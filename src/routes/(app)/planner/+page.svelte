@@ -8,7 +8,11 @@
 	import VariationsPanel from '$lib/components/VariationsPanel.svelte';
 	import WeeklyPlanner from '$lib/components/WeeklyPlanner.svelte';
 	import { addWeeks } from '$lib/dates';
-	import { addCustomMealSchema } from '$lib/schemas/mealPlan';
+	import {
+		addCustomMealSchema,
+		mealSuggestionListSchema,
+		mealSuggestionSchema
+	} from '$lib/schemas/mealPlan';
 	import type { MealPlanEntryWithRecipe } from '$lib/server/services/mealPlan';
 	import { DAY_LABELS } from '$lib/types';
 	import type { MealSuggestion } from '$lib/types';
@@ -49,8 +53,11 @@
 		const stored = sessionStorage.getItem('pendingSuggestion');
 		if (stored) {
 			try {
-				pendingSuggestion = JSON.parse(stored) as MealSuggestion;
-				showDayPicker = true;
+				const parsed = mealSuggestionSchema.safeParse(JSON.parse(stored));
+				if (parsed.success) {
+					pendingSuggestion = parsed.data;
+					showDayPicker = true;
+				}
 			} catch {
 				// ignore parse errors
 			}
@@ -105,7 +112,7 @@
 				body: JSON.stringify({ meal: mealName })
 			});
 			if (!res.ok) throw new Error('Failed to get variations');
-			variationsList = (await res.json()) as MealSuggestion[];
+			variationsList = mealSuggestionListSchema.parse(await res.json());
 		} catch {
 			actionError = `Could not load variations for ${mealName}. Please try again.`;
 		} finally {
