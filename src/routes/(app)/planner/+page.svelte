@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { deserialize, enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import AuthFormMessage from '$lib/components/AuthFormMessage.svelte';
 	import RecipeDrawer from '$lib/components/RecipeDrawer.svelte';
@@ -82,21 +82,9 @@
 		}
 	});
 
-	async function handleRemoveEntry(entryId: string): Promise<void> {
-		const formData = new FormData();
-		formData.set('entryId', entryId);
-
-		const res = await fetch('?/remove', {
-			method: 'POST',
-			body: formData
-		});
-
-		if (res.ok) {
-			actionError = null;
-			entries = entries.filter((e) => e.entry.id !== entryId);
-		} else {
-			actionError = 'Could not remove that meal. Please try again.';
-		}
+	function handleEntryRemoved(entryId: string): void {
+		actionError = null;
+		entries = entries.filter((e) => e.entry.id !== entryId);
 	}
 
 	function handleAddCustom(dayOfWeek: number): void {
@@ -407,7 +395,8 @@
 		<WeeklyPlanner
 			weekStartDate={data.weekStartDate}
 			{entries}
-			onRemoveEntry={handleRemoveEntry}
+			onEntryRemoved={handleEntryRemoved}
+			onRemoveFailed={(text) => (actionError = text)}
 			onAddCustom={handleAddCustom}
 			onRequestVariations={handleRequestVariations}
 			loadingVariationsDay={variationsLoading ? variationsDay : null}
