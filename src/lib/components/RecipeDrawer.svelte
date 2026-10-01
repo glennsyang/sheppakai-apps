@@ -1,15 +1,91 @@
 <script lang="ts">
-	import type { MealSuggestion } from '$lib/types';
+	import { enhance } from '$app/forms';
+	import { actionFailureText } from '$lib/action-result';
+	import Icon from '$lib/components/Icon.svelte';
+	import type { Ingredient, MealSuggestion } from '$lib/types';
+	import type { SubmitFunction } from '@sveltejs/kit';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	import Modal from './Modal.svelte';
 
 	interface Props {
 		suggestion: MealSuggestion | null;
 		onClose: () => void;
-		onSaveToPlanner: (suggestion: MealSuggestion) => void;
+		/** Omitted when the recipe is already on the board. */
+		onSaveToPlanner?: (suggestion: MealSuggestion) => void;
+		/** The saved recipe behind `suggestion`; when set, the drawer can edit it via the planner's `updateRecipe` action. */
+		recipeId?: string;
+		/** Called after an edit is saved. */
+		onSaved?: () => Promise<void> | void;
 	}
 
-	let { suggestion, onClose, onSaveToPlanner }: Props = $props();
+	let { suggestion, onClose, onSaveToPlanner, recipeId, onSaved }: Props = $props();
+
+	// Edit mode drops back to reading whenever a different recipe opens.
+	let editing = $derived.by(() => {
+		void suggestion;
+		return false;
+	});
+	let saving = $state(false);
+	let saveError = $state<string | null>(null);
+	let draft = $state({ name: '', description: '', prepTimeMinutes: 0, servings: 1 });
+	let draftIngredients = $state<Ingredient[]>([]);
+	let draftSteps = $state<string[]>([]);
+
+	const blankIngredient = (): Ingredient => ({ quantity: '', unit: '', name: '' });
+
+	function startEditing() {
+		if (!suggestion) return;
+		draft = {
+			name: suggestion.name,
+			description: suggestion.description,
+			prepTimeMinutes: suggestion.prepTimeMinutes,
+			servings: suggestion.servings
+		};
+		draftIngredients = suggestion.ingredients.length
+			? suggestion.ingredients.map((ing) => ({ ...ing }))
+			: [blankIngredient()];
+		draftSteps = suggestion.steps.length ? [...suggestion.steps] : [''];
+		saveError = null;
+		editing = true;
+	}
+
+	const filledIngredients = $derived(
+		draftIngredients
+			.map((ing) => ({
+				quantity: ing.quantity.trim(),
+				unit: ing.unit.trim(),
+				name: ing.name.trim()
+			}))
+			.filter((ing) => ing.name)
+	);
+	const filledSteps = $derived(draftSteps.map((step) => step.trim()).filter(Boolean));
+
+	const saveEnhance: SubmitFunction = ({ cancel }) => {
+		if (saving) return cancel();
+		saving = true;
+		saveError = null;
+		return async ({ result }) => {
+			saving = false;
+			if (result.type === 'success') {
+				editing = false;
+				await onSaved?.();
+			} else {
+				saveError = actionFailureText(result, 'Could not save that recipe. Please try again.');
+			}
+		};
+	};
+
+	// Ingredients ticked off while cooking; cleared whenever a different recipe opens.
+	const gathered = $derived.by(() => {
+		void suggestion;
+		return new SvelteSet<number>();
+	});
+
+	function toggleGathered(i: number) {
+		if (gathered.has(i)) gathered.delete(i);
+		else gathered.add(i);
+	}
 </script>
 
 <Modal
@@ -19,89 +95,366 @@
 	variant="drawer"
 >
 	{#if suggestion}
-		<!-- Header -->
-		<div class="border-surface-200-800 flex items-start justify-between gap-4 border-b px-6 py-5">
-			<div class="space-y-1.5">
-				<h2 class="font-serif text-2xl leading-snug font-semibold tracking-tight">
+		<div class="head flex items-start justify-between gap-4 px-6 pt-6 pb-5 sm:px-8">
+			<div class="min-w-0 space-y-3">
+				<h2 class="text-[1.75rem] leading-[1.15] font-bold tracking-tight sm:text-[2rem]">
 					{suggestion.name}
 				</h2>
-				<div class="text-surface-400 flex gap-4 text-xs font-medium">
-					<span>{suggestion.prepTimeMinutes} min prep</span>
-					<span>·</span>
-					<span>{suggestion.servings} servings</span>
+				<div class="ink-soft flex flex-wrap gap-x-5 gap-y-1 text-sm font-semibold">
+					<span class="tabular inline-flex items-center gap-1.5">
+						<Icon name="clock" size={16} />{suggestion.prepTimeMinutes} min
+					</span>
+					<span class="tabular inline-flex items-center gap-1.5">
+						<Icon name="servings" size={16} />Serves {suggestion.servings}
+					</span>
 				</div>
 			</div>
-			<button
-				type="button"
-				onclick={onClose}
-				class="text-surface-400 hover:bg-surface-100-900 hover:text-surface-950-50 mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors"
-				aria-label="Close recipe"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.75"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg
-				>
-			</button>
+			<div class="flex shrink-0 items-center gap-1">
+				{#if recipeId && !editing}
+					<button type="button" onclick={startEditing} class="close" aria-label="Edit recipe">
+						<Icon name="pencil" size={18} />
+					</button>
+				{/if}
+				<button type="button" onclick={onClose} class="close" aria-label="Close recipe">
+					<Icon name="x" size={20} />
+				</button>
+			</div>
 		</div>
 
-		<!-- Scrollable content -->
-		<div class="flex-1 space-y-8 overflow-y-auto px-6 py-6">
-			<!-- Description -->
-			<p class="text-surface-600-400 text-sm leading-relaxed font-light italic">
-				{suggestion.description}
-			</p>
+		{#if editing}
+			<form
+				method="POST"
+				action="/planner?/updateRecipe"
+				use:enhance={saveEnhance}
+				class="flex min-h-0 flex-1 flex-col"
+			>
+				<input type="hidden" name="recipeId" value={recipeId} />
+				<input type="hidden" name="ingredientsJson" value={JSON.stringify(filledIngredients)} />
+				<input type="hidden" name="instructionsJson" value={JSON.stringify(filledSteps)} />
 
-			<!-- Ingredients -->
-			<section>
-				<h3 class="mb-4 font-serif text-lg font-semibold tracking-tight">Ingredients</h3>
-				<ul class="space-y-2">
-					{#each suggestion.ingredients as ing}
-						<li class="flex items-baseline gap-3 text-sm">
-							<span class="bg-primary-500 mt-2 h-1 w-1 shrink-0 rounded-full"></span>
-							<span class="text-surface-950-50 font-medium tabular-nums"
-								>{ing.quantity} {ing.unit}</span
-							>
-							<span class="text-surface-500 font-light">{ing.name}</span>
-						</li>
-					{/each}
-				</ul>
-			</section>
+				<div class="flex-1 space-y-8 overflow-y-auto px-6 py-7 sm:px-8">
+					{#if saveError}
+						<p class="alert preset-tonal-error" role="alert">{saveError}</p>
+					{/if}
 
-			<!-- Steps -->
-			<section>
-				<h3 class="mb-4 font-serif text-lg font-semibold tracking-tight">Instructions</h3>
-				<ol class="space-y-4">
-					{#each suggestion.steps as step, i}
-						<li class="flex gap-4 text-sm">
-							<span
-								class="border-primary-500 text-primary-500 mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold tabular-nums"
+					<div class="space-y-4">
+						<label class="label space-y-1.5">
+							<span class="font-semibold">Name</span>
+							<input
+								type="text"
+								name="name"
+								bind:value={draft.name}
+								class="input"
+								maxlength="200"
+								required
+							/>
+						</label>
+
+						<label class="label space-y-1.5">
+							<span class="font-semibold"
+								>Notes <span class="ink-faint font-normal">(optional)</span></span
 							>
-								{i + 1}
+							<textarea
+								name="description"
+								bind:value={draft.description}
+								class="textarea"
+								rows="3"
+								maxlength="2000"></textarea>
+						</label>
+
+						<div class="grid grid-cols-2 gap-4">
+							<label class="label space-y-1.5">
+								<span class="font-semibold">Prep (min)</span>
+								<input
+									type="number"
+									name="prepTimeMinutes"
+									bind:value={draft.prepTimeMinutes}
+									class="input tabular"
+									min="0"
+									max="1440"
+									required
+								/>
+							</label>
+							<label class="label space-y-1.5">
+								<span class="font-semibold">Serves</span>
+								<input
+									type="number"
+									name="servings"
+									bind:value={draft.servings}
+									class="input tabular"
+									min="1"
+									max="100"
+									required
+								/>
+							</label>
+						</div>
+					</div>
+
+					<fieldset class="space-y-2">
+						<legend class="marker ink-red mb-3 text-xl">Ingredients</legend>
+						{#each draftIngredients as ing, i (i)}
+							<div class="ing-row">
+								<input
+									type="text"
+									bind:value={ing.quantity}
+									class="input"
+									placeholder="2"
+									maxlength="50"
+									aria-label="Ingredient {i + 1} quantity"
+								/>
+								<input
+									type="text"
+									bind:value={ing.unit}
+									class="input"
+									placeholder="cups"
+									maxlength="50"
+									aria-label="Ingredient {i + 1} unit"
+								/>
+								<input
+									type="text"
+									bind:value={ing.name}
+									class="input"
+									placeholder="rice"
+									maxlength="200"
+									aria-label="Ingredient {i + 1} name"
+								/>
+								<button
+									type="button"
+									class="row-remove"
+									onclick={() => draftIngredients.splice(i, 1)}
+									aria-label="Remove ingredient {i + 1}"
+								>
+									<Icon name="x" size={16} />
+								</button>
+							</div>
+						{/each}
+						{#if draftIngredients.length < 50}
+							<button
+								type="button"
+								class="act-text ink-blue inline-flex items-center gap-1.5 text-sm"
+								onclick={() => draftIngredients.push(blankIngredient())}
+							>
+								<Icon name="plus" size={16} />Add an ingredient
+							</button>
+						{/if}
+					</fieldset>
+
+					<fieldset class="space-y-3">
+						<legend class="marker ink-red mb-3 text-xl">Method</legend>
+						{#each draftSteps as _, i (i)}
+							<div class="step-row">
+								<span class="marker ink-blue tabular pt-2 text-xl leading-none" aria-hidden="true"
+									>{i + 1}</span
+								>
+								<textarea
+									bind:value={draftSteps[i]}
+									class="textarea"
+									rows="2"
+									maxlength="2000"
+									aria-label="Step {i + 1}"></textarea>
+								<button
+									type="button"
+									class="row-remove"
+									onclick={() => draftSteps.splice(i, 1)}
+									aria-label="Remove step {i + 1}"
+								>
+									<Icon name="x" size={16} />
+								</button>
+							</div>
+						{/each}
+						{#if draftSteps.length < 50}
+							<button
+								type="button"
+								class="act-text ink-blue inline-flex items-center gap-1.5 text-sm"
+								onclick={() => draftSteps.push('')}
+							>
+								<Icon name="plus" size={16} />Add a step
+							</button>
+						{/if}
+					</fieldset>
+				</div>
+
+				<div class="foot flex gap-2 px-6 py-4 sm:px-8">
+					<button type="submit" disabled={saving} class="btn act flex-1 py-3">
+						{saving ? 'Saving…' : 'Save recipe'}
+					</button>
+					<button
+						type="button"
+						disabled={saving}
+						onclick={() => (editing = false)}
+						class="btn act-quiet py-3"
+					>
+						Cancel
+					</button>
+				</div>
+			</form>
+		{:else}
+			<div class="flex-1 space-y-10 overflow-y-auto px-6 py-7 sm:px-8">
+				{#if suggestion.description}
+					<p class="ink-soft max-w-[60ch] text-[1.05rem] leading-relaxed">
+						{suggestion.description}
+					</p>
+				{/if}
+
+				{#if suggestion.ingredients.length === 0 && suggestion.steps.length === 0}
+					<div class="space-y-3">
+						<p class="marker ink-faint text-lg">Written in by hand. There's no recipe on file.</p>
+						{#if recipeId}
+							<button type="button" onclick={startEditing} class="btn act-quiet px-4 py-2">
+								<Icon name="pencil" size={16} />
+								Add the recipe
+							</button>
+						{/if}
+					</div>
+				{/if}
+
+				{#if suggestion.ingredients.length > 0}
+					<section aria-labelledby="ingredients-heading">
+						<div class="mb-3 flex items-baseline justify-between gap-4">
+							<h3 id="ingredients-heading" class="marker ink-red text-xl">Ingredients</h3>
+							<span class="ink-faint tabular text-sm" aria-live="polite">
+								{gathered.size} of {suggestion.ingredients.length} out
 							</span>
-							<span class="text-surface-700-300 pt-0.5 leading-relaxed font-light">{step}</span>
-						</li>
-					{/each}
-				</ol>
-			</section>
-		</div>
+						</div>
+						<ul class="ruled">
+							{#each suggestion.ingredients as ing, i (i)}
+								<li>
+									<button
+										type="button"
+										class="ingredient"
+										aria-pressed={gathered.has(i)}
+										onclick={() => toggleGathered(i)}
+									>
+										<span class="tick" aria-hidden="true">
+											{#if gathered.has(i)}<Icon name="check" size={14} />{/if}
+										</span>
+										<span class="qty tabular">{ing.quantity} {ing.unit}</span>
+										<span class="name">{ing.name}</span>
+									</button>
+								</li>
+							{/each}
+						</ul>
+					</section>
+				{/if}
 
-		<!-- Footer -->
-		<div class="border-surface-200-800 border-t px-6 py-4">
-			<button
-				type="button"
-				onclick={() => onSaveToPlanner(suggestion)}
-				class="btn preset-filled-primary-500 w-full"
-			>
-				Add to weekly planner
-			</button>
-		</div>
+				{#if suggestion.steps.length > 0}
+					<section aria-labelledby="steps-heading">
+						<h3 id="steps-heading" class="marker ink-red mb-4 text-xl">Method</h3>
+						<ol class="space-y-6">
+							{#each suggestion.steps as step, i (i)}
+								<li class="grid grid-cols-[2rem_1fr] gap-3">
+									<span class="marker ink-blue tabular text-2xl leading-none" aria-hidden="true"
+										>{i + 1}</span
+									>
+									<p class="max-w-[62ch] text-[1.1rem] leading-[1.6]">{step}</p>
+								</li>
+							{/each}
+						</ol>
+					</section>
+				{/if}
+			</div>
+
+			{#if onSaveToPlanner}
+				<div class="foot px-6 py-4 sm:px-8">
+					<button
+						type="button"
+						onclick={() => onSaveToPlanner(suggestion)}
+						class="btn act w-full py-3"
+					>
+						<Icon name="calendar" />
+						Put it on the week
+					</button>
+				</div>
+			{/if}
+		{/if}
 	{/if}
 </Modal>
+
+<style>
+	/* Index-card head rule in red marker */
+	.head {
+		border-bottom: 1.5px solid var(--marker-red);
+	}
+	.foot {
+		border-top: 1px solid var(--rule);
+		padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+	}
+	.close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 2.75rem;
+		height: 2.75rem;
+		margin: -0.25rem -0.5rem 0 0;
+		border-radius: 999px;
+		color: var(--ink-soft);
+	}
+	.close:hover {
+		color: var(--ink);
+		background: color-mix(in oklch, var(--ink) 7%, transparent);
+	}
+
+	.ing-row {
+		display: grid;
+		grid-template-columns: 4rem 5rem minmax(0, 1fr) 2.5rem;
+		gap: 0.5rem;
+		align-items: center;
+	}
+	.step-row {
+		display: grid;
+		grid-template-columns: 1.5rem minmax(0, 1fr) 2.5rem;
+		gap: 0.5rem;
+		align-items: start;
+	}
+	.row-remove {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 8px;
+		color: var(--ink-faint);
+	}
+	.row-remove:hover {
+		color: var(--marker-red);
+		background: color-mix(in oklch, var(--ink) 7%, transparent);
+	}
+
+	.ingredient {
+		display: grid;
+		grid-template-columns: 1.375rem minmax(4.5rem, auto) 1fr;
+		align-items: baseline;
+		gap: 0.75rem;
+		width: 100%;
+		padding: 0.7rem 0;
+		text-align: left;
+		font-size: 1.05rem;
+	}
+	.tick {
+		align-self: center;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.375rem;
+		height: 1.375rem;
+		border-radius: 4px;
+		box-shadow: inset 0 0 0 1.5px var(--rule-strong);
+		color: var(--marker-green);
+	}
+	.qty {
+		font-weight: 700;
+	}
+	.name {
+		color: var(--ink-soft);
+	}
+	.ingredient[aria-pressed='true'] .tick {
+		box-shadow: inset 0 0 0 1.5px var(--marker-green);
+	}
+	.ingredient[aria-pressed='true'] .qty,
+	.ingredient[aria-pressed='true'] .name {
+		color: var(--ink-faint);
+		text-decoration: line-through;
+		text-decoration-thickness: 1.5px;
+	}
+</style>
