@@ -1,12 +1,51 @@
+# Dependencies
 node_modules
 .pnpm-store
+
+# Build output
 build
 .svelte-kit
+.output
+.vercel
+.netlify
+.wrangler
+
+# Tests
 coverage
+playwright-report/
+test-results/
+
+# Env
 .env
 .env.*
 !.env.example
+.env.sentry-build-plugin
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# SQLite
 data
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Local review reports
+**/docs/security-review/
+**/docs/structure-review/
+
+# Tool caches and local AI artifacts
+.fallow/
+.claude/settings.local.json
+# Impeccable screenshots contain personal data
+**/.impeccable/review/
+**/.impeccable/questions/
+**/.impeccable/hook.cache.json
+
+# OS
 .DS_Store
+Thumbs.db
