@@ -1,0 +1,38 @@
+{
+	"name": "@sheppakai/shared",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./api-response": "./src/api-response.ts",
+		"./auth-guard": "./src/auth-guard.ts",
+		"./auth-routes": "./src/auth-routes.ts",
+		"./bearer-token": "./src/bearer-token.ts",
+		"./forgot-password-response": "./src/forgot-password-response.ts",
+		"./sentry-data-collection": "./src/sentry-data-collection.ts"
+	},
+	"scripts": {
+		"check": "tsc --noEmit",
+		"fmt": "oxfmt --no-error-on-unmatched-pattern",
+		"fmt:check": "oxfmt --check --no-error-on-unmatched-pattern",
+		"lint": "oxlint",
+		"test": "vitest --run",
+		"test:ci": "vitest --run",
+		"lint:github": "oxlint --format=github"
+	},
+	"devDependencies": {
+		"@sentry/sveltekit": "catalog:",
+		"@sveltejs/kit": "catalog:",
+		"@types/node": "catalog:",
+		"oxfmt": "catalog:",
+		"oxlint": "catalog:",
+		"svelte": "catalog:",
+		"typescript": "catalog:",
+		"vite": "catalog:",
+		"vitest": "catalog:"
+	},
+	"peerDependencies": {
+		"@sentry/sveltekit": "^11",
+		"@sveltejs/kit": "^2"
+	}
+}

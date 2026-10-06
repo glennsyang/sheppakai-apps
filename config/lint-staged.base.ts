@@ -4,7 +4,7 @@
  * @type {import('lint-staged').Configuration}
  */
 const checkRedirectThrows = (filenames: string[]) =>
-	`node scripts/check-redirect-throws.mjs ${filenames.map((f) => `"${f}"`).join(' ')}`;
+	`node ../../scripts/check-redirect-throws.mjs ${filenames.map((f) => `"${f}"`).join(' ')}`;
 
 export const lintStagedBase = {
 	'*.{js,ts,svelte}': ['pnpm run fmt', "sh -c 'pnpm run lint'"],

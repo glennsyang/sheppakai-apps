@@ -116,7 +116,7 @@ export const auth = betterAuth({
 	plugins: [
 		admin({
 			adminUserIds: ADMIN_USER_IDS.split(','),
-			// Plugin defaults, spelled out for parity with the sibling repos.
+			// Plugin defaults, spelled out to match the other apps.
 			defaultRole: 'user',
 			adminRoles: ['admin']
 		}),

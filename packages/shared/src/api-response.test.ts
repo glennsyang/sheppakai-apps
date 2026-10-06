@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { apiError, apiSuccess } from './response';
+import { apiError, apiSuccess } from './api-response';
 
 describe('apiSuccess', () => {
 	it('wraps data in a { data } envelope with a 200 default status', async () => {

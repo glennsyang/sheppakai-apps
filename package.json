@@ -16,6 +16,7 @@
 	"devDependencies": {
 		"lefthook": "catalog:",
 		"oxfmt": "catalog:",
-		"oxlint": "catalog:"
+		"oxlint": "catalog:",
+		"typescript": "catalog:"
 	}
 }
