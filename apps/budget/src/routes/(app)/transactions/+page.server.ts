@@ -1,0 +1,104 @@
+import { transactionSchema } from '$lib/formSchemas';
+import { createCrudActions } from '$lib/server/actions/crud-helpers';
+import { budgetQueries, transactionQueries } from '$lib/server/db/queries';
+import { transaction } from '$lib/server/db/schema';
+import { toTransactionRow } from '$lib/server/db/writes/transactions';
+import { logger } from '$lib/server/logger';
+import { transactionBudgetAlertHooks } from '$lib/server/notifications/budget-threshold-alerts';
+import {
+	calculateMonthsSinceJanuary,
+	filterByDateRange,
+	getMonthRangeFromUrl,
+	getYearDateRange
+} from '$lib/utils/dates';
+import { superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ url }) => {
+	// Get month, year, and date range from URL params or use current month/year
+	const { month, year, startDate, endDate } = getMonthRangeFromUrl(url);
+
+	// Get yearly date range
+	const { startDate: yearStartDate, endDate: yearEndDate } = getYearDateRange(year);
+
+	const completedMonthsSinceJanuary = calculateMonthsSinceJanuary(year);
+
+	// Normalize on the server regardless of what the client sends: trim whitespace and cap at
+	// the notes column max length (800 chars) so a crafted URL can't trigger an oversized query.
+	const searchQuery = (url.searchParams.get('search') ?? '').trim().slice(0, 800);
+	const form = await superValidate(zod4(transactionSchema));
+
+	try {
+		// In search mode: query across all months, skip budget data (sidebar is hidden)
+		if (searchQuery) {
+			const { transactions, limitReached } = await transactionQueries.search(searchQuery);
+			return {
+				transactions,
+				budgets: [],
+				categorySpending: {} as Record<string, number>,
+				excludedFromBudgetTotal: 0,
+				yearlyTransactions: [],
+				completedMonthsSinceJanuary: 0,
+				form,
+				searchQuery,
+				searchLimitReached: limitReached
+			};
+		}
+
+		// The month is a subset of the year, so load the year once and derive the month from it.
+		const [yearlyTransactions, budgets] = await Promise.all([
+			transactionQueries.findByDateRange(yearStartDate, yearEndDate),
+			budgetQueries.findByMonthYear(month, year)
+		]);
+		const transactions = filterByDateRange(yearlyTransactions, startDate, endDate);
+		const budgetTransactions = transactions.filter((txn) => !txn.excludedFromBudget);
+		const excludedFromBudgetTotal = transactions.reduce(
+			(sum, txn) => sum + (txn.excludedFromBudget ? txn.amount : 0),
+			0
+		);
+
+		// Calculate spending per category
+		const categorySpending = budgetTransactions.reduce<Record<string, number>>((acc, txn) => {
+			if (txn.category) {
+				const categoryId = txn.category.id;
+				acc[categoryId] = (acc[categoryId] || 0) + txn.amount;
+			}
+			return acc;
+		}, {});
+
+		return {
+			transactions,
+			budgets,
+			categorySpending,
+			excludedFromBudgetTotal,
+			yearlyTransactions,
+			completedMonthsSinceJanuary,
+			form,
+			searchQuery
+		};
+	} catch (error) {
+		logger.error('Failed to load transaction data:', error);
+		return {
+			transactions: [],
+			budgets: [],
+			categorySpending: {} as Record<string, number>,
+			excludedFromBudgetTotal: 0,
+			yearlyTransactions: [],
+			completedMonthsSinceJanuary,
+			loadError: 'Failed to load transaction data. Please try refreshing the page.',
+			form,
+			searchQuery
+		};
+	}
+};
+
+export const actions = createCrudActions({
+	schema: transactionSchema,
+	table: transaction,
+	entityName: 'Transaction',
+	...transactionBudgetAlertHooks,
+	transformCreate: (data, userId) => ({ ...toTransactionRow(data), userId }),
+	transformUpdate: (data) => toTransactionRow(data)
+}) satisfies Actions;

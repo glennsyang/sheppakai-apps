@@ -1,0 +1,364 @@
+<script lang="ts">
+	import type { AdminSessionSummary, UserWithSessions } from '$lib';
+	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import * as Select from '$lib/components/ui/select/index.js';
+	import * as Sheet from '$lib/components/ui/sheet/index.js';
+	import * as Table from '$lib/components/ui/table/index.js';
+	import {
+		banUserFormContext,
+		setPasswordFormContext,
+		setUserRoleFormContext
+	} from '$lib/contexts';
+	import { formatLocalTimestamp } from '$lib/utils/dates';
+	import { toast } from 'svelte-sonner';
+	import { superForm } from 'sveltekit-superforms';
+
+	let { user }: { user: UserWithSessions } = $props();
+
+	let openSetRoleDialog = $state<boolean>(false);
+	let openSetPasswordDialog = $state<boolean>(false);
+	let openBanDialog = $state<boolean>(false);
+	let openUnbanDialog = $state<boolean>(false);
+	let openRevokeDialog = $state<boolean>(false);
+	let openDeleteModal = $state<boolean>(false);
+	let openWelcomeModal = $state<boolean>(false);
+	let openSessionsSheet = $state<boolean>(false);
+
+	// Get all forms contexts
+	const setUserRoleForm = setUserRoleFormContext.get();
+	const setPasswordFormData = setPasswordFormContext.get();
+	const banUserFormData = banUserFormContext.get();
+
+	// Create separate superForm instances for each form
+	// Use dynamic IDs per user to avoid duplicates across table rows
+	const {
+		form: setRoleForm,
+		errors: setRoleErrors,
+		enhance: setRoleEnhance,
+		submitting: setRoleSubmitting
+	} = superForm(setUserRoleForm, {
+		// svelte-ignore state_referenced_locally
+		id: `setUserRole-${user.id}`,
+		resetForm: true,
+		onUpdate: ({ form }) => {
+			// Read form.message, not $message: superforms clears the store on submit and only
+			// repopulates it after onUpdate has run, so the store is always undefined here.
+			if (form.message?.type === 'success') {
+				openSetRoleDialog = false;
+				toast.success(form.message.text);
+			} else if (form.message?.type === 'error') {
+				toast.error(form.message.text);
+			}
+		},
+		onError: ({ result }) => {
+			toast.error(`Error updating role: ${result.error.message}`);
+		}
+	});
+
+	const {
+		form: setPasswordForm,
+		errors: setPasswordErrors,
+		enhance: setPasswordEnhance,
+		submitting: setPasswordSubmitting
+	} = superForm(setPasswordFormData, {
+		// svelte-ignore state_referenced_locally
+		id: `setPassword-${user.id}`,
+		resetForm: true,
+		onUpdate: ({ form }) => {
+			if (form.message?.type === 'success') {
+				openSetPasswordDialog = false;
+				toast.success(form.message.text);
+			} else if (form.message?.type === 'error') {
+				toast.error(form.message.text);
+			}
+		},
+		onError: ({ result }) => {
+			toast.error(`Error updating password: ${result.error.message}`);
+		}
+	});
+
+	const {
+		form: banUserForm,
+		errors: banUserErrors,
+		enhance: banUserEnhance,
+		submitting: banUserSubmitting
+	} = superForm(banUserFormData, {
+		// svelte-ignore state_referenced_locally
+		id: `banUser-${user.id}`,
+		resetForm: true,
+		onUpdate: ({ form }) => {
+			if (form.message?.type === 'success') {
+				openBanDialog = false;
+				toast.success(form.message.text);
+			} else if (form.message?.type === 'error') {
+				toast.error(form.message.text);
+			}
+		},
+		onError: ({ result }) => {
+			toast.error(`Error banning user: ${result.error.message}`);
+		}
+	});
+
+	// Update selectedRole when dialog opens
+	$effect(() => {
+		if (openSetRoleDialog) {
+			$setRoleForm.userId = user.id;
+			$setRoleForm.role = user.role || 'user';
+		}
+	});
+
+	$effect(() => {
+		if (openSetPasswordDialog) {
+			$setPasswordForm.userId = user.id;
+			$setPasswordForm.newPassword = '';
+		}
+	});
+
+	$effect(() => {
+		if (openBanDialog) {
+			$banUserForm.userId = user.id;
+			$banUserForm.banReason = '';
+		}
+	});
+
+	// Derived value for active session count
+	let activeSessionCount = $derived(
+		user.sessions?.filter((s) => new Date(s.expiresAt) > new Date()).length || 0
+	);
+
+	// Helper function to check if session is active
+	function isSessionActive(session: AdminSessionSummary): boolean {
+		return new Date(session.expiresAt) > new Date();
+	}
+</script>
+
+<RowActionsMenu onDelete={() => (openDeleteModal = true)} deleteLabel="Delete User">
+	<DropdownMenu.Item onclick={() => (openSetRoleDialog = true)}>Set Role</DropdownMenu.Item>
+	<DropdownMenu.Item onclick={() => (openSetPasswordDialog = true)}>Set Password</DropdownMenu.Item>
+	{#if user.banned}
+		<DropdownMenu.Item onclick={() => (openUnbanDialog = true)}>Unban User</DropdownMenu.Item>
+	{:else}
+		<DropdownMenu.Item onclick={() => (openBanDialog = true)}>Ban user</DropdownMenu.Item>
+	{/if}
+	<DropdownMenu.Item onclick={() => (openWelcomeModal = true)}>Send Welcome Email</DropdownMenu.Item
+	>
+	<DropdownMenu.Item onclick={() => (openSessionsSheet = true)}>List Sessions</DropdownMenu.Item>
+	<DropdownMenu.Item onclick={() => (openRevokeDialog = true)}>Revoke Sessions</DropdownMenu.Item>
+</RowActionsMenu>
+
+<!-- Set Role Dialog -->
+<Dialog.Root bind:open={openSetRoleDialog}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>Set user role</Dialog.Title>
+			<Dialog.Description>Change the role for {user.email}</Dialog.Description>
+		</Dialog.Header>
+		<form method="POST" action="/admin/users?/setRole" use:setRoleEnhance>
+			<input type="hidden" name="userId" bind:value={$setRoleForm.userId} />
+
+			<div class="space-y-2">
+				<label for="user-role">Role</label>
+				<Select.Root type="single" bind:value={$setRoleForm.role} required>
+					<Select.Trigger class="w-full {$setRoleErrors.role ? 'border-destructive' : ''}">
+						{$setRoleForm.role.charAt(0).toUpperCase() + $setRoleForm.role.slice(1)}
+					</Select.Trigger>
+					<Select.Content>
+						<Select.Label>Select Role</Select.Label>
+						<Select.Item value="user" label="User">User</Select.Item>
+						<Select.Item value="admin" label="Admin">Admin</Select.Item>
+					</Select.Content>
+				</Select.Root>
+				{#if $setRoleErrors.role}
+					<p class="text-destructive text-sm">{$setRoleErrors.role}</p>
+				{/if}
+				<input type="hidden" name="role" value={$setRoleForm.role} />
+			</div>
+
+			<Dialog.Footer>
+				<Dialog.Close><Button type="reset" variant="outline">Cancel</Button></Dialog.Close>
+				<Button type="submit" disabled={$setRoleSubmitting}>
+					{$setRoleSubmitting ? 'Saving...' : 'Set Role'}
+				</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>
+
+<!-- Set Password Dialog -->
+<Dialog.Root bind:open={openSetPasswordDialog}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>Set user password</Dialog.Title>
+			<Dialog.Description>Set a new password for {user.email}</Dialog.Description>
+		</Dialog.Header>
+		<form class="space-y-4" method="POST" action="/admin/users?/setPassword" use:setPasswordEnhance>
+			<input type="hidden" name="userId" bind:value={$setPasswordForm.userId} />
+
+			<div class="space-y-2">
+				<label for="newPassword">New Password</label>
+				<Input
+					id="newPassword"
+					name="newPassword"
+					type="password"
+					bind:value={$setPasswordForm.newPassword}
+					class={$setPasswordErrors.newPassword ? 'border-destructive' : ''}
+					required
+					minlength={12}
+					placeholder="Enter new password (min 12 characters)"
+				/>
+				{#if $setPasswordErrors.newPassword}
+					<p class="text-destructive text-sm">{$setPasswordErrors.newPassword}</p>
+				{/if}
+			</div>
+
+			<Dialog.Footer>
+				<Dialog.Close><Button type="reset" variant="outline">Cancel</Button></Dialog.Close>
+				<Button type="submit" disabled={$setPasswordSubmitting}>
+					{$setPasswordSubmitting ? 'Updating...' : 'Update Password'}
+				</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>
+
+<!-- Ban user Dialog -->
+<Dialog.Root bind:open={openBanDialog}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>Ban user</Dialog.Title>
+			<Dialog.Description>Ban {user.email} from the application</Dialog.Description>
+		</Dialog.Header>
+		<form class="space-y-4" method="POST" action="/admin/users?/banUser" use:banUserEnhance>
+			<input type="hidden" name="userId" bind:value={$banUserForm.userId} />
+
+			<div class="space-y-2">
+				<label for="banReason">Reason (optional)</label>
+				<Input
+					id="banReason"
+					name="banReason"
+					type="text"
+					bind:value={$banUserForm.banReason}
+					class={$banUserErrors.banReason ? 'border-destructive' : ''}
+					placeholder="Enter ban reason"
+					required
+				/>
+				{#if $banUserErrors.banReason}
+					<p class="text-destructive text-sm">{$banUserErrors.banReason}</p>
+				{/if}
+			</div>
+
+			<Dialog.Footer>
+				<Dialog.Close><Button type="reset" variant="outline">Cancel</Button></Dialog.Close>
+				<Button type="submit" disabled={$banUserSubmitting}>
+					{$banUserSubmitting ? 'Updating...' : 'Ban user'}
+				</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>
+
+<!-- Unban User Confirmation -->
+<ConfirmModal
+	bind:open={openUnbanDialog}
+	id={user.id}
+	actionUrl="/admin/users?/unbanUser"
+	title="Unban user"
+	message="Are you sure you want to unban {user.email}?"
+	confirmButtonText="Unban User"
+/>
+
+<!-- Revoke Sessions Confirmation -->
+<ConfirmModal
+	bind:open={openRevokeDialog}
+	id={user.id}
+	actionUrl="/admin/users?/revokeSession"
+	title="Revoke session"
+	message="Are you sure you want to permanently revoke all sessions for {user.email}? This action cannot be undone."
+	confirmButtonText="Revoke Session"
+/>
+
+<!-- Send Welcome Email Confirmation -->
+<ConfirmModal
+	bind:open={openWelcomeModal}
+	id={user.id}
+	actionUrl="/admin/users?/sendWelcomeEmail"
+	title="Send welcome email"
+	message="Send {user.email} a welcome email with a new 72-hour link to set their password?"
+	confirmButtonText="Send Email"
+/>
+
+<!-- Delete User Confirmation -->
+<ConfirmModal
+	bind:open={openDeleteModal}
+	id={user.id}
+	actionUrl="/admin/users?/deleteUser"
+	title="Delete user"
+	message="Are you sure you want to permanently delete {user.email}? This action cannot be undone."
+	confirmButtonText="Delete User"
+/>
+
+<!-- Sessions Sheet -->
+<Sheet.Root bind:open={openSessionsSheet}>
+	<Sheet.Content side="right" class="flex w-full flex-col sm:max-w-lg">
+		<Sheet.Header>
+			<Sheet.Title>User Sessions</Sheet.Title>
+			<Sheet.Description>
+				Active and expired sessions for {user.email}
+			</Sheet.Description>
+		</Sheet.Header>
+
+		<div class="flex-1 overflow-y-auto px-4 py-4">
+			{#if !user.sessions || user.sessions.length === 0}
+				<div class="text-muted-foreground flex h-32 items-center justify-center">
+					No sessions found
+				</div>
+			{:else}
+				<Table.Root>
+					<Table.Header>
+						<Table.Row>
+							<Table.Head>Status</Table.Head>
+							<Table.Head>IP Address</Table.Head>
+							<Table.Head>Created</Table.Head>
+							<Table.Head>Expires</Table.Head>
+						</Table.Row>
+					</Table.Header>
+					<Table.Body>
+						{#each user.sessions as session (session.id)}
+							<Table.Row>
+								<Table.Cell>
+									{#if isSessionActive(session)}
+										<Badge variant="default" class="bg-green-500">Active</Badge>
+									{:else}
+										<Badge variant="destructive">Expired</Badge>
+									{/if}
+								</Table.Cell>
+								<Table.Cell class="font-mono text-xs">
+									{session.ipAddress || 'N/A'}
+								</Table.Cell>
+								<Table.Cell class="text-xs">
+									{formatLocalTimestamp(new Date(session.createdAt).toISOString())}
+								</Table.Cell>
+								<Table.Cell class="text-xs">
+									{formatLocalTimestamp(new Date(session.expiresAt).toISOString())}
+								</Table.Cell>
+							</Table.Row>
+						{/each}
+					</Table.Body>
+				</Table.Root>
+			{/if}
+		</div>
+
+		<Sheet.Footer class="border-t pt-4">
+			<div class="flex w-full justify-between text-sm font-medium">
+				<span>{user.sessions?.length || 0} total sessions</span>
+				<span>{activeSessionCount} active</span>
+			</div>
+		</Sheet.Footer>
+	</Sheet.Content>
+</Sheet.Root>

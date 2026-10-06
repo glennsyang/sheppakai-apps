@@ -1,0 +1,292 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mockState = vi.hoisted(() => ({
+	findAll: vi.fn<(_options?: { where?: unknown }) => Promise<unknown[]>>(
+		async (_options?: { where?: unknown }) => []
+	),
+	createdBuilder: null as unknown,
+	findByDateRangeSpy: null as unknown
+}));
+
+vi.mock('drizzle-orm', () => ({
+	and: (...conditions: unknown[]) => ({ type: 'and', conditions }),
+	desc: (field: unknown) => ({ type: 'desc', field }),
+	eq: (field: unknown, value: unknown) => ({ type: 'eq', field, value }),
+	isNotNull: (field: unknown) => ({ type: 'isNotNull', field }),
+	ne: (field: unknown, value: unknown) => ({ type: 'ne', field, value }),
+	or: (...conditions: unknown[]) => ({ type: 'or', conditions }),
+	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
+		type: 'sql',
+		text: strings.join('?'),
+		values
+	})
+}));
+
+vi.mock('../schema', () => ({
+	transaction: {
+		date: 'transaction.date',
+		categoryId: 'transaction.category_id',
+		excludedFromBudget: 'transaction.excluded_from_budget',
+		gstAmount: 'transaction.gst_amount',
+		payee: 'transaction.payee',
+		notes: 'transaction.notes',
+		amount: 'transaction.amount'
+	}
+}));
+
+const mockAggregate = vi.hoisted(() => {
+	const chain = {
+		select: vi.fn<(fields: unknown) => unknown>(),
+		from: vi.fn<(table: unknown) => unknown>(),
+		where: vi.fn<(where: unknown) => unknown>(),
+		groupBy: vi.fn<(...groups: unknown[]) => unknown>(),
+		all: vi.fn<() => unknown[]>(() => [
+			{ categoryId: 'cat-1', month: '03', year: '2026', total: 42 }
+		])
+	};
+	chain.select.mockImplementation(() => chain);
+	chain.from.mockImplementation(() => chain);
+	chain.where.mockImplementation(() => chain);
+	chain.groupBy.mockImplementation(() => chain);
+	return chain;
+});
+
+vi.mock('../index', () => ({ getDb: () => ({ select: mockAggregate.select }) }));
+
+vi.mock('./factory', () => ({
+	createQueryBuilder: () => {
+		const builder = {
+			findAll: mockState.findAll,
+			findById: vi.fn<() => void>(),
+			findFirst: vi.fn<() => void>()
+		};
+		mockState.createdBuilder = builder;
+		return builder;
+	}
+}));
+
+import { transactionQueries } from './transactions';
+
+describe('transactionQueries', () => {
+	beforeEach(() => {
+		mockState.findAll.mockClear();
+		mockState.findAll.mockResolvedValue([]);
+	});
+
+	it('findByMonth calculates month boundaries and delegates to findByDateRange', async () => {
+		const spy = vi.spyOn(transactionQueries, 'findByDateRange').mockResolvedValue([]);
+
+		await transactionQueries.findByMonth(2, 2024);
+
+		expect(spy).toHaveBeenCalledWith('2024-02-01', '2024-02-29');
+		spy.mockRestore();
+	});
+
+	it('findByCategory without range filters by category only', async () => {
+		await transactionQueries.findByCategory('cat-1');
+
+		expect(mockState.findAll).toHaveBeenCalledWith({
+			where: {
+				type: 'eq',
+				field: 'transaction.category_id',
+				value: 'cat-1'
+			}
+		});
+	});
+
+	it('findByCategory with range builds compound condition', async () => {
+		await transactionQueries.findByCategory('cat-2', {
+			start: '2026-01-01',
+			end: '2026-01-31'
+		});
+
+		const call = mockState.findAll.mock.lastCall;
+		expect(call).toBeDefined();
+		const arg = call?.[0] as unknown as { where: { type: string; conditions: unknown[] } };
+		expect(arg.where.type).toBe('and');
+		expect(arg.where.conditions).toHaveLength(3);
+	});
+
+	it('findByDateRangeExcludingCategory adds gst constraints when required', async () => {
+		await transactionQueries.findByDateRangeExcludingCategory(
+			'2026-01-01',
+			'2026-01-31',
+			'business',
+			true
+		);
+
+		const call = mockState.findAll.mock.lastCall;
+		expect(call).toBeDefined();
+		const arg = call?.[0] as unknown as { where: { conditions: unknown[] } };
+		expect(arg.where.conditions).toHaveLength(5);
+	});
+
+	it('findByDateRangeExcludingCategory omits gst constraints by default', async () => {
+		await transactionQueries.findByDateRangeExcludingCategory(
+			'2026-01-01',
+			'2026-01-31',
+			'business'
+		);
+
+		const call = mockState.findAll.mock.lastCall;
+		expect(call).toBeDefined();
+		const arg = call?.[0] as unknown as { where: { conditions: unknown[] } };
+		expect(arg.where.conditions).toHaveLength(3);
+	});
+
+	it('findByDateRangeIncludedInBudget enforces excludedFromBudget=false', async () => {
+		await transactionQueries.findByDateRangeIncludedInBudget('2026-01-01', '2026-01-31');
+
+		const call = mockState.findAll.mock.lastCall;
+		expect(call).toBeDefined();
+		const arg = call?.[0] as unknown as { where: { conditions: unknown[] } };
+		expect(arg.where.conditions).toHaveLength(3);
+		expect(arg.where.conditions[2]).toEqual({
+			type: 'eq',
+			field: 'transaction.excluded_from_budget',
+			value: false
+		});
+	});
+
+	it('findByDateRangeExcludedFromBudget enforces excludedFromBudget=true', async () => {
+		await transactionQueries.findByDateRangeExcludedFromBudget('2026-01-01', '2026-01-31');
+
+		const call = mockState.findAll.mock.lastCall;
+		expect(call).toBeDefined();
+		const arg = call?.[0] as unknown as { where: { conditions: unknown[] } };
+		expect(arg.where.conditions).toHaveLength(3);
+		expect(arg.where.conditions[2]).toEqual({
+			type: 'eq',
+			field: 'transaction.excluded_from_budget',
+			value: true
+		});
+	});
+
+	describe('search', () => {
+		type SqlCondition = { type: string; text: string; values: unknown[] };
+		type OrWhere = { type: string; conditions: SqlCondition[] };
+
+		function makeRows(count: number) {
+			return Array.from({ length: count }, (_, index) => ({ id: `txn-${index}` }));
+		}
+
+		function getWhere() {
+			const call = mockState.findAll.mock.lastCall;
+			expect(call).toBeDefined();
+			return (call![0] as unknown as { where: OrWhere }).where;
+		}
+
+		it('builds an OR condition spanning payee and notes columns', async () => {
+			await transactionQueries.search('coffee');
+
+			const where = getWhere();
+			expect(where.type).toBe('or');
+			expect(where.conditions).toHaveLength(2);
+		});
+
+		it('targets the payee column first and notes column second', async () => {
+			await transactionQueries.search('coffee');
+
+			const where = getWhere();
+			expect(where.conditions[0].values[0]).toBe('transaction.payee');
+			expect(where.conditions[1].values[0]).toBe('transaction.notes');
+		});
+
+		it('wraps the search term in % wildcards for a contains match', async () => {
+			await transactionQueries.search('coffee');
+
+			const where = getWhere();
+			expect(where.conditions[0].values[1]).toBe('%coffee%');
+			expect(where.conditions[1].values[1]).toBe('%coffee%');
+		});
+
+		it('includes an ESCAPE clause in both SQL conditions', async () => {
+			await transactionQueries.search('coffee');
+
+			const where = getWhere();
+			for (const condition of where.conditions) {
+				expect(condition.type).toBe('sql');
+				expect(condition.text).toContain('ESCAPE');
+			}
+		});
+
+		it('escapes % to prevent wildcard injection', async () => {
+			await transactionQueries.search('100%off');
+
+			const where = getWhere();
+			expect(where.conditions[0].values[1]).toBe(String.raw`%100\%off%`);
+			expect(where.conditions[1].values[1]).toBe(String.raw`%100\%off%`);
+		});
+
+		it('escapes _ to prevent single-character wildcard injection', async () => {
+			await transactionQueries.search('a_b');
+
+			const where = getWhere();
+			expect(where.conditions[0].values[1]).toBe(String.raw`%a\_b%`);
+			expect(where.conditions[1].values[1]).toBe(String.raw`%a\_b%`);
+		});
+
+		it('escapes backslashes to prevent corruption of the LIKE escape sequence', async () => {
+			await transactionQueries.search(String.raw`a\b`);
+
+			const where = getWhere();
+			expect(where.conditions[0].values[1]).toBe(String.raw`%a\\b%`);
+			expect(where.conditions[1].values[1]).toBe(String.raw`%a\\b%`);
+		});
+
+		it('handles all three special characters in a single query', async () => {
+			await transactionQueries.search(String.raw`50%_off\deal`);
+
+			const where = getWhere();
+			expect(where.conditions[0].values[1]).toBe(String.raw`%50\%\_off\\deal%`);
+			expect(where.conditions[1].values[1]).toBe(String.raw`%50\%\_off\\deal%`);
+		});
+
+		it('caps the query at 200 rows', async () => {
+			await transactionQueries.search('coffee');
+
+			const call = mockState.findAll.mock.lastCall;
+			expect(call).toBeDefined();
+			expect((call![0] as unknown as { limit: number }).limit).toBe(200);
+		});
+
+		it('returns the rows with limitReached false when under the cap', async () => {
+			const rows = makeRows(199);
+			mockState.findAll.mockResolvedValue(rows);
+
+			const result = await transactionQueries.search('coffee');
+
+			expect(result.transactions).toEqual(rows);
+			expect(result.limitReached).toBe(false);
+		});
+
+		it('flags limitReached when the result set fills the cap', async () => {
+			mockState.findAll.mockResolvedValue(makeRows(200));
+
+			const result = await transactionQueries.search('coffee');
+
+			expect(result.limitReached).toBe(true);
+		});
+	});
+});
+
+describe('transactionQueries.sumByCategoryMonth', () => {
+	it('filters to the date range and budget-counted rows, grouped by category and month', async () => {
+		const result = await transactionQueries.sumByCategoryMonth('2026-01-01', '2026-03-31');
+
+		const where = mockAggregate.where.mock.lastCall![0] as {
+			type: string;
+			conditions: Array<{ type: string; field?: string; value?: unknown; values?: unknown[] }>;
+		};
+		expect(where.type).toBe('and');
+		expect(where.conditions[0].values).toContain('2026-01-01');
+		expect(where.conditions[1].values).toContain('2026-03-31');
+		expect(where.conditions[2]).toEqual({
+			type: 'eq',
+			field: 'transaction.excluded_from_budget',
+			value: false
+		});
+		expect(mockAggregate.groupBy.mock.lastCall![0]).toBe('transaction.category_id');
+		expect(result).toEqual([{ categoryId: 'cat-1', month: '03', year: '2026', total: 42 }]);
+	});
+});

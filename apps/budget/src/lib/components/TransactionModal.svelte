@@ -1,0 +1,225 @@
+<script lang="ts">
+	import type { BaseModalProps, Category } from '$lib';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { Input } from '$lib/components/ui/input';
+	import * as Select from '$lib/components/ui/select/index.js';
+	import { Textarea } from '$lib/components/ui/textarea';
+	import type { transactionSchema } from '$lib/formSchemas';
+	import { extractDateFromTimestamp, getTodayDate } from '$lib/utils/dates';
+	import { toast } from 'svelte-sonner';
+	import type { SuperValidated } from 'sveltekit-superforms';
+	import { superForm } from 'sveltekit-superforms';
+	import type { z } from 'zod';
+
+	interface Props extends Omit<BaseModalProps<z.infer<typeof transactionSchema>>, 'initialData'> {
+		initialData?: Partial<z.infer<typeof transactionSchema>>;
+		categories: Category[];
+		transactionForm: SuperValidated<z.infer<typeof transactionSchema>>;
+	}
+
+	let { open = $bindable(), initialData, isEditing, categories, transactionForm }: Props = $props();
+
+	let sortedCategories = $derived([...categories].toSorted((a, b) => a.name.localeCompare(b.name)));
+
+	const formInstance = $derived(
+		superForm(transactionForm, {
+			resetForm: true,
+			onUpdate: ({ form }) => {
+				// Read form.message, not $message: superforms clears the store on submit and only
+				// repopulates it after onUpdate has run, so the store is always undefined here.
+				if (form.message?.type === 'success') {
+					open = false;
+					toast.success(form.message.text);
+				} else if (form.message?.type === 'error') {
+					toast.error(form.message.text);
+				}
+			},
+			onError: ({ result }) => {
+				// Catastrophic DB crashes (Form data is lost)
+				toast.error(
+					`There was an error ${isEditing ? 'updating' : 'creating'} the transaction. Reason: ${result.error.message}`
+				);
+			}
+		})
+	);
+
+	const { form, errors, enhance, submitting } = $derived(formInstance);
+
+	$effect(() => {
+		if (open) {
+			if (initialData) {
+				$form.id = initialData.id || '';
+				$form.amount = initialData.amount || 0;
+				$form.payee = initialData.payee || '';
+				$form.notes = initialData.notes || '';
+				$form.date = initialData.date ? extractDateFromTimestamp(initialData.date) : '';
+				$form.gstAmount = initialData.gstAmount || 0;
+				$form.excludedFromBudget = initialData.excludedFromBudget || false;
+				$form.categoryId = initialData.categoryId || '';
+			} else {
+				$form.id = '';
+				$form.amount = 0;
+				$form.payee = '';
+				$form.notes = '';
+				$form.gstAmount = 0;
+				$form.excludedFromBudget = false;
+				$form.categoryId = '';
+				$form.date = getTodayDate();
+			}
+		}
+	});
+</script>
+
+<Dialog.Root bind:open>
+	<Dialog.Content class="sm:max-w-106.25">
+		<Dialog.Header>
+			<Dialog.Title>{isEditing ? 'Edit transaction' : 'Add transaction'}</Dialog.Title>
+			<Dialog.Description>
+				{isEditing
+					? 'Update this transaction entry. Modify the amount, payee, notes, date, or category as needed.'
+					: 'Record a new transaction entry. Fill in the amount, payee, notes, date, and select a category.'}
+			</Dialog.Description>
+		</Dialog.Header>
+		<form
+			class="space-y-4"
+			method="POST"
+			action={isEditing ? '/transactions?/update' : '/transactions?/create'}
+			use:enhance
+		>
+			<input type="hidden" name="id" bind:value={$form.id} />
+
+			<div class="flex gap-4">
+				<div class="flex-3 space-y-2">
+					<label for="transaction-amount" class="text-sm font-medium">Amount</label>
+					<Input
+						id="transaction-amount"
+						name="amount"
+						type="number"
+						inputmode="decimal"
+						step="0.01"
+						min="0"
+						bind:value={$form.amount}
+						placeholder="0.00"
+						class={$errors.amount ? 'border-destructive' : ''}
+						required
+					/>
+					{#if $errors.amount}
+						<p class="text-destructive text-sm">{$errors.amount}</p>
+					{/if}
+				</div>
+				<div class="flex-2 space-y-2">
+					<label for="transaction-gst-amount" class="text-sm font-medium">GST</label>
+					<Input
+						id="transaction-gst-amount"
+						name="gstAmount"
+						type="number"
+						inputmode="decimal"
+						step="0.01"
+						min="0"
+						bind:value={$form.gstAmount}
+						placeholder="0.00"
+						class={$errors.gstAmount ? 'border-destructive' : ''}
+					/>
+					{#if $errors.gstAmount}
+						<p class="text-destructive text-sm">{$errors.gstAmount}</p>
+					{/if}
+				</div>
+			</div>
+
+			<div class="space-y-2">
+				<label for="transaction-payee" class="text-sm font-medium">Payee</label>
+				<Input
+					id="transaction-payee"
+					name="payee"
+					bind:value={$form.payee}
+					placeholder="Who did you pay?"
+					class={$errors.payee ? 'border-destructive' : ''}
+					required
+				/>
+				{#if $errors.payee}
+					<p class="text-destructive text-sm">{$errors.payee}</p>
+				{/if}
+			</div>
+
+			<div class="space-y-2">
+				<label for="transaction-notes" class="text-sm font-medium">Notes</label>
+				<Textarea
+					id="transaction-notes"
+					name="notes"
+					bind:value={$form.notes}
+					placeholder="What was this transaction for?"
+					class={$errors.notes ? 'border-destructive' : ''}
+					rows={2}
+				/>
+				{#if $errors.notes}
+					<p class="text-destructive text-sm">{$errors.notes}</p>
+				{/if}
+			</div>
+
+			<div class="space-y-2">
+				<label for="transaction-date" class="text-sm font-medium">Date</label>
+				<Input
+					id="transaction-date"
+					name="date"
+					type="date"
+					bind:value={$form.date}
+					class={$errors.date ? 'border-destructive' : ''}
+					required
+				/>
+				{#if $errors.date}
+					<p class="text-destructive text-sm">{$errors.date}</p>
+				{/if}
+			</div>
+
+			<div class="space-y-2">
+				<div class="flex items-start gap-2">
+					<input
+						id="transaction-excluded"
+						name="excludedFromBudget"
+						type="checkbox"
+						bind:checked={$form.excludedFromBudget}
+						class="border-input text-primary focus:ring-ring mt-0.5 h-4 w-4 rounded"
+					/>
+					<div>
+						<label for="transaction-excluded" class="text-sm font-medium">
+							Exclude from monthly budget
+						</label>
+						<p class="text-muted-foreground text-xs">
+							This transaction stays visible in tracking and search.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="space-y-2">
+				<label for="transaction-category" class="text-sm font-medium">Category</label>
+				<Select.Root type="single" name="categoryId" bind:value={$form.categoryId} required>
+					<Select.Trigger class="w-full {$errors.categoryId ? 'border-destructive' : ''}">
+						{$form.categoryId
+							? sortedCategories.find((c) => c.id === $form.categoryId)?.name || 'Select a category'
+							: 'Select a category'}
+					</Select.Trigger>
+					<Select.Content>
+						<Select.Label class="px-2 py-1 text-sm font-medium">Categories</Select.Label>
+						{#each sortedCategories as category (category.id)}
+							<Select.Item value={category.id} label={category.name}>
+								{category.name}
+							</Select.Item>
+						{/each}
+					</Select.Content>
+				</Select.Root>
+				{#if $errors.categoryId}
+					<p class="text-destructive text-sm">{$errors.categoryId}</p>
+				{/if}
+			</div>
+
+			<Dialog.Footer>
+				<Dialog.Close><Button type="reset" variant="outline">Cancel</Button></Dialog.Close>
+				<Button type="submit" disabled={$submitting}>
+					{$submitting ? 'Saving...' : isEditing ? 'Save' : 'Create'}
+				</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>

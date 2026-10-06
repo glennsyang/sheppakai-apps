@@ -1,0 +1,74 @@
+<script lang="ts">
+	import type { SavingsGoal } from '$lib';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { unArchiveFormContext } from '$lib/contexts';
+	import ArchiveRestoreIcon from '@lucide/svelte/icons/archive-restore';
+	import { toast } from 'svelte-sonner';
+	import { superForm } from 'sveltekit-superforms';
+
+	let { goal }: { goal: SavingsGoal } = $props();
+
+	let openUnarchiveDialog = $state<boolean>(false);
+	let isSubmitting = $state<boolean>(false);
+
+	const unArchiveForm = unArchiveFormContext.get();
+
+	const { form, enhance } = superForm(unArchiveForm, {
+		resetForm: true,
+		onUpdate: async ({ form }) => {
+			// Read form.message, not $message: superforms clears the store on submit and only
+			// repopulates it after onUpdate has run, so the store is always undefined here.
+			if (form.message?.type === 'success') {
+				openUnarchiveDialog = false;
+				toast.success(form.message.text);
+			} else if (form.message?.type === 'error') {
+				toast.error(form.message.text);
+			}
+		},
+		onError: ({ result }) => {
+			toast.error(`Failed to unarchive goal: ${result.error.message}`);
+		}
+	});
+
+	$effect(() => {
+		if (openUnarchiveDialog) {
+			$form.goalId = goal.id;
+		}
+	});
+</script>
+
+<Button
+	variant="ghost"
+	size="sm"
+	onclick={() => (openUnarchiveDialog = true)}
+	class="flex items-center gap-2"
+>
+	<ArchiveRestoreIcon class="size-4" />
+	Unarchive
+</Button>
+
+<!-- Unarchive Confirmation Dialog -->
+<Dialog.Root bind:open={openUnarchiveDialog}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>Unarchive savings goal</Dialog.Title>
+			<Dialog.Description>
+				Are you sure you want to unarchive "{goal.name}" for {goal.user.name}? The goal will be set
+				to active status.
+			</Dialog.Description>
+		</Dialog.Header>
+		<form method="POST" action="/admin/archived-goals?/unarchive" use:enhance>
+			<input type="hidden" name="goalId" bind:value={$form.goalId} />
+
+			<div class="flex justify-end gap-2 pt-4">
+				<Button type="button" variant="outline" onclick={() => (openUnarchiveDialog = false)}
+					>Cancel</Button
+				>
+				<Button type="submit" disabled={isSubmitting}>
+					{isSubmitting ? 'Unarchiving...' : 'Unarchive'}
+				</Button>
+			</div>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>

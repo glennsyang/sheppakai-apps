@@ -1,0 +1,118 @@
+{
+	"version": "7",
+	"dialect": "sqlite",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "6",
+			"when": 1767893006723,
+			"tag": "0000_faithful_triathlon",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1767902014625,
+			"tag": "0001_eager_blockbuster",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "6",
+			"when": 1737079200000,
+			"tag": "0002_convert_utc_to_local",
+			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "6",
+			"when": 1769236902061,
+			"tag": "0003_sticky_jazinda",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "6",
+			"when": 1769447535081,
+			"tag": "0004_rich_talisman",
+			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "6",
+			"when": 1771657907131,
+			"tag": "0005_tense_prodigy",
+			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "6",
+			"when": 1777246994594,
+			"tag": "0006_crazy_silvermane",
+			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "6",
+			"when": 1780441816364,
+			"tag": "0007_remarkable_krista_starr",
+			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "6",
+			"when": 1785715908228,
+			"tag": "0008_bored_vulcan",
+			"breakpoints": true
+		},
+		{
+			"idx": 9,
+			"version": "6",
+			"when": 1785861978287,
+			"tag": "0009_icy_king_cobra",
+			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "6",
+			"when": 1786578887116,
+			"tag": "0010_complex_shinobi_shaw",
+			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "6",
+			"when": 1787800821052,
+			"tag": "0011_abnormal_greymalkin",
+			"breakpoints": true
+		},
+		{
+			"idx": 12,
+			"version": "6",
+			"when": 1787980528243,
+			"tag": "0012_backfill_existing_users_email_verified",
+			"breakpoints": true
+		},
+		{
+			"idx": 13,
+			"version": "6",
+			"when": 1788587717461,
+			"tag": "0013_clean_santa_claus",
+			"breakpoints": true
+		},
+		{
+			"idx": 14,
+			"version": "6",
+			"when": 1788737651343,
+			"tag": "0014_dapper_richard_fisk",
+			"breakpoints": true
+		},
+		{
+			"idx": 15,
+			"version": "6",
+			"when": 1788928604591,
+			"tag": "0015_strange_alice",
+			"breakpoints": true
+		}
+	]
+}

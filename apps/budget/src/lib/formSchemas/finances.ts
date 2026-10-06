@@ -1,0 +1,86 @@
+import type { Recurring, Transaction } from '$lib/types';
+import { z } from 'zod';
+
+export const transactionSchema = z.object({
+	id: z.string().optional(),
+	amount: z.number().positive('Amount must be positive'),
+	payee: z.string().min(1, 'Payee is required').max(100, 'Payee must be at most 100 characters'),
+	notes: z.string().min(1, 'Notes are required').max(800, 'Notes must be at most 800 characters'),
+	date: z
+		.string()
+		.min(1, 'Date is required')
+		.regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+	gstAmount: z.number().optional(),
+	excludedFromBudget: z.boolean().default(false),
+	categoryId: z.string().min(1, 'Category is required')
+});
+
+export const incomeSchema = z.object({
+	id: z.string().optional(),
+	name: z.string().min(1, 'Name is required').max(100, 'Name must be at most 100 characters'),
+	description: z
+		.string()
+		.min(1, 'Description is required')
+		.max(500, 'Description must be at most 500 characters'),
+	date: z
+		.string()
+		.min(1, 'Date is required')
+		.regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+	amount: z.number().positive('Amount must be positive')
+});
+
+export const recurringSchema = z
+	.object({
+		id: z.string().optional(),
+		amount: z.number().positive('Amount must be positive'),
+		description: z
+			.string()
+			.min(1, 'Description is required')
+			.max(500, 'Description must be at most 500 characters'),
+		merchant: z
+			.string()
+			.min(1, 'Merchant is required')
+			.max(100, 'Merchant must be at most 100 characters'),
+		cadence: z.enum(['Monthly', 'Yearly'], { error: 'Cadence is required' }),
+		dueDay: z.number().int().min(1).max(31).nullable().optional(),
+		dueMonth: z.number().int().min(1).max(12).nullable().optional()
+	})
+	.superRefine((data, ctx) => {
+		if (data.cadence === 'Yearly' && data.dueDay && !data.dueMonth) {
+			ctx.addIssue({
+				code: 'custom',
+				message: 'Due month is required for yearly cadence',
+				path: ['dueMonth']
+			});
+		}
+	});
+
+export const togglePaidSchema = z.object({
+	id: z.string().min(1, 'Recurring ID is required'),
+	paid: z.boolean()
+});
+
+export function toTransactionFormData(t: Transaction): z.input<typeof transactionSchema> {
+	return {
+		id: t.id,
+		amount: t.amount,
+		payee: t.payee,
+		notes: t.notes,
+		date: t.date,
+		gstAmount: t.gstAmount ?? undefined,
+		excludedFromBudget: t.excludedFromBudget,
+		categoryId: t.category?.id ?? ''
+	};
+}
+
+export function toRecurringFormData(r: Recurring): z.input<typeof recurringSchema> {
+	return {
+		id: r.id,
+		amount: r.amount,
+		description: r.description,
+		merchant: r.merchant,
+		cadence: r.cadence,
+		dueDay: r.dueDay,
+		dueMonth: r.dueMonth
+	};
+}

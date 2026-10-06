@@ -1,0 +1,89 @@
+<script lang="ts">
+	import type { MonthlySpentChartData } from '$lib';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Chart from '$lib/components/ui/chart/index.js';
+	import { formatCurrency } from '$lib/utils';
+	import { scaleBand } from 'd3-scale';
+	import { BarChart, Highlight } from 'layerchart';
+	import { cubicInOut } from 'svelte/easing';
+
+	interface Props {
+		chartTitle: string;
+		chartDescription?: string;
+		chartData?: MonthlySpentChartData[];
+		/** Category identity colour for the within-budget portion. */
+		color?: string;
+	}
+
+	let { chartTitle, chartDescription, chartData, color = 'var(--chart-8)' }: Props = $props();
+
+	let chartConfig = $derived({
+		budget: { label: 'Within budget', color },
+		overbudget: { label: 'Over budget', color: 'var(--destructive)' }
+	} satisfies Chart.ChartConfig);
+
+	const averageSpent = $derived.by(() => {
+		if (!chartData || chartData.length === 0) return 0;
+		const total = chartData.reduce((sum, d) => sum + d.spent, 0);
+		return total / chartData.length;
+	});
+</script>
+
+<Card.Root>
+	<Card.Header>
+		<Card.Title class="flex items-center gap-2 text-sm font-medium">
+			<span class="size-2 shrink-0 rounded-full" style="background: {color}" aria-hidden="true"
+			></span>
+			<span class="truncate">{chartTitle}</span>
+		</Card.Title>
+		<Card.Description class="text-xs"
+			>{chartDescription ?? 'Monthly spending vs budget'}</Card.Description
+		>
+	</Card.Header>
+	<Card.Content>
+		<Chart.Container config={chartConfig} class="aspect-auto h-44 w-full">
+			<BarChart
+				data={chartData}
+				xScale={scaleBand().padding(0.25)}
+				x="month"
+				axis="x"
+				rule={false}
+				series={[
+					{
+						key: 'budget',
+						label: 'Budget',
+						color: chartConfig.budget.color,
+						props: { rounded: 'bottom', radius: 3 }
+					},
+					{
+						key: 'overbudget',
+						label: 'Over',
+						color: chartConfig.overbudget.color
+					}
+				]}
+				seriesLayout="stack"
+				props={{
+					bars: {
+						stroke: 'none',
+						initialWidth: 0,
+						motion: { type: 'tween', duration: 500, easing: cubicInOut }
+					},
+					highlight: { area: false },
+					xAxis: { format: (d) => d.slice(0, 3) }
+				}}
+			>
+				{#snippet belowMarks()}
+					<Highlight area={{ class: 'fill-muted' }} />
+				{/snippet}
+				{#snippet tooltip()}
+					<Chart.Tooltip />
+				{/snippet}
+			</BarChart>
+		</Chart.Container>
+	</Card.Content>
+	<Card.Footer class="text-muted-foreground text-xs">
+		Average <span class="text-foreground ms-1 font-medium tabular-nums"
+			>{formatCurrency(averageSpent)}</span
+		>/month
+	</Card.Footer>
+</Card.Root>

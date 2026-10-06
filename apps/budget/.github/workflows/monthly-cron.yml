@@ -1,0 +1,22 @@
+name: Reset Recurring Job
+
+on:
+  schedule:
+    - cron: '10 8 1 * *' # 1st of every month at 12:10 AM PST / 1:10 AM PDT
+  workflow_dispatch: # Allow manual trigger
+
+# Only curls the app with CRON_SECRET; needs no GITHUB_TOKEN scopes.
+permissions: {}
+
+jobs:
+  trigger-emails:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reset recurring 'paid' status
+        env:
+          CRON_SECRET: ${{ secrets['CRON_SECRET'] }}
+          APP_URL: ${{ secrets['APP_URL'] }}
+        run: |
+          curl -X POST $APP_URL/api/cron/reset-recurring-paid \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json"

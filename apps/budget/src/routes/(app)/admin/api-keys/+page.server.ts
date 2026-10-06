@@ -1,0 +1,89 @@
+import type { ApiScope } from '$lib/api-scopes';
+import { scopesToPermissions } from '$lib/api-scopes';
+import { createApiKeySchema, idSchema } from '$lib/formSchemas';
+import { adminFormAction } from '$lib/server/actions/admin-guard';
+import { assertAdmin, auth } from '$lib/server/auth';
+import { apiKeyQueries } from '$lib/server/db/queries';
+import { deleteApiKeyById } from '$lib/server/db/writes/api-keys';
+import { logger } from '$lib/server/logger';
+import { message, superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ locals }) => {
+	// The admin layout guards this too, but layout and page loads run in parallel and this
+	// load returns every user's keys, so it checks for itself rather than relying on that.
+	assertAdmin(locals);
+
+	const createForm = await superValidate(zod4(createApiKeySchema), { id: 'createApiKey' });
+	const revokeForm = await superValidate(zod4(idSchema), { id: 'revokeApiKey' });
+
+	try {
+		// Every admin's keys, not just the caller's: a banned or demoted admin can't be
+		// trusted to revoke their own, so any remaining admin must be able to.
+		const apiKeys = await apiKeyQueries.listAllWithOwner();
+		return { apiKeys, createForm, revokeForm };
+	} catch (error) {
+		logger.error('Failed to load API keys', error);
+		return {
+			apiKeys: [],
+			loadError: 'Failed to load API keys. Please try refreshing the page.',
+			createForm,
+			revokeForm
+		};
+	}
+};
+
+export const actions = {
+	create: adminFormAction(createApiKeySchema, async (_event, form, user) => {
+		try {
+			// Deliberately not passing `headers` here: the plugin only accepts server-only fields
+			// like `permissions` and rate-limit overrides on a "trusted server" call (no headers/
+			// request on the context), and rejects them outright on a session-based "client" call.
+			const created = await auth.api.createApiKey({
+				body: {
+					name: form.data.name,
+					userId: user.id,
+					permissions: scopesToPermissions(form.data.scopes as ApiScope[]),
+					expiresIn: form.data.expiresInDays ? form.data.expiresInDays * 86400 : undefined
+				}
+			});
+
+			logger.info('API key created', { keyId: created.id, scopes: form.data.scopes });
+
+			// The plaintext key is only ever returned here, once. Ride it alongside the usual
+			// message-bearing form rather than inventing a new response shape: `message()` sets
+			// `form.message` and returns `{ form }`, so setting `form.message` by hand and adding
+			// `apiKey` keeps the `$message`/`form.valid` contract every other page relies on while
+			// giving this one page a value to read out of the raw ActionResult.
+			form.message = {
+				type: 'success',
+				text: 'API key created. Copy it now — it will not be shown again.'
+			};
+			return { form, apiKey: created.key };
+		} catch (error) {
+			logger.error('Failed to create API key', error);
+			return message(
+				form,
+				{ type: 'error', text: 'Failed to create API key. Please try again.' },
+				{ status: 500 }
+			);
+		}
+	}),
+
+	revoke: adminFormAction(idSchema, async (_event, form, user) => {
+		// Revokes any user's key, not only the caller's (see `deleteApiKeyById`).
+		try {
+			const deleted = await deleteApiKeyById(form.data.id);
+			if (!deleted) {
+				return message(form, { type: 'error', text: 'API key not found.' }, { status: 404 });
+			}
+			logger.info('API key revoked', { keyId: form.data.id, revokedBy: user.id });
+			return message(form, { type: 'success', text: 'API key revoked.' });
+		} catch (error) {
+			logger.error('Failed to revoke API key', error);
+			return message(form, { type: 'error', text: 'Failed to revoke API key.' }, { status: 500 });
+		}
+	})
+} satisfies Actions;

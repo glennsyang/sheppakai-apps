@@ -1,0 +1,485 @@
+/**
+ * Date Utilities for Local Timezone Storage
+ *
+ * Storage: Local timestamps as text (YYYY-MM-DD HH:MM:SS) without UTC conversion
+ * User Input: Local date (YYYY-MM-DD) → Combined with current local time
+ * Display: Local timestamp → Formatted local date
+ * Queries: Month range using local dates
+ * Audit: created_at/updated_at still use SQLite's current_timestamp (UTC)
+ */
+
+type PeriodProgressKind = 'month' | 'year';
+type PeriodProgressStatus = 'past' | 'current' | 'future';
+type PeriodProgressUnit = 'day' | 'month';
+
+const PACIFIC_TIMEZONE = 'America/Los_Angeles';
+
+export interface PeriodProgress {
+	kind: PeriodProgressKind;
+	elapsedUnits: number;
+	totalUnits: number;
+	percentage: number;
+	status: PeriodProgressStatus;
+	unit: PeriodProgressUnit;
+}
+
+/**
+ * Format user's date input for storage with current local time
+ * @param dateString - Date from HTML input (YYYY-MM-DD)
+ * @returns Local timestamp string (YYYY-MM-DD HH:MM:SS)
+ *
+ * Example: User enters "2026-02-01" at 3:45 PM local time
+ *   → Returns: "2026-02-01 15:45:32"
+ */
+export function formatDateForStorage(dateString: string): string {
+	const now = new Date();
+	const datePart = dateString;
+	const hours = padMonth(String(now.getHours()));
+	const minutes = padMonth(String(now.getMinutes()));
+	const seconds = padMonth(String(now.getSeconds()));
+	return `${datePart} ${hours}:${minutes}:${seconds}`;
+}
+
+/**
+ * Extract date portion from a local timestamp
+ * @param timestamp - Local timestamp (YYYY-MM-DD HH:MM:SS)
+ * @returns Date string (YYYY-MM-DD) for date inputs
+ *
+ * Example: "2026-02-01 15:45:32" → "2026-02-01"
+ */
+export function extractDateFromTimestamp(timestamp: string): string {
+	return timestamp.split(' ')[0];
+}
+
+/**
+ * Format local timestamp for display
+ * @param timestamp - Local timestamp string (YYYY-MM-DD HH:MM:SS)
+ * @param format - Output format (default: "MMM DD, YYYY")
+ * @returns Formatted date string
+ *
+ * Example: "2026-02-01 15:45:32" → "Feb 01, 2026"
+ */
+export function formatLocalTimestamp(timestamp: string, format: string = 'MMM DD, YYYY'): string {
+	// Date-only strings (YYYY-MM-DD) are parsed as UTC midnight by JS, which shifts the date
+	// back one day in negative-offset timezones (e.g. PST). Appending T00:00:00 forces local parsing.
+	const normalized =
+		timestamp.length === 10 ? `${timestamp}T00:00:00` : timestamp.replace(' ', 'T');
+	const date = new Date(normalized);
+
+	if (format === 'MMM DD, YYYY') {
+		const month = date.toLocaleString('en-US', { month: 'short' });
+		const day = padMonth(String(date.getDate()));
+		const year = date.getFullYear();
+		return `${month} ${day}, ${year}`;
+	}
+
+	// Fallback to localeString for other formats
+	return date.toLocaleString('en-US');
+}
+
+/**
+ * Get date range for a month using local dates
+ * @param month - Month (1-12)
+ * @param year - Year
+ * @returns { startDate, endDate } as YYYY-MM-DD strings
+ *
+ * Example: month=2, year=2026
+ *   → startDate: "2026-02-01"
+ *   → endDate: "2026-02-28"
+ */
+/** A day heading for grouped lists: "Fri, Oct 3", with the year when it isn't this year. */
+export function formatDayHeading(timestamp: string, now: Date = new Date()): string {
+	const normalized =
+		timestamp.length === 10 ? `${timestamp}T00:00:00` : timestamp.replace(' ', 'T');
+	const date = new Date(normalized);
+	return date.toLocaleDateString('en-US', {
+		weekday: 'short',
+		month: 'short',
+		day: 'numeric',
+		...(date.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' })
+	});
+}
+
+export function getMonthDateRange(month: number, year: number) {
+	const startDate = `${year}-${padMonth(String(month))}-01`;
+
+	// Get last day of month
+	const nextMonth = month === 12 ? 1 : month + 1;
+	const nextYear = month === 12 ? year + 1 : year;
+	const lastDay = new Date(nextYear, nextMonth - 1, 0).getDate();
+	const endDate = `${year}-${padMonth(String(month))}-${padMonth(String(lastDay))}`;
+
+	return { startDate, endDate };
+}
+
+/**
+ * Get date range for a full year using local dates
+ * @param year - Year
+ * @returns { startDate, endDate } as YYYY-MM-DD strings
+ *
+ * Example: year=2026
+ *   → startDate: "2026-01-01"
+ *   → endDate: "2026-12-31"
+ */
+export function getYearDateRange(year: number) {
+	const startDate = `${year}-01-01`;
+	const endDate = `${year}-12-31`;
+
+	return { startDate, endDate };
+}
+
+/**
+ * Keep the rows whose `date` falls within [startDate, endDate], both inclusive.
+ * Compares the YYYY-MM-DD part only, matching the `date(col) >= date(start)` /
+ * `date(col) <= date(end)` bounds the queries use, so a month can be derived in
+ * memory from an already-loaded year instead of a second query.
+ */
+export function filterByDateRange<T extends { date: string }>(
+	rows: T[],
+	startDate: string,
+	endDate: string
+): T[] {
+	return rows.filter((row) => {
+		const day = row.date.slice(0, 10);
+		return day >= startDate && day <= endDate;
+	});
+}
+
+/**
+ * Get current date in YYYY-MM-DD format
+ * For default values in date input fields
+ */
+export function getTodayDate(): string {
+	const now = new Date();
+	const year = now.getFullYear();
+	const month = padMonth(String(now.getMonth() + 1));
+	const day = padMonth(String(now.getDate()));
+	return `${year}-${month}-${day}`;
+}
+
+/**
+ * Get current UTC timestamp for audit fields
+ * Matches SQLite's current_timestamp format
+ */
+export function getCurrentUTCTimestamp(): string {
+	return new Date().toISOString().replace('T', ' ').split('.')[0];
+}
+
+/**
+ * Format a time string (HH:MM or HH:MM:SS) to 12-hour format
+ * @param time - Time string in 24h format (e.g. "14:30")
+ * @returns Formatted time string (e.g. "2:30 PM"), or null if input is null/undefined or invalid
+ */
+export function formatTime12h(time: string | null | undefined): string | null {
+	if (!time) return null;
+
+	const parts = time.split(':');
+	if (parts.length !== 2 && parts.length !== 3) return null;
+	const [hourPart, minutePart] = parts;
+	const h = Number(hourPart);
+	const m = Number(minutePart);
+	if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+	if (!Number.isInteger(h) || !Number.isInteger(m)) return null;
+	if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+
+	const ampm = h >= 12 ? 'PM' : 'AM';
+	const h12 = h % 12 || 12;
+	return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+/**
+ * Pad month number with leading zero for consistent formatting
+ * @param month - Month number (1-12)
+ * @returns Padded month string (e.g., "03" for March)
+ */
+export function padMonth(month: number | string): string {
+	return month.toString().padStart(2, '0');
+}
+
+/**
+ * Get year/month/day parts of a date as observed in the Pacific timezone
+ * (America/Los_Angeles, which auto-adjusts for PST/PDT), regardless of the
+ * server or browser's own local timezone.
+ */
+function getPacificDateParts(date: Date = new Date()): {
+	year: number;
+	month: number;
+	day: number;
+} {
+	const formatter = new Intl.DateTimeFormat('en-US', {
+		timeZone: PACIFIC_TIMEZONE,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	});
+	const parts = formatter.formatToParts(date);
+	const partMap = new Map(parts.map((part) => [part.type, part.value]));
+
+	return {
+		year: Number(partMap.get('year')),
+		month: Number(partMap.get('month')),
+		day: Number(partMap.get('day'))
+	};
+}
+
+/**
+ * Get the current month/year as observed in the Pacific timezone, so the
+ * month rolls over at midnight Pacific rather than midnight UTC or the
+ * server/browser's own local timezone.
+ */
+export function getCurrentPacificMonthYear(date: Date = new Date()): {
+	month: number;
+	year: number;
+} {
+	const { month, year } = getPacificDateParts(date);
+	return { month, year };
+}
+
+/**
+ * Parse a `month` search param, accepting only whole numbers 1-12
+ * @param value - Raw search param value (or null when absent)
+ * @param fallback - Month to use when the value is missing or invalid
+ *
+ * Example: "3" → 3, "13" → fallback, "3abc" → fallback
+ */
+export function parseMonthParam(value: string | null, fallback: number): number {
+	if (value === null || !/^\d{1,2}$/.test(value)) return fallback;
+	const month = Number(value);
+	return month >= 1 && month <= 12 ? month : fallback;
+}
+
+/**
+ * Parse a `year` search param, accepting only four-digit years 1900-9999
+ * @param value - Raw search param value (or null when absent)
+ * @param fallback - Year to use when the value is missing or invalid
+ *
+ * Example: "2025" → 2025, "99" → fallback, "abc" → fallback
+ */
+export function parseYearParam(value: string | null, fallback: number): number {
+	if (value === null || !/^\d{4}$/.test(value)) return fallback;
+	const year = Number(value);
+	return year >= 1900 ? year : fallback;
+}
+
+/**
+ * Extract month and year from URL search params with fallback to current date
+ * Invalid or out-of-range values fall back to the current Pacific month/year.
+ * @param url - URL object containing searchParams
+ * @returns Object with month (1-12) and year
+ *
+ * Example: URL with ?month=3&year=2025 → { month: 3, year: 2025 }
+ * Example: URL with no params → { month: 1, year: 2026 } (current date, Pacific time)
+ */
+export function getMonthYearFromUrl(url: URL): { month: number; year: number } {
+	const current = getCurrentPacificMonthYear();
+
+	return {
+		month: parseMonthParam(url.searchParams.get('month'), current.month),
+		year: parseYearParam(url.searchParams.get('year'), current.year)
+	};
+}
+
+/**
+ * Extract month, year, and date range from URL search params
+ * Combines getMonthYearFromUrl() with getMonthDateRange()
+ * @param url - URL object containing searchParams
+ * @returns Object with month, year, startDate, and endDate
+ *
+ * Example: URL with ?month=3&year=2025
+ *   → { month: 3, year: 2025, startDate: "2025-03-01", endDate: "2025-03-31" }
+ */
+export function getMonthRangeFromUrl(url: URL) {
+	const { month, year } = getMonthYearFromUrl(url);
+	const { startDate, endDate } = getMonthDateRange(month, year);
+
+	return { month, year, startDate, endDate };
+}
+
+/**
+ * Get date ranges for the previous N months from current date (skipping future months)
+ * @param count - Number of months to include
+ * @returns Array of month ranges with month, year, startDate, endDate
+ *
+ * Example: count=6 (called on Jan 30, 2026)
+ *   → Returns data for Aug 2025, Sep 2025, Oct 2025, Nov 2025, Dec 2025, Jan 2026
+ */
+export function getPreviousMonthsRange(count: number) {
+	const { year: currentYear, month: currentMonth, day: currentDay } = getPacificDateParts();
+	const currentDate = new Date(currentYear, currentMonth - 1, currentDay);
+	const ranges = [];
+
+	for (let i = count - 1; i >= 0; i--) {
+		const targetDate = new Date(currentYear, currentMonth - 1 - i, 1);
+
+		// Skip if future month
+		if (targetDate > currentDate) continue;
+
+		const targetMonth = targetDate.getMonth() + 1;
+		const targetYear = targetDate.getFullYear();
+		const { startDate, endDate } = getMonthDateRange(targetMonth, targetYear);
+
+		ranges.push({ month: targetMonth, year: targetYear, startDate, endDate });
+	}
+
+	return ranges;
+}
+
+/**
+ * Get date ranges for all months in a calendar year (Jan-Dec or up to current month)
+ * @param year - The year to get month ranges for
+ * @returns Array of month ranges with month, year, startDate, endDate
+ *
+ * Example: year=2026 (called on Jan 30, 2026)
+ *   → Returns only January 2026
+ * Example: year=2025 (called on Jan 30, 2026)
+ *   → Returns all 12 months of 2025
+ */
+export function getCalendarYearMonthsRange(year: number) {
+	const { year: currentYear, month: currentMonth, day: currentDay } = getPacificDateParts();
+	const currentDate = new Date(currentYear, currentMonth - 1, currentDay);
+	const ranges = [];
+
+	for (let month = 1; month <= 12; month++) {
+		const monthDate = new Date(year, month - 1, 1);
+
+		// Skip future months
+		if (monthDate > currentDate) break;
+
+		const { startDate, endDate } = getMonthDateRange(month, year);
+		ranges.push({ month, year, startDate, endDate });
+	}
+
+	return ranges;
+}
+
+function buildPeriodProgress(
+	kind: PeriodProgressKind,
+	elapsedUnits: number,
+	totalUnits: number,
+	status: PeriodProgressStatus,
+	unit: PeriodProgressUnit
+): PeriodProgress {
+	const safeTotalUnits = Math.max(totalUnits, 1);
+	const percentage = Math.min(100, Math.max(0, (elapsedUnits / safeTotalUnits) * 100));
+
+	return {
+		kind,
+		elapsedUnits,
+		totalUnits,
+		percentage,
+		status,
+		unit
+	};
+}
+
+/**
+ * Get completion progress for a selected month relative to the reference date,
+ * as observed in the Pacific timezone so it agrees with the month/year resolved
+ * by getMonthYearFromUrl. Past months are complete, future months have not started, and the current month
+ * uses the current day of month as the elapsed amount.
+ */
+export function getMonthProgress(
+	month: number,
+	year: number,
+	referenceDate: Date = new Date()
+): PeriodProgress {
+	const totalUnits = new Date(year, month, 0).getDate();
+	const {
+		year: referenceYear,
+		month: referenceMonth,
+		day: referenceDay
+	} = getPacificDateParts(referenceDate);
+
+	if (year < referenceYear || (year === referenceYear && month < referenceMonth)) {
+		return buildPeriodProgress('month', totalUnits, totalUnits, 'past', 'day');
+	}
+
+	if (year > referenceYear || (year === referenceYear && month > referenceMonth)) {
+		return buildPeriodProgress('month', 0, totalUnits, 'future', 'day');
+	}
+
+	return buildPeriodProgress('month', referenceDay, totalUnits, 'current', 'day');
+}
+
+/**
+ * Count the months of `year` that have fully elapsed, as observed in the Pacific
+ * timezone so it agrees with the month/year resolved by getMonthYearFromUrl.
+ * Past years count 12, future years 0, and the current year counts the months
+ * before the current one (January → 0).
+ */
+export function calculateMonthsSinceJanuary(
+	year: number,
+	referenceDate: Date = new Date()
+): number {
+	const current = getCurrentPacificMonthYear(referenceDate);
+
+	if (year < current.year) {
+		return 12;
+	}
+
+	if (year > current.year) {
+		return 0;
+	}
+
+	return current.month - 1;
+}
+
+/**
+ * Get completion progress for a selected year relative to the reference date,
+ * as observed in the Pacific timezone so it agrees with the month/year resolved
+ * by getMonthYearFromUrl. Past years are complete, future years have not started,
+ * and the current year counts the months before the current one as elapsed.
+ */
+export function getYearProgress(year: number, referenceDate: Date = new Date()): PeriodProgress {
+	const totalUnits = 12;
+	const { year: referenceYear, month: referenceMonth } = getPacificDateParts(referenceDate);
+
+	if (year < referenceYear) {
+		return buildPeriodProgress('year', totalUnits, totalUnits, 'past', 'month');
+	}
+
+	if (year > referenceYear) {
+		return buildPeriodProgress('year', 0, totalUnits, 'future', 'month');
+	}
+
+	return buildPeriodProgress('year', referenceMonth - 1, totalUnits, 'current', 'month');
+}
+
+function getLastDayOfMonth(year: number, month: number): number {
+	return new Date(year, month, 0).getDate();
+}
+
+/**
+ * Get the due date within the current cadence period for a recurring item.
+ * Monthly items are due on `dueDay` of the current month; Yearly items are due
+ * on `dueDay` of `dueMonth` in the current year. `dueDay` is clamped to the
+ * last day of the target month (e.g. dueDay=31 in February → Feb 28/29).
+ */
+export function getCurrentPeriodDueDate(
+	dueDay: number,
+	dueMonth: number | null,
+	cadence: string,
+	referenceDate: Date = new Date()
+): Date {
+	const year = referenceDate.getFullYear();
+	const month = cadence === 'Yearly' && dueMonth ? dueMonth : referenceDate.getMonth() + 1;
+	const day = Math.min(dueDay, getLastDayOfMonth(year, month));
+
+	return new Date(year, month - 1, day);
+}
+
+/**
+ * Get the signed number of days between a due date and the reference date.
+ * Negative values mean the due date has passed (overdue).
+ */
+export function getDaysUntilDue(dueDate: Date, referenceDate: Date = new Date()): number {
+	const startOfDue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+	const startOfReference = new Date(
+		referenceDate.getFullYear(),
+		referenceDate.getMonth(),
+		referenceDate.getDate()
+	);
+	const msPerDay = 24 * 60 * 60 * 1000;
+
+	return Math.round((startOfDue.getTime() - startOfReference.getTime()) / msPerDay);
+}

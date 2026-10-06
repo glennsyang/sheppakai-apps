@@ -1,0 +1,156 @@
+import { idSchema, windowCleaningCustomerSchema, windowCleaningJobSchema } from '$lib/formSchemas';
+import { requireAuth } from '$lib/server/actions/auth-guard';
+import { createAction, updateAction } from '$lib/server/actions/crud-helpers';
+import { deleteJob, updateJob } from '$lib/server/actions/window-cleaning-jobs';
+import { getDb } from '$lib/server/db';
+import { windowCleaningCustomerQueries, windowCleaningJobQueries } from '$lib/server/db/queries';
+import { windowCleaningCustomer, windowCleaningJob } from '$lib/server/db/schema';
+import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
+import { toWindowCleaningCustomerRow } from '$lib/server/db/writes/window-cleaning-customers';
+import { toWindowCleaningJobRow } from '$lib/server/db/writes/window-cleaning-jobs';
+import { logger } from '$lib/server/logger';
+import type { WindowCleaningJob } from '$lib/types';
+import { getCurrentUTCTimestamp } from '$lib/utils/dates';
+import { eq } from 'drizzle-orm';
+import { message, superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async () => {
+	const customerForm = await superValidate(zod4(windowCleaningCustomerSchema));
+	const jobForm = await superValidate(zod4(windowCleaningJobSchema));
+
+	try {
+		const [customers, allJobs, customerStats] = await Promise.all([
+			windowCleaningCustomerQueries.findAll(),
+			windowCleaningJobQueries.findAll(),
+			windowCleaningJobQueries.getStatsPerCustomer()
+		]);
+
+		// Build O(1) lookup maps — avoids O(customers × jobs) filter loops
+		const statsMap = new Map(customerStats.map((s) => [s.customerId, s]));
+		const jobsMap = allJobs.reduce((acc, job) => {
+			const list = acc.get(job.customerId);
+			if (list) {
+				list.push(job);
+			} else {
+				acc.set(job.customerId, [job]);
+			}
+			return acc;
+		}, new Map<string, WindowCleaningJob[]>());
+
+		const customersWithStats = customers.map((customer) => {
+			const stats = statsMap.get(customer.id);
+			const jobs = jobsMap.get(customer.id) ?? [];
+			return {
+				...customer,
+				jobs,
+				totalEarned: stats?.totalEarned ?? 0,
+				lastJobDate: stats?.lastJobDate ?? null
+			};
+		});
+
+		// Page-level summary stats
+		const now = new Date();
+		const currentMonth = now.getMonth() + 1;
+		const currentYear = now.getFullYear();
+		const monthPad = String(currentMonth).padStart(2, '0');
+		const monthPrefix = `${currentYear}-${monthPad}`;
+
+		const jobsThisMonth = allJobs.filter((j) => j.jobDate.startsWith(monthPrefix));
+		const earnedThisMonth = jobsThisMonth.reduce((sum, j) => sum + j.amountCharged + j.tip, 0);
+
+		const jobsThisYear = allJobs.filter((j) => j.jobDate.startsWith(String(currentYear)));
+		const earnedThisYear = jobsThisYear.reduce((sum, j) => sum + j.amountCharged + j.tip, 0);
+
+		const jobsLastYear = allJobs.filter((j) => j.jobDate.startsWith(String(currentYear - 1)));
+		const earnedLastYear = jobsLastYear.reduce((sum, j) => sum + j.amountCharged + j.tip, 0);
+
+		return {
+			customers: customersWithStats,
+			totalCustomers: customers.length,
+			jobsThisMonthCount: jobsThisMonth.length,
+			earnedThisMonth,
+			earnedThisYear,
+			earnedLastYear,
+			customerForm,
+			jobForm
+		};
+	} catch (error) {
+		logger.error('Failed to load window cleaning customers:', error);
+		return {
+			customers: [],
+			totalCustomers: 0,
+			jobsThisMonthCount: 0,
+			earnedThisMonth: 0,
+			earnedThisYear: 0,
+			earnedLastYear: 0,
+			loadError: 'Failed to load window cleaning customers. Please try refreshing the page.',
+			customerForm,
+			jobForm
+		};
+	}
+};
+
+export const actions = {
+	createCustomer: createAction({
+		schema: windowCleaningCustomerSchema,
+		table: windowCleaningCustomer,
+		entityName: 'Customer',
+		transformCreate: (data, userId) => ({ ...toWindowCleaningCustomerRow(data), userId })
+	}),
+
+	updateCustomer: updateAction({
+		schema: windowCleaningCustomerSchema,
+		table: windowCleaningCustomer,
+		entityName: 'Customer',
+		transformUpdate: (data) => toWindowCleaningCustomerRow(data)
+	}),
+
+	// Soft-delete: set deletedAt/deletedBy instead of hard delete, so this cannot use deleteAction
+	deleteCustomer: requireAuth(async (event, user) => {
+		const form = await superValidate(event.request, zod4(idSchema));
+
+		if (!form.valid) {
+			return message(form, { type: 'error', text: 'Customer ID is required' }, { status: 400 });
+		}
+
+		const id = form.data.id;
+
+		try {
+			await getDb()
+				.update(windowCleaningCustomer)
+				.set(
+					withAuditFieldsForUpdate(
+						{
+							deletedAt: getCurrentUTCTimestamp(),
+							deletedBy: user.id
+						},
+						user
+					)
+				)
+				.where(eq(windowCleaningCustomer.id, id));
+
+			logger.info(`Customer soft-deleted: ${id} by ${user.id}`);
+			return message(form, { type: 'success', text: 'Customer deleted successfully' });
+		} catch (error) {
+			logger.error('Failed to delete customer', error);
+			return message(
+				form,
+				{ type: 'error', text: 'Failed to delete customer. A database error occurred.' },
+				{ status: 500 }
+			);
+		}
+	}),
+
+	createJob: createAction({
+		schema: windowCleaningJobSchema,
+		table: windowCleaningJob,
+		entityName: 'Job',
+		transformCreate: (data, userId) => ({ ...toWindowCleaningJobRow(data), userId })
+	}),
+
+	updateJob,
+	deleteJob
+} satisfies Actions;
