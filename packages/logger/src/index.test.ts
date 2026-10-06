@@ -35,7 +35,7 @@ describe('logger', () => {
 
 	it('always writes structured JSON, in both dev and prod', async () => {
 		vi.resetModules();
-		const { logger } = await import('../lib/server/logger');
+		const { logger } = await import('./index');
 		logger.info('hello', { foo: 'bar' });
 		const entry = lastEntry(infoSpy);
 		expect(entry.level).toBe('info');
@@ -47,7 +47,7 @@ describe('logger', () => {
 	describe('level filtering via LOG_LEVEL', () => {
 		it('defaults to debug in dev — all levels are logged', async () => {
 			vi.resetModules();
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.debug('d');
 			logger.info('i');
 			logger.warn('w');
@@ -61,7 +61,7 @@ describe('logger', () => {
 		it('defaults to info in production — debug is suppressed', async () => {
 			vi.resetModules();
 			process.env.NODE_ENV = 'production';
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.debug('d');
 			logger.info('i');
 			expect(debugSpy).not.toHaveBeenCalled();
@@ -71,7 +71,7 @@ describe('logger', () => {
 		it('honors an explicit LOG_LEVEL override', async () => {
 			vi.resetModules();
 			process.env.LOG_LEVEL = 'warn';
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.debug('d');
 			logger.info('i');
 			logger.warn('w');
@@ -87,7 +87,7 @@ describe('logger', () => {
 		it('strips PII fields from meta in production', async () => {
 			vi.resetModules();
 			process.env.NODE_ENV = 'production';
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.info('user event', {
 				userId: 'u1',
 				id: 'row1',
@@ -117,7 +117,7 @@ describe('logger', () => {
 
 		it('keeps PII fields intact in dev', async () => {
 			vi.resetModules();
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.info('user event', { userId: 'u1', safeField: 'keep-me' });
 			const entry = lastEntry(infoSpy);
 			expect(entry.userId).toBe('u1');
@@ -127,7 +127,7 @@ describe('logger', () => {
 		it('strips PII fields carried in child() context too', async () => {
 			vi.resetModules();
 			process.env.NODE_ENV = 'production';
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			const requestLogger = logger.child({ requestId: 'req-1', userId: 'u1' });
 			requestLogger.info('context test');
 			const entry = lastEntry(infoSpy);
@@ -139,7 +139,7 @@ describe('logger', () => {
 	describe('child() context inheritance', () => {
 		it('merges child context into every subsequent log', async () => {
 			vi.resetModules();
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			const child = logger.child({ requestId: 'req-1', method: 'GET' });
 			child.info('first');
 			child.warn('second');
@@ -152,7 +152,7 @@ describe('logger', () => {
 
 		it('does not mutate the parent logger and returns a new instance', async () => {
 			vi.resetModules();
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			const child = logger.child({ requestId: 'req-1' });
 			expect(child).not.toBe(logger);
 			logger.info('on parent');
@@ -161,7 +161,7 @@ describe('logger', () => {
 
 		it('grandchild context overrides and extends parent context', async () => {
 			vi.resetModules();
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			const child = logger.child({ requestId: 'req-1', userId: 'anon' });
 			const grandchild = child.child({ userId: 'u42' });
 			grandchild.info('nested');
@@ -174,7 +174,7 @@ describe('logger', () => {
 	describe('error() second argument', () => {
 		it('accepts an Error instance', async () => {
 			vi.resetModules();
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.error('boom', new Error('bad thing'));
 			const entry = lastEntry(errorSpy);
 			const err = entry.error as Record<string, unknown>;
@@ -184,7 +184,7 @@ describe('logger', () => {
 
 		it('accepts a string', async () => {
 			vi.resetModules();
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.error('boom', 'string reason');
 			const entry = lastEntry(errorSpy);
 			expect(entry.error).toBe('string reason');
@@ -192,7 +192,7 @@ describe('logger', () => {
 
 		it('accepts no error argument at all', async () => {
 			vi.resetModules();
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.error('boom');
 			const entry = lastEntry(errorSpy);
 			expect(entry.error).toBeUndefined();
@@ -201,7 +201,7 @@ describe('logger', () => {
 
 		it('still accepts meta as the third argument alongside an Error', async () => {
 			vi.resetModules();
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.error('boom', new Error('bad thing'), { requestId: 'req-1' });
 			const entry = lastEntry(errorSpy);
 			expect(entry.requestId).toBe('req-1');
@@ -215,7 +215,7 @@ describe('logger', () => {
 		});
 
 		it('redacts an email address embedded in an Error message', async () => {
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.error('Failed operation', new Error('Failed for a@b.com'));
 			const line = errorSpy.mock.calls.at(-1)?.[0] as string;
 			expect(line).not.toContain('a@b.com');
@@ -223,7 +223,7 @@ describe('logger', () => {
 		});
 
 		it('redacts a JWT-shaped token embedded in an Error message', async () => {
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			const fakeJwt =
 				'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dQw4w9WgXcQrRZ4rV9v9v9v9v9v9v9v9v9v9v9v9v9v';
 			logger.error('Token error', new Error(`Bad token: ${fakeJwt}`));
@@ -233,7 +233,7 @@ describe('logger', () => {
 
 		it('redacts PII in the message and in string meta values', async () => {
 			const sentry = await import('@sentry/sveltekit');
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.warn('Email to a@b.com bounced', { recipient: 'c@d.com' });
 			const line = warnSpy.mock.calls.at(-1)?.[0] as string;
 			expect(line).not.toContain('a@b.com');
@@ -243,7 +243,7 @@ describe('logger', () => {
 
 		it('redacts PII in the Error object handed to Sentry', async () => {
 			const sentry = await import('@sentry/sveltekit');
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.error('Failed operation', new Error('Failed for a@b.com'));
 			const [sentryError] = vi.mocked(sentry.captureException).mock.calls[0] as unknown as [Error];
 			expect(sentryError.message).not.toContain('a@b.com');
@@ -251,7 +251,7 @@ describe('logger', () => {
 
 		it('strips PII from a non-Error payload handed to Sentry', async () => {
 			const sentry = await import('@sentry/sveltekit');
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.error('Failed operation', { userId: 'u1', detail: 'x', note: 'Failed for a@b.com' });
 			const [, options] = vi.mocked(sentry.captureMessage).mock.calls[0] as unknown as [
 				string,
@@ -264,7 +264,7 @@ describe('logger', () => {
 
 		it('serializes an Error nested in a non-Error payload handed to Sentry', async () => {
 			const sentry = await import('@sentry/sveltekit');
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.error('Failed operation', { err: new Error('bad thing') });
 			const [, options] = vi.mocked(sentry.captureMessage).mock.calls[0] as unknown as [
 				string,
@@ -275,7 +275,7 @@ describe('logger', () => {
 
 		it('does not redact free text in development', async () => {
 			delete process.env.NODE_ENV;
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.error('Failed operation', new Error('Failed for a@b.com'));
 			const line = errorSpy.mock.calls.at(-1)?.[0] as string;
 			expect(line).toContain('a@b.com');
@@ -286,7 +286,7 @@ describe('logger', () => {
 		it('does not forward to Sentry in dev', async () => {
 			vi.resetModules();
 			const sentry = await import('@sentry/sveltekit');
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			logger.warn('careful');
 			logger.error('boom', new Error('bad thing'));
 			expect(sentry.captureMessage).not.toHaveBeenCalled();
@@ -297,7 +297,7 @@ describe('logger', () => {
 			vi.resetModules();
 			process.env.NODE_ENV = 'production';
 			const sentry = await import('@sentry/sveltekit');
-			const { logger } = await import('../lib/server/logger');
+			const { logger } = await import('./index');
 			expect(() => logger.warn('careful')).not.toThrow();
 			expect(() => logger.error('boom', new Error('bad thing'))).not.toThrow();
 			expect(sentry.captureMessage).toHaveBeenCalledTimes(1);

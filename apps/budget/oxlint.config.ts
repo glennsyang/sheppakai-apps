@@ -34,17 +34,6 @@ export default defineConfig({
 			}
 		},
 		{
-			// logger.ts is copied byte-for-byte from claude-sveltekit-toolkit's shared/server/logger.ts
-			// and kept identical across sibling repos (meal-planner, synapse) via /propagate-shared —
-			// don't add inline lint-disable comments here, suppress via config instead. The flagged
-			// String(error) fallback only runs when JSON.stringify(error) itself throws, which is an
-			// intentional last-resort stringification, not a real defaultToString() bug.
-			files: ['src/lib/server/logger.ts'],
-			rules: {
-				'typescript/no-base-to-string': 'off'
-			}
-		},
-		{
 			// auth-guard.ts is kept identical across sibling repos, so its own tests may import
 			// requireAdmin even though the app itself must not (see the rule below).
 			files: ['src/lib/server/actions/auth-guard.test.ts'],
