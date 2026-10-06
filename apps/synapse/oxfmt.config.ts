@@ -15,7 +15,6 @@ export default defineConfig({
 		'/static',
 		'/drizzle',
 		'src/lib/components/ui/',
-		'src/lib/server/logger.ts',
 		'/.github/skills/',
 		'/AGENTS.md',
 		'*.toml'

@@ -17,11 +17,7 @@ export default defineConfig({
 		'src/lib/components/ui/',
 		'/.github/skills/',
 		'/AGENTS.md',
-		'*.toml',
-		// Copied byte-for-byte from claude-sveltekit-toolkit's shared/server/logger.ts and kept
-		// identical across sibling repos (meal-planner, synapse) via /propagate-shared — don't
-		// let oxfmt reformat it locally, that would defeat the point of unifying it.
-		'src/lib/server/logger.ts'
+		'*.toml'
 	],
 	printWidth: 100,
 	semi: true,

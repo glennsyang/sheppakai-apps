@@ -21,22 +21,33 @@ FROM base AS build
 # source maps — it doesn't share Node's bundled cert store.
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3 ca-certificates
-    
-# Install node modules
-COPY .npmrc package-lock.json package.json ./
-RUN npm install -g npm@11 && npm ci --include=dev
 
-# Copy application code
+# pnpm via corepack, pinned by the root package.json's packageManager field
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+
+# The build context is the monorepo root (see .github/workflows/fly-deploy.yml), so the
+# workspace lockfile and packages/ are visible. Fetch from the lockfile alone first so the
+# dependency layer stays cached across source-only changes. NODE_ENV=production
+# (set in base) would otherwise make pnpm skip the devDependencies the build needs.
+WORKDIR /repo
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm fetch --prod=false
+
+# Copy the workspace, then install only this app and the workspace packages it uses
 COPY . .
+RUN pnpm install --offline --frozen-lockfile --prod=false --filter sheppakai-budget...
+
+WORKDIR /repo/apps/budget
 
 # Build application. SENTRY_AUTH_TOKEN is supplied as a BuildKit secret (via
 # `flyctl deploy --build-secret`, see fly-deploy.yml) so it reaches only this RUN step
 # and never gets baked into an image layer.
 RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
-	SENTRY_AUTH_TOKEN="$(cat /run/secrets/SENTRY_AUTH_TOKEN 2>/dev/null || true)" npm run build
+	SENTRY_AUTH_TOKEN="$(cat /run/secrets/SENTRY_AUTH_TOKEN 2>/dev/null || true)" pnpm run build
 
-# Remove development dependencies
-RUN npm prune --omit=dev
+# Write a standalone production node_modules for the runtime image (resolves workspace:*)
+RUN pnpm --filter sheppakai-budget deploy --prod --legacy /prod
 
 
 # Final stage for app image
@@ -48,21 +59,21 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy built application
-COPY --from=build /app/build /app/build
-COPY --from=build /app/node_modules /app/node_modules
-COPY --from=build /app/package.json /app
+COPY --from=build /repo/apps/budget/build /app/build
+COPY --from=build /prod/node_modules /app/node_modules
+COPY --from=build /prod/package.json /app
 
 # Copy migrations and the standalone migration runner (uses drizzle-orm, not the
-# drizzle-kit CLI, so drizzle-kit stays a devDependency and is pruned above)
-COPY --from=build /app/src/lib/server/db/migrations /app/src/lib/server/db/migrations
-COPY --from=build /app/scripts/migrate.js /app/scripts/migrate.js
+# drizzle-kit CLI, so drizzle-kit stays a devDependency and is left out of /prod)
+COPY --from=build /repo/apps/budget/src/lib/server/db/migrations /app/src/lib/server/db/migrations
+COPY --from=build /repo/apps/budget/scripts/migrate.js /app/scripts/migrate.js
 
 # Setup sqlite3 on a separate volume
 RUN mkdir -p /data
 VOLUME /data
 
 # Copy and set permissions for startup script
-COPY start.sh /app/start.sh
+COPY apps/budget/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
 # Start the server by default, this can be overwritten at runtime

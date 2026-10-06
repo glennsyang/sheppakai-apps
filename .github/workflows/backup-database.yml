@@ -2,6 +2,15 @@ name: Database Backup
 
 on:
   workflow_dispatch: # Allow manual triggers
+    inputs:
+      app:
+        description: App whose database to back up
+        required: true
+        type: choice
+        options:
+          - synapse
+          - mealplanner
+          - budget
 
 permissions:
   contents: read
@@ -9,40 +18,50 @@ permissions:
 
 jobs:
   backup:
-    name: Backup SQLite Database
+    name: Backup SQLite Database (${{ inputs.app }})
     runs-on: ubuntu-latest
+    # FLY_API_TOKEN and BACKUP_ENCRYPTION_PASSPHRASE come from the app's environment.
+    environment: ${{ inputs.app }}
 
     steps:
       - name: Setup Flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # v1.6
+        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
+
+      - name: Resolve Fly app and database path
+        env:
+          APP: ${{ inputs.app }}
+        run: |
+          case "$APP" in
+            synapse) echo "FLY_APP=synapse-dev" >> "$GITHUB_ENV"; echo "DB_PATH=/data/synapse.db" >> "$GITHUB_ENV" ;;
+            mealplanner) echo "FLY_APP=sheppakai-mealplanner" >> "$GITHUB_ENV"; echo "DB_PATH=/data/db.sqlite" >> "$GITHUB_ENV" ;;
+            budget) echo "FLY_APP=sheppakai-budget" >> "$GITHUB_ENV"; echo "DB_PATH=/data/sheppakaibudget.db" >> "$GITHUB_ENV" ;;
+            *) echo "Unknown app: $APP" >&2; exit 1 ;;
+          esac
 
       - name: Get timestamp
         id: timestamp
-        run: |
-          BACKUP_DATE=$(date -u +'%Y-%m-%d-%H%M%S')
-          echo "date=$BACKUP_DATE" >> "$GITHUB_OUTPUT"
-          echo "BACKUP_DATE=$BACKUP_DATE" >> "$GITHUB_ENV"
+        run: echo "date=$(date -u +'%Y-%m-%d-%H%M%S')" >> $GITHUB_OUTPUT
 
       - name: Dump database from Fly.io
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           echo "Creating database backup..."
-          flyctl ssh console -a synapse-dev -C "sqlite3 /data/synapse.db .dump" > "backup-$BACKUP_DATE.sql"
+          flyctl ssh console -a "$FLY_APP" -C "sqlite3 $DB_PATH .dump" > backup-${{ steps.timestamp.outputs.date }}.sql
 
       - name: Compress backup
         run: |
           echo "Compressing backup..."
-          gzip -9 "backup-$BACKUP_DATE.sql"
+          gzip -9 backup-${{ steps.timestamp.outputs.date }}.sql
 
       - name: Encrypt backup
         env:
           BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
         run: |
-          # The dump contains password hashes and live session tokens, so it must never
-          # land in the (unencrypted, 30-day-retained) Actions artifact store as plaintext.
-          # Fail closed if the secret isn't configured, rather than silently uploading
-          # an unencrypted backup.
+          # The dump contains password hashes and live session tokens (plus all app
+          # data), so it must never land in the (unencrypted, 30-day-retained) Actions
+          # artifact store as plaintext. Fail closed if the secret isn't configured,
+          # rather than silently uploading an unencrypted backup.
           if [ -z "$BACKUP_ENCRYPTION_PASSPHRASE" ]; then
             echo "Error: BACKUP_ENCRYPTION_PASSPHRASE secret is not set. Refusing to upload an unencrypted database dump." >&2
             echo "Generate one (e.g. 'openssl rand -base64 32') and add it as a repo secret named BACKUP_ENCRYPTION_PASSPHRASE." >&2
@@ -50,20 +69,23 @@ jobs:
           fi
 
           echo "Encrypting backup..."
-          BACKUP_FILE="backup-$BACKUP_DATE.sql.gz"
-          gpg --batch --yes --pinentry-mode loopback \
-            --passphrase "$BACKUP_ENCRYPTION_PASSPHRASE" \
+          BACKUP_FILE="backup-${{ steps.timestamp.outputs.date }}.sql.gz"
+          # Feed the passphrase on stdin (fd 0) rather than as an argument, so it never
+          # appears in the runner's process list. printf is a shell builtin, so it
+          # doesn't spawn a process with the passphrase in argv either.
+          printf '%s' "$BACKUP_ENCRYPTION_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 \
             --symmetric --cipher-algo AES256 \
             --output "$BACKUP_FILE.gpg" "$BACKUP_FILE"
 
           # Remove the plaintext archive so only the encrypted copy remains on disk.
           rm "$BACKUP_FILE"
 
-          echo "To decrypt: gpg --batch --yes --pinentry-mode loopback --passphrase \"\$BACKUP_ENCRYPTION_PASSPHRASE\" --decrypt --output backup.sql.gz $BACKUP_FILE.gpg"
+          echo "To decrypt: printf '%s' \"\$BACKUP_ENCRYPTION_PASSPHRASE\" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --decrypt --output backup.sql.gz $BACKUP_FILE.gpg"
 
       - name: Validate backup
         run: |
-          BACKUP_FILE="backup-$BACKUP_DATE.sql.gz.gpg"
+          BACKUP_FILE="backup-${{ steps.timestamp.outputs.date }}.sql.gz.gpg"
 
           if [ ! -s "$BACKUP_FILE" ]; then
             echo "Error: Backup file is empty or does not exist"
@@ -73,12 +95,12 @@ jobs:
           BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
           echo "✓ Backup validation passed"
           echo "Backup size: $BACKUP_SIZE"
-          echo "backup_size=$BACKUP_SIZE" >> "$GITHUB_OUTPUT"
+          echo "backup_size=$BACKUP_SIZE" >> $GITHUB_OUTPUT
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: db-backup-${{ steps.timestamp.outputs.date }}
+          name: db-backup-${{ inputs.app }}-${{ steps.timestamp.outputs.date }}
           path: backup-${{ steps.timestamp.outputs.date }}.sql.gz.gpg
           retention-days: 30
           compression-level: 9
@@ -86,9 +108,11 @@ jobs:
       - name: Create issue on failure
         if: failure()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          APP: ${{ inputs.app }}
         with:
           script: |
-            const title = '[Automated] Database Backup Failure';
+            const title = `[Automated] Database Backup Failure (${process.env.APP})`;
 
             // Check for existing open issues with same title
             const existingIssues = await github.rest.issues.listForRepo({
@@ -134,8 +158,12 @@ jobs:
       - name: Close backup failure issues on success
         if: success()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          APP: ${{ inputs.app }}
         with:
           script: |
+            const title = `[Automated] Database Backup Failure (${process.env.APP})`;
+
             // Find all open issues with backup-failure label
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -146,6 +174,7 @@ jobs:
 
             // Close each one
             for (const issue of issues.data) {
+              if (issue.title !== title) continue;
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,

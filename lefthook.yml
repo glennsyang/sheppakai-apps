@@ -1,0 +1,26 @@
+# lefthook.yml
+
+pre-commit:
+  commands:
+    # Delegate to each app's lint-staged config, scoped to that app's staged files
+    lint-staged-synapse:
+      root: apps/synapse/
+      glob: 'apps/synapse/**'
+      run: pnpm exec lint-staged --config lint-staged.config.ts
+    lint-staged-mealplanner:
+      root: apps/mealplanner/
+      glob: 'apps/mealplanner/**'
+      run: pnpm exec lint-staged --config lint-staged.config.ts
+    lint-staged-budget:
+      root: apps/budget/
+      glob: 'apps/budget/**'
+      run: pnpm exec lint-staged --config lint-staged.config.ts
+    lint-staged-packages:
+      glob: 'packages/**'
+      run: pnpm --filter './packages/**' fmt
+
+pre-push:
+  commands:
+    # Runs Vitest for apps/packages changed since main before the code leaves your machine
+    test:
+      run: pnpm --filter '...[origin/main]' test

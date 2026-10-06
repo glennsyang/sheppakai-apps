@@ -1,0 +1,29 @@
+{
+	"name": "@sheppakai/logger",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"check": "tsc --noEmit",
+		"fmt": "oxfmt --no-error-on-unmatched-pattern",
+		"fmt:check": "oxfmt --check --no-error-on-unmatched-pattern",
+		"lint": "oxlint",
+		"test": "vitest --run",
+		"test:ci": "vitest --run",
+		"lint:github": "oxlint --format=github"
+	},
+	"devDependencies": {
+		"@sentry/sveltekit": "catalog:",
+		"@types/node": "catalog:",
+		"oxfmt": "catalog:",
+		"oxlint": "catalog:",
+		"typescript": "catalog:",
+		"vitest": "catalog:"
+	},
+	"peerDependencies": {
+		"@sentry/sveltekit": "^11"
+	}
+}
