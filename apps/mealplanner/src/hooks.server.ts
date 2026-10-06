@@ -1,0 +1,129 @@
+import { PUBLIC_SENTRY_DSN } from '$app/env/public';
+import { building, dev } from '$app/environment';
+import { sentryDataCollection } from '$lib/sentry-data-collection';
+import { allowedEmails, auth } from '$lib/server/auth';
+import { isUserAccessAllowed } from '$lib/server/auth/allowlist-hook';
+import { logger } from '$lib/server/logger';
+import * as Sentry from '@sentry/sveltekit';
+import type { Handle, HandleServerError } from '@sveltejs/kit';
+import { sequence } from '@sveltejs/kit/hooks';
+import { svelteKitHandler } from 'better-auth/svelte-kit';
+
+Sentry.init({
+	dsn: PUBLIC_SENTRY_DSN,
+	tracesSampleRate: 1.0,
+	// Same restrictive baseline as hooks.client.ts. Loosening it server-side would let Sentry
+	// capture cookies, bodies and full headers — including the auth session cookie — which the
+	// browser SDK can't reach since client JS has no access to HttpOnly cookies or
+	// server-internal headers. Server-side error context is already captured explicitly below
+	// (requestId, userId, url, method, status) via the structured logger, so Sentry's own PII
+	// capture isn't needed here.
+	dataCollection: sentryDataCollection,
+	// logger.warn()/logger.error() report via captureMessage; without this every call would get
+	// a synthetic call-site stack trace and regroup existing issues.
+	attachStacktrace: false
+});
+
+export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
+	if (dev && event.url.pathname === '/.well-known/appspecific/com.chrome.devtools.json') {
+		return new Response(undefined, { status: 404 });
+	}
+
+	const requestId = crypto.randomUUID();
+	let requestLogger = logger.child({
+		requestId,
+		method: event.request.method,
+		url: event.url.pathname
+	});
+
+	requestLogger.info('Incoming request', {
+		userAgent: event.request.headers.get('user-agent')
+	});
+
+	const startTime = Date.now();
+
+	// Better-auth session middleware
+	const session = await auth.api.getSession({
+		headers: event.request.headers
+	});
+
+	// Make session and user available on server.
+	// The allowlist and ban are otherwise only checked when a session is created, so a
+	// user removed from ALLOWED_EMAILS (or banned) would keep a self-extending session.
+	// Re-check on every request.
+	if (session && !isUserAccessAllowed(session.user, allowedEmails)) {
+		requestLogger.warn('Session rejected', {
+			userId: session.user.id,
+			reason: 'owner_not_allowed'
+		});
+		try {
+			await auth.api.revokeSession({
+				body: { token: session.session.token },
+				headers: event.request.headers
+			});
+		} catch (err) {
+			requestLogger.error('Failed to revoke disallowed session', err, {
+				userId: session.user.id
+			});
+		}
+	} else if (session) {
+		event.locals.session = session.session;
+		event.locals.user = session.user;
+		requestLogger = requestLogger.child({ userId: session.user.id });
+	}
+
+	event.locals.requestId = requestId;
+
+	const response = await svelteKitHandler({ event, resolve, auth, building });
+
+	requestLogger.info('Request completed', {
+		status: response.status,
+		duration: `${Date.now() - startTime}ms`
+	});
+
+	// Security headers
+	response.headers.set('X-Frame-Options', 'DENY');
+	response.headers.set('X-Content-Type-Options', 'nosniff');
+	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+	response.headers.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+	response.headers.set('X-Request-ID', requestId);
+
+	// HSTS only in production
+	if (!dev) {
+		response.headers.set(
+			'Strict-Transport-Security',
+			'max-age=31536000; includeSubDomains; preload'
+		);
+	}
+
+	// Content-Security-Policy is managed via kit.csp in svelte.config.js (nonce mode).
+	// SvelteKit generates a per-request nonce, injects it into inline scripts/styles it
+	// produces, and sets the CSP header automatically. Sentry's sentryHandle() also
+	// honours the nonce. Do NOT set Content-Security-Policy here — it would override
+	// the nonce-bearing header that SvelteKit emits.
+
+	return response;
+});
+
+// Note: logger.error() already forwards to Sentry (captureException) internally in
+// production, so this is intentionally NOT wrapped in Sentry.handleErrorWithSentry() —
+// doing so would double-report every unhandled error.
+export const handleError: HandleServerError = ({ error, event, status, message }) => {
+	const requestId = event.locals.requestId ?? 'unknown';
+	const userId = event.locals.user?.id ?? 'anonymous';
+
+	logger.error('Unhandled server error', error, {
+		requestId,
+		userId,
+		url: event.url.pathname,
+		method: event.request.method,
+		status,
+		message,
+		userAgent: event.request.headers.get('user-agent')
+	});
+
+	return {
+		message: dev ? message : 'An unexpected error occurred',
+		requestId
+	};
+};

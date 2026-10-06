@@ -1,0 +1,190 @@
+# Meal Planner
+
+A dinner-focused meal planning app. Add your pantry ingredients, get AI-generated recipe suggestions, and slot meals into a Monday–Sunday weekly planner.
+
+---
+
+## Features
+
+- **AI meal suggestions** — Claude (Anthropic) and Gemini (Google) suggest practical dinner recipes based on what's in your pantry
+- **Recipe variations** — Generate alternative versions of any dish
+- **Pantry management** — Track ingredients with optional quantities and units
+- **Weekly planner** — Assign recipes to specific days of the week
+- **Streaming suggestions** — Real-time recipe generation for a faster experience
+- **Secure auth** — Email/password login via better-auth with rate limiting and IP tracking
+- **Dark mode** — Detected from system preference or `localStorage`
+
+---
+
+## Tech Stack
+
+| Concern         | Choice                                                       |
+| --------------- | ------------------------------------------------------------ |
+| Framework       | SvelteKit `^2.50.2` + TypeScript (strict)                    |
+| UI Components   | Svelte `^5.55.8` (runes only)                                |
+| Database        | SQLite via Drizzle ORM `^0.45.2` (better-sqlite3 `^12.10.0`) |
+| Auth            | better-auth `^1.6.11` (email + password)                     |
+| AI — Meals      | `@google/genai ^2.4.0` — `gemini-2.5-flash-preview`          |
+| AI — Variations | `@anthropic-ai/sdk ^0.96.0` — `claude-sonnet-4-6`            |
+| UI Styling      | shadcn-svelte (bits-ui) + Tailwind CSS `^4.2.1`              |
+| Animations      | Svelte 5 transitions + `@formkit/auto-animate ^0.9.0`        |
+| Forms           | sveltekit-superforms `^2.30.1` + Zod `^4.4.3`                |
+| Error Tracking  | Sentry `^10.53.1`                                            |
+| Testing         | Vitest `^4.1.6`                                              |
+| Linting         | oxlint `^1.65.0` + oxfmt `^0.50.0`                           |
+| Deployment      | fly.io (Node 22, SQLite on persistent volume)                |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js **22.23.3** (use `.nvmrc` or `nvm use`)
+- npm
+
+### Install
+
+```bash
+npm install
+```
+
+### Environment variables
+
+```bash
+cp .env.example .env
+# then fill in the values
+```
+
+See [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) for the full reference — every variable the app
+uses, which are required, their defaults, and where each is consumed.
+
+### Database setup
+
+```bash
+npm run db:migrate   # Create ./data/db.sqlite and apply committed migrations
+```
+
+### Dev server
+
+```bash
+npm run dev
+```
+
+App runs at `http://localhost:5173`.
+
+---
+
+## Common Commands
+
+```bash
+npm run dev            # Dev server
+npm run build          # Production build
+npm run preview        # Preview production build
+npm run test           # Run all Vitest tests
+npm run test:coverage  # Tests with v8 coverage report
+npm run check          # svelte-check (TypeScript + Svelte)
+npm run lint           # oxlint
+npm run fmt            # oxfmt (format)
+npm run db:generate    # Generate a migration from schema.ts changes
+npm run db:migrate     # Apply committed migrations to SQLite
+npm run db:studio      # Drizzle visual browser
+```
+
+---
+
+## Project Structure
+
+```
+src/
+├── hooks.server.ts              # Session middleware, security headers, CSP
+├── app.css                      # Tailwind v4, tw-animate-css, fridge theme, world classes
+├── app.html                     # Pre-paint dark-mode script, fonts
+├── lib/
+│   ├── logger.ts                # App-wide logger (never use console.log)
+│   ├── types.ts                 # Shared TypeScript interfaces
+│   ├── auth-client.ts           # Client-side better-auth
+│   ├── schemas/                 # Zod v4 schemas (auth, pantry, mealPlan)
+│   ├── components/              # Svelte 5 UI components
+│   └── server/
+│       ├── db/
+│       │   ├── schema.ts        # All Drizzle tables (auth + app)
+│       │   └── index.ts         # Drizzle client (WAL mode)
+│       ├── auth/index.ts        # betterAuth instance
+│       ├── ai/
+│       │   ├── claude.ts        # Variations API (suggestVariations)
+│       │   └── gemini.ts        # Meal suggestions (suggestMeals, suggestMealsStream)
+│       └── services/
+│           ├── pantry.ts
+│           ├── recipes.ts
+│           └── mealPlan.ts
+├── routes/
+│   ├── (auth)/                  # sign-in, sign-out, password reset, email verification
+│   ├── (app)/                   # Protected: auth guard in +layout.server.ts
+│   │   ├── pantry/
+│   │   ├── suggest/
+│   │   └── planner/
+│   ├── api/auth/[...all]/       # better-auth handler
+│   ├── api/suggest/             # GET ?items=… → meal suggestions (Gemini)
+│   ├── api/variations/          # GET ?meal=… → dish variations (Claude)
+│   └── api/healthz/             # Health check
+└── tests/
+    ├── logger.test.ts
+    ├── schemas/auth.test.ts
+    └── services/pantry.test.ts, mealPlan.test.ts
+```
+
+---
+
+## Database Schema
+
+| Table               | Purpose                                   |
+| ------------------- | ----------------------------------------- |
+| `user`              | User accounts (better-auth)               |
+| `session`           | Active sessions (better-auth)             |
+| `account`           | OAuth accounts (better-auth)              |
+| `verification`      | Email verification tokens (better-auth)   |
+| `pantry_items`      | Pantry inventory per user                 |
+| `recipes`           | Saved recipes (AI-generated or custom)    |
+| `meal_plans`        | Weekly meal plans (one per user per week) |
+| `meal_plan_entries` | Recipe-to-day assignments within a plan   |
+
+All app tables use UUID text primary keys and `created_at` / `updated_at` audit columns.
+
+---
+
+## Deployment (fly.io)
+
+```bash
+# Set secrets
+fly secrets set \
+  BETTER_AUTH_SECRET=... \
+  BETTER_AUTH_BASE_URL=https://sheppakai-mealplanner.fly.dev \
+  ANTHROPIC_API_KEY=... \
+  GEMINI_API_KEY=... \
+  BREVO_API_KEY=... \
+  BREVO_FROM_ADDRESS=...
+
+# Deploy
+fly deploy
+```
+
+`DATABASE_URL` and `NODE_ENV` are intentionally _not_ set here — they're baked into the
+`Dockerfile` instead. See [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) for the full variable
+reference, including build-time and CI-only vars.
+
+SQLite is stored on a persistent volume mounted at `/data/db.sqlite`. Migrations run
+automatically on boot — `start.sh` applies any committed, unapplied migrations via
+`scripts/migrate.js` before the server starts, so a normal `fly deploy` is enough.
+
+---
+
+## Known Quirks
+
+1. **Superforms + Zod v4 email inputs** — Never spread `{...$constraints}` on `type="email"` inputs. Zod v4's email regex is incompatible with the browser's HTML `pattern` attribute `v` flag.
+
+2. **`getMondayOfCurrentWeek()`** — Uses local date components instead of `.toISOString()` to avoid UTC offset shifting the date across midnight.
+
+3. **Auth redirects** — `auth.api.signInEmail` / `signUpEmail` may internally throw SvelteKit redirects. Always `if (isRedirect(err)) throw err` inside auth catch blocks.
+
+4. **Secure cookies** — `useSecureCookies: true` is set. Cookies require HTTPS in production. better-auth auto-allows non-secure cookies on `localhost` in dev.

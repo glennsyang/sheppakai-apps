@@ -1,0 +1,55 @@
+import { z } from 'zod';
+
+// Canonical password rule for reset: length-only, per NIST SP 800-63B §5.1.1.2
+// (composition rules deliberately omitted). Matches minPasswordLength in
+// src/lib/server/auth/index.ts.
+const passwordSchema = z.string().min(12, 'Password must be at least 12 characters');
+
+export const emailField = z.email('Please enter a valid email address');
+
+export const loginSchema = z.object({
+	email: emailField,
+	password: z.string().min(1, 'Password is required')
+});
+
+export const resendVerificationSchema = z.object({
+	email: emailField
+});
+
+// Also enforced server-side for direct /api/auth/* writes (src/lib/server/auth/name-guard.ts).
+export const MAX_NAME_LENGTH = 100;
+
+export const updateNameSchema = z.object({
+	name: z
+		.string()
+		.min(2, 'Name must be at least 2 characters')
+		.max(MAX_NAME_LENGTH, 'Name is too long')
+});
+
+export const changePasswordSchema = z
+	.object({
+		currentPassword: z.string().min(1, 'Current password is required'),
+		newPassword: passwordSchema,
+		confirmPassword: z.string().min(1, 'Please confirm your password')
+	})
+	.refine((data) => data.newPassword === data.confirmPassword, {
+		message: 'Passwords do not match',
+		path: ['confirmPassword']
+	});
+
+export const forgotPasswordSchema = z.object({
+	email: emailField
+});
+
+export const resetPasswordSchema = z
+	.object({
+		password: passwordSchema,
+		confirmPassword: z.string().min(1, 'Please confirm your password'),
+		// Carried through the form as a hidden field so the action can consume the
+		// token from the reset link; the page also guards on its presence.
+		token: z.string().optional()
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		message: 'Passwords do not match',
+		path: ['confirmPassword']
+	});

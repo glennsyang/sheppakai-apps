@@ -1,0 +1,37 @@
+{
+	"$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+	"entry": ["src/index.{ts,tsx,js,jsx}", "src/main.{ts,tsx,js,jsx}"],
+	"ignorePatterns": [
+		"**/*.generated.ts",
+		"src/lib/components/ui/**",
+		"src/lib/utils.ts",
+		"**/*.config.ts",
+		"src/env.ts",
+		"src/app.css",
+		"src/lib/styles/*.css",
+		"scripts/migrate.js"
+	],
+	"ignoreDependencies": [
+		"@flydotio/dockerfile",
+		"@sveltejs/kit",
+		"@tailwindcss/vite",
+		"@tanstack/svelte-table",
+		"bits-ui",
+		"clsx",
+		"svelte",
+		"sveltekit-superforms",
+		"tailwind-merge",
+		"tailwind-variants",
+		"tw-animate-css",
+		"zod"
+	],
+	"duplicates": {
+		"ignore": ["src/lib/components/ui/**/*.{ts,tsx}"]
+	},
+	"rules": {
+		"unresolved-imports": "error",
+		"unlisted-dependencies": "error",
+		"unused-exports": "error",
+		"circular-dependencies": "warn"
+	}
+}

@@ -1,0 +1,16 @@
+import { PUBLIC_SENTRY_DSN } from '$app/env/public';
+import { sentryDataCollection } from '$lib/sentry-data-collection';
+import { handleErrorWithSentry } from '@sentry/sveltekit';
+import * as Sentry from '@sentry/sveltekit';
+
+Sentry.init({
+	dsn: PUBLIC_SENTRY_DSN,
+
+	tracesSampleRate: 0.2,
+
+	// Keep user IPs, headers and user context out of Sentry; requestId is the only prod correlation key.
+	dataCollection: sentryDataCollection
+});
+
+// If you have a custom error handler, pass it to `handleErrorWithSentry`
+export const handleError = handleErrorWithSentry();
