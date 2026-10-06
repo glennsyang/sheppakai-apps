@@ -1,0 +1,155 @@
+import { z } from 'zod';
+
+/**
+ * Schema for logging a weight entry
+ */
+export const logWeightSchema = z.object({
+	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (use YYYY-MM-DD)'),
+	time: z
+		.string()
+		.regex(/^\d{2}:\d{2}$/, 'Invalid time format (use HH:MM)')
+		.optional()
+		.nullable(),
+	weightLbs: z.coerce.number().positive('Weight must be positive')
+});
+
+/**
+ * Schema for updating a weight entry
+ */
+export const updateWeightSchema = logWeightSchema.extend({
+	id: z.uuid()
+});
+
+/**
+ * Common schema for deleting entries by id
+ */
+export const deleteEntrySchema = z.object({
+	id: z.uuid()
+});
+
+/**
+ * Schema for setting goal weight
+ */
+export const setGoalWeightSchema = z.object({
+	targetWeightLbs: z.coerce.number().positive('Target weight must be positive')
+});
+
+/**
+ * Schema for workout exercise (for strength workouts)
+ */
+const workoutExerciseSchema = z.object({
+	exerciseName: z.string().min(1, 'Exercise name is required').max(100),
+	sets: z.coerce.number().int().positive().optional().nullable(),
+	reps: z.coerce.number().int().positive().optional().nullable(),
+	weightLbs: z.coerce.number().int().positive().optional().nullable()
+});
+
+export type WorkoutExerciseInput = z.infer<typeof workoutExerciseSchema>;
+
+export const MAX_WORKOUT_EXERCISES = 50;
+
+const workoutExercisesArraySchema = z.array(workoutExerciseSchema).max(MAX_WORKOUT_EXERCISES);
+
+type ParseWorkoutExercisesResult =
+	| { success: true; data: WorkoutExerciseInput[] }
+	| { success: false };
+
+/**
+ * Parse and validate the JSON-encoded exercises field submitted by the workout form.
+ * Rows with a blank name are dropped first, since the form always submits its
+ * empty trailing rows.
+ */
+export function parseWorkoutExercises(json: string): ParseWorkoutExercisesResult {
+	let input: unknown;
+	try {
+		input = JSON.parse(json);
+	} catch {
+		return { success: false };
+	}
+
+	if (!Array.isArray(input)) {
+		return { success: false };
+	}
+
+	const rows = input.filter(
+		(row) =>
+			!(
+				row &&
+				typeof row === 'object' &&
+				typeof row.exerciseName === 'string' &&
+				row.exerciseName.trim().length === 0
+			)
+	);
+
+	const parsed = workoutExercisesArraySchema.safeParse(rows);
+	return parsed.success ? { success: true, data: parsed.data } : { success: false };
+}
+
+const WorkoutTypeEnum = z.enum(['strength', 'cardio', 'hiit', 'walk', 'stretch', 'other']);
+
+export type WorkoutType = z.infer<typeof WorkoutTypeEnum>;
+
+/**
+ * Schema for logging a workout
+ */
+export const logWorkoutSchema = z.object({
+	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (use YYYY-MM-DD)'),
+	time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format (use HH:MM)'),
+	type: WorkoutTypeEnum,
+	durationMinutes: z.coerce.number().int().positive(),
+	steps: z.coerce.number().int().positive().optional().nullable(), // For walk workouts
+	notes: z.string().optional().nullable(),
+	exercises: z.string().optional().nullable() // JSON string for strength workouts
+});
+
+/**
+ * Schema for updating a workout
+ */
+export const updateWorkoutSchema = logWorkoutSchema.extend({
+	id: z.uuid()
+});
+
+const MealTypeEnum = z.enum(['breakfast', 'lunch', 'dinner', 'snack']);
+
+export type MealType = z.infer<typeof MealTypeEnum>;
+/**
+ * Schema for logging a meal
+ */
+export const logMealSchema = z.object({
+	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (use YYYY-MM-DD)'),
+	timeOfDay: MealTypeEnum,
+	description: z.string().min(1, 'Description is required'),
+	caloriesEstimate: z.coerce.number().int().positive().optional().nullable()
+});
+
+/**
+ * Schema for updating a meal
+ */
+export const updateMealSchema = logMealSchema.extend({
+	id: z.uuid()
+});
+
+/**
+ * Schema for setting daily calorie target
+ */
+export const setCalorieTargetSchema = z.object({
+	targetCalories: z.coerce.number().int().positive('Target calories must be positive')
+});
+
+/**
+ * Schema for creating/updating workout reminder
+ */
+export const workoutReminderSchema = z.object({
+	workoutType: WorkoutTypeEnum,
+	cadence: z.enum(['daily', 'weekly']),
+	daysOfWeek: z.string().optional().nullable(), // JSON array of day numbers (0-6)
+	time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format (use HH:MM)'),
+	enabled: z.boolean().default(true)
+});
+
+/**
+ * Schema for updating workout reminder
+ */
+export const updateWorkoutReminderSchema = workoutReminderSchema.extend({
+	id: z.uuid()
+});

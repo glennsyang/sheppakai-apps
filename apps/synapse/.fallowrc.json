@@ -1,0 +1,49 @@
+{
+	"$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+	"entry": ["src/index.{ts,tsx,js,jsx}", "src/main.{ts,tsx,js,jsx}"],
+	"ignorePatterns": [
+		"**/*.generated.ts",
+		"src/lib/components/ui/**",
+		"**/*.config.ts",
+		"src/env.ts",
+		"src/lib/index.ts",
+		"src/lib/utils.ts",
+		"scripts/migrate.js"
+	],
+	"ignoreDependencies": [
+		"@flydotio/dockerfile",
+		"@internationalized/date",
+		"@lucide/svelte",
+		"@sveltejs/kit",
+		"@tailwindcss/typography",
+		"@tailwindcss/vite",
+		"@tanstack/svelte-table",
+		"@tanstack/table-core",
+		"bits-ui",
+		"clsx",
+		"dotenv",
+		"embla-carousel-svelte",
+		"layerchart",
+		"svelte",
+		"svelte-dnd-action",
+		"svelte-sonner",
+		"sveltekit-superforms",
+		"tailwind-merge",
+		"tailwind-variants",
+		"tailwindcss",
+		"vaul-svelte",
+		"zod"
+	],
+	"ignoreExports": [
+		{ "file": "src/lib/utils/ui.ts", "exports": ["WithoutChildrenOrChild", "WithElementRef"] }
+	],
+	"duplicates": {
+		"ignore": ["src/lib/components/ui/**/*.{ts,tsx}"]
+	},
+	"rules": {
+		"unresolved-imports": "error",
+		"unlisted-dependencies": "error",
+		"unused-exports": "error",
+		"circular-dependencies": "off"
+	}
+}

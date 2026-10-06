@@ -1,0 +1,436 @@
+@import '@fontsource/zen-kaku-gothic-new/latin-400.css';
+@import '@fontsource/zen-kaku-gothic-new/latin-500.css';
+@import '@fontsource/zen-kaku-gothic-new/latin-700.css';
+@import '@fontsource/zen-kaku-gothic-new/latin-900.css';
+@import 'tailwindcss';
+
+@import 'tw-animate-css';
+
+@plugin '@tailwindcss/typography';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Daybook: every screen is a sheet of grid paper bound in an indigo cloth
+ * cover. Each domain writes in its own pen colour.
+ */
+:root {
+	--radius: 0.1875rem;
+
+	/* Cover cloth and paper */
+	--cover: oklch(0.34 0.08 263);
+	--cover-deep: oklch(0.28 0.07 263);
+	--cover-foreground: oklch(0.93 0.025 255);
+	--cover-muted: oklch(0.74 0.05 258);
+	--paper: oklch(0.978 0.004 170);
+	--grid-line: oklch(0.88 0.02 235 / 0.5);
+	--rule: oklch(0.84 0.014 240);
+	--rule-strong: oklch(0.3 0.012 250);
+
+	--background: var(--paper);
+	--foreground: oklch(0.24 0.014 255);
+	--card: oklch(0.99 0.003 170);
+	--card-foreground: oklch(0.24 0.014 255);
+	--popover: oklch(0.99 0.003 170);
+	--popover-foreground: oklch(0.24 0.014 255);
+	--primary: oklch(0.24 0.014 255);
+	--primary-foreground: oklch(0.98 0.004 170);
+	--secondary: oklch(0.945 0.008 230);
+	--secondary-foreground: oklch(0.24 0.014 255);
+	--muted: oklch(0.95 0.007 220);
+	--muted-foreground: oklch(0.47 0.016 250);
+	--accent: oklch(0.935 0.014 250);
+	--accent-foreground: oklch(0.24 0.014 255);
+	--destructive: oklch(0.55 0.2 27);
+	--border: var(--rule);
+	--input: oklch(0.8 0.014 240);
+	--ring: oklch(0.45 0.13 263);
+	--chart-1: oklch(0.6 0.19 38);
+	--chart-2: oklch(0.52 0.13 155);
+	--chart-3: oklch(0.48 0.17 258);
+	--chart-4: oklch(0.5 0.16 300);
+	--chart-5: oklch(0.56 0.19 350);
+	--sidebar: var(--cover);
+	--sidebar-foreground: var(--cover-foreground);
+	--sidebar-primary: var(--paper);
+	--sidebar-primary-foreground: oklch(0.24 0.014 255);
+	--sidebar-accent: var(--cover-deep);
+	--sidebar-accent-foreground: var(--cover-foreground);
+	--sidebar-border: oklch(0.42 0.07 263);
+	--sidebar-ring: var(--ring);
+
+	/* Pen colours, as bare oklch triplets: oklch(var(--color-x) / a) */
+	--color-teal: 0.42 0.11 263; /* dashboard / brand: aizome indigo */
+	--color-blue: 0.48 0.17 258; /* journal: ink blue */
+	--color-green: 0.52 0.13 155; /* fitness */
+	--color-orange: 0.6 0.19 38; /* tasks: vermilion */
+	--color-purple: 0.5 0.16 300; /* meditation: violet */
+	--color-pink: 0.56 0.19 350; /* visits: magenta */
+	--color-amber: 0.66 0.15 70; /* warnings */
+}
+
+.dark {
+	--cover: oklch(0.17 0.025 263);
+	--cover-deep: oklch(0.14 0.02 263);
+	--cover-foreground: oklch(0.9 0.02 255);
+	--cover-muted: oklch(0.66 0.04 258);
+	--paper: oklch(0.225 0.013 252);
+	--grid-line: oklch(0.36 0.016 250 / 0.45);
+	--rule: oklch(0.34 0.014 250);
+	--rule-strong: oklch(0.88 0.01 240);
+
+	--background: var(--paper);
+	--foreground: oklch(0.93 0.008 240);
+	--card: oklch(0.245 0.013 252);
+	--card-foreground: oklch(0.93 0.008 240);
+	--popover: oklch(0.26 0.014 252);
+	--popover-foreground: oklch(0.93 0.008 240);
+	--primary: oklch(0.93 0.008 240);
+	--primary-foreground: oklch(0.22 0.013 252);
+	--secondary: oklch(0.29 0.014 252);
+	--secondary-foreground: oklch(0.93 0.008 240);
+	--muted: oklch(0.28 0.013 252);
+	--muted-foreground: oklch(0.72 0.014 245);
+	--accent: oklch(0.3 0.02 258);
+	--accent-foreground: oklch(0.93 0.008 240);
+	--destructive: oklch(0.68 0.18 25);
+	--border: var(--rule);
+	--input: oklch(0.4 0.016 250);
+	--ring: oklch(0.7 0.12 263);
+	--chart-1: oklch(0.72 0.16 40);
+	--chart-2: oklch(0.7 0.13 155);
+	--chart-3: oklch(0.7 0.13 255);
+	--chart-4: oklch(0.7 0.13 300);
+	--chart-5: oklch(0.72 0.16 350);
+	--sidebar: var(--cover);
+	--sidebar-foreground: var(--cover-foreground);
+	--sidebar-primary: var(--paper);
+	--sidebar-primary-foreground: oklch(0.93 0.008 240);
+	--sidebar-accent: var(--cover-deep);
+	--sidebar-accent-foreground: var(--cover-foreground);
+	--sidebar-border: oklch(0.26 0.02 263);
+	--sidebar-ring: var(--ring);
+
+	--color-teal: 0.72 0.1 263;
+	--color-blue: 0.72 0.13 255;
+	--color-green: 0.72 0.13 155;
+	--color-orange: 0.74 0.15 42;
+	--color-purple: 0.72 0.13 300;
+	--color-pink: 0.74 0.15 352;
+	--color-amber: 0.8 0.13 75;
+}
+
+@theme inline {
+	--font-sans: 'Zen Kaku Gothic New', ui-sans-serif, system-ui, sans-serif;
+	--font-display: 'Zen Kaku Gothic New', ui-sans-serif, system-ui, sans-serif;
+
+	--radius-sm: calc(var(--radius) - 1px);
+	--radius-md: var(--radius);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 1px);
+	--radius-2xl: calc(var(--radius) + 1px);
+	--radius-3xl: calc(var(--radius) + 2px);
+	--radius-4xl: calc(var(--radius) + 3px);
+
+	/* Paper has no drop shadows; only floating layers lift. */
+	--shadow-2xs: none;
+	--shadow-xs: none;
+	--shadow-sm: none;
+	--shadow-md: 0 6px 18px -10px oklch(0.2 0.03 260 / 0.35);
+	--shadow-lg: 0 14px 34px -14px oklch(0.2 0.03 260 / 0.4);
+	--shadow-xl: 0 22px 48px -18px oklch(0.2 0.03 260 / 0.45);
+
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+	--color-cover: var(--cover);
+	--color-cover-deep: var(--cover-deep);
+	--color-cover-foreground: var(--cover-foreground);
+	--color-cover-muted: var(--cover-muted);
+	--color-paper: var(--paper);
+	--color-rule: var(--rule);
+	--color-rule-strong: var(--rule-strong);
+
+	/* Pen colours as Tailwind classes (text-pen-tasks, bg-pen-fitness/10 ...) */
+	--color-pen-brand: oklch(var(--color-teal));
+	--color-pen-journal: oklch(var(--color-blue));
+	--color-pen-fitness: oklch(var(--color-green));
+	--color-pen-tasks: oklch(var(--color-orange));
+	--color-pen-mind: oklch(var(--color-purple));
+	--color-pen-people: oklch(var(--color-pink));
+	--color-pen-warn: oklch(var(--color-amber));
+
+	/* Legacy section colour names, now resolving to the pens */
+	--color-teal: oklch(var(--color-teal));
+	--color-blue: oklch(var(--color-blue));
+	--color-green: oklch(var(--color-green));
+	--color-orange: oklch(var(--color-orange));
+	--color-purple: oklch(var(--color-purple));
+	--color-pink: oklch(var(--color-pink));
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	html {
+		-webkit-font-smoothing: antialiased;
+		text-rendering: optimizeLegibility;
+	}
+	body {
+		@apply text-foreground bg-cover font-sans;
+		font-feature-settings: 'palt' 0;
+	}
+	::selection {
+		background: oklch(var(--color-teal) / 0.22);
+		color: inherit;
+	}
+	input,
+	textarea {
+		caret-color: oklch(var(--color-teal));
+	}
+	:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+	a {
+		text-underline-offset: 0.2em;
+		text-decoration-thickness: 1px;
+	}
+	h1,
+	h2,
+	h3 {
+		text-wrap: balance;
+	}
+	.tabular-nums,
+	time {
+		font-variant-numeric: tabular-nums;
+	}
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--rule) transparent;
+	}
+}
+
+/* Grid paper: the ground every sheet is written on. */
+@utility grid-paper {
+	background-color: var(--paper);
+	background-image:
+		linear-gradient(var(--grid-line) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+	background-size: 14px 14px;
+	background-position: -1px -1px;
+}
+
+/* A ruled heading line: title set on a hairline, like a planner section. */
+@utility ruled {
+	border-bottom: 1px solid var(--rule-strong);
+}
+
+/* A strip of washi tape: flat pen colour at low strength. */
+@utility washi {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.0625rem 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 500;
+	line-height: 1.25rem;
+	border-radius: 1px;
+}
+
+/* Mobile Responsive Utilities */
+@layer utilities {
+	/* Touch-friendly tap targets (min 44x44px per Apple/Google guidelines) */
+	.touch-target {
+		@apply min-h-11 min-w-11;
+	}
+
+	/* Mobile-optimized spacing */
+	.mobile-container {
+		@apply px-4 sm:px-6 lg:px-8;
+	}
+
+	/* Stack on mobile, horizontal on desktop */
+	.mobile-stack {
+		@apply flex flex-col gap-4 sm:flex-row sm:items-center;
+	}
+
+	/* Responsive grid patterns */
+	.responsive-grid-2 {
+		@apply grid grid-cols-1 gap-4 sm:grid-cols-2;
+	}
+
+	.responsive-grid-3 {
+		@apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3;
+	}
+
+	.responsive-grid-4 {
+		@apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4;
+	}
+
+	/* Mobile-first form layouts */
+	.form-row {
+		@apply grid grid-cols-1 gap-4 md:grid-cols-2;
+	}
+
+	/* Hide scrollbar but keep functionality */
+	.scrollbar-hide {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+
+	.scrollbar-hide::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+/* Smooth scrolling for iOS devices */
+.table-scroll-container {
+	-webkit-overflow-scrolling: touch;
+}
+
+/* Ensure buttons and interactive elements are touch-friendly on mobile */
+@media (max-width: 768px) {
+	/* Increase font size for better readability on mobile */
+	input,
+	textarea,
+	select {
+		@apply text-base;
+	}
+}
+
+@custom-variant data-open {
+	&:where([data-state='open']),
+	&:where([data-open]:not([data-open='false'])) {
+		@slot;
+	}
+	&:where([data-open]:not([data-open='false'])) {
+		@slot;
+	}
+}
+
+@custom-variant data-closed {
+	&:where([data-state='closed']),
+	&:where([data-closed]:not([data-closed='false'])) {
+		@slot;
+	}
+	&:where([data-closed]:not([data-closed='false'])) {
+		@slot;
+	}
+}
+
+@custom-variant data-checked {
+	&:where([data-state='checked']),
+	&:where([data-checked]:not([data-checked='false'])) {
+		@slot;
+	}
+	&:where([data-checked]:not([data-checked='false'])) {
+		@slot;
+	}
+}
+
+@custom-variant data-unchecked {
+	&:where([data-state='unchecked']),
+	&:where([data-unchecked]:not([data-unchecked='false'])) {
+		@slot;
+	}
+	&:where([data-unchecked]:not([data-unchecked='false'])) {
+		@slot;
+	}
+}
+
+@custom-variant data-selected {
+	&:where([data-selected]) {
+		@slot;
+	}
+}
+
+@custom-variant data-disabled {
+	&:where([data-disabled='true']),
+	&:where([data-disabled]:not([data-disabled='false'])) {
+		@slot;
+	}
+	&:where([data-disabled]:not([data-disabled='false'])) {
+		@slot;
+	}
+}
+
+@custom-variant data-active {
+	&:where([data-state='active']),
+	&:where([data-active]:not([data-active='false'])) {
+		@slot;
+	}
+	&:where([data-active]:not([data-active='false'])) {
+		@slot;
+	}
+}
+
+@custom-variant data-horizontal {
+	&:where([data-orientation='horizontal']) {
+		@slot;
+	}
+}
+
+@custom-variant data-vertical {
+	&:where([data-orientation='vertical']) {
+		@slot;
+	}
+}
+
+@utility no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+/* Page title: heavy heading led by a square of the section's pen. */
+@utility page-title {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	font-size: 1.875rem;
+	line-height: 1.15;
+	font-weight: 900;
+	letter-spacing: -0.02em;
+	&::before {
+		content: '';
+		width: 0.75rem;
+		height: 0.75rem;
+		flex-shrink: 0;
+		border-radius: 2px;
+		background: var(--pen, currentColor);
+	}
+	@media (width >= 48rem) {
+		font-size: 2.25rem;
+	}
+}

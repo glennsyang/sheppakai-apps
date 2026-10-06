@@ -1,0 +1,82 @@
+<script lang="ts">
+	import CreateReminderDialog from '$lib/components/fitness/dialogs/CreateReminderDialog.svelte';
+	import ReminderCard from '$lib/components/fitness/entries/ReminderCard.svelte';
+	import * as Card from '$lib/components/ui/card';
+	import type { workoutReminderSchema } from '$lib/schemas/fitness';
+	import { Bell, BellOff } from '@lucide/svelte/icons';
+	import type { Infer, SuperValidated } from 'sveltekit-superforms';
+
+	interface Reminder {
+		id: string;
+		workoutType: string;
+		cadence: string;
+		time: string;
+		daysOfWeek: string | null;
+		enabled: boolean;
+	}
+
+	interface Props {
+		reminders: Reminder[];
+		reminderForm: SuperValidated<Infer<typeof workoutReminderSchema>>;
+		onToggle: (reminder: Reminder) => void;
+		onDelete: (id: string) => void;
+	}
+
+	let { reminders, reminderForm, onToggle, onDelete }: Props = $props();
+
+	const activeCount = $derived(reminders.filter((r) => r.enabled).length);
+	const disabledCount = $derived(reminders.filter((r) => !r.enabled).length);
+</script>
+
+<section class="mb-2 space-y-4">
+	<div class="flex items-center justify-between">
+		<CreateReminderDialog formData={reminderForm} />
+	</div>
+
+	{#if reminders.length === 0}
+		<Card.Root class="border-border bg-card dark:border-border dark:bg-muted border-dashed">
+			<Card.Content class="flex flex-col items-center gap-2 py-8 text-center">
+				<BellOff class="text-muted-foreground h-8 w-8" />
+				<p class="text-muted-foreground dark:text-muted-foreground text-sm font-medium">
+					No reminders set
+				</p>
+				<p class="text-muted-foreground text-xs">
+					Create a reminder to get email nudges on your schedule
+				</p>
+			</Card.Content>
+		</Card.Root>
+	{:else}
+		<Card.Root class="bg-card dark:bg-muted border-0 dark:shadow-zinc-800/50">
+			<Card.Header class="pb-2">
+				<div class="flex items-center justify-between">
+					<Card.Title class="text-foreground dark:text-muted-foreground text-sm font-medium">
+						Active Reminders
+					</Card.Title>
+					<div
+						class="text-muted-foreground dark:text-muted-foreground flex items-center gap-3 text-xs"
+					>
+						{#if activeCount > 0}
+							<span class="flex items-center gap-1">
+								<Bell class="text-pen-fitness h-3 w-3" />
+								{activeCount}
+								active
+							</span>
+						{/if}
+						{#if disabledCount > 0}
+							<span class="flex items-center gap-1">
+								<BellOff class="h-3 w-3" />
+								{disabledCount}
+								paused
+							</span>
+						{/if}
+					</div>
+				</div>
+			</Card.Header>
+			<Card.Content class="space-y-2">
+				{#each reminders as reminder (reminder.id)}
+					<ReminderCard {reminder} {onToggle} {onDelete} />
+				{/each}
+			</Card.Content>
+		</Card.Root>
+	{/if}
+</section>
