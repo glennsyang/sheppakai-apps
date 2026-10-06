@@ -1,3 +1,7 @@
+---
+applyTo: 'apps/synapse/**'
+---
+
 # Synapse Copilot Instructions
 
 Last updated: 2026-03-12

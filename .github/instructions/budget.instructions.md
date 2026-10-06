@@ -1,3 +1,7 @@
+---
+applyTo: 'apps/budget/**'
+---
+
 # Project Overview
 
 SvelteKit budget tracking app using Svelte 5, Tailwind CSS, SQLite (better-sqlite3), and Drizzle ORM. Features user authentication, monthly expense tracking, budget planning, and recurring transactions.
