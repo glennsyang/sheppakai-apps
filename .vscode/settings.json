@@ -5,20 +5,16 @@
 	"editor.codeActionsOnSave": {
 		"source.fixAll.oxc": "always"
 	},
-	"oxc.fmt.configPath": "oxfmt.config.ts",
 	"editor.defaultFormatter": "oxc.oxc-vscode",
 	"oxc.typeAware": true,
 	"chat.tools.terminal.autoApprove": {
+		// Approve common, non-destructive commands
 		"/^ls/": true,
 		"/^cd/": true,
 		"/^grep/": true,
 		"/^cat/": true,
-		"npm run fmt": true,
-		"npm run lint": true,
-		"npm run test": true,
-		"npm run check": true,
-		"npm run build": true,
-		"npx tsc": true,
-		"npx vitest": true
+		"/^pnpm (--filter \\S+ )?(fmt|lint|test|check|build)\\b/": true,
+		"pnpm exec tsc": true,
+		"pnpm exec vitest": true
 	}
 }

@@ -27,6 +27,8 @@ jobs:
           filters: |
             shared: &shared
               - 'packages/**'
+              - 'config/**'
+              - 'lefthook.yml'
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
