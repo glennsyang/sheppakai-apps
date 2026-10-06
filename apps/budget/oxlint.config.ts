@@ -13,9 +13,9 @@ export default defineConfig({
 			}
 		},
 		{
-			// auth-guard.ts's own tests may import requireAdmin even though the app itself must not
-			// (see the rule below).
-			files: ['src/lib/server/actions/auth-guard.test.ts'],
+			// The auth-guard re-export and its tests may touch requireAdmin even though the app
+			// itself must not (see the rule below).
+			files: ['src/lib/server/actions/auth-guard.ts', 'src/lib/server/actions/auth-guard.test.ts'],
 			rules: {
 				'eslint/no-restricted-imports': 'off'
 			}
@@ -31,6 +31,12 @@ export default defineConfig({
 				paths: [
 					{
 						name: '$lib/server/actions/auth-guard',
+						importNames: ['requireAdmin'],
+						message:
+							'requireAdmin checks the role only and ignores ADMIN_USER_IDS. Use adminFormAction (actions) or assertAdmin (loads).'
+					},
+					{
+						name: '@sheppakai/shared/auth-guard',
 						importNames: ['requireAdmin'],
 						message:
 							'requireAdmin checks the role only and ignores ADMIN_USER_IDS. Use adminFormAction (actions) or assertAdmin (loads).'

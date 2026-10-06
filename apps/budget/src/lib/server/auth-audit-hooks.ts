@@ -5,9 +5,8 @@ import { logger } from './logger';
 import { sendAuthAlerts } from './notifications';
 
 /**
- * Shared `hooks.after` observability for Better Auth, copied verbatim into
- * synapse / sheppakai-mealplanner (see `../../../../auth-audit.md` #448) —
- * only `appName` differs per repo.
+ * `hooks.after` observability for Better Auth. The same code runs in every app;
+ * only `appName` differs.
  *
  * Path matching is exact, not `.includes(...)`: Better Auth's internal
  * endpoint paths are `/sign-up/email` and `/sign-in/email` (the app's own

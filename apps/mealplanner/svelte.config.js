@@ -7,8 +7,8 @@ const config = {
 
 		// Nonce-based CSP. SvelteKit generates a per-request nonce, injects it into the
 		// inline <script>/<style> it emits during SSR, and sets the Content-Security-Policy
-		// header itself — hooks.server.ts must NOT set that header. Cross-repo strategy and
-		// the per-app allowance table live in sheppakai-budget's docs/CSP.md.
+		// header itself — hooks.server.ts must NOT set that header. Shared strategy and
+		// the per-app allowance table live in apps/budget/docs/CSP.md.
 		csp: {
 			mode: 'nonce',
 			directives: {

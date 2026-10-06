@@ -45,6 +45,8 @@ jobs:
               - 'apps/budget/**'
             packages/logger:
               - *shared
+            packages/shared:
+              - *shared
 
   audit:
     name: Dependency audit

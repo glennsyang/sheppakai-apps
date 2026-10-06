@@ -169,8 +169,8 @@ export const auth = betterAuth({
 		// `user` model and the `auth.api.listUsers` / `setRole` / `banUser` / `unbanUser` /
 		// `removeUser` endpoints, and prevents `role` from being set through sign-up input.
 		// `adminUserIds` bootstraps admins by id from the `ADMIN_USER_IDS` env var (no DB write
-		// needed); `defaultRole` / `adminRoles` are the plugin defaults, spelled out for parity
-		// with the sibling repos.
+		// needed); `defaultRole` / `adminRoles` are the plugin defaults, spelled out to match
+		// the other apps.
 		admin({
 			adminUserIds: ADMIN_USER_IDS.split(','),
 			defaultRole: 'user',

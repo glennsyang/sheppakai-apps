@@ -1,5 +1,5 @@
-// Shared auth-page `load` helpers. Canonical cross-repo module surface
-// (auth-audit.md §2N) — kept byte-identical with synapse and sheppakai-mealplanner.
+// Auth-page `load` helpers. Same code in every app; it stays per app because it
+// redirects to this app's POST_LOGIN_ROUTE.
 
 import { POST_LOGIN_ROUTE } from '$lib/auth-routes';
 import { redirect } from '@sveltejs/kit';
