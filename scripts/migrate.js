@@ -1,4 +1,5 @@
-// Standalone migration runner used at container boot (see start.sh).
+// Standalone migration runner used at container boot by every app (see apps/<app>/start.sh).
+// Each Dockerfile copies it to /app/scripts/migrate.js next to /app/src/lib/server/db/migrations.
 //
 // Uses drizzle-orm's migrator (a runtime dependency) instead of the drizzle-kit
 // CLI, so drizzle-kit can stay a devDependency and be pruned from the production
@@ -37,7 +38,7 @@ try {
 	// drizzle-orm's migrator wraps the whole batch in a single BEGIN/COMMIT, and
 	// SQLite treats `PRAGMA foreign_keys` as a no-op inside a transaction. So the
 	// `PRAGMA foreign_keys=OFF` that drizzle-kit emits at the top of a table-rebuild
-	// migration (e.g. 0015_strange_alice) never takes effect here. Combined with
+	// migration (e.g. budget's 0015_strange_alice) never takes effect here. Combined with
 	// better-sqlite3 v12 defaulting foreign_keys=ON, `DROP TABLE` in a rebuild would
 	// then either fail the FK check or fire ON DELETE CASCADE and wipe child rows
 	// (sessions, accounts, ...). Setting it on the connection *before* migrate()
