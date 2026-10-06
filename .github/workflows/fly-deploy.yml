@@ -1,17 +1,14 @@
 # See https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/
 #
-# Manual-only until cutover, so this repo can't race the old per-app repos onto the same Fly
-# apps. At cutover: uncomment `push`, then disable fly-deploy.yml in the old repos.
-#
 # Each app's FLY_API_TOKEN lives in a GitHub environment named after the app, so a job only
 # ever sees its own app's deploy token.
 
 name: Fly Deploy
 
 on:
-  # push:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       app:

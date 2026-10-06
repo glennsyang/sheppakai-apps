@@ -43,21 +43,15 @@ not in an app's `package.json`.
 
 - `pr-check.yml`: runs format, lint, type check and tests only for the projects a PR changes.
   A change under `packages/`, the lockfile or root config re-checks every app.
-- `fly-deploy.yml`: checks then deploys one app with the repo root as the Docker build context.
+- `fly-deploy.yml`: on push to main, checks then deploys each changed app with the repo root as the Docker build context.
 - `backup-database.yml`: manual SQLite backup of one app's Fly volume.
 - `synapse-notifications-cron.yml`, `budget-weekly-cron.yml`, `budget-monthly-cron.yml`: the app crons.
 
 Secrets live in one GitHub **environment per app** (`synapse`, `mealplanner`, `budget`), so a
 job only sees its own app's secrets.
 
-## Cutover checklist
+## History
 
-Until cutover, the old per-app repos still deploy and run the crons. In this repo, deploys
-and crons are manual-only (`workflow_dispatch`) so the two repos never both act on the same Fly app.
-
-1. Create the `synapse`, `mealplanner` and `budget` environments in this repo's settings.
-2. Add each app's secrets to its environment: `FLY_API_TOKEN`, `SENTRY_AUTH_TOKEN`,
-   `BACKUP_ENCRYPTION_PASSPHRASE`, and for synapse and budget also `APP_URL` and `CRON_SECRET`.
-3. Run `Fly Deploy` manually for one app and confirm it is healthy.
-4. Uncomment `push` in `fly-deploy.yml` and the `schedule` blocks in the cron workflows.
-5. In the old repos, disable the deploy and cron workflows, then archive the repos.
+The apps used to live in `glennsyang/synapse`, `glennsyang/sheppakai-mealplanner` and
+`glennsyang/sheppakai-budget`. Deploys and crons moved here on 2026-10-06, and their workflows were
+disabled in the old repos. Older issues and PRs are still on those repos.
