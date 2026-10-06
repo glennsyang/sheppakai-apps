@@ -167,6 +167,12 @@ importers:
       lefthook:
         specifier: 'catalog:'
         version: 2.1.17
+      oxfmt:
+        specifier: 'catalog:'
+        version: 0.72.0(svelte@5.57.1)
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.87.0(oxlint-tsgolint@7.0.2003)
 
   apps/budget:
     dependencies:

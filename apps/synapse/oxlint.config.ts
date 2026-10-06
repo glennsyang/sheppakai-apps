@@ -1,40 +1,8 @@
 import { defineConfig } from 'oxlint';
 
+import { oxlintBase } from '../../config/oxlint.base.ts';
+
 export default defineConfig({
-	categories: { correctness: 'error', perf: 'off', style: 'off', suspicious: 'off' },
-	env: {
-		browser: true,
-		node: true,
-		svelte: true,
-		vitest: true
-	},
-	ignorePatterns: [
-		'**/node_modules',
-		'**/.claude',
-		'.svelte-kit',
-		'build',
-		'**/.DS_Store',
-		'**/.env',
-		'**/.env.*',
-		'!**/.env.example',
-		'!**/.env.test',
-		'**/*.db',
-		'src/lib/components/ui/**',
-		'src/lib/index.ts'
-	],
-	options: {
-		typeAware: true,
-		typeCheck: true
-	},
-	plugins: ['eslint', 'typescript', 'oxc', 'vitest', 'unicorn'],
-	rules: {
-		'no-unused-vars': [
-			'error',
-			{
-				argsIgnorePattern: '^_',
-				varsIgnorePattern: '^_'
-			}
-		],
-		'typescript/no-explicit-any': 'error'
-	}
+	...oxlintBase,
+	ignorePatterns: [...(oxlintBase.ignorePatterns ?? []), 'src/lib/index.ts']
 });

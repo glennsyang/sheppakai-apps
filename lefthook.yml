@@ -21,6 +21,7 @@ pre-commit:
 
 pre-push:
   commands:
-    # Runs Vitest for apps/packages changed since main before the code leaves your machine
+    # Runs Vitest for apps/packages changed since main. The root package is excluded: its own
+    # `test` script is `pnpm -r test`, which would run every suite a second time.
     test:
-      run: pnpm --filter '...[origin/main]' test
+      run: pnpm --filter '...[origin/main]' --filter '!sheppakai-apps' test

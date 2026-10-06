@@ -1,30 +1,9 @@
 import { defineConfig } from 'oxlint';
 
+import { oxlintBase } from '../../config/oxlint.base.ts';
+
 export default defineConfig({
-	categories: { correctness: 'error', perf: 'off', style: 'off', suspicious: 'off' },
-	env: {
-		browser: true,
-		node: true,
-		svelte: true,
-		vitest: true
-	},
-	ignorePatterns: [
-		'**/node_modules',
-		'**/.claude',
-		'.svelte-kit',
-		'build',
-		'**/.DS_Store',
-		'**/.env',
-		'**/.env.*',
-		'!**/.env.example',
-		'!**/.env.test',
-		'**/*.db',
-		'src/lib/components/ui/**'
-	],
-	options: {
-		typeAware: true,
-		typeCheck: true
-	},
+	...oxlintBase,
 	overrides: [
 		{
 			// Non-null assertions are legitimate in test fixtures, where the setup guarantees the value.
@@ -34,26 +13,18 @@ export default defineConfig({
 			}
 		},
 		{
-			// auth-guard.ts is kept identical across sibling repos, so its own tests may import
-			// requireAdmin even though the app itself must not (see the rule below).
+			// auth-guard.ts's own tests may import requireAdmin even though the app itself must not
+			// (see the rule below).
 			files: ['src/lib/server/actions/auth-guard.test.ts'],
 			rules: {
 				'eslint/no-restricted-imports': 'off'
 			}
 		}
 	],
-	plugins: ['eslint', 'typescript', 'oxc', 'vitest', 'unicorn'],
 	rules: {
-		'no-unused-vars': [
-			'error',
-			{
-				argsIgnorePattern: '^_',
-				varsIgnorePattern: '^_'
-			}
-		],
-		// requireAdmin in the shared auth-guard.ts checks the DB role only, so it would 403 an
-		// admin granted via ADMIN_USER_IDS. The file stays byte-identical across repos, so the
-		// guard against using it here lives in config rather than in the file.
+		...oxlintBase.rules,
+		// requireAdmin in auth-guard.ts checks the DB role only, so it would 403 an admin granted
+		// via ADMIN_USER_IDS. The guard against using it here lives in config rather than in the file.
 		'eslint/no-restricted-imports': [
 			'error',
 			{
@@ -67,7 +38,6 @@ export default defineConfig({
 				]
 			}
 		],
-		'typescript/no-non-null-assertion': 'error',
-		'typescript/no-explicit-any': 'error'
+		'typescript/no-non-null-assertion': 'error'
 	}
 });
