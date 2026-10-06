@@ -15,9 +15,6 @@
 		"test:ci": "vitest --run",
 		"lint:github": "oxlint --format=github"
 	},
-	"peerDependencies": {
-		"@sentry/sveltekit": "^11"
-	},
 	"devDependencies": {
 		"@sentry/sveltekit": "catalog:",
 		"@types/node": "catalog:",
@@ -25,5 +22,8 @@
 		"oxlint": "catalog:",
 		"typescript": "catalog:",
 		"vitest": "catalog:"
+	},
+	"peerDependencies": {
+		"@sentry/sveltekit": "^11"
 	}
 }
