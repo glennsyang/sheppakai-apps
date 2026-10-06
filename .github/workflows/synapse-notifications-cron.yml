@@ -1,9 +1,8 @@
 name: Synapse Scheduled Notifications
 
 on:
-  # Enable at cutover, then disable cron.yml in the old synapse repo:
-  # schedule:
-  #   - cron: '*/10 * * * *' # Every 10 minutes
+  schedule:
+    - cron: '*/10 * * * *' # Every 10 minutes
   workflow_dispatch: # Allow manual trigger
 
 # Only curls the app with CRON_SECRET; needs no GITHUB_TOKEN scopes.

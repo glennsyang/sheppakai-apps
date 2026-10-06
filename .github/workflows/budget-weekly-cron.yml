@@ -1,9 +1,8 @@
 name: Budget Weekly Summary Email
 
 on:
-  # Enable at cutover, then disable weekly-cron.yml in the old sheppakai-budget repo:
-  # schedule:
-  #   - cron: '10 16 * * 1' # Monday 8:10am PST / 9:10am PDT
+  schedule:
+    - cron: '10 16 * * 1' # Monday 8:10am PST / 9:10am PDT
   workflow_dispatch: # Allow manual trigger
 
 # Only curls the app with CRON_SECRET; needs no GITHUB_TOKEN scopes.
