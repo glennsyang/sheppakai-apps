@@ -66,7 +66,7 @@ COPY --from=build /prod/package.json /app
 # Copy migrations and the standalone migration runner (uses drizzle-orm, not the
 # drizzle-kit CLI, so drizzle-kit stays a devDependency and is left out of /prod)
 COPY --from=build /repo/apps/budget/src/lib/server/db/migrations /app/src/lib/server/db/migrations
-COPY --from=build /repo/apps/budget/scripts/migrate.js /app/scripts/migrate.js
+COPY --from=build /repo/scripts/migrate.js /app/scripts/migrate.js
 
 # Setup sqlite3 on a separate volume
 RUN mkdir -p /data

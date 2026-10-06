@@ -8,8 +8,7 @@
 		"**/*.config.ts",
 		"src/env.ts",
 		"src/app.css",
-		"src/lib/styles/*.css",
-		"scripts/migrate.js"
+		"src/lib/styles/*.css"
 	],
 	"ignoreDependencies": [
 		"@flydotio/dockerfile",
