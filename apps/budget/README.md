@@ -52,39 +52,50 @@ This project is developer-ready and runs locally with a standard Node setup.
 
 - **Node.js 22.23.3** (required for better-sqlite3 compatibility)
   - Optional with nvm: `nvm use 22.23.3`
+- **pnpm 10** (this repo is a pnpm workspace; `corepack enable` picks the pinned version)
 
 ### Installation
 
-1. **Install dependencies**
+1. **Install dependencies** (from the repo root)
 
    ```bash
-   npm install
+   pnpm install
    ```
 
-2. **Run database migrations**
+2. **Create your env file** (from `apps/budget`)
 
    ```bash
-   npm run db:migrate
+   cp .env.example .env
    ```
 
-3. **Start the dev server**
+3. **Run database migrations**
 
    ```bash
-   npm run dev
+   pnpm db:migrate
    ```
 
-4. **Open http://localhost:5173**
+4. **Start the dev server**
+
+   ```bash
+   pnpm dev
+   ```
+
+   From the repo root, `pnpm --filter sheppakai-budget dev` does the same.
+
+5. **Open http://localhost:5173**
 
 ### Common Scripts
 
+Run these from `apps/budget`:
+
 ```bash
-npm run fmt           # Format code with Oxfmt
-npm run lint          # Run Oxlint and static analysis checks
-npm run check:all     # Format, lint, and test in one pass
-npm run db:generate   # Generate Drizzle schema types
-npm run db:migrate    # Run database migrations
-npm run db:studio     # Open Drizzle Studio (database browser)
-npm run test          # Run unit tests
+pnpm fmt              # Format code with Oxfmt
+pnpm lint             # Run Oxlint and static analysis checks
+pnpm check:all        # Format, lint, and test in one pass
+pnpm db:generate      # Generate Drizzle schema types
+pnpm db:migrate       # Run database migrations
+pnpm db:studio        # Open Drizzle Studio (database browser)
+pnpm test             # Run unit tests
 ```
 
 ## Additional Documentation
