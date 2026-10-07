@@ -169,12 +169,11 @@ fly secrets set \
 fly deploy
 ```
 
-`DATABASE_URL` and `NODE_ENV` are intentionally _not_ set here — they're baked into the
-`Dockerfile` instead. See [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) for the full variable
+`DATABASE_URL` is a Fly secret, and `NODE_ENV` is set in the repo-root `Dockerfile`. See [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) for the full variable
 reference, including build-time and CI-only vars.
 
 SQLite is stored on a persistent volume mounted at `/data/db.sqlite`. Migrations run
-automatically on boot — `start.sh` applies any committed, unapplied migrations via
+automatically on boot — `scripts/start.sh` applies any committed, unapplied migrations via
 `scripts/migrate.js` before the server starts, so a normal `fly deploy` is enough.
 
 ---

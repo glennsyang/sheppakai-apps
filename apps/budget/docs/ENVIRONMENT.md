@@ -10,7 +10,7 @@ Fly app: `sheppakai-budget`. Validated in [`src/env.ts`](../src/env.ts) unless n
 
 | Variable               | Required | Set in prod via     | Notes                                                                                                        |
 | ---------------------- | -------- | ------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `DATABASE_URL`         | Yes      | Dockerfile `ENV`    | `file:///data/sheppakaibudget.db`. Only matters for local dev.                                               |
+| `DATABASE_URL`         | Yes      | Fly secret          | `file:///tmp/build.db`. Only matters for local dev.                                                          |
 | `BETTER_AUTH_SECRET`   | Yes      | Fly secret          | At least 32 characters.                                                                                      |
 | `BETTER_AUTH_BASE_URL` | No       | Fly secret          | Defaults to `http://localhost:5173`. Same host as the `APP_URL` GitHub secret, but a separate value.         |
 | `CRON_SECRET`          | Yes      | Fly secret          | Bearer token for `/api/cron/*`. **Also a GitHub Actions secret, and the two must match** (see the root doc). |

@@ -1,5 +1,5 @@
-// Standalone migration runner used at container boot by every app (see apps/<app>/start.sh).
-// Each Dockerfile copies it to /app/scripts/migrate.js next to /app/src/lib/server/db/migrations.
+// Standalone migration runner used at container boot by every app (see scripts/start.sh).
+// The root Dockerfile copies it to /app/scripts/migrate.js next to /app/src/lib/server/db/migrations.
 //
 // Uses drizzle-orm's migrator (a runtime dependency) instead of the drizzle-kit
 // CLI, so drizzle-kit can stay a devDependency and be pruned from the production

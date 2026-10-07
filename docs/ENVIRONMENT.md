@@ -12,7 +12,7 @@ app's own runtime variables are in its `docs/ENVIRONMENT.md`:
 | Kind                    | Where it's set                                                              | Read by                                                    |
 | ----------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | App runtime secrets     | Fly secrets (`fly secrets set … -a <fly-app>`)                              | The running app, validated in `apps/<app>/src/env.ts`      |
-| App runtime, not secret | `apps/<app>/Dockerfile` `ENV` or `apps/<app>/fly.toml` `[env]`              | The running app                                            |
+| App runtime, not secret | `apps/<app>/fly.toml` `[env]` (`NODE_ENV` only: root `Dockerfile` `ENV`)    | The running app                                            |
 | Local development       | `apps/<app>/.env` (copy `.env.example`)                                     | `pnpm --filter <app> dev`                                  |
 | CI / infra secrets      | GitHub Actions **environment** secrets (`budget`, `synapse`, `mealplanner`) | Root `.github/workflows/*.yml` only. Never the running app |
 
@@ -27,7 +27,7 @@ differences.
 
 | Variable               | Purpose                                                                                                                                                                                |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`         | SQLite file path. Set in each Dockerfile for production.                                                                                                                               |
+| `DATABASE_URL`         | SQLite file path. Set as a Fly secret on each app for production.                                                                                                                      |
 | `BETTER_AUTH_SECRET`   | Better Auth session signing key, at least 32 characters.                                                                                                                               |
 | `BETTER_AUTH_BASE_URL` | App origin Better Auth builds callback and email links against.                                                                                                                        |
 | `BREVO_API_KEY`        | Brevo transactional email.                                                                                                                                                             |
@@ -35,7 +35,7 @@ differences.
 | `ADMIN_USER_IDS`       | Comma-separated user ids bootstrapped as admins by the Better Auth `admin` plugin. Defaults to `dummy_admin_id`.                                                                       |
 | `ALLOWED_EMAILS`       | Comma-separated; the only emails that can sign in (exact, case-insensitive). Unset or empty means env validation fails and every request returns 500 (fails closed).                   |
 | `AUTH_ALERTS_URL`      | ntfy.sh topic for auth push alerts.                                                                                                                                                    |
-| `NODE_ENV`             | `development` \| `production` \| `test`. Set to `production` in each Dockerfile.                                                                                                       |
+| `NODE_ENV`             | `development` \| `production` \| `test`. Set to `production` in the root `Dockerfile`.                                                                                                 |
 | `ADDRESS_HEADER`       | `Fly-Client-IP`, set in each `fly.toml`. Makes `getClientAddress()` return the real client IP so the auth rate limiters key per client. Not in `env.ts`; read by `adapter-node`.       |
 | `SENTRY_DSN`           | Public (sent to the browser). Defaults to the app's Sentry project DSN in `env.ts`, so no config is needed.                                                                            |
 | `LOG_LEVEL`            | `debug` \| `info` \| `warn` \| `error`. Defaults to `debug` in dev, `info` in prod. Read straight from `process.env` by `packages/logger`, so tests can override it with `vi.stubEnv`. |
@@ -66,7 +66,7 @@ Each app has a GitHub **environment** with the same name. The workflows pick it 
 
 ### Source maps
 
-Each Dockerfile strips `.map` files from the shipped image (`adapter-node` always emits
+The root `Dockerfile` strips `.map` files from the shipped image (`adapter-node` always emits
 them), so source maps are never served publicly. With `SENTRY_AUTH_TOKEN` set, they're
 uploaded to Sentry before being stripped, which gives readable stack traces in Sentry. To
 enable it, create a Sentry **Organization Auth Token** (org `sheppakai`, scope

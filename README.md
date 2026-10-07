@@ -82,10 +82,10 @@ cp apps/budget/.env.example apps/budget/.env   # then fill in values
 pnpm --filter sheppakai-budget dev             # http://localhost:5173
 ```
 
-| Task                  | Command                                    |
-| --------------------- | ------------------------------------------ |
-| Check, lint, test all | `pnpm check`, `pnpm lint`, `pnpm test`     |
-| Only what changed     | `pnpm --filter "...[origin/main]" test`    |
-| Build an app image    | `docker build -f apps/budget/Dockerfile .` |
+| Task                  | Command                                 |
+| --------------------- | --------------------------------------- |
+| Check, lint, test all | `pnpm check`, `pnpm lint`, `pnpm test`  |
+| Only what changed     | `pnpm --filter "...[origin/main]" test` |
+| Build an app image    | `docker build --build-arg APP=budget .` |
 
 Workspace package names: `synapse`, `sheppakai-mealplanner`, `sheppakai-budget`, `@sheppakai/logger`.

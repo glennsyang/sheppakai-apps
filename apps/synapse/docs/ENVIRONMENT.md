@@ -10,7 +10,7 @@ Fly app: `synapse-dev`. Validated in [`src/env.ts`](../src/env.ts) unless noted.
 
 | Variable               | Required | Set in prod via          | Notes                                                                                                                                |
 | ---------------------- | -------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `DATABASE_URL`         | Yes      | Dockerfile `ENV`         | `/data/synapse.db`.                                                                                                                  |
+| `DATABASE_URL`         | Yes      | Fly secret               | `file:///tmp/build.db`.                                                                                                              |
 | `BETTER_AUTH_SECRET`   | Yes      | Fly secret               | At least 32 characters.                                                                                                              |
 | `BETTER_AUTH_BASE_URL` | Yes      | Fly secret               |                                                                                                                                      |
 | `CRON_SECRET`          | Yes      | Fly secret               | At least 16 characters. Bearer token for `/api/cron/*`. **Also a GitHub Actions secret, and the two must match** (see the root doc). |
