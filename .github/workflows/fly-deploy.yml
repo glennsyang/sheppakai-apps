@@ -42,6 +42,8 @@ jobs:
           filters: |
             shared: &shared
               - 'packages/**'
+              - 'package.json'
+              - '.npmrc'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'Dockerfile'
