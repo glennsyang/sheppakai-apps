@@ -12,7 +12,7 @@ type MessageOptions = NonNullable<Parameters<typeof message>[2]>;
  * from behind a shared/NAT IP without tripping on a single legitimate user.
  *
  * Both keys use `event.getClientAddress()`, which only returns the real client IP in
- * prod because the Dockerfile sets `ADDRESS_HEADER=fly-client-ip`; without it every
+ * prod because fly.toml sets `ADDRESS_HEADER=Fly-Client-IP`; without it every
  * request shares the Fly proxy's IP and one bucket.
  */
 export function createAuthRateLimiter(): RetryAfterRateLimiter {

@@ -17,7 +17,7 @@ const changePasswordLimiter = createUserRateLimiter([5, 'm']);
 
 /**
  * Real client IP for the security-audit log. In prod adapter-node reads it from the
- * unspoofable `fly-client-ip` header (`ADDRESS_HEADER` in the Dockerfile); it throws
+ * unspoofable `fly-client-ip` header (`ADDRESS_HEADER` in fly.toml); it throws
  * when that header is missing, and the audit log just records no IP.
  */
 function getClientIp(event: RequestEvent): string | undefined {
