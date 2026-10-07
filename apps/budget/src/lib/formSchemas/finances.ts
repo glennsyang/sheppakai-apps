@@ -1,4 +1,5 @@
 import type { Recurring, Transaction } from '$lib/types';
+import { getTodayDate } from '$lib/utils/dates';
 import { z } from 'zod';
 
 export const transactionSchema = z.object({
@@ -71,6 +72,11 @@ export function toTransactionFormData(t: Transaction): z.input<typeof transactio
 		excludedFromBudget: t.excludedFromBudget,
 		categoryId: t.category?.id ?? ''
 	};
+}
+
+/** A fresh, unsaved copy of `t` for the Duplicate action: no id, dated today. */
+export function toDuplicateTransactionFormData(t: Transaction): z.input<typeof transactionSchema> {
+	return { ...toTransactionFormData(t), id: '', date: getTodayDate() };
 }
 
 export function toRecurringFormData(r: Recurring): z.input<typeof recurringSchema> {

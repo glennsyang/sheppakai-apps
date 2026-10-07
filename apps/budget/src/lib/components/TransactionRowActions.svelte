@@ -3,8 +3,9 @@
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
 	import TransactionModal from '$lib/components/TransactionModal.svelte';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import { getCategoriesContext, transactionFormContext } from '$lib/contexts';
-	import { toTransactionFormData } from '$lib/formSchemas';
+	import { toDuplicateTransactionFormData, toTransactionFormData } from '$lib/formSchemas';
 
 	let {
 		id,
@@ -19,18 +20,29 @@
 	} = $props();
 
 	let openEditModal = $state<boolean>(false);
+	let openDuplicateModal = $state<boolean>(false);
 	let openDeleteModal = $state<boolean>(false);
 
 	const categories = getCategoriesContext();
 	const transactionForm = transactionFormContext.get();
 </script>
 
-<RowActionsMenu onEdit={() => (openEditModal = true)} onDelete={() => (openDeleteModal = true)} />
+<RowActionsMenu onEdit={() => (openEditModal = true)} onDelete={() => (openDeleteModal = true)}>
+	<DropdownMenu.Item onclick={() => (openDuplicateModal = true)}>Duplicate</DropdownMenu.Item>
+</RowActionsMenu>
 
 <TransactionModal
 	bind:open={openEditModal}
 	initialData={toTransactionFormData(transactionData)}
 	isEditing
+	categories={categories()}
+	{transactionForm}
+/>
+
+<TransactionModal
+	bind:open={openDuplicateModal}
+	initialData={toDuplicateTransactionFormData(transactionData)}
+	isDuplicating
 	categories={categories()}
 	{transactionForm}
 />

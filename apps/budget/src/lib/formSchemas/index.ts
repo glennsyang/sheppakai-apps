@@ -22,6 +22,7 @@ export {
 	recurringSchema,
 	togglePaidSchema,
 	toRecurringFormData,
+	toDuplicateTransactionFormData,
 	toTransactionFormData,
 	transactionSchema
 } from './finances';

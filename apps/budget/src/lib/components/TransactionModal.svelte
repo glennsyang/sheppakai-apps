@@ -14,11 +14,20 @@
 
 	interface Props extends Omit<BaseModalProps<z.infer<typeof transactionSchema>>, 'initialData'> {
 		initialData?: Partial<z.infer<typeof transactionSchema>>;
+		/** Pre-filled copy of an existing transaction, saved as a new one. */
+		isDuplicating?: boolean;
 		categories: Category[];
 		transactionForm: SuperValidated<z.infer<typeof transactionSchema>>;
 	}
 
-	let { open = $bindable(), initialData, isEditing, categories, transactionForm }: Props = $props();
+	let {
+		open = $bindable(),
+		initialData,
+		isEditing,
+		isDuplicating,
+		categories,
+		transactionForm
+	}: Props = $props();
 
 	let sortedCategories = $derived([...categories].toSorted((a, b) => a.name.localeCompare(b.name)));
 
@@ -74,11 +83,19 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-106.25">
 		<Dialog.Header>
-			<Dialog.Title>{isEditing ? 'Edit transaction' : 'Add transaction'}</Dialog.Title>
+			<Dialog.Title>
+				{isEditing
+					? 'Edit transaction'
+					: isDuplicating
+						? 'Duplicate transaction'
+						: 'Add transaction'}
+			</Dialog.Title>
 			<Dialog.Description>
 				{isEditing
 					? 'Update this transaction entry. Modify the amount, payee, notes, date, or category as needed.'
-					: 'Record a new transaction entry. Fill in the amount, payee, notes, date, and select a category.'}
+					: isDuplicating
+						? 'Create a new transaction from this copy. Adjust the amount, date, or anything else before saving.'
+						: 'Record a new transaction entry. Fill in the amount, payee, notes, date, and select a category.'}
 			</Dialog.Description>
 		</Dialog.Header>
 		<form

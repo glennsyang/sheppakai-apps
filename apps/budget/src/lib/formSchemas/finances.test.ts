@@ -1,9 +1,11 @@
 import type { Recurring, Transaction } from '$lib/types';
+import { getTodayDate } from '$lib/utils/dates';
 import { describe, expect, it } from 'vitest';
 
 import {
 	recurringSchema,
 	toRecurringFormData,
+	toDuplicateTransactionFormData,
 	toTransactionFormData,
 	transactionSchema
 } from './finances';
@@ -64,6 +66,18 @@ describe('toTransactionFormData', () => {
 		const data = toTransactionFormData(transaction);
 		expect(data.excludedFromBudget).toBe(true);
 		expect(data.categoryId).toBe('c1');
+		expect(transactionSchema.safeParse(data).success).toBe(true);
+	});
+});
+
+describe('toDuplicateTransactionFormData', () => {
+	it('copies the fields but clears the id and dates it today', () => {
+		const data = toDuplicateTransactionFormData(transaction);
+		expect(data).toEqual({
+			...toTransactionFormData(transaction),
+			id: '',
+			date: getTodayDate()
+		});
 		expect(transactionSchema.safeParse(data).success).toBe(true);
 	});
 });
