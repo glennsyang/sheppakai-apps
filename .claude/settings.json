@@ -1,16 +1,9 @@
 {
 	"permissions": {
-		"allow": ["WebFetch(domain:www.shadcn-svelte.com)", "WebFetch(domain:github.com)", "Bash(gh api *)"]
-	},
-	"extraKnownMarketplaces": {
-		"sveltekit-toolkit-marketplace": {
-			"source": {
-				"source": "directory",
-				"path": "/Users/glennsheppard/Development/Personal/claude-sveltekit-toolkit"
-			}
-		}
-	},
-	"enabledPlugins": {
-		"sveltekit-toolkit@sveltekit-toolkit-marketplace": true
+		"allow": [
+			"WebFetch(domain:www.shadcn-svelte.com)",
+			"WebFetch(domain:github.com)",
+			"Bash(gh api *)"
+		]
 	}
 }

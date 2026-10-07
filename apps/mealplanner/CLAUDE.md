@@ -259,11 +259,11 @@ leaves `handleError` unwrapped (the structured logger already forwards to Sentry
 
 ## Shared Tooling & Review
 
-This repo shares skills/agents/commands with `sheppakai-budget` and `synapse` via the `sveltekit-toolkit` Claude Code plugin (see `../claude-sveltekit-toolkit`), enabled in the repo-root `.claude/settings.json`. It provides `svelte-code-writer`, `svelte5-best-practices`, `better-auth-best-practices`, `shadcn-svelte-components`, `frontend-design`, `tailwind-patterns`, `web-design-reviewer`, `brevo-email-log` (checks Brevo's transactional email event log to verify whether a specific email actually sent/delivered/bounced — all three repos send through the same Brevo account), a `/propagate` command for replicating a shared-dependency fix across the sibling repos, and a `/scaffold-form` command for scaffolding a new form/CRUD feature — this repo's flavor is the full-page form pattern (schema + `+page.server.ts` with superValidate + `+page.svelte` with superForm).
+Shared skills, agents and commands for all three apps live in the repo-root `.claude/` folder (no plugin install needed). It holds the skills `svelte-code-writer`, `svelte5-best-practices`, `better-auth-best-practices`, `shadcn-svelte-components`, `tailwind-patterns`, `brevo-email-log` (checks Brevo's transactional email event log to verify whether a specific email actually sent/delivered/bounced — all three apps send through the same Brevo account) and `restore-db-backup`, the `code-structure-reviewer` and `security-reviewer` agents, and a `/scaffold-form` command for scaffolding a new form/CRUD feature (`/scaffold-form mealplanner ...`) — this repo's flavor is the full-page form pattern (schema + `+page.server.ts` with superValidate + `+page.svelte` with superForm).
 
-Like its siblings, this repo uses shadcn-svelte + bits-ui, so the `shadcn-svelte-components` skill applies.
+Like the other apps, this one uses shadcn-svelte + bits-ui, so the `shadcn-svelte-components` skill applies.
 
-The `code-structure-reviewer` and `security-reviewer` agents (also from the shared plugin) are available on demand — invoke them when you want a structural or security pass on a change, not automatically on every PR.
+The `code-structure-reviewer` and `security-reviewer` agents (in the repo-root `.claude/agents/`) are available on demand — invoke them when you want a structural or security pass on a change, not automatically on every PR.
 
 ---
 
