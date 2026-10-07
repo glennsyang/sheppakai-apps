@@ -1,8 +1,3 @@
-# fly.toml app configuration file generated for sheppakai-budget on 2025-12-11T19:28:03-08:00
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
 app = 'sheppakai-budget'
 primary_region = 'yyz'
 
