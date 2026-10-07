@@ -47,6 +47,9 @@ WORKDIR /repo/apps/mealplanner
 RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
     SENTRY_AUTH_TOKEN="$(cat /run/secrets/SENTRY_AUTH_TOKEN 2>/dev/null || true)" pnpm run build
 
+# Strip source maps from server bundle (adapter-node hardcodes sourcemap: true)
+RUN find build -name "*.map" -delete
+
 # Write a standalone production node_modules for the runtime image (resolves workspace:*)
 RUN pnpm --filter sheppakai-mealplanner deploy --prod --legacy /prod
 
@@ -80,8 +83,4 @@ RUN chmod +x /app/start.sh
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
 ENV DATABASE_URL="file:///data/db.sqlite"
-# Fly's proxy is the TCP peer for every request, so without this adapter-node's
-# getClientAddress() returns the proxy IP and the auth-form rate limiters share one
-# global bucket. adapter-node throws if the header is missing (fails closed).
-ENV ADDRESS_HEADER="fly-client-ip"
 CMD [ "/app/start.sh" ]

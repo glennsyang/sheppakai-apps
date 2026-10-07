@@ -63,8 +63,14 @@ export const variables = defineEnvVars({
 		schema: z.string().optional()
 	},
 	SENTRY_DSN: {
-		description: 'Sentry DSN for client + server error/log reporting (not secret; safe to commit)',
+		description:
+			'Sentry DSN, sent to the browser to initialize error tracking client-side. Not a secret — defaults to the project DSN so no config is required.',
 		public: true,
-		schema: building ? z.string().catch('https://placeholder@o0.ingest.sentry.io/0') : z.url()
+		static: true,
+		schema: z
+			.url()
+			.default(
+				'https://0941b6e2d9801402928ec265ba858ff9@o4510809399492608.ingest.us.sentry.io/4511970268020736'
+			)
 	}
 });

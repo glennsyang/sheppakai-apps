@@ -1,4 +1,4 @@
-import { PUBLIC_SENTRY_DSN } from '$app/env/public';
+import { SENTRY_DSN } from '$app/env/public';
 import { building, dev } from '$app/environment';
 import { sentryDataCollection } from '$lib/sentry-data-collection';
 import { allowedEmails, auth } from '$lib/server/auth';
@@ -10,7 +10,7 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 
 Sentry.init({
-	dsn: PUBLIC_SENTRY_DSN,
+	dsn: SENTRY_DSN,
 	tracesSampleRate: 1.0,
 	// Same restrictive baseline as hooks.client.ts. Loosening it server-side would let Sentry
 	// capture cookies, bodies and full headers — including the auth session cookie — which the
