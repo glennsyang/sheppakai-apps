@@ -79,7 +79,7 @@ corepack enable
 pnpm install
 
 cp apps/budget/.env.example apps/budget/.env   # then fill in values
-pnpm --filter sheppakai-budget dev             # http://localhost:5173
+pnpm --filter budget dev             # http://localhost:5173
 ```
 
 | Task                  | Command                                 |
@@ -88,4 +88,4 @@ pnpm --filter sheppakai-budget dev             # http://localhost:5173
 | Only what changed     | `pnpm --filter "...[origin/main]" test` |
 | Build an app image    | `docker build --build-arg APP=budget .` |
 
-Workspace package names: `synapse`, `sheppakai-mealplanner`, `sheppakai-budget`, `@sheppakai/logger`.
+Workspace package names: `synapse`, `mealplanner`, `budget`, `@sheppakai/logger`.

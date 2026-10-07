@@ -12,8 +12,10 @@ let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
 export function getDb() {
 	if (!_db) {
+		const dbUrl = DATABASE_URL;
+
 		// Extract file path from DATABASE_URL (remove 'file://' prefix if present)
-		const dbPath = DATABASE_URL.replace(/^file:\/\//, '');
+		const dbPath = dbUrl.replace(/^file:\/\//, '');
 
 		// Ensure the directory exists
 		const dir = dirname(dbPath);

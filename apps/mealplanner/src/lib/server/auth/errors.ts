@@ -2,7 +2,7 @@
 //
 // Cross-repo counterparts (keep the map body in sync with these):
 //   - synapse:          src/lib/utils/auth.ts
-//   - sheppakai-budget: src/lib/utils.ts  (consumed by src/lib/server/actions/auth-form-handler.ts)
+//   - budget: src/lib/utils.ts  (consumed by src/lib/server/actions/auth-form-handler.ts)
 //
 // Only imported from `+page.server.ts` auth actions, hence it lives under
 // `src/lib/server/` rather than a `src/lib/utils` tree this repo doesn't have.

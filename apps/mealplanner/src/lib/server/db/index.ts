@@ -26,9 +26,23 @@ export function getDb() {
 		connection.pragma('journal_mode = WAL');
 		const enableQueryLogging = NODE_ENV !== 'production';
 		_db = drizzle(connection, { schema, logger: enableQueryLogging });
-
-		logger.info('Database connected', { path: dbPath });
 	}
 
 	return _db;
 }
+
+// --- Graceful shutdown for DB connection (if needed) ---
+// Note: better-sqlite3 doesn't have a built-in close method on the connection object,
+// but if you need to perform any cleanup, you can do it here.
+const shutdown = () => {
+	if (_db) {
+		logger.info('Closing SQLite connection');
+		_db.$client.close(); // Closes the better-sqlite3 connection safely
+		process.exit(0);
+	}
+	process.exit(0);
+};
+
+// Listen for Fly.io termination signals
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

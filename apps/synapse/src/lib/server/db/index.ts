@@ -6,7 +6,6 @@ import { logger } from '$lib/server/logger';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 
-import { createQueryLogger } from './query-logger';
 import * as schema from './schema';
 
 let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
@@ -23,7 +22,10 @@ export function getDb() {
 		mkdirSync(dir, { recursive: true });
 
 		const connection = new Database(dbPath);
-		_db = drizzle(connection, { schema, logger: createQueryLogger(NODE_ENV !== 'production') });
+		// Disable SQL query logging in production to prevent sensitive auth values
+		// (access_token, refresh_token, id_token, password) from leaking into logs.
+		const enableQueryLogging = NODE_ENV !== 'production';
+		_db = drizzle(connection, { schema, logger: enableQueryLogging });
 	}
 
 	return _db;
