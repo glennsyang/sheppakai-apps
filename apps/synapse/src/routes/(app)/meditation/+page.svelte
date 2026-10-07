@@ -5,6 +5,7 @@
 	import MeditationDurationFilter from '$lib/components/meditation/MeditationDurationFilter.svelte';
 	import MeditationMoodFilter from '$lib/components/meditation/MeditationMoodFilter.svelte';
 	import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte';
+	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
 	import PageSkeleton from '$lib/components/skeletons/PageSkeleton.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
@@ -161,6 +162,7 @@
 	<PageSkeleton color="purple" />
 {:else}
 	<PageShell class="min-w-0 overflow-x-hidden">
+		<LoadErrorAlert message={data.loadError} />
 		<div
 			class="mobile-stack ruled mb-6 flex items-center justify-between gap-3 pb-4 sm:flex-wrap lg:flex-nowrap"
 		>

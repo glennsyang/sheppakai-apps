@@ -9,14 +9,15 @@ import {
 	getOwnedEntityOrNull,
 	getOwnedEntityOrThrow
 } from '$lib/server/actions/edit-route-helpers';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import { parseTaskTags, toCommaSeparatedJson } from '$lib/server/actions/string-parsers';
 import { getDb } from '$lib/server/db';
 import { tasks } from '$lib/server/db/schema';
 import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { and, eq, ne, sql } from 'drizzle-orm';
-import { setError, superValidate } from 'sveltekit-superforms';
+import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import type { Actions, PageServerLoad } from './$types';
@@ -85,7 +86,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(updateTaskSchema));
 
 		if (!form.valid) {
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		if (form.data.title) {
@@ -109,7 +110,7 @@ export const actions = {
 			);
 
 			if (!existing) {
-				return fail(404, { form, error: 'Task not found' });
+				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
 			}
 
 			const nextState = (form.data.state ?? existing.state) as TaskState;
@@ -181,7 +182,7 @@ export const actions = {
 			logger.info('Task updated', { taskId, userId: user.id });
 		} catch (error) {
 			logger.error('Failed to update task', error, { taskId });
-			return fail(500, { form, error: 'Failed to update task' });
+			return message(form, { type: 'error', text: 'Failed to update task' }, { status: 500 });
 		}
 
 		throw redirect(303, '/tasks');
@@ -192,7 +193,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(deleteTaskSchema));
 
 		if (!form.valid || form.data.id !== taskId) {
-			return fail(400, { error: 'Invalid task id' });
+			return message(form, { type: 'error', text: 'Invalid task id' }, { status: 400 });
 		}
 
 		try {
@@ -203,7 +204,7 @@ export const actions = {
 			);
 
 			if (!existing) {
-				return fail(404, { error: 'Task not found' });
+				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
 			}
 
 			await getDb()
@@ -213,7 +214,7 @@ export const actions = {
 			logger.info('Task deleted', { taskId, taskNumber: existing.taskNumber, userId: user.id });
 		} catch (error) {
 			logger.error('Failed to delete task', error, { taskId });
-			return fail(500, { error: 'Failed to delete task' });
+			return message(form, { type: 'error', text: 'Failed to delete task' }, { status: 500 });
 		}
 
 		throw redirect(303, '/tasks');

@@ -117,7 +117,9 @@ describe('pantry/planner actions: consistent { form } results (#166)', () => {
 	it('saveAndAdd validates recipe + day as one form and saves', async () => {
 		const result = await plannerActions.saveAndAdd(ctx({ user: USER } as Locals, recipeFields));
 
-		expect(result).toMatchObject({ form: { valid: true } });
+		expect(result).toMatchObject({
+			form: { valid: true, message: { type: 'success', text: 'Added Curry to the planner.' } }
+		});
 		expect(recipesMock.saveRecipe).toHaveBeenCalledWith(
 			'user_1',
 			expect.objectContaining({ name: 'Curry', ingredientsJson: [expect.any(Object)] })
@@ -135,7 +137,10 @@ describe('pantry/planner actions: consistent { form } results (#166)', () => {
 			ctx({ user: USER } as Locals, { ...recipeFields, dayOfWeek: '9' })
 		);
 
-		expect(result).toMatchObject({ status: 400, data: { form: { valid: false } } });
+		expect(result).toMatchObject({
+			status: 400,
+			data: { form: { valid: false, message: { type: 'error' } } }
+		});
 		expect(recipesMock.saveRecipe).not.toHaveBeenCalled();
 	});
 

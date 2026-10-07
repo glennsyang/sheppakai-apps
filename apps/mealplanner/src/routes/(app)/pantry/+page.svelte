@@ -39,6 +39,9 @@
 </svelte:head>
 
 <div class="px-5 pt-8 pb-8 sm:px-10 sm:pt-12">
+	{#if data.loadError}
+		<Alert variant="destructive" class="mb-6" role="alert">{data.loadError}</Alert>
+	{/if}
 	<h1 class="text-[2rem] leading-tight font-bold tracking-tight sm:text-[2.5rem]">Pantry</h1>
 	<p class="ink-soft mt-2 max-w-[56ch] text-lg leading-relaxed">
 		What's in the kitchen. Dinner ideas are built from these.

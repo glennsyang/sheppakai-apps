@@ -60,6 +60,13 @@ export const editSessionSchema = z.object({
 });
 
 /**
+ * Schema for deleting a meditation session (posted by `ConfirmDialog` as a hidden field)
+ */
+export const deleteSessionSchema = z.object({
+	session_id: z.string().min(1, 'Session ID is required')
+});
+
+/**
  * Schema for filtering meditation routines
  */
 export const routineFilterSchema = z.object({

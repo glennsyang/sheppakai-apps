@@ -5,7 +5,9 @@ import { scopesToPermissions, type ApiScope } from '$lib/api-scopes';
 import type { AdminApiLogEntry } from '$lib/components/admin/api-logs-columns';
 import { createUserSchema, sendWelcomeEmailSchema } from '$lib/schemas/admin-user';
 import { createApiKeySchema, revokeApiKeySchema } from '$lib/schemas/api-key';
+import { unarchivePersonSchema } from '$lib/schemas/visits';
 import { getUser, requireAdmin } from '$lib/server/actions/auth-guard';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import { allowedEmails, auth } from '$lib/server/auth';
 import { buildAllowlistCommand, formatAlertEmail } from '$lib/server/auth-allowlist-hook';
 import { getDb } from '$lib/server/db';
@@ -14,7 +16,7 @@ import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
 import { sendWelcomeEmail } from '$lib/server/email';
 import { logger } from '$lib/server/logger';
 import { sendAuthAlerts } from '$lib/server/notifications';
-import { error, fail, isRedirect } from '@sveltejs/kit';
+import { error, isRedirect } from '@sveltejs/kit';
 import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -159,6 +161,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			archivedPeople: [],
 			apiKeys: [],
 			apiLogs: [],
+			loadError: 'Failed to load admin dashboard data. Please try refreshing the page.',
 			createApiKeyForm,
 			createUserForm
 		};
@@ -170,7 +173,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(createUserSchema));
 
 		if (!form.valid) {
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		const { name, email, role } = form.data;
@@ -236,28 +239,32 @@ export const actions = {
 	}),
 
 	sendWelcomeEmail: requireAdmin(async ({ request }, admin) => {
-		const formData = await request.formData();
-		const parsed = sendWelcomeEmailSchema.safeParse({ userId: formData.get('userId') });
+		const form = await superValidate(request, zod4(sendWelcomeEmailSchema));
 
-		if (!parsed.success) {
-			return fail(400, { error: 'User ID is required' });
+		if (!form.valid) {
+			return invalidForm(form, 'User ID is required');
 		}
 
 		try {
-			const target = await getDb().query.user.findFirst({ where: eq(user.id, parsed.data.userId) });
+			const target = await getDb().query.user.findFirst({ where: eq(user.id, form.data.userId) });
 
 			if (!target) {
-				return fail(404, { error: 'User not found' });
+				return message(form, { type: 'error', text: 'User not found' }, { status: 404 });
 			}
 
 			if (!isAllowlisted(target.email)) {
-				return fail(400, {
-					error: `${target.email} isn't in ALLOWED_EMAILS yet, so they couldn't sign in. Allowlist them first.`
-				});
+				return invalidForm(
+					form,
+					`${target.email} isn't in ALLOWED_EMAILS yet, so they couldn't sign in. Allowlist them first.`
+				);
 			}
 
 			if (!(await trySendWelcomeEmail(target.email, target.name))) {
-				return fail(500, { error: 'Failed to send welcome email' });
+				return message(
+					form,
+					{ type: 'error', text: 'Failed to send welcome email' },
+					{ status: 500 }
+				);
 			}
 
 			logger.info('Welcome email sent by admin', { adminId: admin.id, userId: target.id });
@@ -267,20 +274,25 @@ export const actions = {
 				3
 			);
 
-			return { success: true, email: target.email };
+			return message(form, { type: 'success', text: `Welcome email sent to ${target.email}.` });
 		} catch (err) {
 			logger.error('Failed to send welcome email', err);
-			return fail(500, { error: 'Failed to send welcome email' });
+			return message(
+				form,
+				{ type: 'error', text: 'Failed to send welcome email' },
+				{ status: 500 }
+			);
 		}
 	}),
 
 	unarchivePerson: requireAdmin(async ({ request }) => {
-		const formData = await request.formData();
-		const personId = formData.get('personId') as string;
+		const form = await superValidate(request, zod4(unarchivePersonSchema));
 
-		if (!personId) {
-			return fail(400, { error: 'Person ID is required' });
+		if (!form.valid) {
+			return invalidForm(form, 'Person ID is required');
 		}
+
+		const { personId } = form.data;
 
 		try {
 			const db = getDb();
@@ -293,15 +305,17 @@ export const actions = {
 			logger.info('Person unarchived', { personId });
 		} catch (err) {
 			logger.error('Failed to unarchive person', err);
-			return fail(500, { error: 'Failed to unarchive person' });
+			return message(form, { type: 'error', text: 'Failed to unarchive person' }, { status: 500 });
 		}
+
+		return message(form, { type: 'success', text: 'Person unarchived.' });
 	}),
 
 	createApiKey: requireAdmin(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(createApiKeySchema));
 
 		if (!form.valid) {
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -338,11 +352,10 @@ export const actions = {
 	}),
 
 	revokeApiKey: requireAdmin(async ({ request }) => {
-		const formData = await request.formData();
-		const parsed = revokeApiKeySchema.safeParse({ id: formData.get('id') });
+		const form = await superValidate(request, zod4(revokeApiKeySchema));
 
-		if (!parsed.success) {
-			return fail(400, { error: 'API key ID is required' });
+		if (!form.valid) {
+			return invalidForm(form, 'API key ID is required');
 		}
 
 		try {
@@ -350,17 +363,19 @@ export const actions = {
 			// their own keys; requireAdmin above is the authorization for revoking anyone's.
 			const deleted = await getDb()
 				.delete(apiKey)
-				.where(eq(apiKey.id, parsed.data.id))
+				.where(eq(apiKey.id, form.data.id))
 				.returning({ id: apiKey.id });
 
 			if (deleted.length === 0) {
-				return fail(404, { error: 'API key not found' });
+				return message(form, { type: 'error', text: 'API key not found' }, { status: 404 });
 			}
 
-			logger.info('API key revoked', { keyId: parsed.data.id });
+			logger.info('API key revoked', { keyId: form.data.id });
 		} catch (err) {
 			logger.error('Failed to revoke API key', err);
-			return fail(500, { error: 'Failed to revoke API key' });
+			return message(form, { type: 'error', text: 'Failed to revoke API key' }, { status: 500 });
 		}
+
+		return message(form, { type: 'success', text: 'API key revoked.' });
 	})
 } satisfies Actions;

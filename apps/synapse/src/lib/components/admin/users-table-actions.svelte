@@ -3,6 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import type { User } from '$lib/types';
+	import { actionMessage } from '$lib/utils/actionMessage';
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import { toast } from 'svelte-sonner';
 
@@ -37,11 +38,14 @@
 				isSubmitting = true;
 
 				return async ({ result, update }) => {
-					if (result.type === 'success') {
-						toast.success(`Welcome email sent to ${user.email}.`);
-					} else if (result.type === 'failure') {
-						const data = result.data as { error?: string } | undefined;
-						toast.error(data?.error ?? 'Failed to send welcome email');
+					const resultMessage = actionMessage(result, {
+						success: `Welcome email sent to ${user.email}.`,
+						error: 'Failed to send welcome email'
+					});
+					if (resultMessage.type === 'success') {
+						toast.success(resultMessage.text);
+					} else {
+						toast.error(resultMessage.text);
 					}
 					await update();
 					isSubmitting = false;

@@ -17,6 +17,7 @@ import {
 	updateTaskStateSchema
 } from '$lib/schemas/task';
 import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import { parseTaskTags } from '$lib/server/actions/string-parsers';
 import {
 	createDailyAgendaCustomEntry,
@@ -421,7 +422,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	});
 	const activeTab = pageState.success ? pageState.data.tab : 'kanban';
 	const agendaWeek = pageState.success ? pageState.data.week : getStartOfWeek();
-	const agenda = userId ? await loadDailyAgendaData(userId, agendaWeek) : null;
+	let agenda: Awaited<ReturnType<typeof loadDailyAgendaData>> | null = null;
+	let agendaLoadError: string | undefined;
+	try {
+		agenda = await loadDailyAgendaData(userId, agendaWeek);
+	} catch (error) {
+		logger.error('Failed to load daily agenda', error, { userId });
+		agendaLoadError = 'Failed to load your daily agenda. Please try refreshing the page.';
+	}
 	const filters = taskFilterSchema.safeParse({
 		keyword: url.searchParams.get('keyword') ?? undefined,
 		priority: url.searchParams.get('priority') ?? undefined,
@@ -479,7 +487,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			tasks: [],
 			allTags: userId ? await getAllTags(userId) : [],
 			moodForm: await buildMoodForm(),
-			mood: emptyMood
+			mood: emptyMood,
+			loadError: agendaLoadError
 		};
 	}
 
@@ -498,7 +507,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				tasks: tasksWithParsedFields,
 				allTags,
 				moodForm: await buildMoodForm(),
-				mood: emptyMood
+				mood: emptyMood,
+				loadError: agendaLoadError
 			};
 		}
 
@@ -603,6 +613,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			tasks: tasksWithParsedFields,
 			allTags,
 			moodForm,
+			loadError: agendaLoadError,
 			mood: {
 				selectedPeriod,
 				rangeLabel,
@@ -640,7 +651,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			tasks: [],
 			allTags: [],
 			moodForm: await buildMoodForm(),
-			mood: emptyMood
+			mood: emptyMood,
+			loadError: 'Failed to load tasks. Please try refreshing the page.'
 		};
 	}
 };
@@ -648,7 +660,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 export const actions = {
 	moveBoardTask: requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(moveTaskBoardSchema));
-		if (!form.valid) return fail(400, { form });
+		if (!form.valid) return invalidForm(form);
 
 		try {
 			const timestamp = new Date().toISOString();
@@ -664,13 +676,13 @@ export const actions = {
 			);
 
 			if (!moveResult) {
-				return fail(404, { form, error: 'Task not found' });
+				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
 			}
 
 			return { form };
 		} catch (error) {
 			logger.error('Failed to move task on board', error, { form, userId: user.id });
-			return fail(500, { form, error: 'Failed to move task' });
+			return message(form, { type: 'error', text: 'Failed to move task' }, { status: 500 });
 		}
 	}),
 
@@ -679,7 +691,7 @@ export const actions = {
 	 */
 	updateState: requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(updateTaskStateSchema));
-		if (!form.valid) return fail(400, { form });
+		if (!form.valid) return invalidForm(form);
 
 		try {
 			const existing = await getDb().query.tasks.findFirst({
@@ -691,7 +703,7 @@ export const actions = {
 			});
 
 			if (!existing) {
-				return fail(404, { form, error: 'Task not found' });
+				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
 			}
 
 			if (existing.state === form.data.state) {
@@ -711,19 +723,19 @@ export const actions = {
 			);
 
 			if (!moveResult) {
-				return fail(404, { form, error: 'Task not found' });
+				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
 			}
 
 			return { form };
 		} catch (error) {
 			logger.error('Failed to update task state', error, { form, userId: user.id });
-			return fail(500, { form, error: 'Failed to update task state' });
+			return message(form, { type: 'error', text: 'Failed to update task state' }, { status: 500 });
 		}
 	}),
 
 	delete: requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(deleteTaskSchema));
-		if (!form.valid) return fail(400, { form });
+		if (!form.valid) return invalidForm(form);
 
 		try {
 			const existing = await getDb().query.tasks.findFirst({
@@ -731,7 +743,7 @@ export const actions = {
 			});
 
 			if (!existing) {
-				return fail(404, { form, error: 'Task not found' });
+				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
 			}
 			await getDb()
 				.delete(tasks)
@@ -744,7 +756,7 @@ export const actions = {
 			});
 		} catch (error) {
 			logger.error('Failed to delete task from board', error, { form });
-			return fail(500, { form, error: 'Failed to delete task' });
+			return message(form, { type: 'error', text: 'Failed to delete task' }, { status: 500 });
 		}
 
 		throw redirect(303, '/tasks');
@@ -921,7 +933,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid mood log form data', { errors: form.errors, userId: user.id });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		const today = getTodayString();

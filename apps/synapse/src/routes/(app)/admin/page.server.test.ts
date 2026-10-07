@@ -254,7 +254,9 @@ describe('admin sendWelcomeEmail action', () => {
 
 		const result = await runAction('sendWelcomeEmail', { userId: 'u1' });
 
-		expect(result).toMatchObject({ success: true });
+		expect(result).toMatchObject({
+			form: { message: { type: 'success', text: 'Welcome email sent to allowed@example.com.' } }
+		});
 		expect(mockSendWelcomeEmail).toHaveBeenCalledWith(
 			'allowed@example.com',
 			'Ada',

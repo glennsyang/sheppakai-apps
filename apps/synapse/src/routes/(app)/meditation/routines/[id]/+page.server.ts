@@ -1,3 +1,4 @@
+import { noFieldsSchema } from '$lib/schemas/common';
 import {
 	completeSessionSchema,
 	editSessionSchema,
@@ -5,6 +6,7 @@ import {
 	updateRoutineSchema
 } from '$lib/schemas/meditation';
 import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import {
 	handleDeleteSession,
 	handleUpdateSession
@@ -19,7 +21,7 @@ import {
 } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { safeParse } from '$lib/utils/json';
-import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
+import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { and, desc, eq, or } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -132,12 +134,12 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid schedule form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		if (!routineId) {
 			logger.warn('Missing routine ID in createSchedule action', { userId: user.id });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -152,7 +154,7 @@ export const actions = {
 			});
 
 			if (!routine) {
-				return fail(404, { error: 'Routine not found' });
+				return message(form, { type: 'error', text: 'Routine not found' }, { status: 404 });
 			}
 
 			// Parse days_of_week if provided (stored as JSON array string e.g. "[0,1,6]")
@@ -227,12 +229,13 @@ export const actions = {
 		}
 	}),
 
-	deleteSchedule: requireAuth(async ({ params }, user) => {
+	deleteSchedule: requireAuth(async ({ request, params }, user) => {
 		const routineId = params.id;
+		const form = await superValidate(request, zod4(noFieldsSchema));
 
 		if (!routineId) {
 			logger.warn('Missing routine ID in deleteSchedule action', { userId: user.id });
-			return fail(400, { error: 'Routine ID is required' });
+			return message(form, { type: 'error', text: 'Routine ID is required' }, { status: 400 });
 		}
 
 		try {
@@ -248,10 +251,10 @@ export const actions = {
 				routineId: routineId,
 				userId: user.id
 			});
-			return { success: true };
+			return message(form, { type: 'success', text: 'Schedule deleted.' });
 		} catch (error) {
 			logger.error('Failed to delete schedule', error);
-			return fail(500, { error: 'Failed to delete schedule' });
+			return message(form, { type: 'error', text: 'Failed to delete schedule' }, { status: 500 });
 		}
 	}),
 
@@ -261,7 +264,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid session form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -276,7 +279,7 @@ export const actions = {
 			});
 
 			if (!routine) {
-				return fail(404, { error: 'Routine not found' });
+				return message(form, { type: 'error', text: 'Routine not found' }, { status: 404 });
 			}
 
 			const sessionId = generateId();
@@ -319,7 +322,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid update routine form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -331,11 +334,11 @@ export const actions = {
 			});
 
 			if (!routine) {
-				return fail(404, { error: 'Routine not found' });
+				return message(form, { type: 'error', text: 'Routine not found' }, { status: 404 });
 			}
 
 			if (routine.isPredefined || routine.userId !== user.id) {
-				return fail(403, { error: 'Cannot edit this routine' });
+				return message(form, { type: 'error', text: 'Cannot edit this routine' }, { status: 403 });
 			}
 
 			// Parse mood tags
@@ -378,8 +381,9 @@ export const actions = {
 
 	deleteSession: requireAuth(async ({ request }, user) => handleDeleteSession(request, user.id)),
 
-	deleteRoutine: requireAuth(async ({ params }, user) => {
+	deleteRoutine: requireAuth(async ({ request, params }, user) => {
 		const routineId = params.id;
+		const form = await superValidate(request, zod4(noFieldsSchema));
 
 		try {
 			const db = getDb();
@@ -390,11 +394,15 @@ export const actions = {
 			});
 
 			if (!routine) {
-				return fail(404, { error: 'Routine not found' });
+				return message(form, { type: 'error', text: 'Routine not found' }, { status: 404 });
 			}
 
 			if (routine.isPredefined || routine.userId !== user.id) {
-				return fail(403, { error: 'Cannot delete this routine' });
+				return message(
+					form,
+					{ type: 'error', text: 'Cannot delete this routine' },
+					{ status: 403 }
+				);
 			}
 
 			await db
@@ -413,7 +421,7 @@ export const actions = {
 			});
 		} catch (error) {
 			logger.error('Failed to delete routine', error);
-			return fail(500, { error: 'Failed to delete routine' });
+			return message(form, { type: 'error', text: 'Failed to delete routine' }, { status: 500 });
 		}
 
 		throw redirect(303, '/meditation');

@@ -637,9 +637,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const today = getTodayString();
 	const ranges = buildDateRanges(today);
-	const db = getDb();
 
 	try {
+		const db = getDb();
 		const [data, visitStatusThresholds, dashboardGoals] = await Promise.all([
 			runDashboardQueries(db, user.id, ranges),
 			getVisitStatusThresholdsForUser(user.id, db),
@@ -715,6 +715,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		};
 	} catch (error) {
 		logger.error('Failed to load dashboard data', error);
-		return emptyDashboardReturn();
+		return {
+			...emptyDashboardReturn(),
+			loadError: 'Failed to load dashboard data. Please try refreshing the page.'
+		};
 	}
 };

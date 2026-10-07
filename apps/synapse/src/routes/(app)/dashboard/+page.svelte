@@ -6,6 +6,7 @@
 	import AgendaItemScorecard from '$lib/components/dashboard/AgendaItemScorecard.svelte';
 	import VisitHealthPanel from '$lib/components/dashboard/VisitHealthPanel.svelte';
 	import WorkoutTypeChart from '$lib/components/dashboard/WorkoutTypeChart.svelte';
+	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
 	import PenCheck from '$lib/components/shared/PenCheck.svelte';
 	import DashboardSkeleton from '$lib/components/skeletons/DashboardSkeleton.svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
@@ -174,6 +175,7 @@
 	<DashboardSkeleton />
 {:else}
 	<div class="mx-auto w-full max-w-7xl space-y-12" in:fade={{ duration: 160 }}>
+		<LoadErrorAlert message={data.loadError} class="" />
 		<!-- ── Page header: the date, as a planner prints it ─────────────────── -->
 		<header class="ruled flex flex-wrap items-end gap-x-6 gap-y-4 pb-5">
 			<div class="flex items-end gap-4">

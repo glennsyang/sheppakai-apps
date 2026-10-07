@@ -58,6 +58,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		logger.error('Failed to load journal entries', error);
 		return {
 			entries: [],
+			loadError: 'Failed to load journal entries. Please try refreshing the page.',
 			filters: {
 				content: content ?? '',
 				date: date ?? ''

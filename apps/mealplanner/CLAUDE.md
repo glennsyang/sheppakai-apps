@@ -69,7 +69,7 @@ Always use **Node.js 22.23.3** for all development, testing, and tooling. Do not
 ### Error handling
 
 - Always re-throw SvelteKit redirects: `if (isRedirect(error)) throw error`.
-- The target contract is `docs/ERROR_HANDLING_POLICY.md` at the repo root (`message(form, …, { status })` instead of bare `fail(...)`). Existing routes still use `fail(400, { form })` / `fail(500, ...)`; new code and routes you touch should follow the policy.
+- Follow `docs/ERROR_HANDLING_POLICY.md` at the repo root. Loads that query the DB return a `loadError` the page renders; actions answer with `invalidForm(form)` (`src/lib/server/actions/form-responses.ts`) or `message(form, …, { status })`, never a bare `fail(...)`.
 
 ---
 
@@ -207,7 +207,8 @@ export type MySchema = typeof mySchema;
 ```ts
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
-import { isRedirect, redirect, fail } from '@sveltejs/kit';
+import { isRedirect, redirect } from '@sveltejs/kit';
+import { invalidForm } from '$lib/server/actions/form-responses';
 
 // load
 const form = await superValidate(zod4(mySchema));
@@ -215,10 +216,10 @@ return { form };
 
 // action
 const form = await superValidate(request, zod4(mySchema));
-if (!form.valid) return fail(400, { form });
+if (!form.valid) return invalidForm(form);
 try { ... } catch (err) {
   if (isRedirect(err)) throw err;
-  return message(form, 'Error message', { status: 400 });
+  return message(form, { type: 'error', text: 'Error message' }, { status: 500 });
 }
 throw redirect(302, '/destination');
 ```

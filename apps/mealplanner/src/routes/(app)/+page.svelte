@@ -2,6 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import Icon from '$lib/components/Icon.svelte';
 	import RecipeDrawer from '$lib/components/RecipeDrawer.svelte';
+	import { Alert } from '$lib/components/ui/alert';
 	import { Button } from '$lib/components/ui/button';
 	import WeeklyPlanner from '$lib/components/WeeklyPlanner.svelte';
 	import { recipeAsSuggestion } from '$lib/recipes';
@@ -58,6 +59,12 @@
 	recipeId={openEntry?.recipe.id}
 	onSaved={invalidateAll}
 />
+
+{#if data.loadError}
+	<div class="px-5 pt-8 sm:px-10">
+		<Alert variant="destructive" role="alert">{data.loadError}</Alert>
+	</div>
+{/if}
 
 <!-- Tonight: the answer to "what's for dinner?" before anything else -->
 <section class="px-5 pt-8 pb-10 sm:px-10 sm:pt-12 sm:pb-14" aria-labelledby="tonight-heading">

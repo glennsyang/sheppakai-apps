@@ -10,6 +10,8 @@ import {
 } from '$lib/schemas/mealPlan';
 import { requireAuth } from '$lib/server/actions/auth-guard';
 import { handleDomainAction } from '$lib/server/actions/domain-action';
+import { invalidForm } from '$lib/server/actions/form-responses';
+import { logger } from '$lib/server/logger';
 import {
 	getMealPlanWithEntries,
 	addMealPlanEntry,
@@ -17,7 +19,7 @@ import {
 	getMondayOfCurrentWeek
 } from '$lib/server/services/mealPlan';
 import { saveRecipe, updateRecipe } from '$lib/server/services/recipes';
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
@@ -41,18 +43,26 @@ function resolveWeekStartDate(url: URL): string {
 export const load: PageServerLoad = async ({ url }) => {
 	const weekStartDate = resolveWeekStartDate(url);
 
-	const [entries, addCustomForm] = await Promise.all([
-		getMealPlanWithEntries(weekStartDate),
-		superValidate(zod4(addCustomMealSchema))
-	]);
+	const addCustomForm = await superValidate(zod4(addCustomMealSchema));
 
-	return { entries, weekStartDate, addCustomForm };
+	try {
+		const entries = await getMealPlanWithEntries(weekStartDate);
+		return { entries, weekStartDate, addCustomForm };
+	} catch (error) {
+		logger.error('Failed to load meal plan:', error);
+		return {
+			entries: [],
+			weekStartDate,
+			loadError: 'Failed to load your meal plan. Please try refreshing the page.',
+			addCustomForm
+		};
+	}
 };
 
 export const actions: Actions = {
 	saveAndAdd: requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(saveAndAddSchema));
-		if (!form.valid) return fail(400, { form });
+		if (!form.valid) return invalidForm(form);
 
 		return handleDomainAction(
 			form,
@@ -70,6 +80,7 @@ export const actions: Actions = {
 			{
 				loggerContext: 'Failed to save recipe and add to planner',
 				fallbackMessage: 'Could not add that meal to the planner. Please try again.',
+				successMessage: `Added ${form.data.name} to the planner.`,
 				logFields: { userId: user.id }
 			}
 		);
@@ -77,18 +88,19 @@ export const actions: Actions = {
 
 	remove: requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(removeMealPlanEntrySchema));
-		if (!form.valid) return fail(400, { form });
+		if (!form.valid) return invalidForm(form);
 
 		return handleDomainAction(form, () => removeMealPlanEntry(form.data.entryId), {
 			loggerContext: 'Failed to remove meal plan entry',
 			fallbackMessage: 'Could not remove that meal. Please try again.',
+			successMessage: 'Meal removed.',
 			logFields: { userId: user.id }
 		});
 	}),
 
 	addCustom: requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(addCustomMealSchema));
-		if (!form.valid) return fail(400, { form });
+		if (!form.valid) return invalidForm(form);
 
 		return handleDomainAction(
 			form,
@@ -107,6 +119,7 @@ export const actions: Actions = {
 			{
 				loggerContext: 'Failed to add custom meal',
 				fallbackMessage: 'Could not add your meal. Please try again.',
+				successMessage: `Added ${form.data.name} to the planner.`,
 				logFields: { userId: user.id }
 			}
 		);
@@ -114,7 +127,7 @@ export const actions: Actions = {
 
 	updateRecipe: requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(updateRecipeSchema));
-		if (!form.valid) return fail(400, { form });
+		if (!form.valid) return invalidForm(form);
 
 		return handleDomainAction(
 			form,
@@ -130,6 +143,7 @@ export const actions: Actions = {
 			{
 				loggerContext: 'Failed to update recipe',
 				fallbackMessage: 'Could not save that recipe. Please try again.',
+				successMessage: 'Recipe saved.',
 				logFields: { userId: user.id }
 			}
 		);

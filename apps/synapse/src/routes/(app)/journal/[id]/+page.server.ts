@@ -1,13 +1,15 @@
+import { idSchema } from '$lib/schemas/common';
 import { buildWeatherJson, journalEntrySchema } from '$lib/schemas/journal';
 import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import { getDb } from '$lib/server/db';
 import { journalEntries } from '$lib/server/db/schema';
 import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { safeParse } from '$lib/utils/json';
-import { error, fail, redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
-import { superValidate } from 'sveltekit-superforms';
+import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import type { Actions, PageServerLoad } from './$types';
@@ -44,7 +46,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid journal entry form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -67,7 +69,11 @@ export const actions = {
 			logger.info('Journal entry updated', { entryId, userId: user.id });
 		} catch (error) {
 			logger.error('Failed to update journal entry', error);
-			return fail(500, { form, error: 'Failed to update journal entry' });
+			return message(
+				form,
+				{ type: 'error', text: 'Failed to update journal entry' },
+				{ status: 500 }
+			);
 		}
 
 		throw redirect(303, '/journal');
@@ -75,11 +81,10 @@ export const actions = {
 
 	delete: requireAuth(async ({ request, params }, user) => {
 		const entryId = params.id;
-		const formData = await request.formData();
-		const submittedId = formData.get('id');
+		const form = await superValidate(request, zod4(idSchema));
 
-		if (typeof submittedId !== 'string' || submittedId !== entryId) {
-			return fail(400, { error: 'Invalid journal entry id' });
+		if (!form.valid || form.data.id !== entryId) {
+			return message(form, { type: 'error', text: 'Invalid journal entry id' }, { status: 400 });
 		}
 
 		try {
@@ -88,7 +93,7 @@ export const actions = {
 			});
 
 			if (!existingEntry) {
-				return fail(404, { error: 'Journal entry not found' });
+				return message(form, { type: 'error', text: 'Journal entry not found' }, { status: 404 });
 			}
 
 			await getDb()
@@ -98,7 +103,11 @@ export const actions = {
 			logger.info('Journal entry deleted', { entryId, userId: user.id });
 		} catch (error) {
 			logger.error('Failed to delete journal entry', error, { entryId });
-			return fail(500, { error: 'Failed to delete journal entry' });
+			return message(
+				form,
+				{ type: 'error', text: 'Failed to delete journal entry' },
+				{ status: 500 }
+			);
 		}
 
 		throw redirect(303, '/journal');

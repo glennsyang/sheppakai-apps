@@ -15,6 +15,7 @@ import {
 	workoutReminderSchema
 } from '$lib/schemas/fitness';
 import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import { getDb } from '$lib/server/db';
 import {
 	dailyCalorieTargets,
@@ -32,7 +33,7 @@ import {
 } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { getTodayString } from '$lib/utils/date';
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { and, desc, eq } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -60,9 +61,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const reminderForm = await superValidate(zod4(workoutReminderSchema));
 
 	const userId = getUser(locals).id;
-	const db = getDb();
 
 	try {
+		const db = getDb();
 		// Load weight entries
 		const weights = await db.query.weightEntries.findMany({
 			where: eq(weightEntries.userId, userId),
@@ -141,6 +142,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		logger.error('Failed to load fitness data', error);
 		return {
 			tab,
+			loadError: 'Failed to load fitness data. Please try refreshing the page.',
 			reminders: [],
 			weightEntries: [],
 			goalWeight: null,
@@ -169,7 +171,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid weight log form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -206,7 +208,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid goal weight form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -258,7 +260,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid workout log form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		let exercises: WorkoutExerciseInput[] = [];
@@ -330,7 +332,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid meal log form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -369,7 +371,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid calorie target form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -421,7 +423,7 @@ export const actions = {
 			logger.warn('Invalid workout reminder form data', {
 				errors: form.errors
 			});
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -462,7 +464,7 @@ export const actions = {
 			logger.warn('Invalid workout reminder update form data', {
 				errors: form.errors
 			});
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -512,7 +514,11 @@ export const actions = {
 		const form = await superValidate(request, zod4(deleteEntrySchema));
 
 		if (!form.valid) {
-			return fail(400, { error: 'Invalid workout reminder data' });
+			return message(
+				form,
+				{ type: 'error', text: 'Invalid workout reminder data' },
+				{ status: 400 }
+			);
 		}
 
 		try {
@@ -524,7 +530,11 @@ export const actions = {
 				.returning({ id: workoutReminders.id });
 
 			if (result.length === 0) {
-				return fail(404, { error: 'Workout reminder not found' });
+				return message(
+					form,
+					{ type: 'error', text: 'Workout reminder not found' },
+					{ status: 404 }
+				);
 			}
 
 			logger.info('Workout reminder deleted', { reminderId: form.data.id, userId: user.id });
@@ -547,7 +557,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(updateWeightSchema));
 
 		if (!form.valid) {
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -587,7 +597,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(deleteEntrySchema));
 
 		if (!form.valid) {
-			return fail(400, { error: 'Invalid weight entry id' });
+			return message(form, { type: 'error', text: 'Invalid weight entry id' }, { status: 400 });
 		}
 
 		try {
@@ -597,7 +607,7 @@ export const actions = {
 			});
 
 			if (!existing) {
-				return fail(404, { error: 'Weight entry not found' });
+				return message(form, { type: 'error', text: 'Weight entry not found' }, { status: 404 });
 			}
 
 			await db
@@ -607,7 +617,11 @@ export const actions = {
 			logger.info('Weight entry deleted', { entryId: form.data.id, userId: user.id });
 		} catch (error) {
 			logger.error('Failed to delete weight entry', error);
-			return fail(500, { error: 'Failed to delete weight entry' });
+			return message(
+				form,
+				{ type: 'error', text: 'Failed to delete weight entry' },
+				{ status: 500 }
+			);
 		}
 
 		return { success: true };
@@ -617,7 +631,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(updateWorkoutSchema));
 
 		if (!form.valid) {
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		let parsedExercises: WorkoutExerciseInput[] = [];
@@ -694,7 +708,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(deleteEntrySchema));
 
 		if (!form.valid) {
-			return fail(400, { error: 'Invalid workout id' });
+			return message(form, { type: 'error', text: 'Invalid workout id' }, { status: 400 });
 		}
 
 		try {
@@ -704,7 +718,7 @@ export const actions = {
 			});
 
 			if (!existing) {
-				return fail(404, { error: 'Workout not found' });
+				return message(form, { type: 'error', text: 'Workout not found' }, { status: 404 });
 			}
 
 			await db
@@ -714,7 +728,7 @@ export const actions = {
 			logger.info('Workout deleted', { workoutId: form.data.id, userId: user.id });
 		} catch (error) {
 			logger.error('Failed to delete workout', error);
-			return fail(500, { error: 'Failed to delete workout' });
+			return message(form, { type: 'error', text: 'Failed to delete workout' }, { status: 500 });
 		}
 
 		return { success: true };
@@ -724,7 +738,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(updateMealSchema));
 
 		if (!form.valid) {
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -765,7 +779,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(deleteEntrySchema));
 
 		if (!form.valid) {
-			return fail(400, { error: 'Invalid meal id' });
+			return message(form, { type: 'error', text: 'Invalid meal id' }, { status: 400 });
 		}
 
 		try {
@@ -775,7 +789,7 @@ export const actions = {
 			});
 
 			if (!existing) {
-				return fail(404, { error: 'Meal not found' });
+				return message(form, { type: 'error', text: 'Meal not found' }, { status: 404 });
 			}
 
 			await db
@@ -785,7 +799,7 @@ export const actions = {
 			logger.info('Meal deleted', { mealId: form.data.id, userId: user.id });
 		} catch (error) {
 			logger.error('Failed to delete meal', error);
-			return fail(500, { error: 'Failed to delete meal' });
+			return message(form, { type: 'error', text: 'Failed to delete meal' }, { status: 500 });
 		}
 
 		return { success: true };

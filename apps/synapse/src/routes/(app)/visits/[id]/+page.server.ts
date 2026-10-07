@@ -1,9 +1,16 @@
-import { personSchema, scheduleVisitSchema, visitSchema } from '$lib/schemas/visits';
+import { noFieldsSchema } from '$lib/schemas/common';
+import {
+	deleteVisitSchema,
+	personSchema,
+	scheduleVisitSchema,
+	visitSchema
+} from '$lib/schemas/visits';
 import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
 import {
 	getOwnedEntityOrNull,
 	getOwnedEntityOrThrow
 } from '$lib/server/actions/edit-route-helpers';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import { toCommaSeparatedJson } from '$lib/server/actions/string-parsers';
 import { getDb } from '$lib/server/db';
 import { people, visits } from '$lib/server/db/schema';
@@ -17,7 +24,7 @@ import { getVisitStatusThresholdsForUser } from '$lib/server/visit-status-settin
 import { getTodayString } from '$lib/utils/date';
 import { safeParse } from '$lib/utils/json';
 import { calculatePersonVisitStatus, getEffectiveFollowUpDate } from '$lib/utils/visit-status';
-import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
+import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { and, desc, eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -103,7 +110,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid visit form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -117,7 +124,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return fail(404, { error: 'Person not found' });
+				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
 			}
 
 			const companions = toCommaSeparatedJson(form.data.companions);
@@ -174,11 +181,11 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid visit update form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		if (typeof visitId !== 'string' || !visitId) {
-			return fail(400, { error: 'Visit ID is required' });
+			return message(form, { type: 'error', text: 'Visit ID is required' }, { status: 400 });
 		}
 
 		try {
@@ -195,7 +202,7 @@ export const actions = {
 			);
 
 			if (!visit) {
-				return fail(404, { error: 'Visit not found' });
+				return message(form, { type: 'error', text: 'Visit not found' }, { status: 404 });
 			}
 
 			const companions = toCommaSeparatedJson(form.data.companions);
@@ -242,7 +249,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid person form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -256,7 +263,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return fail(404, { error: 'Person not found' });
+				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
 			}
 
 			await db
@@ -292,7 +299,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid schedule visit form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
@@ -306,7 +313,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return fail(404, { error: 'Person not found' });
+				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
 			}
 
 			await db
@@ -336,7 +343,9 @@ export const actions = {
 		}
 	}),
 
-	cancelScheduledVisit: requireAuth(async ({ params }, user) => {
+	cancelScheduledVisit: requireAuth(async ({ request, params }, user) => {
+		const form = await superValidate(request, zod4(noFieldsSchema));
+
 		try {
 			const db = getDb();
 
@@ -348,7 +357,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return fail(404, { error: 'Person not found' });
+				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
 			}
 
 			await db
@@ -358,14 +367,20 @@ export const actions = {
 
 			logger.info('Scheduled visit cancelled', { personId: params.id, userId: user.id });
 
-			return { success: true };
+			return message(form, { type: 'success', text: 'Scheduled visit cleared.' });
 		} catch (err) {
 			logger.error('Failed to cancel scheduled visit', err);
-			return fail(500, { error: 'Failed to cancel scheduled visit' });
+			return message(
+				form,
+				{ type: 'error', text: 'Failed to cancel scheduled visit' },
+				{ status: 500 }
+			);
 		}
 	}),
 
-	archivePerson: requireAuth(async ({ params }, user) => {
+	archivePerson: requireAuth(async ({ request, params }, user) => {
+		const form = await superValidate(request, zod4(noFieldsSchema));
+
 		try {
 			const db = getDb();
 
@@ -377,7 +392,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return fail(404, { error: 'Person not found' });
+				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
 			}
 
 			await db
@@ -392,13 +407,15 @@ export const actions = {
 			logger.info('Person archived', { personId: params.id, userId: user.id });
 		} catch (err) {
 			logger.error('Failed to archive person', err);
-			return fail(500, { error: 'Failed to archive person' });
+			return message(form, { type: 'error', text: 'Failed to archive person' }, { status: 500 });
 		}
 
 		throw redirect(303, '/visits');
 	}),
 
-	deletePerson: requireAuth(async ({ params }, user) => {
+	deletePerson: requireAuth(async ({ request, params }, user) => {
+		const form = await superValidate(request, zod4(noFieldsSchema));
+
 		try {
 			const db = getDb();
 
@@ -410,7 +427,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return fail(404, { error: 'Person not found' });
+				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
 			}
 
 			// Delete person (cascades to visits)
@@ -419,19 +436,20 @@ export const actions = {
 			logger.info('Person deleted', { personId: params.id, userId: user.id });
 		} catch (err) {
 			logger.error('Failed to delete person', err);
-			return fail(500, { error: 'Failed to delete person' });
+			return message(form, { type: 'error', text: 'Failed to delete person' }, { status: 500 });
 		}
 
 		throw redirect(303, '/visits');
 	}),
 
 	deleteVisit: requireAuth(async ({ request }, user) => {
-		const formData = await request.formData();
-		const visitId = formData.get('visitId') as string;
+		const form = await superValidate(request, zod4(deleteVisitSchema));
 
-		if (!visitId) {
-			return fail(400, { error: 'Visit ID is required' });
+		if (!form.valid) {
+			return invalidForm(form, 'Visit ID is required');
 		}
+
+		const { visitId } = form.data;
 
 		try {
 			const db = getDb();
@@ -444,17 +462,17 @@ export const actions = {
 			);
 
 			if (!visit) {
-				return fail(404, { error: 'Visit not found' });
+				return message(form, { type: 'error', text: 'Visit not found' }, { status: 404 });
 			}
 
 			await db.delete(visits).where(and(eq(visits.id, visitId), eq(visits.userId, user.id)));
 
 			logger.info('Visit deleted', { visitId, userId: user.id });
 
-			return { success: true };
+			return message(form, { type: 'success', text: 'Visit deleted.' });
 		} catch (err) {
 			logger.error('Failed to delete visit', err);
-			return fail(500, { error: 'Failed to delete visit' });
+			return message(form, { type: 'error', text: 'Failed to delete visit' }, { status: 500 });
 		}
 	})
 } satisfies Actions;
