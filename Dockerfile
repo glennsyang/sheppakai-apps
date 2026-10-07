@@ -42,9 +42,10 @@ COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm fetch --prod=false
 
 # Copy the workspace, then install only this app and the workspace packages it uses.
-# The filter selects the app by path, so no package name is needed.
+# The filter selects the app by path (braces are needed for `...` to also pull in its
+# workspace dependencies), so no package name is needed.
 COPY . .
-RUN pnpm install --offline --frozen-lockfile --prod=false --filter "./apps/${APP}..."
+RUN pnpm install --offline --frozen-lockfile --prod=false --filter "{./apps/${APP}}..."
 
 WORKDIR /repo/apps/${APP}
 
