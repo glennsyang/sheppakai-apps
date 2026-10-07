@@ -27,7 +27,7 @@ differences.
 
 | Variable               | Purpose                                                                                                                                                                                |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`         | SQLite file path. Set in each `fly.toml` `[env]` for production.                                                                                                                       |
+| `DATABASE_URL`         | SQLite file path. Set as a Fly secret on each app for production.                                                                                                                      |
 | `BETTER_AUTH_SECRET`   | Better Auth session signing key, at least 32 characters.                                                                                                                               |
 | `BETTER_AUTH_BASE_URL` | App origin Better Auth builds callback and email links against.                                                                                                                        |
 | `BREVO_API_KEY`        | Brevo transactional email.                                                                                                                                                             |

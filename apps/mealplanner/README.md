@@ -169,7 +169,7 @@ fly secrets set \
 fly deploy
 ```
 
-`DATABASE_URL` is set in `fly.toml` `[env]`, and `NODE_ENV` in the repo-root `Dockerfile`. See [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) for the full variable
+`DATABASE_URL` is a Fly secret, and `NODE_ENV` is set in the repo-root `Dockerfile`. See [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) for the full variable
 reference, including build-time and CI-only vars.
 
 SQLite is stored on a persistent volume mounted at `/data/db.sqlite`. Migrations run

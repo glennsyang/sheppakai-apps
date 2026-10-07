@@ -8,8 +8,6 @@ primary_region = 'yyz'
   # client's. Make getClientAddress() (used by the auth rate limiter) read the
   # real client IP from the header Fly sets on every proxied request.
   ADDRESS_HEADER = 'Fly-Client-IP'
-  # SQLite file on the [[mounts]] volume below.
-  DATABASE_URL = '/data/synapse.db'
 
 [[mounts]]
   source = 'data'
