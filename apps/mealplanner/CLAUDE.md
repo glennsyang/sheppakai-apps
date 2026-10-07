@@ -28,7 +28,7 @@ Always use **Node.js 22.23.3** for all development, testing, and tooling. Do not
 
 ## Product Data-Sharing Model (Critical Requirement)
 
-- This app is intentionally a **shared-data** system for exactly **two users** — the same model used by the sibling `sheppakai-budget` repo (see its `AGENTS.md`, "Product Data-Sharing Model").
+- This app is intentionally a **shared-data** system for exactly **two users** — the same model used by the sibling `budget` repo (see its `AGENTS.md`, "Product Data-Sharing Model").
 - Both users are expected to see and edit the same household data: `pantry_items`, `recipes`, `meal_plans`, and `meal_plan_entries` are shared, not per-user-private. There is one shared pantry and one shared weekly planner, not one per user.
 - Do **not** treat cross-user visibility or editing of these tables as a tenant-isolation bug (IDOR) in this project unless this product requirement changes. A full-codebase security review (2026-08-27) initially flagged this as critical in #31 and #32 — both were closed as by-design once this was clarified.
 - This does **not** extend to auth-only data. Session tokens, account credentials, and verification records must stay strictly per-user and never be exposed to another user or leaked to the client beyond what better-auth already scopes — that's a real security bug, not a data-sharing question (see #33, still open).
@@ -117,7 +117,7 @@ src/
 ## Authentication
 
 - **better-auth v1** with email+password only (no OAuth).
-- **Public sign-up is disabled** (`emailAndPassword.disableSignUp: true`, no `/register` route) — the shared-data model depends on exactly two users (#124). Sign-in is also gated to the exact `ALLOWED_EMAILS` list (`src/lib/server/auth/allowlist-hook.ts`) — same as `sheppakai-budget` and `synapse`. New accounts: admin plugin's `createUser`, then add the email to `ALLOWED_EMAILS`.
+- **Public sign-up is disabled** (`emailAndPassword.disableSignUp: true`, no `/register` route) — the shared-data model depends on exactly two users (#124). Sign-in is also gated to the exact `ALLOWED_EMAILS` list (`src/lib/server/auth/allowlist-hook.ts`) — same as `budget` and `synapse`. New accounts: admin plugin's `createUser`, then add the email to `ALLOWED_EMAILS`.
 - Minimum password length: **12 characters**.
 - `src/hooks.server.ts` runs the session middleware on every request, populating `event.locals.user` and `event.locals.session` via `svelteKitHandler`.
 - `(app)/+layout.server.ts` enforces the auth guard — redirects to `/sign-in` if no session. Auth route paths are centralised in `src/lib/auth-routes.ts` (`SIGN_IN_ROUTE`, etc.) — no inline route literals.

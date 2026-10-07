@@ -151,7 +151,7 @@ export const auth = betterAuth({
 /**
  * Assert the current user is an admin, throwing a SvelteKit `error(401|403)` otherwise.
  *
- * This is sheppakai-budget's superforms-aware extension of the canonical admin guard: it
+ * This is budget's superforms-aware extension of the canonical admin guard: it
  * additionally honours the `ADMIN_USER_IDS` env bootstrap (grant admin by id without a DB
  * write), on top of the `role === 'admin'` check that `requireAdmin` in
  * `./actions/auth-guard` performs in every repo. Use it directly in

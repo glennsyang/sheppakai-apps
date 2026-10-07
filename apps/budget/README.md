@@ -80,7 +80,7 @@ This project is developer-ready and runs locally with a standard Node setup.
    pnpm dev
    ```
 
-   From the repo root, `pnpm --filter sheppakai-budget dev` does the same.
+   From the repo root, `pnpm --filter budget dev` does the same.
 
 5. **Open http://localhost:5173**
 

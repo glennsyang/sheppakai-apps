@@ -73,7 +73,7 @@ export const auth = betterAuth({
 		// Runs after a reset completes and every session has been revoked
 		// (revokeSessionsOnPasswordReset above). Fire-and-forget: the reset itself
 		// has already succeeded, so a failing confirmation email or push alert must
-		// not break the response. Parity with sheppakai-budget.
+		// not break the response. Parity with budget.
 		onPasswordReset: async ({ user }) => {
 			logPasswordResetAudit(user, 'Meal Planner');
 			void sendPasswordChangedEmail({
