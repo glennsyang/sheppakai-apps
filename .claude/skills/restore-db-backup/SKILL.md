@@ -10,7 +10,7 @@ All three apps share one `Database Backup` GitHub Actions workflow
 app's production SQLite db, gzips it, and GPG-encrypts it with the app environment's
 `BACKUP_ENCRYPTION_PASSPHRASE` before uploading it as a `db-backup-<app>-<timestamp>`
 artifact containing one `backup-<timestamp>.sql.gz.gpg` file. See
-`apps/budget/docs/BACKUP_RESTORE.md` for the full backup/restore design.
+`docs/BACKUP_RESTORE.md` (repo root) for the full backup/restore design.
 
 This skill fetches that artifact, decrypts, decompresses, and restores the dump into the
 app's local dev db in one step.

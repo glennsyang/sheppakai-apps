@@ -111,7 +111,7 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 	// SvelteKit generates a per-request nonce, injects it into the inline scripts/styles
 	// it produces, and sets the CSP header automatically. Do NOT set Content-Security-Policy
 	// here — it would override the nonce-bearing header SvelteKit emits. See
-	// apps/budget/docs/CSP.md for the shared strategy and per-app allowances.
+	// docs/CSP.md (repo root) for the shared strategy and per-app allowances.
 
 	return response;
 });

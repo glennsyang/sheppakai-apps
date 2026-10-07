@@ -1,14 +1,13 @@
 # Content-Security-Policy Strategy
 
-Single source of truth for how CSP is configured across the three auth apps
-(`synapse`, `sheppakai-budget`, `sheppakai-mealplanner`). Tracked by
-[glennsyang/sheppakai-budget#440](https://github.com/glennsyang/sheppakai-budget/issues/440);
-see `auth-audit.md` §2I.
+Single source of truth for how CSP is configured across the three apps
+(`apps/synapse`, `apps/budget`, `apps/mealplanner`). Originally tracked by
+glennsyang/sheppakai-budget#440, before the apps moved into this monorepo.
 
 ## Strategy — SvelteKit `kit.csp` nonce mode
 
 All three apps configure CSP **only** through `kit.csp` with `mode: 'nonce'` in
-`svelte.config.js`:
+each app's `svelte.config.js`:
 
 ```js
 kit: {
@@ -97,19 +96,19 @@ Passing `nonce` to `<ModeWatcher>` doesn't work: components can't read the reque
 
 ### Per-app `connect-src`
 
-| app                     | `connect-src`                                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------- |
-| `synapse`               | `'self'` · Sentry ingest · `https://nominatim.openstreetmap.org` · `https://api.open-meteo.com` |
-| `sheppakai-budget`      | `'self'` · Sentry ingest                                                                        |
-| `sheppakai-mealplanner` | `'self'` · Sentry ingest                                                                        |
+| app           | `connect-src`                                                                                   |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| `synapse`     | `'self'` · Sentry ingest · `https://nominatim.openstreetmap.org` · `https://api.open-meteo.com` |
+| `budget`      | `'self'` · Sentry ingest                                                                        |
+| `mealplanner` | `'self'` · Sentry ingest                                                                        |
 
 "Sentry ingest" = `https://*.ingest.us.sentry.io` and `https://*.ingest.sentry.io`.
 
 ## Changing CSP
 
-1. Update `svelte.config.js` in the affected repo(s).
+1. Update `apps/<app>/svelte.config.js` for the affected app(s).
 2. Update the table above so this file stays the single source of truth.
-3. Verify with `npm run build && npm run preview`: load an authenticated page (a
+3. Verify with `pnpm --filter <app> build && pnpm --filter <app> preview`: load an authenticated page (a
    chart page where the app has charts), confirm the `Content-Security-Policy` response
    header carries a fresh `'nonce-…'` in `script-src`, and confirm the browser console
    shows **no** CSP violations.

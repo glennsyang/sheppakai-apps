@@ -1,74 +1,40 @@
-# Environment Variables
+# Environment Variables (mealplanner)
 
-This is the canonical list of every environment variable this app uses — app runtime, build-time,
-and CI-only. `.env.example` is the actual template to copy for local dev; this doc is the
-reference for what each one does, where it's required, and where it's consumed. If the two ever
-disagree, this doc and the code it links to are the source of truth — update `.env.example` (and
-the README/CLAUDE.md pointers to this file) to match, not the other way around.
+Every runtime variable this app reads. Shared conventions, the meaning of the variables all
+apps share, the "adding a user" steps, and the GitHub Actions secrets are in
+[docs/ENVIRONMENT.md](../../../docs/ENVIRONMENT.md). `.env.example` is the local template.
+If it and this doc ever disagree, this doc and `src/env.ts` win: update `.env.example`.
+
+Fly app: `sheppakai-mealplanner`. Validated in [`src/env.ts`](../src/env.ts) unless noted.
 
 ## App runtime
 
-Validated at startup in [`src/env.ts`](../src/env.ts) via SvelteKit's explicit-env feature
-(`experimental.explicitEnvironmentVariables` in `svelte.config.js`), and consumed via
-`$app/env/private` (or `$app/env/public` for the one public var). During `npm run build`, each
-var falls back to a build-time dummy value (see `src/env.ts`) so the build never needs real
-secrets — those dummies are rejected at runtime outside of build.
+| Variable               | Required | Set in prod via     | Notes                                                                                                                                                                                                                                    |
+| ---------------------- | -------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`         | Yes      | Dockerfile `ENV`    | `file:///data/db.sqlite`. Dev default: `./data/db.sqlite`.                                                                                                                                                                               |
+| `BETTER_AUTH_SECRET`   | Yes      | Fly secret          | At least 32 characters.                                                                                                                                                                                                                  |
+| `BETTER_AUTH_BASE_URL` | No       | Fly secret          | Defaults to `http://localhost:5173`.                                                                                                                                                                                                     |
+| `BREVO_API_KEY`        | Yes      | Fly secret          |                                                                                                                                                                                                                                          |
+| `BREVO_FROM_ADDRESS`   | Yes      | Fly secret          | Must be a confirmed Brevo sender.                                                                                                                                                                                                        |
+| `ADMIN_USER_IDS`       | No       | Fly secret          | Defaults to `dummy_admin_id`. Promoting with SQL (`UPDATE user SET role='admin'`) also works.                                                                                                                                            |
+| `ALLOWED_EMAILS`       | Yes      | Fly secret          | Enforced by `src/lib/server/auth/allowlist-hook.ts` at sign-in, at session creation and on every request. Add users from `/admin` → **Add user**.                                                                                        |
+| `ANTHROPIC_API_KEY`    | For AI   | Fly secret          | Claude API key (recipe variations, `src/lib/server/ai/claude.ts`). Has a dummy default, so the app boots without it but the feature fails.                                                                                               |
+| `GEMINI_API_KEY`       | For AI   | Fly secret          | Gemini API key (meal suggestions, `src/lib/server/ai/gemini.ts`). Same dummy default.                                                                                                                                                    |
+| `AUTH_ALERTS_URL`      | No       | Fly secret          | ntfy.sh topic for auth alerts (completed password resets). When unset, it defaults to `https://auth-alerts.invalid` and alerts are skipped, because alert text includes a user's name and email and must never be sent to a placeholder. |
+| `NODE_ENV`             | No       | Dockerfile `ENV`    | `production` in the image.                                                                                                                                                                                                               |
+| `ADDRESS_HEADER`       | No       | `fly.toml` `[env]`  | `Fly-Client-IP`. Not in `env.ts`.                                                                                                                                                                                                        |
+| `SENTRY_DSN`           | No       | Default in `env.ts` | Public.                                                                                                                                                                                                                                  |
+| `LOG_LEVEL`            | No       | Not set             | Not in `env.ts`; read by `packages/logger`.                                                                                                                                                                                              |
 
-| Variable               | Required | Fly secret? | Consumed in                                                  | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ---------------------- | -------- | ----------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`         | Yes      | No          | `src/lib/server/db/index.ts`                                 | Baked into the `Dockerfile` (`file:///data/db.sqlite`) instead — see below. Dev default: `./data/db.sqlite`.                                                                                                                                                                                                                                                                                                                                                                                       |
-| `BETTER_AUTH_SECRET`   | Yes      | Yes         | `src/lib/server/auth/index.ts`                               | Random 32+ char string for auth session signing.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `BETTER_AUTH_BASE_URL` | Yes      | Yes         | `src/lib/server/auth/index.ts`                               | App origin URL, used for auth callbacks. Defaults to `http://localhost:5173`.                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `ADMIN_USER_IDS`       | No       | Yes         | `src/lib/server/auth/index.ts`                               | Comma-separated user IDs bootstrapped as admins by the better-auth `admin` plugin. Defaults to `dummy_admin_id`. Parity with the sibling repos (sheppakai-budget#437); the one-off SQL `UPDATE user SET role='admin'` promotion path also works.                                                                                                                                                                                                                                                   |
-| `ALLOWED_EMAILS`       | Yes      | Yes         | `src/lib/server/auth/index.ts`, `src/hooks.server.ts`        | Comma-separated; the only emails that can sign in (exact, case-insensitive). Enforced by `src/lib/server/auth/allowlist-hook.ts` at sign-in, at session creation, and on every request. Unset or empty → env validation fails and every request returns 500 (fails closed). New account: `/admin` → **Add user** (prints the exact `fly secrets set ALLOWED_EMAILS="…" -a sheppakai-mealplanner` command if the email isn't listed), add the email here, then **Send welcome email** on their row. |
-| `BREVO_API_KEY`        | Yes      | Yes         | `src/lib/server/email/index.ts`                              | Brevo API key for transactional email.                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `BREVO_FROM_ADDRESS`   | Yes      | Yes         | `src/lib/server/email/index.ts`                              | Must be a sender address confirmed in Brevo. Related to #59, #64.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `ANTHROPIC_API_KEY`    | Yes      | **Missing** | `src/lib/server/ai/claude.ts`                                | Claude API key (recipe variations). **Not currently set in production** (`fly secrets list` doesn't show it) — needs `fly secrets set ANTHROPIC_API_KEY=...` from someone with the key.                                                                                                                                                                                                                                                                                                            |
-| `GEMINI_API_KEY`       | Yes      | Yes         | `src/lib/server/ai/gemini.ts`                                | Gemini API key (meal suggestions).                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `NODE_ENV`             | No       | Yes\*       | `src/lib/server/db/index.ts`, `src/lib/server/auth/index.ts` | `development` \| `production` \| `test`. \*Also baked into the `Dockerfile` — see below; the Fly secret is redundant but harmless.                                                                                                                                                                                                                                                                                                                                                                 |
-| `SENTRY_DSN`           | No       | No          | `src/hooks.client.ts`, `src/hooks.server.ts`                 | Not a secret — sent to the browser. Defaults to the project DSN, so no config is needed unless pointing at a different Sentry project.                                                                                                                                                                                                                                                                                                                                                             |
-| `AUTH_ALERTS_URL`      | No       | Yes\*\*     | `src/lib/server/notifications/index.ts`                      | Ntfy.sh URL for security/auth push alerts (completed password resets). \*\*Not required to run. Unset → defaults to a non-resolving `https://auth-alerts.invalid`, which `sendAuthAlerts` treats as "disabled" and skips (fails closed — alert text carries a user's name/email, so it is never POSTed to a placeholder). Prod delivery needs `fly secrets set AUTH_ALERTS_URL=...`.                                                                                                               |
+## GitHub Actions secrets
 
-## App runtime, optional, unvalidated
-
-Not validated by `src/env.ts` — read directly via `process.env` and safe to leave unset.
-
-| Variable    | Required | Consumed in                | Notes                                                                                     |
-| ----------- | -------- | -------------------------- | ----------------------------------------------------------------------------------------- |
-| `LOG_LEVEL` | No       | `src/lib/server/logger.ts` | `debug` \| `info` \| `warn` \| `error`. Defaults to `debug` in dev, `info` in production. |
-
-## Baked into the `Dockerfile`, not Fly secrets
-
-Set as `ENV` lines in [`Dockerfile`](../Dockerfile), not via `fly secrets set` — intentional, not
-an omission:
-
-- `DATABASE_URL=file:///data/db.sqlite`
-- `NODE_ENV=production`
-- `ADDRESS_HEADER=fly-client-ip` — makes adapter-node's `getClientAddress()` return the real client IP (set by Fly's edge, not spoofable) instead of the Fly proxy's, so the auth-form rate limiters in `src/lib/server/rate-limiter.ts` key per client rather than sharing one global bucket (#125). Fails closed: a request without the header throws.
-
-## Build-time only
-
-Not needed for `npm run dev` — only read during `npm run build`.
-
-| Variable            | Consumed in                            | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SENTRY_AUTH_TOKEN` | `vite.config.ts` (`sentrySvelteKit()`) | Lets the Sentry Vite plugin upload source maps during build. Passed into the Docker build stage as a BuildKit build secret (never persisted into an image layer) — see `Dockerfile` (`RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN`) and `.github/workflows/fly-deploy.yml` (`flyctl deploy --build-secret`). Requires a `SENTRY_AUTH_TOKEN` GitHub Actions repo secret to actually take effect; without it, the build just skips source-map upload. |
-
-## CI-only GitHub Actions secrets
-
-Not app runtime vars — never touched by the running app, only by GitHub Actions workflows.
-
-| Variable                       | Used in                                                                     | Notes                                                                 |
-| ------------------------------ | --------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `FLY_API_TOKEN`                | `.github/workflows/fly-deploy.yml`, `.github/workflows/backup-database.yml` | Deploys and remote `flyctl ssh` access.                               |
-| `BACKUP_ENCRYPTION_PASSPHRASE` | `.github/workflows/backup-database.yml`                                     | Encrypts the SQLite dump before it's uploaded as an Actions artifact. |
-| `SENTRY_AUTH_TOKEN`            | `.github/workflows/fly-deploy.yml`                                          | See "Build-time only" above.                                          |
+Environment `mealplanner`: `FLY_API_TOKEN`, `BACKUP_ENCRYPTION_PASSPHRASE`,
+`SENTRY_AUTH_TOKEN`. There are no cron jobs, so no `CRON_SECRET` or `APP_URL`. See the
+[root doc](../../../docs/ENVIRONMENT.md#github-actions-secrets).
 
 ## Verification
 
-- [ ] `fly secrets list -a sheppakai-mealplanner` matches the "Fly secret?" column above exactly
-      (as of this doc: `BETTER_AUTH_BASE_URL`, `BETTER_AUTH_SECRET`, `GEMINI_API_KEY`, `NODE_ENV`,
-      `BREVO_API_KEY`, `BREVO_FROM_ADDRESS`, `ALLOWED_EMAILS` are set; `ANTHROPIC_API_KEY` is the known gap above.
-      `ADMIN_USER_IDS` should be set to the production admin's user id).
-- [ ] A fresh `cp .env.example .env` + fill-in boots the app locally with no missing-var errors,
-      including the AI (Claude/Gemini) and Brevo email paths.
+- [ ] `fly secrets list -a sheppakai-mealplanner` matches the "Fly secret" rows above.
+- [ ] `gh secret list --env mealplanner` lists the three secrets above.
+- [ ] A fresh `cp .env.example .env` with real values boots the app locally with no
+      missing-variable errors, including the AI (Claude/Gemini) and Brevo email paths.

@@ -1,27 +1,17 @@
 # External API (`/api/v1`)
 
-A small JSON API for driving Synapse from outside the web UI — a personal AI assistant, a
-script, or a future mobile client. Authenticated with API keys, not session cookies, so an
-external tool never needs your personal login.
+A small JSON API for driving Synapse from outside the web UI. Authentication, the response
+envelope, error codes, CORS and what's out of scope are shared with budget and documented in
+[docs/API_CONVENTIONS.md](../../../docs/API_CONVENTIONS.md). This file covers what's specific
+to synapse.
 
-## Authentication
+## Keys
 
-Every request must include:
-
-```
-Authorization: Bearer <key>
-```
-
-- The key is **only** ever read from the `Authorization` header. It is never accepted as a
-  query parameter, and a browser session cookie is never accepted as a fallback — the two
-  auth paths are fully independent.
-- Keys are created and revoked from **Admin → API Keys** (`/admin`) in the web UI, by an
-  admin account. The plaintext key is shown exactly once, at creation time — only a hash is
-  stored, so if you lose it you'll need to revoke it and create a new one.
-- Each key is scoped to a specific set of permissions (see below) and can optionally expire.
-- Each key has its own rate limit; repeated requests beyond it return `429`.
-- **Admin → API Logs** (`/admin`) shows the same audit trail described below — who made each
-  write, with which key, and what happened — for reviewing external activity in the UI.
+- Created and revoked by an admin from **Admin → API Keys** (`/admin`).
+- **Admin → API Logs** (`/admin`) shows the audit trail (who made each write, with which key,
+  and what happened), so you can review external activity in the UI.
+- Records are per user: a key only sees and changes its own user's records. Any other id
+  returns `404`.
 
 ## Scopes
 
@@ -41,40 +31,8 @@ Authorization: Bearer <key>
 | `journal:read`   | `GET /api/v1/journal`, `GET /api/v1/journal/{id}`      |
 | `journal:write`  | `POST /api/v1/journal`, `PATCH /api/v1/journal/{id}`   |
 
-A key only needs the scopes for the endpoints it's meant to call — pick the narrowest set
-that covers the intended use. `people:read` exists mainly to resolve a `personId` for the
+`people:read` exists mainly to resolve a `personId` for the
 visits endpoints — a visit is tied to an existing person record, not a free-text name.
-
-## Response shape
-
-Every response is one of exactly two shapes:
-
-```jsonc
-// Success
-{ "data": /* endpoint-specific payload */ }
-
-// Failure
-{ "error": { "code": "some_code", "message": "Human-readable explanation" } }
-```
-
-| HTTP status | `error.code`                                             | Meaning                                                                                                                                                                              |
-| ----------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 401         | `missing_header` / `invalid_scheme` / `malformed_header` | No `Authorization` header, wrong scheme, or malformed value                                                                                                                          |
-| 401         | `invalid_api_key`                                        | Key doesn't exist, is disabled, expired, or lacks the scope the endpoint requires (deliberately indistinguishable from an unknown key, so a caller can't probe which reason applies) |
-| 404         | `not_found`                                              | The record doesn't exist, or doesn't belong to this key's user                                                                                                                       |
-| 429         | `rate_limited`                                           | This key's rate limit or request quota was exceeded — wait and retry                                                                                                                 |
-| 400         | `validation_failed`                                      | Request body or query parameters failed validation                                                                                                                                   |
-| 400         | `invalid_json`                                           | Request body wasn't valid JSON                                                                                                                                                       |
-| 500         | `internal_error`                                         | Something went wrong server-side; check the server logs                                                                                                                              |
-
-Every write — successful or failed — is recorded in an internal audit log with the key that
-made it, so activity from an external tool is traceable if something looks wrong.
-
-## CORS
-
-No `Access-Control-Allow-Origin` header is ever returned. This API is for server-to-server
-or script use (curl, a backend job, an assistant's tool call) — not for calling directly
-from browser JavaScript on another site.
 
 ## Endpoints
 
@@ -219,8 +177,5 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
 
 ## Out of scope
 
-- OAuth2/third-party app authorization — API keys are enough for a single-user "give my own
-  tool a key" setup
-- Write access to user/auth-management endpoints
-- Webhooks
-- Delete endpoints — delete records from the web UI
+Beyond the [shared list](../../../docs/API_CONVENTIONS.md#out-of-scope): there are no delete
+endpoints. Delete records from the web UI.

@@ -1,41 +1,38 @@
-# Environment Variables
+# Environment Variables (budget)
 
-Canonical reference for every environment variable this app or its CI/infra pipeline uses. `.env.example` mirrors this list for local development.
+Every runtime variable this app reads. Shared conventions, the meaning of the variables all
+apps share, and the GitHub Actions secrets are in
+[docs/ENVIRONMENT.md](../../../docs/ENVIRONMENT.md). `.env.example` is the local template.
+
+Fly app: `sheppakai-budget`. Validated in [`src/env.ts`](../src/env.ts) unless noted.
 
 ## App runtime
 
-Read by the running app — validated in `src/env.ts` (SvelteKit's `defineEnvVars`) unless noted otherwise. Deployed to production as Fly.io secrets (`fly secrets set`).
+| Variable               | Required | Set in prod via     | Notes                                                                                                        |
+| ---------------------- | -------- | ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`         | Yes      | Dockerfile `ENV`    | `file:///data/sheppakaibudget.db`. Only matters for local dev.                                               |
+| `BETTER_AUTH_SECRET`   | Yes      | Fly secret          | At least 32 characters.                                                                                      |
+| `BETTER_AUTH_BASE_URL` | No       | Fly secret          | Defaults to `http://localhost:5173`. Same host as the `APP_URL` GitHub secret, but a separate value.         |
+| `CRON_SECRET`          | Yes      | Fly secret          | Bearer token for `/api/cron/*`. **Also a GitHub Actions secret, and the two must match** (see the root doc). |
+| `BREVO_API_KEY`        | Yes      | Fly secret          |                                                                                                              |
+| `BREVO_FROM_ADDRESS`   | Yes      | Fly secret          | Must be a confirmed Brevo sender.                                                                            |
+| `ADMIN_USER_IDS`       | No       | Fly secret          | Defaults to `dummy_admin_id`.                                                                                |
+| `ALLOWED_EMAILS`       | Yes      | Fly secret          | Enforced by `src/lib/server/auth-allowlist-hook.ts`. Add users from **Admin → Users → Add User**.            |
+| `AUTH_ALERTS_URL`      | No       | Fly secret          | ntfy.sh topic. Has a dummy default.                                                                          |
+| `BUDGET_ALERTS_URL`    | No       | Fly secret          | ntfy.sh topic for budget alerts. Has a dummy default.                                                        |
+| `NODE_ENV`             | No       | Dockerfile `ENV`    | `production` in the image.                                                                                   |
+| `ADDRESS_HEADER`       | No       | `fly.toml` `[env]`  | `Fly-Client-IP`. Not in `env.ts`.                                                                            |
+| `SENTRY_DSN`           | No       | Default in `env.ts` | Public.                                                                                                      |
+| `LOG_LEVEL`            | No       | Not set             | Not in `env.ts`; read by `packages/logger`.                                                                  |
 
-| Variable               | Subsystem                                                       | Where it's set                           | Required?                                             | Notes                                                                                                                                                                                                                                 |
-| ---------------------- | --------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`         | Drizzle / SQLite                                                | Fly secret, `.env` local                 | Required                                              | Hardcoded to `file:///data/sheppakaibudget.db` inside the Docker image; only matters for local dev.                                                                                                                                   |
-| `BETTER_AUTH_SECRET`   | Auth (`src/lib/server/auth.ts`)                                 | Fly secret, `.env` local                 | Required (min 32 chars)                               |                                                                                                                                                                                                                                       |
-| `BETTER_AUTH_BASE_URL` | Auth callbacks / password reset redirects                       | Fly secret, `.env` local                 | Optional (defaults to `http://localhost:5173`)        | Not the same as `APP_URL` below — that one's CI-only.                                                                                                                                                                                 |
-| `CRON_SECRET`          | `api/cron/*` route auth                                         | Fly secret **and** GitHub Actions secret | Required                                              | **Sync risk**: exists in two places. `monthly-cron.yml`/`weekly-cron.yml` curl the deployed app using the GitHub Actions copy, which must match the Fly secret. No automation keeps them in sync — update both by hand when rotating. |
-| `BREVO_API_KEY`        | Brevo transactional email                                       | Fly secret, `.env` local                 | Required                                              |                                                                                                                                                                                                                                       |
-| `BREVO_FROM_ADDRESS`   | Brevo transactional email                                       | Fly secret, `.env` local                 | Required (must be a confirmed Brevo sender)           |                                                                                                                                                                                                                                       |
-| `ADMIN_USER_IDS`       | `admin` plugin / `requireAdmin` gate (`src/lib/server/auth.ts`) | Fly secret, `.env` local                 | Optional (defaults to a dummy id)                     | Comma-separated list of hardcoded admin user ids.                                                                                                                                                                                     |
-| `ALLOWED_EMAILS`       | Sign-in allowlist (`src/lib/server/auth-allowlist-hook.ts`)     | Fly secret, `.env` local                 | Required                                              | Comma-separated; exact, case-insensitive match. Public sign-up is disabled, so add new accounts from **Admin → Users → Add User** **and** add their email here (the dialog shows the exact `fly secrets set` command).                |
-| `AUTH_ALERTS_URL`      | ntfy.sh push alerts (`src/lib/server/notifications`)            | Fly secret, `.env` local                 | Optional (has a dummy default)                        |                                                                                                                                                                                                                                       |
-| `BUDGET_ALERTS_URL`    | ntfy.sh push alerts (`src/lib/server/notifications`)            | Fly secret, `.env` local                 | Optional (has a dummy default)                        |                                                                                                                                                                                                                                       |
-| `SENTRY_DSN`           | Sentry init (`hooks.client.ts`/`hooks.server.ts`)               | `.env` local, hardcoded default          | Optional (defaults to the project's Sentry DSN)       | Marked `public: true` in `src/env.ts` — safe to expose to the client bundle.                                                                                                                                                          |
-| `NODE_ENV`             | Runtime environment                                             | Set by Docker image / `.env` local       | Optional (defaults to `development`)                  |                                                                                                                                                                                                                                       |
-| `LOG_LEVEL`            | `src/lib/server/logger.ts`                                      | `.env` local                             | Optional (defaults to `debug` in dev, `info` in prod) | **Read raw from `process.env`, not through `src/env.ts`** — see the comment in `logger.ts` (needed so tests can override it per-test with `vi.stubEnv`).                                                                              |
+## GitHub Actions secrets
 
-## CI / infra only
+Environment `budget`: `FLY_API_TOKEN`, `BACKUP_ENCRYPTION_PASSPHRASE`, `SENTRY_AUTH_TOKEN`,
+`CRON_SECRET`, `APP_URL`. See the [root doc](../../../docs/ENVIRONMENT.md#github-actions-secrets).
 
-Not read by the app itself — only by GitHub Actions workflows or `flyctl`. Do **not** `fly secrets set` these; they belong as GitHub Actions repo secrets.
-
-| Variable                       | Used by                                                          | Notes                                                                                                                                                                            |
-| ------------------------------ | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `APP_URL`                      | `monthly-cron.yml`, `weekly-cron.yml`                            | Curls the deployed app. Easy to confuse with `BETTER_AUTH_BASE_URL` (the app-runtime equivalent) — they must point at the same host but are two separate values.                 |
-| `FLY_API_TOKEN`                | `fly-deploy.yml`, `backup-database.yml`                          | Used by `flyctl`.                                                                                                                                                                |
-| `SENTRY_AUTH_TOKEN`            | `fly-deploy.yml` → `flyctl deploy --build-secret` → `Dockerfile` | Passed into the Docker build stage as a BuildKit secret so `vite.config.ts`'s `sentrySvelteKit()` can upload source maps. Never reaches the running container or an image layer. |
-| `BACKUP_ENCRYPTION_PASSPHRASE` | `backup-database.yml`                                            | Encrypts/decrypts the nightly SQLite dump. See `docs/BACKUP_RESTORE.md`. Workflow fails closed if unset.                                                                         |
-
-## Verifying the list is accurate
+## Verification
 
 ```bash
-fly secrets list -a sheppakai-budget   # should match the "App runtime" table above (optional vars may be omitted)
-gh secret list                          # should include CRON_SECRET, FLY_API_TOKEN, SENTRY_AUTH_TOKEN, BACKUP_ENCRYPTION_PASSPHRASE
+fly secrets list -a sheppakai-budget   # the "Fly secret" rows above (optional ones may be missing)
+gh secret list --env budget            # the five secrets above
 ```

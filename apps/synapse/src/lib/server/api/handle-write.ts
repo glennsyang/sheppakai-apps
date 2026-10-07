@@ -14,9 +14,9 @@ type WriteContext = {
 
 /**
  * Shared success/failure envelope for every `/api/v1/*` write route: runs `perform`,
- * records an audit-log entry for the outcome either way (per docs/API.md's audit-trail
- * guarantee), and maps a thrown `ApiWriteError` to its typed response or anything else
- * to a logged 500.
+ * records an audit-log entry for the outcome either way (per the audit-trail guarantee in
+ * docs/API_CONVENTIONS.md), and maps a thrown `ApiWriteError` to its typed response or
+ * anything else to a logged 500.
  */
 export async function handleApiWrite<T>(
 	context: WriteContext,
