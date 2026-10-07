@@ -69,7 +69,7 @@ Always use **Node.js 22.23.3** for all development, testing, and tooling. Do not
 ### Error handling
 
 - Always re-throw SvelteKit redirects: `if (isRedirect(error)) throw error`.
-- Use `fail(400, { form })` for form validation errors, `fail(500, ...)` for server errors.
+- The target contract is `docs/ERROR_HANDLING_POLICY.md` at the repo root (`message(form, …, { status })` instead of bare `fail(...)`). Existing routes still use `fail(400, { form })` / `fail(500, ...)`; new code and routes you touch should follow the policy.
 
 ---
 
@@ -253,7 +253,7 @@ All configured in `src/hooks.server.ts`:
 
 `hooks.server.ts` wires `Sentry.sentryHandle()` into the `handle` sequence and intentionally
 leaves `handleError` unwrapped (the structured logger already forwards to Sentry) — see
-`sheppakai-budget`'s `docs/SENTRY.md` for the cross-repo strategy.
+`docs/SENTRY.md` at the repo root for the cross-app strategy.
 
 ---
 

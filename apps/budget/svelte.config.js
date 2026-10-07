@@ -11,7 +11,7 @@ const config = {
 
 		// Nonce-based CSP: eliminates unsafe-inline from script-src.
 		// Sentry's sentryHandle() automatically reads the nonce SvelteKit generates.
-		// Shared strategy + per-app allowances: docs/CSP.md (single source of truth).
+		// Shared strategy + per-app allowances: docs/CSP.md at the repo root (single source of truth).
 		csp: {
 			mode: 'nonce',
 			directives: {

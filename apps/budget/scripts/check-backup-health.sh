@@ -6,6 +6,12 @@
 # Don't exit on error - we want to collect all results
 set +e
 
+# Run from anywhere: the workflow and docs live at the monorepo root, the restore
+# test script next to this file.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+WORKFLOW="$REPO_ROOT/.github/workflows/backup-database.yml"
+
 echo "==================================="
 echo "Backup System Health Check"
 echo "==================================="
@@ -54,11 +60,11 @@ fi
 # Check 3: Workflow file exists
 echo ""
 echo "Checking workflow configuration..."
-if [ -f ".github/workflows/backup-database.yml" ]; then
+if [ -f "$WORKFLOW" ]; then
     check_pass "Backup workflow file exists"
     
     # Check if schedule is configured
-    if grep -q "schedule:" ".github/workflows/backup-database.yml"; then
+    if grep -q "schedule:" "$WORKFLOW"; then
         check_pass "Scheduled backups configured"
     else
         check_warn "No schedule found - backups must be triggered manually"
@@ -68,9 +74,9 @@ else
 fi
 
 # Check 4: Test script exists
-if [ -f "scripts/test-restore.sh" ]; then
+if [ -f "$SCRIPT_DIR/test-restore.sh" ]; then
     check_pass "Restore test script exists"
-    if [ -x "scripts/test-restore.sh" ]; then
+    if [ -x "$SCRIPT_DIR/test-restore.sh" ]; then
         check_pass "Test script is executable"
     else
         check_warn "Test script is not executable - run: chmod +x scripts/test-restore.sh"
@@ -82,16 +88,10 @@ fi
 # Check 5: Documentation exists
 echo ""
 echo "Checking documentation..."
-if [ -f "docs/BACKUP_RESTORE.md" ]; then
+if [ -f "$REPO_ROOT/docs/BACKUP_RESTORE.md" ]; then
     check_pass "Backup documentation exists"
 else
     check_warn "Backup documentation not found"
-fi
-
-if [ -f "docs/BACKUP_QUICK_REFERENCE.md" ]; then
-    check_pass "Quick reference guide exists"
-else
-    check_warn "Quick reference guide not found"
 fi
 
 # Check 6: Recent workflow runs (requires gh CLI and auth)
@@ -183,7 +183,7 @@ if [ $WARN -gt 0 ] || [ $FAIL -gt 0 ]; then
     echo "- Check GitHub Actions workflow runs"
     echo "- Verify Fly.io credentials are current"
     echo "- Test restore procedure: ./scripts/test-restore.sh <backup-file>"
-    echo "- Review docs/BACKUP_RESTORE.md for detailed procedures"
+    echo "- Review docs/BACKUP_RESTORE.md (repo root) for detailed procedures"
 else
     echo "- System is healthy, continue monthly restore testing"
     echo "- Next scheduled backup: Check GitHub Actions for next run time"

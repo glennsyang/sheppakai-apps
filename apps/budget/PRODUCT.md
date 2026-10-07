@@ -33,7 +33,7 @@ Household budgeting and real side-business bookkeeping (window-cleaning customer
 
 - Stack already exists: SvelteKit 2 / Svelte 5, Tailwind v4, shadcn-svelte (bits-ui), layerchart, SQLite/Drizzle, better-auth. Deployed on fly.io (`yyz`).
 - Light and dark themes are both supported (`mode-watcher`).
-- Strict nonce-based CSP with deliberate carve-outs (`docs/CSP.md`). Visual work must not require new inline script or style sources without review.
+- Strict nonce-based CSP with deliberate carve-outs (`docs/CSP.md` at the repo root). Visual work must not require new inline script or style sources without review.
 - Email verification is required. Sign-up is open, but the real audience is the household.
 - Window-cleaning and receipts are first-class business records, not throwaway features.
 - Terminology in use: Transactions, Budget, Categories, Recurring, Income, Savings / Goals, Receipts (Fuel, Business), Window Cleaning (Customers, Jobs).

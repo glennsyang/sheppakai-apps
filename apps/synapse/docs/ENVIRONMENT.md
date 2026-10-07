@@ -1,53 +1,39 @@
-# Environment Variables
+# Environment Variables (synapse)
 
-Canonical reference for every environment variable this app or its CI/CD pipeline uses. `src/env.ts` (via SvelteKit's `defineEnvVars`) is the source of truth for app-runtime vars; this doc also covers the CI/infra-only vars that live outside that schema. See `.env.example` for a copy-pasteable local `.env` template.
+Every runtime variable this app reads. Shared conventions, the meaning of the variables all
+apps share, the "adding a user" steps, and the GitHub Actions secrets are in
+[docs/ENVIRONMENT.md](../../../docs/ENVIRONMENT.md). `.env.example` is the local template.
 
-## App runtime (validated in `src/env.ts`)
+Fly app: `synapse-dev`. Validated in [`src/env.ts`](../src/env.ts) unless noted.
 
-| Variable               | Subsystem               | Where it's set in prod         | Required | Notes                                                                                  |
-| ---------------------- | ----------------------- | ------------------------------ | -------- | -------------------------------------------------------------------------------------- |
-| `DATABASE_URL`         | Database                | Dockerfile `ENV`               | Yes      | Path to the SQLite file                                                                |
-| `BETTER_AUTH_SECRET`   | Auth                    | Fly secret                     | Yes      | Min 32 characters                                                                      |
-| `BETTER_AUTH_BASE_URL` | Auth                    | Fly secret                     | Yes      | Base URL Better Auth issues links against                                              |
-| `AUTH_ALERTS_URL`      | Notifications (ntfy.sh) | Fly secret                     | Yes      | Push alert topic for auth events                                                       |
-| `REMINDER_ALERTS_URL`  | Notifications (ntfy.sh) | Fly secret                     | Yes      | Push alert topic for reminder events                                                   |
-| `BREVO_API_KEY`        | Email                   | Fly secret                     | Yes      | Brevo API key for transactional email                                                  |
-| `BREVO_FROM_ADDRESS`   | Email                   | Fly secret                     | Yes      | Must be a confirmed Brevo sender                                                       |
-| `ADMIN_USER_IDS`       | Auth (admin plugin)     | Fly secret                     | Yes      | Comma-separated user IDs bootstrapped as admins; defaults to `dummy_admin_id`          |
-| `ALLOWED_EMAILS`       | Auth (sign-in gate)     | Fly secret                     | Yes      | Comma-separated; the only emails that can sign in (exact, case-insensitive). See below |
-| `CRON_SECRET`          | Cron auth               | Fly secret                     | Yes      | Bearer token for `/api/cron/*`                                                         |
-| `NODE_ENV`             | Runtime                 | Dockerfile `ENV`               | Yes      | `development` \| `production` \| `test`; defaults to `development`                     |
-| `ADDRESS_HEADER`       | Rate limiting           | Dockerfile `ENV`               | Yes      | `fly-client-ip`; real client IP for the auth-form rate limiters (else Fly proxy IP)    |
-| `SENTRY_DSN`           | Observability (Sentry)  | Dockerfile `ENV`               | Yes      | Not secret — Sentry DSNs are safe to expose publicly                                   |
-| `LOG_LEVEL`            | Logging                 | Not set in prod (uses default) | No       | `debug` \| `info` \| `warn` \| `error`; defaults to `debug` in dev, `info` in prod     |
-| `FLY_APP_NAME`         | Admin (allowlist hint)  | Set automatically by Fly       | No       | Used in the `fly secrets set … -a <app>` hint shown after creating a user              |
+## App runtime
 
-### Adding a user
+| Variable               | Required | Set in prod via          | Notes                                                                                                                                |
+| ---------------------- | -------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`         | Yes      | Dockerfile `ENV`         | `/data/synapse.db`.                                                                                                                  |
+| `BETTER_AUTH_SECRET`   | Yes      | Fly secret               | At least 32 characters.                                                                                                              |
+| `BETTER_AUTH_BASE_URL` | Yes      | Fly secret               |                                                                                                                                      |
+| `CRON_SECRET`          | Yes      | Fly secret               | At least 16 characters. Bearer token for `/api/cron/*`. **Also a GitHub Actions secret, and the two must match** (see the root doc). |
+| `AUTH_ALERTS_URL`      | Yes      | Fly secret               | ntfy.sh topic for auth events.                                                                                                       |
+| `REMINDER_ALERTS_URL`  | Yes      | Fly secret               | ntfy.sh topic for reminders.                                                                                                         |
+| `BREVO_API_KEY`        | Yes      | Fly secret               |                                                                                                                                      |
+| `BREVO_FROM_ADDRESS`   | Yes      | Fly secret               | Must be a confirmed Brevo sender.                                                                                                    |
+| `ADMIN_USER_IDS`       | No       | Fly secret               | Defaults to `dummy_admin_id`.                                                                                                        |
+| `ALLOWED_EMAILS`       | Yes      | Fly secret               | Enforced by `src/lib/server/auth-allowlist-hook.ts`.                                                                                 |
+| `NODE_ENV`             | No       | Dockerfile `ENV`         | `production` in the image.                                                                                                           |
+| `ADDRESS_HEADER`       | No       | `fly.toml` `[env]`       | `Fly-Client-IP`. Not in `env.ts`.                                                                                                    |
+| `SENTRY_DSN`           | No       | Default in `env.ts`      | Public.                                                                                                                              |
+| `LOG_LEVEL`            | No       | Not set                  | Declared in `env.ts`, but `packages/logger` reads it from `process.env`.                                                             |
+| `FLY_APP_NAME`         | No       | Set automatically by Fly | Used in the `fly secrets set … -a <app>` hint shown after creating a user.                                                           |
 
-Public sign-up is disabled (`emailAndPassword.disableSignUp`), and sign-in is gated by `ALLOWED_EMAILS` (`src/lib/server/auth-allowlist-hook.ts`). To add an account:
+## GitHub Actions secrets
 
-1. As an admin, go to **Admin → Users → Add user** and enter their name, email and role. No password is set by you — the server generates a throwaway one and the user sets their own via **Forgot password**.
-2. If their email is already in `ALLOWED_EMAILS`, they're emailed a welcome message with sign-in instructions straight away.
-3. If it isn't, the page shows the exact `fly secrets set ALLOWED_EMAILS="…" -a <app>` command to run (it includes the current list, since `fly secrets set` replaces the value). Once the app restarts with the new secret, use **Send welcome email** on their row in the Users table.
-
-If `ALLOWED_EMAILS` is unset or empty, env validation fails and every request returns 500 (fail closed).
-
-## CI / infra only (not in `src/env.ts`, not read by the app at runtime)
-
-| Variable                       | Used by                                                                         | Where it's set        | Required | Notes                                                                                                                   |
-| ------------------------------ | ------------------------------------------------------------------------------- | --------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `APP_URL`                      | `.github/workflows/cron.yml`                                                    | GitHub Actions secret | Yes      | Deployed URL the cron job curls                                                                                         |
-| `FLY_API_TOKEN`                | `.github/workflows/fly-deploy.yml`, `backup-database.yml`                       | GitHub Actions secret | Yes      | Auth for `flyctl`                                                                                                       |
-| `BACKUP_ENCRYPTION_PASSPHRASE` | `.github/workflows/backup-database.yml`                                         | GitHub Actions secret | Yes      | Encrypts DB dumps before upload; the workflow fails closed if unset                                                     |
-| `SENTRY_AUTH_TOKEN`            | `.github/workflows/fly-deploy.yml` → Dockerfile build secret → `vite.config.ts` | GitHub Actions secret | No       | Enables Sentry source-map upload during the Docker build (see below); deploy succeeds without it, just skips the upload |
-
-### Sentry source-map upload
-
-The Dockerfile strips `.map` files from the shipped image (`adapter-node` hardcodes `sourcemap: true`), so source maps are never served publicly regardless of this setting. When `SENTRY_AUTH_TOKEN` is present, `fly-deploy.yml` passes it to `flyctl deploy --build-secret`, which the Dockerfile mounts via BuildKit (`RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN`) so the Sentry vite plugin can upload maps to Sentry _before_ they're stripped — giving readable (non-minified) stack traces in Sentry without exposing source structure publicly.
-
-To enable it: create a Sentry **Organization Auth Token** (Settings → Auth Tokens, org `sheppakai`) scoped for `project:releases`, then `gh secret set SENTRY_AUTH_TOKEN --repo <owner>/synapse`.
+Environment `synapse`: `FLY_API_TOKEN`, `BACKUP_ENCRYPTION_PASSPHRASE`, `SENTRY_AUTH_TOKEN`,
+`CRON_SECRET`, `APP_URL`. See the [root doc](../../../docs/ENVIRONMENT.md#github-actions-secrets).
 
 ## Verification
 
-- `fly secrets list -a synapse-dev` should list exactly the Fly-secret rows in the table above (`BETTER_AUTH_SECRET`, `BETTER_AUTH_BASE_URL`, `CRON_SECRET`, `AUTH_ALERTS_URL`, `REMINDER_ALERTS_URL`, `BREVO_API_KEY`, `BREVO_FROM_ADDRESS`, `ADMIN_USER_IDS`, `ALLOWED_EMAILS`) — no more, no less. `NODE_ENV`, `DATABASE_URL`, `SENTRY_DSN`, and `ADDRESS_HEADER` intentionally don't appear there since they're baked into the Dockerfile.
-- `cp .env.example .env`, fill in real values, `npm run dev` should boot with no missing-var errors.
+```bash
+fly secrets list -a synapse-dev   # exactly the "Fly secret" rows above, no more, no less
+gh secret list --env synapse      # the five secrets above
+```

@@ -25,18 +25,18 @@ as a PWA for quick logging on a phone, and a weekly summary email supports revie
 
 ## Tech stack
 
-| Concern       | Choice                                                    |
-| ------------- | --------------------------------------------------------- |
-| Framework     | SvelteKit, Svelte 5 (runes), TypeScript (strict)          |
-| UI            | Tailwind CSS v4, shadcn-svelte / bits-ui, LayerChart      |
-| Forms         | sveltekit-superforms + Zod                                |
-| Data          | SQLite with Drizzle ORM (better-sqlite3)                  |
-| Auth          | Better Auth (email + password, invite-only)               |
-| Email         | Brevo transactional email                                 |
-| Observability | Sentry, plus a shared structured JSON logger              |
-| Testing       | Vitest; Playwright in Synapse                             |
+| Concern       | Choice                                                        |
+| ------------- | ------------------------------------------------------------- |
+| Framework     | SvelteKit, Svelte 5 (runes), TypeScript (strict)              |
+| UI            | Tailwind CSS v4, shadcn-svelte / bits-ui, LayerChart          |
+| Forms         | sveltekit-superforms + Zod                                    |
+| Data          | SQLite with Drizzle ORM (better-sqlite3)                      |
+| Auth          | Better Auth (email + password, invite-only)                   |
+| Email         | Brevo transactional email                                     |
+| Observability | Sentry, plus a shared structured JSON logger                  |
+| Testing       | Vitest; Playwright in Synapse                                 |
 | Tooling       | pnpm workspaces and catalogs, oxlint, oxfmt, fallow, lefthook |
-| Hosting       | Fly.io, one app per project with SQLite on a volume       |
+| Hosting       | Fly.io, one app per project with SQLite on a volume           |
 
 ## Repository layout
 
@@ -47,7 +47,11 @@ apps/
   budget/         Budget
 packages/
   logger/         @sheppakai/logger: structured JSON logging with PII redaction and Sentry forwarding
+  shared/         @sheppakai/shared: auth guards, API envelope, bearer-token parsing, Sentry config
+docs/             Repo-wide docs: backup/restore, CSP, Sentry, error handling, API conventions, env vars
 ```
+
+App-specific docs (environment variables, external API endpoints) live in `apps/<app>/docs/`.
 
 Dependencies shared by more than one app are pinned once in the `catalog:` section of
 `pnpm-workspace.yaml`, so every app runs on the same SvelteKit, Svelte, Vite and TypeScript versions.
@@ -78,10 +82,10 @@ cp apps/budget/.env.example apps/budget/.env   # then fill in values
 pnpm --filter sheppakai-budget dev             # http://localhost:5173
 ```
 
-| Task                    | Command                                    |
-| ----------------------- | ------------------------------------------ |
-| Check, lint, test all   | `pnpm check`, `pnpm lint`, `pnpm test`     |
-| Only what changed       | `pnpm --filter "...[origin/main]" test`    |
-| Build an app image      | `docker build -f apps/budget/Dockerfile .` |
+| Task                  | Command                                    |
+| --------------------- | ------------------------------------------ |
+| Check, lint, test all | `pnpm check`, `pnpm lint`, `pnpm test`     |
+| Only what changed     | `pnpm --filter "...[origin/main]" test`    |
+| Build an app image    | `docker build -f apps/budget/Dockerfile .` |
 
 Workspace package names: `synapse`, `sheppakai-mealplanner`, `sheppakai-budget`, `@sheppakai/logger`.

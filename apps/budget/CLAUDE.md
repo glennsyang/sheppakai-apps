@@ -28,6 +28,7 @@ A personal finance tracker: transactions, category budgets, recurring transactio
 - Imports use `$lib/components/ui/...` directly — no custom path alias (`$comp` etc. does not exist in this repo).
 - Class merging: prefer Svelte's array `class={[...]}` syntax; `tailwind-merge`/`tailwind-variants` are deps but only for the shadcn component internals, not general app code.
 - Re-throw SvelteKit redirects in auth/action catch blocks: `if (isRedirect(err)) throw err`.
+- Load and action error handling follows `docs/ERROR_HANDLING_POLICY.md` at the repo root; budget is its reference implementation.
 
 ### Env vars — uses SvelteKit's newer `$app/env` module, not `$app/environment`
 
@@ -65,8 +66,8 @@ This repo already has a shared helper for the repeated "list page + form + serve
 ## Domain notes
 
 - **`window-cleaning`** and **`receipts` (fuel + business)** are real side-business bookkeeping features, not demo data — treat them as first-class, not throwaway.
-- **Sentry** is wired in `hooks.server.ts` via `sentryHandle()` in the `handle` sequence, with `handleError` intentionally left unwrapped (the structured logger already forwards to Sentry) — read `docs/SENTRY.md` (the cross-repo single source of truth) before changing this.
-- CSP is nonce-based (`svelte.config.js`, `kit.csp.mode: 'nonce'`) with specific `unsafe-inline` carve-outs for `layerchart`/bits-ui runtime style injection — read `docs/CSP.md` (the cross-repo single source of truth) and the comments in `svelte.config.js` before touching CSP, the directives are deliberate, not defaults.
+- **Sentry** is wired in `hooks.server.ts` via `sentryHandle()` in the `handle` sequence, with `handleError` intentionally left unwrapped (the structured logger already forwards to Sentry) — read `docs/SENTRY.md` at the repo root (the cross-app single source of truth) before changing this.
+- CSP is nonce-based (`svelte.config.js`, `kit.csp.mode: 'nonce'`) with specific `unsafe-inline` carve-outs for `layerchart`/bits-ui runtime style injection — read `docs/CSP.md` at the repo root (the cross-app single source of truth) and the comments in `svelte.config.js` before touching CSP, the directives are deliberate, not defaults.
 
 ---
 

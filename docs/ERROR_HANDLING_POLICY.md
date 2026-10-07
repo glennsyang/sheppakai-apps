@@ -1,12 +1,29 @@
-# Server Load Error Handling Policy
+# Server Error Handling Policy
 
 ## Overview
 
-All SvelteKit server load functions and actions must implement consistent error handling to ensure:
+This is the target policy for every app in the monorepo (`apps/budget`, `apps/synapse`,
+`apps/mealplanner`). All SvelteKit server load functions and actions must handle errors
+consistently, so that:
 
-- **Operational visibility**: Errors are logged with sufficient context for debugging
-- **Graceful degradation**: Users see helpful error messages instead of generic 500 pages
-- **Consistent UX**: All routes handle failures in a predictable way
+- **Operational visibility**: errors are logged with enough context to debug them
+- **Graceful degradation**: users see a helpful message instead of a generic 500 page
+- **Consistent UX**: every route handles failure the same predictable way
+
+Paths in the examples below are relative to the app (`apps/<app>/`); most of them point at
+`apps/budget`, the reference implementation.
+
+## Adoption status
+
+| Area                                    | budget | synapse                                          | mealplanner                                      |
+| --------------------------------------- | ------ | ------------------------------------------------ | ------------------------------------------------ |
+| Load functions return `loadError`       | ✅     | ❌ log and return empty defaults, no `loadError` | ❌ no try/catch, so a failed query becomes a 500 |
+| Auth forms via `handleAuthFormAction`   | ✅     | ✅                                               | ✅                                               |
+| Non-auth actions use `message(form, …)` | ✅     | ❌ many still return bare `fail(...)`            | ❌ many still return bare `fail(...)`            |
+| `/api/v1` JSON envelope                 | ✅     | ✅                                               | n/a (no API)                                     |
+
+New code in any app follows this policy. When you touch an existing synapse or mealplanner
+route, bring it in line.
 
 ## Policy: Load Functions
 
@@ -16,25 +33,25 @@ All `load` functions that make database queries or external API calls **must** w
 
 ```typescript
 export const load: PageServerLoad = async ({ url, locals }) => {
-	// Initialize forms first (outside try/catch since they're synchronous)
-	const form = await superValidate(zod4(mySchema));
+  // Initialize forms first (outside try/catch since they're synchronous)
+  const form = await superValidate(zod4(mySchema));
 
-	try {
-		// Database queries or external API calls
-		const data = await queries.findAll();
+  try {
+    // Database queries or external API calls
+    const data = await queries.findAll();
 
-		return {
-			data,
-			form
-		};
-	} catch (error) {
-		logger.error('Failed to load [entity name]:', error);
-		return {
-			data: [], // sensible empty default
-			loadError: 'Failed to load [entity name]. Please try refreshing the page.',
-			form
-		};
-	}
+    return {
+      data,
+      form,
+    };
+  } catch (error) {
+    logger.error("Failed to load [entity name]:", error);
+    return {
+      data: [], // sensible empty default
+      loadError: "Failed to load [entity name]. Please try refreshing the page.",
+      form,
+    };
+  }
 };
 ```
 
@@ -50,29 +67,29 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 ```typescript
 export const load: PageServerLoad = async ({ url }) => {
-	const { startDate, endDate } = getMonthRangeFromUrl(url);
-	const form = await superValidate(zod4(transactionSchema));
+  const { startDate, endDate } = getMonthRangeFromUrl(url);
+  const form = await superValidate(zod4(transactionSchema));
 
-	try {
-		const [transactions, budgets] = await Promise.all([
-			transactionQueries.findByDateRange(startDate, endDate),
-			budgetQueries.findByMonthYear(month, year)
-		]);
+  try {
+    const [transactions, budgets] = await Promise.all([
+      transactionQueries.findByDateRange(startDate, endDate),
+      budgetQueries.findByMonthYear(month, year),
+    ]);
 
-		return {
-			transactions,
-			budgets,
-			form
-		};
-	} catch (error) {
-		logger.error('Failed to load transactions and budgets:', error);
-		return {
-			transactions: [],
-			budgets: [],
-			loadError: 'Failed to load transaction data. Please try refreshing the page.',
-			form
-		};
-	}
+    return {
+      transactions,
+      budgets,
+      form,
+    };
+  } catch (error) {
+    logger.error("Failed to load transactions and budgets:", error);
+    return {
+      transactions: [],
+      budgets: [],
+      loadError: "Failed to load transaction data. Please try refreshing the page.",
+      form,
+    };
+  }
 };
 ```
 
@@ -96,10 +113,11 @@ read `$message` and `$errors`. No page has to branch on which shape the server h
 
 ### Implementations
 
-Both halves live in `src/lib/server/actions/auth-form-handler.ts`. Non-auth actions (CRUD helpers,
+Both halves live in each app's `src/lib/server/actions/auth-form-handler.ts`. The three copies
+match apart from where they import `getBetterAuthErrorMessage` from. In budget, non-auth actions (CRUD helpers,
 admin guard, app routes) import the same validation helper as `invalidForm` from
-`src/lib/server/actions/form-responses.ts`, a re-export that keeps the auth module byte-identical
-across repos:
+`src/lib/server/actions/form-responses.ts`, a re-export that gives it a neutral name without a
+second copy:
 
 ```typescript
 // Validation failure
@@ -137,14 +155,15 @@ has run; a `$message` read inside `onUpdate` is always `undefined`. See
 Note also that `message(form, ..., { status >= 400 })` sets `form.valid = false`, so `form.valid` is a
 usable success check — but prefer `form.message?.type === 'success'`, which is explicit.
 
-Two components submit with plain `use:enhance` from `$app/forms` rather than a `superForm` instance,
-because they render no fields of their own: `ConfirmModal` and `PresetBudgetCard`. They read the
+A few budget components submit with plain `use:enhance` from `$app/forms` rather than a `superForm`
+instance, because they render no fields of their own: `ConfirmModal`, `PresetBudgetCard`,
+`UpcomingBillsCard`, and the recurring table's `paid-toggle` / `data-table-actions`. They read the
 banner out of the raw `ActionResult` via `actionMessage()` in `src/lib/utils/actionMessage.ts`, which
 is the only place that unwraps a result by hand.
 
-### Migration status
+### Migration status (budget)
 
-Every action in the app follows this contract. The shared `requireAuth` 401 wall is the sole
+Every action in budget follows this contract. The shared `requireAuth` 401 wall is the sole
 exception (see below), and `actionMessage()` keeps its `data.error` fallback for that one case alone.
 
 Success messages for CRUD actions come from `getCrudMessage()` in
@@ -163,16 +182,16 @@ soft-deletes and so cannot use `deleteAction`.
 - **Auth redirects**: `throw redirect(...)` is intentional control flow, not an error case
 - **Validation failures**: Already handled by superforms/zod validation
 - **Intentional error throws**: When using `error(404, 'Not found')` is appropriate
-- **`requireAuth` / `requireAdmin` 401/403**: `src/lib/server/actions/auth-guard.ts` returns
-  `fail(401 | 403, { error })` because its wrappers run before any `superValidate` and so have no
-  form to carry a message. The file is kept byte-identical across the sibling repos, so it is not
-  bent to this repo's contract. The 401 is defence-in-depth: `src/routes/(app)/+layout.server.ts`
+- **`requireAuth` / `requireAdmin` 401/403**: `packages/shared/src/auth-guard.ts` (re-exported
+  by each app's `src/lib/server/actions/auth-guard.ts`) returns `fail(401 | 403, { error })`
+  because its wrappers run before any `superValidate` and so have no form to carry a message.
+  It is shared by all three apps, so it is not bent to one app's contract. The 401 is defence-in-depth: `src/routes/(app)/+layout.server.ts`
   already redirects unauthenticated users, so the path is reachable only when a session expires
   between page load and submit, and `actionMessage()` keeps its `data.error` fallback for it.
   Contrast `adminAuthFailure` (`src/lib/server/actions/admin-guard.ts`), which always runs after
   validation and answers with `message(form, ...)`.
-- **Admin actions use `adminFormAction`, never `requireAdmin`**: the shared `requireAdmin` checks
-  the DB `role` only, while this repo's admin check (`isAdminUser`, via `assertAdmin` /
+- **Admin actions in budget use `adminFormAction`, never `requireAdmin`**: the shared `requireAdmin` checks
+  the DB `role` only, while budget's admin check (`isAdminUser`, via `assertAdmin` /
   `adminFormAction`) also honours the `ADMIN_USER_IDS` bootstrap. Importing `requireAdmin` outside
   its own test is an oxlint error (`no-restricted-imports` in `oxlint.config.ts`).
 - **Sign-out**: `src/routes/(auth)/sign-out/+page.server.ts` has no form. A Better Auth failure is
@@ -197,15 +216,14 @@ Components should check for `loadError` and display it prominently:
 
 ## JSON API routes
 
-`/api/v1/*` routes (`src/routes/api/v1/`) have no superform to attach a `message()` to, so
-they follow the same policy restated as a plain JSON envelope instead: `{ data }` on success,
-`{ error: { code, message } }` on failure, always with an explicit HTTP status — no third
-shape. See `src/lib/server/api/response.ts` (`apiSuccess`/`apiError`) and
-[API.md](./API.md) for the full contract.
+`/api/v1/*` routes (`src/routes/api/v1/` in budget and synapse) have no superform to attach a
+`message()` to, so they follow the same policy restated as a plain JSON envelope instead:
+`{ data }` on success, `{ error: { code, message } }` on failure, always with an explicit HTTP
+status — no third shape. See `packages/shared/src/api-response.ts` (`apiSuccess`/`apiError`)
+and [API_CONVENTIONS.md](./API_CONVENTIONS.md) for the full contract.
 
 ## References
 
-- Example load implementation: `src/routes/(app)/admin/users/+page.server.ts`
-- Every `(app)` page load that queries the database follows this pattern; `src/routes/(app)/load-error-fallbacks.test.ts` asserts the fallback shape for the loads that were brought in line last
-- Example action implementation: `src/routes/(auth)/sign-in/+page.server.ts`
-- Structure review: `docs/structure-review/2026-07-27-review.md` (Error Handling → Findings 1 and 2)
+- Example load implementation: `apps/budget/src/routes/(app)/admin/users/+page.server.ts`
+- Every budget `(app)` page load that queries the database follows this pattern; `apps/budget/src/routes/(app)/load-error-fallbacks.test.ts` asserts the fallback shape for the loads that were brought in line last
+- Example action implementation: `apps/budget/src/routes/(auth)/sign-in/+page.server.ts`

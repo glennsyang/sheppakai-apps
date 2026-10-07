@@ -57,14 +57,16 @@ jobs:
       - name: Encrypt backup
         env:
           BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+          APP: ${{ inputs.app }}
         run: |
           # The dump contains password hashes and live session tokens (plus all app
-          # data), so it must never land in the (unencrypted, 30-day-retained) Actions
-          # artifact store as plaintext. Fail closed if the secret isn't configured,
-          # rather than silently uploading an unencrypted backup.
+          # data), so it must never land in the Actions artifact store as plaintext:
+          # this repo is public, so any signed-in GitHub user can download its
+          # artifacts. Fail closed if the secret isn't configured, rather than
+          # silently uploading an unencrypted backup.
           if [ -z "$BACKUP_ENCRYPTION_PASSPHRASE" ]; then
             echo "Error: BACKUP_ENCRYPTION_PASSPHRASE secret is not set. Refusing to upload an unencrypted database dump." >&2
-            echo "Generate one (e.g. 'openssl rand -base64 32') and add it as a repo secret named BACKUP_ENCRYPTION_PASSPHRASE." >&2
+            echo "Generate one (e.g. 'openssl rand -base64 32') and add it as a secret named BACKUP_ENCRYPTION_PASSPHRASE on the '$APP' environment." >&2
             exit 1
           fi
 
@@ -102,7 +104,7 @@ jobs:
         with:
           name: db-backup-${{ inputs.app }}-${{ steps.timestamp.outputs.date }}
           path: backup-${{ steps.timestamp.outputs.date }}.sql.gz.gpg
-          retention-days: 30
+          retention-days: 5
           compression-level: 9
 
       - name: Create issue on failure
