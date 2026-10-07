@@ -126,7 +126,7 @@ Server actions are named `?/log<Thing>` and `?/update<Thing>` on the same route.
 ### Env vars required
 
 ```
-DATABASE_URL=data/synapse.db
+DATABASE_URL=data/sample.db
 BETTER_AUTH_SECRET=...
 BETTER_AUTH_BASE_URL=http://localhost   # or the fly.io URL in prod
 BREVO_API_KEY=...
