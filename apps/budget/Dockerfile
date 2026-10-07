@@ -46,6 +46,9 @@ WORKDIR /repo/apps/budget
 RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
 	SENTRY_AUTH_TOKEN="$(cat /run/secrets/SENTRY_AUTH_TOKEN 2>/dev/null || true)" pnpm run build
 
+# Strip source maps from server bundle (adapter-node hardcodes sourcemap: true)
+RUN find build -name "*.map" -delete
+
 # Write a standalone production node_modules for the runtime image (resolves workspace:*)
 RUN pnpm --filter sheppakai-budget deploy --prod --legacy /prod
 

@@ -68,8 +68,10 @@ export const variables = defineEnvVars({
 		schema: z.enum(['development', 'production', 'test']).default('development')
 	},
 	SENTRY_DSN: {
-		description: 'Sentry DSN for client and server error monitoring',
+		description:
+			'Sentry DSN, sent to the browser to initialize error tracking client-side. Not a secret — defaults to the project DSN so no config is required.',
 		public: true,
+		static: true,
 		schema: z
 			.url()
 			.default(

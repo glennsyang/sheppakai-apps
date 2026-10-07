@@ -1,10 +1,10 @@
-import { PUBLIC_SENTRY_DSN } from '$app/env/public';
+import { SENTRY_DSN } from '$app/env/public';
 import { sentryDataCollection } from '$lib/sentry-data-collection';
 import { handleErrorWithSentry } from '@sentry/sveltekit';
 import * as Sentry from '@sentry/sveltekit';
 
 Sentry.init({
-	dsn: PUBLIC_SENTRY_DSN,
+	dsn: SENTRY_DSN,
 
 	tracesSampleRate: 0.2,
 

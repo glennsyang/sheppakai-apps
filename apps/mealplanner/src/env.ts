@@ -85,7 +85,7 @@ export const variables = defineEnvVars({
 		description: 'Application runtime environment',
 		schema: z.enum(['development', 'production', 'test']).default('development')
 	},
-	PUBLIC_SENTRY_DSN: {
+	SENTRY_DSN: {
 		description:
 			'Sentry DSN, sent to the browser to initialize error tracking client-side. Not a secret — defaults to the project DSN so no config is required.',
 		public: true,
