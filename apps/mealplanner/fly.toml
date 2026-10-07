@@ -8,6 +8,8 @@ primary_region = "yyz"
   # client's. Make getClientAddress() (used by the auth rate limiter) read the
   # real client IP from the header Fly sets on every proxied request.
   ADDRESS_HEADER = 'Fly-Client-IP'
+  # SQLite file on the [[mounts]] volume below.
+  DATABASE_URL = 'file:///data/db.sqlite'
 
 [[mounts]]
   source = "data"
@@ -19,7 +21,6 @@ primary_region = "yyz"
   auto_stop_machines = "stop"
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
 
   [[http_service.checks]]
     interval = '1m0s'
@@ -28,9 +29,6 @@ primary_region = "yyz"
     method = 'get'
     path = '/api/healthz'
 
-[processes]
-  app = "./start.sh"
-  
 [[vm]]
   memory = "512mb"
   cpu_kind = "shared"

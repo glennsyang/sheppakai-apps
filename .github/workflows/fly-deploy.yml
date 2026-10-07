@@ -44,6 +44,10 @@ jobs:
               - 'packages/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
+              - 'Dockerfile'
+              - '.dockerignore'
+              - 'scripts/start.sh'
+              - 'scripts/migrate.js'
             synapse:
               - *shared
               - 'apps/synapse/**'
@@ -109,12 +113,14 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # v1.6
 
       # Build context is the repo root so the image can see the workspace lockfile and packages/.
+      # One root Dockerfile serves every app; APP picks the apps/<folder> to build.
       - name: Deploy to Fly.io
         working-directory: .
         run: >
           flyctl deploy . --remote-only
           --config "apps/$APP/fly.toml"
-          --dockerfile "apps/$APP/Dockerfile"
+          --dockerfile Dockerfile
+          --build-arg APP="$APP"
           --build-secret SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN"
         env:
           APP: ${{ matrix.app }}
