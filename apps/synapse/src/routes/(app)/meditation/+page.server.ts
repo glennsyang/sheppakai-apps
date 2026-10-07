@@ -118,6 +118,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		logger.error('Failed to load meditation data', error);
 		return {
 			routines: [],
+			loadError: 'Failed to load meditation data. Please try refreshing the page.',
 			schedules: [],
 			sessions: [],
 			editSessionForm: await superValidate(zod4(editSessionSchema))

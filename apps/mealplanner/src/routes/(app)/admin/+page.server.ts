@@ -11,32 +11,44 @@ import {
 	unbanUserSchema
 } from '$lib/schemas/admin';
 import { requireAdmin } from '$lib/server/actions/auth-guard';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import { allowedEmails, auth } from '$lib/server/auth';
 import { sendAccountCreatedEmail } from '$lib/server/email';
 import { logger } from '$lib/server/logger';
 import { sendAuthAlerts } from '$lib/server/notifications';
-import { error, fail, isRedirect } from '@sveltejs/kit';
+import { error, isRedirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
-import { message, setError, superValidate } from 'sveltekit-superforms';
+import { message, setError, superValidate, type SuperValidated } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import type { Actions, PageServerLoad } from './$types';
 
+type MessageStatus = NonNullable<Parameters<typeof message>[2]>['status'];
+
 /**
- * Turn a failed `auth.api.*` admin call into an action result. better-auth raises
+ * Turn a failed `auth.api.*` admin call into a `message(form, …)` failure. better-auth raises
  * `APIError` for expected rejections (insufficient permission, target not found,
  * "can't ban an admin", …) — surface those with their real status/message and log
  * at `warn`. Anything else is unexpected: log at `error` and return a generic 500.
  * SvelteKit redirects are re-thrown untouched.
  */
-function adminActionError(context: string, err: unknown, fallback: string) {
+function adminActionError<TForm extends Record<string, unknown>>(
+	form: SuperValidated<TForm>,
+	context: string,
+	err: unknown,
+	fallback: string
+) {
 	if (isRedirect(err)) throw err;
 	if (err instanceof APIError) {
 		logger.warn(context, { status: err.statusCode, reason: err.message });
-		return fail(err.statusCode || 400, { error: err.body?.message || fallback });
+		return message(
+			form,
+			{ type: 'error', text: err.body?.message || fallback },
+			{ status: (err.statusCode || 400) as MessageStatus }
+		);
 	}
 	logger.error(context, err);
-	return fail(500, { error: fallback });
+	return message(form, { type: 'error', text: fallback }, { status: 500 });
 }
 
 const isAllowlisted = (email: string) => allowedEmails.has(email.trim().toLowerCase());
@@ -71,39 +83,52 @@ export const load: PageServerLoad = async ({ request }) => {
 			error(403, 'Forbidden');
 		}
 		logger.error('Failed to load admin user list', err);
-		return { users: [], allowlistedIds: [], allowlist: [] as string[], createForm };
+		return {
+			users: [],
+			allowlistedIds: [],
+			allowlist: [] as string[],
+			loadError: 'Failed to load users. Please try refreshing the page.',
+			createForm
+		};
 	}
 };
 
 export const actions: Actions = {
 	setRole: requireAdmin(async ({ request }, actingUser) => {
-		const parsed = setRoleSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!parsed.success) {
-			return fail(400, { error: 'Invalid role change request' });
+		const form = await superValidate(request, zod4(setRoleSchema));
+		if (!form.valid) {
+			return invalidForm(form, 'Invalid role change request');
 		}
-		const { userId, role } = parsed.data;
+		const { userId, role } = form.data;
 
 		if (userId === actingUser.id) {
-			return fail(400, { error: 'You cannot change your own role' });
+			return invalidForm(form, 'You cannot change your own role');
 		}
 
 		try {
 			await auth.api.setRole({ body: { userId, role }, headers: request.headers });
 			logger.info('Admin changed user role', { actorId: actingUser.id, userId, role });
 		} catch (err) {
-			return adminActionError('Failed to change user role', err, 'Failed to change user role');
+			return adminActionError(
+				form,
+				'Failed to change user role',
+				err,
+				'Failed to change user role'
+			);
 		}
+
+		return message(form, { type: 'success', text: 'Role updated.' });
 	}),
 
 	banUser: requireAdmin(async ({ request }, actingUser) => {
-		const parsed = banUserSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!parsed.success) {
-			return fail(400, { error: 'Invalid ban request' });
+		const form = await superValidate(request, zod4(banUserSchema));
+		if (!form.valid) {
+			return invalidForm(form, 'Invalid ban request');
 		}
-		const { userId, banReason } = parsed.data;
+		const { userId, banReason } = form.data;
 
 		if (userId === actingUser.id) {
-			return fail(400, { error: 'You cannot ban yourself' });
+			return invalidForm(form, 'You cannot ban yourself');
 		}
 
 		try {
@@ -113,48 +138,54 @@ export const actions: Actions = {
 			});
 			logger.info('Admin banned user', { actorId: actingUser.id, userId });
 		} catch (err) {
-			return adminActionError('Failed to ban user', err, 'Failed to ban user');
+			return adminActionError(form, 'Failed to ban user', err, 'Failed to ban user');
 		}
+
+		return message(form, { type: 'success', text: 'User banned.' });
 	}),
 
 	unbanUser: requireAdmin(async ({ request }, actingUser) => {
-		const parsed = unbanUserSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!parsed.success) {
-			return fail(400, { error: 'Invalid unban request' });
+		const form = await superValidate(request, zod4(unbanUserSchema));
+		if (!form.valid) {
+			return invalidForm(form, 'Invalid unban request');
 		}
 
 		try {
-			await auth.api.unbanUser({ body: { userId: parsed.data.userId }, headers: request.headers });
-			logger.info('Admin unbanned user', { actorId: actingUser.id, userId: parsed.data.userId });
+			await auth.api.unbanUser({ body: { userId: form.data.userId }, headers: request.headers });
+			logger.info('Admin unbanned user', { actorId: actingUser.id, userId: form.data.userId });
 		} catch (err) {
-			return adminActionError('Failed to unban user', err, 'Failed to unban user');
+			return adminActionError(form, 'Failed to unban user', err, 'Failed to unban user');
 		}
+
+		return message(form, { type: 'success', text: 'User unbanned.' });
 	}),
 
 	removeUser: requireAdmin(async ({ request }, actingUser) => {
-		const parsed = removeUserSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!parsed.success) {
-			return fail(400, { error: 'Invalid remove request' });
+		const form = await superValidate(request, zod4(removeUserSchema));
+		if (!form.valid) {
+			return invalidForm(form, 'Invalid remove request');
 		}
 
-		if (parsed.data.userId === actingUser.id) {
-			return fail(400, { error: 'You cannot remove your own account' });
+		if (form.data.userId === actingUser.id) {
+			return invalidForm(form, 'You cannot remove your own account');
 		}
 
 		// Shared household rows (pantry, recipes, plans) keep existing: their creator
 		// `user_id` FK is ON DELETE SET NULL, so only auth data goes with the user (#164).
 		try {
-			await auth.api.removeUser({ body: { userId: parsed.data.userId }, headers: request.headers });
-			logger.info('Admin removed user', { actorId: actingUser.id, userId: parsed.data.userId });
+			await auth.api.removeUser({ body: { userId: form.data.userId }, headers: request.headers });
+			logger.info('Admin removed user', { actorId: actingUser.id, userId: form.data.userId });
 		} catch (err) {
-			return adminActionError('Failed to remove user', err, 'Failed to remove user');
+			return adminActionError(form, 'Failed to remove user', err, 'Failed to remove user');
 		}
+
+		return message(form, { type: 'success', text: 'User removed.' });
 	}),
 
 	createUser: requireAdmin(async ({ request }, actingUser) => {
 		const form = await superValidate(request, zod4(createUserSchema));
 		if (!form.valid) {
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 		const { name, email, role } = form.data;
 
@@ -236,29 +267,35 @@ export const actions: Actions = {
 	}),
 
 	sendWelcomeEmail: requireAdmin(async ({ request }, actingUser) => {
-		const parsed = sendWelcomeSchema.safeParse(Object.fromEntries(await request.formData()));
-		if (!parsed.success) {
-			return fail(400, { error: 'Invalid request' });
+		const form = await superValidate(request, zod4(sendWelcomeSchema));
+		if (!form.valid) {
+			return invalidForm(form, 'Invalid request');
 		}
 
 		try {
 			const user = await auth.api.getUser({
-				query: { id: parsed.data.userId },
+				query: { id: form.data.userId },
 				headers: request.headers
 			});
 			if (!isAllowlisted(user.email)) {
-				return fail(400, {
-					error: `${user.email} isn't in ALLOWED_EMAILS yet — add it before sending the welcome email.`
-				});
+				return invalidForm(
+					form,
+					`${user.email} isn't in ALLOWED_EMAILS yet — add it before sending the welcome email.`
+				);
 			}
 			await sendWelcome(user.email, user.name);
 			logger.info('Admin sent welcome email', {
 				actorId: actingUser.id,
 				userId: user.id
 			});
-			return { success: `Welcome email sent to ${user.email}.` };
+			return message(form, { type: 'success', text: `Welcome email sent to ${user.email}.` });
 		} catch (err) {
-			return adminActionError('Failed to send welcome email', err, 'Failed to send welcome email');
+			return adminActionError(
+				form,
+				'Failed to send welcome email',
+				err,
+				'Failed to send welcome email'
+			);
 		}
 	})
 };

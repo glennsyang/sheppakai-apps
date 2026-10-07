@@ -1,4 +1,5 @@
 <script lang="ts">
+	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -218,6 +219,7 @@
 <svelte:head><title>Profile</title></svelte:head>
 
 <div class="mx-auto w-full max-w-5xl">
+	<LoadErrorAlert message={data.loadError} />
 	<div class="ruled mb-8 pb-4">
 		<h1 class="page-title" style="--pen: oklch(var(--color-teal))">Profile</h1>
 		<p class="text-muted-foreground mt-2">Manage your account information and security settings</p>

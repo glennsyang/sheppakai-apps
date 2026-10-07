@@ -8,6 +8,7 @@
 	import AdminUsersTable from '$lib/components/admin/AdminUsersTable.svelte';
 	import CreateUserDialog from '$lib/components/admin/CreateUserDialog.svelte';
 	import PageShell from '$lib/components/app/PageShell.svelte';
+	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -76,6 +77,7 @@
 </script>
 
 <PageShell class="min-w-0 overflow-x-hidden">
+	<LoadErrorAlert message={data.loadError} />
 	<div class="ruled mb-6 pb-4">
 		<h1 class="page-title" style="--pen: oklch(var(--color-teal))">Admin</h1>
 		<p class="text-muted-foreground text-sm sm:text-base">

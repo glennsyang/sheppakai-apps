@@ -15,15 +15,22 @@ Paths in the examples below are relative to the app (`apps/<app>/`); most of the
 
 ## Adoption status
 
-| Area                                    | budget | synapse                                          | mealplanner                                      |
-| --------------------------------------- | ------ | ------------------------------------------------ | ------------------------------------------------ |
-| Load functions return `loadError`       | ✅     | ❌ log and return empty defaults, no `loadError` | ❌ no try/catch, so a failed query becomes a 500 |
-| Auth forms via `handleAuthFormAction`   | ✅     | ✅                                               | ✅                                               |
-| Non-auth actions use `message(form, …)` | ✅     | ❌ many still return bare `fail(...)`            | ❌ many still return bare `fail(...)`            |
-| `/api/v1` JSON envelope                 | ✅     | ✅                                               | n/a (no API)                                     |
+| Area                                    | budget | synapse                             | mealplanner  |
+| --------------------------------------- | ------ | ----------------------------------- | ------------ |
+| Load functions return `loadError`       | ✅     | ✅                                  | ✅           |
+| Auth forms via `handleAuthFormAction`   | ✅     | ✅                                  | ✅           |
+| Non-auth actions use `message(form, …)` | ✅     | ✅ (except Daily Agenda, see below) | ✅           |
+| `/api/v1` JSON envelope                 | ✅     | ✅                                  | n/a (no API) |
 
-New code in any app follows this policy. When you touch an existing synapse or mealplanner
-route, bring it in line.
+All three apps follow this policy (#19). New code in any app does too.
+
+Each app has the same building blocks: `invalidForm` in
+`src/lib/server/actions/form-responses.ts` for validation failures, and (budget, synapse)
+`actionMessage()` in `src/lib/utils/actionMessage.ts` for components that submit with plain
+`use:enhance`. mealplanner's planner/pantry components use `actionFailureText()` in
+`src/lib/action-result.ts` for the same job. Actions that post no fields of their own (synapse's
+`archivePerson`, `deleteRoutine`, …) validate against `noFieldsSchema` / `idSchema` in
+`src/lib/schemas/common.ts`, so they still have a form to carry a message.
 
 ## Policy: Load Functions
 
@@ -194,6 +201,15 @@ soft-deletes and so cannot use `deleteAction`.
   the DB `role` only, while budget's admin check (`isAdminUser`, via `assertAdmin` /
   `adminFormAction`) also honours the `ADMIN_USER_IDS` bootstrap. Importing `requireAdmin` outside
   its own test is an oxlint error (`no-restricted-imports` in `oxlint.config.ts`).
+- **Detail-page loads throw `error()`**: synapse's `journal/[id]`, `tasks/[id]/edit`, `visits/[id]`
+  and `meditation/routines/[id]` loads throw `error(404)` for a missing entity and `error(500)` for
+  a failed query, rather than returning a `loadError`. The page cannot render anything useful
+  without its entity, so the error page is the honest answer.
+- **synapse Daily Agenda actions**: `failAgendaValidation` / `failAgendaMutation` in
+  `apps/synapse/src/routes/(app)/tasks/+page.server.ts` answer with a structured `agendaAction`
+  payload (scope, entity id, field errors, values) that `DailyAgendaView` reads to drive its inline
+  editors, so they still use `fail(...)`. `ConfirmDialog` reads that payload's `text` before falling
+  back to `actionMessage()`. Moving them onto superforms means reworking `DailyAgendaView`.
 - **Sign-out**: `src/routes/(auth)/sign-out/+page.server.ts` has no form. A Better Auth failure is
   logged and the action still redirects to sign-in, so the user never sees a 500 for it.
 
@@ -225,5 +241,8 @@ and [API_CONVENTIONS.md](./API_CONVENTIONS.md) for the full contract.
 ## References
 
 - Example load implementation: `apps/budget/src/routes/(app)/admin/users/+page.server.ts`
-- Every budget `(app)` page load that queries the database follows this pattern; `apps/budget/src/routes/(app)/load-error-fallbacks.test.ts` asserts the fallback shape for the loads that were brought in line last
+- Every `(app)` page load that queries the database follows this pattern; the fallback shape is asserted by
+  `apps/budget/src/routes/(app)/load-error-fallbacks.test.ts`,
+  `apps/synapse/src/routes/(app)/load-error-fallbacks.test.ts` and
+  `apps/mealplanner/src/tests/routes/loadErrorFallbacks.test.ts`
 - Example action implementation: `apps/budget/src/routes/(auth)/sign-in/+page.server.ts`

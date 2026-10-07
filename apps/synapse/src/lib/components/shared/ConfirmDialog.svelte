@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import { actionMessage } from '$lib/utils/actionMessage';
 	import type { ActionResult } from '@sveltejs/kit';
 	import { toast } from 'svelte-sonner';
 
@@ -27,25 +28,22 @@
 		hiddenFields
 	}: Props = $props();
 
-	type ConfirmDialogActionData = {
-		error?: string;
-		agendaAction?: {
-			text?: string;
-		};
-	};
+	// Daily Agenda actions answer with their own `agendaAction` payload (see the exception in
+	// docs/ERROR_HANDLING_POLICY.md); everything else carries a superforms message.
+	type AgendaActionData = { agendaAction?: { text?: string } };
 
-	function getResultMessage(
-		result: ActionResult<ConfirmDialogActionData, ConfirmDialogActionData>
-	): string | undefined {
-		if (result.type !== 'success' && result.type !== 'failure') {
-			return undefined;
+	function getResultMessage(result: ActionResult): App.Superforms.Message {
+		const fallbacks = { success: `${title} successful!`, error: `${title} failed!` };
+		const agendaText =
+			result.type === 'success' || result.type === 'failure'
+				? (result.data as AgendaActionData | undefined)?.agendaAction?.text
+				: undefined;
+
+		if (typeof agendaText === 'string') {
+			return { type: result.type === 'success' ? 'success' : 'error', text: agendaText };
 		}
 
-		if (typeof result.data?.agendaAction?.text === 'string') {
-			return result.data.agendaAction.text;
-		}
-
-		return typeof result.data?.error === 'string' ? result.data.error : undefined;
+		return actionMessage(result, fallbacks);
 	}
 </script>
 
@@ -64,12 +62,10 @@
 				return async ({ result, update }) => {
 					const resultMessage = getResultMessage(result);
 
-					if (result.type === 'success' || result.type === 'redirect') {
-						toast.success(resultMessage ?? `${title} successful!`);
-					} else if (result.type === 'failure') {
-						toast.error(resultMessage ?? `${title} failed!`);
+					if (resultMessage.type === 'success') {
+						toast.success(resultMessage.text);
 					} else {
-						toast.error(`${title} failed!`);
+						toast.error(resultMessage.text);
 					}
 
 					await update();

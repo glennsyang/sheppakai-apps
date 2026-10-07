@@ -56,3 +56,17 @@ export const visitSchema = z.object({
 			.optional()
 	)
 });
+
+/**
+ * Schema for deleting a single visit
+ */
+export const deleteVisitSchema = z.object({
+	visitId: z.string().min(1, 'Visit ID is required')
+});
+
+/**
+ * Schema for restoring an archived person from Admin → Archived persons
+ */
+export const unarchivePersonSchema = z.object({
+	personId: z.string().min(1, 'Person ID is required')
+});

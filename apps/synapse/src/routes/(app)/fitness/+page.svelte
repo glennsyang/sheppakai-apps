@@ -14,6 +14,7 @@
 	import LogWeightDialog from '$lib/components/fitness/dialogs/LogWeightDialog.svelte';
 	import LogWorkoutDialog from '$lib/components/fitness/dialogs/LogWorkoutDialog.svelte';
 	import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte';
+	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
 	import PageSkeleton from '$lib/components/skeletons/PageSkeleton.svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
 	import { getTodayString, parseLocalDateString } from '$lib/utils/date';
@@ -172,6 +173,7 @@
 	<PageSkeleton color="green" />
 {:else}
 	<PageShell>
+		<LoadErrorAlert message={data.loadError} />
 		<!-- Header with unified action cluster -->
 		<FitnessDashboardHeader
 			workoutForm={data.workoutForm}

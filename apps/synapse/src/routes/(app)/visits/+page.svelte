@@ -2,6 +2,7 @@
 	import { replaceState } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import PageShell from '$lib/components/app/PageShell.svelte';
+	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
 	import PageSkeleton from '$lib/components/skeletons/PageSkeleton.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Tabs from '$lib/components/ui/tabs';
@@ -105,6 +106,7 @@
 	<PageSkeleton color="pink" />
 {:else}
 	<PageShell class="sm:py-6">
+		<LoadErrorAlert message={data.loadError} />
 		<div class="ruled mb-6 flex items-center justify-between gap-3 pb-4">
 			<div>
 				<h1 class="page-title" style="--pen: oklch(var(--color-pink))">Visit Tracking</h1>

@@ -2,7 +2,9 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { actionMessage } from '$lib/utils/actionMessage';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+	import { toast } from 'svelte-sonner';
 
 	import type { AdminApiKey } from './api-keys-columns';
 
@@ -37,7 +39,16 @@
 			use:enhance={() => {
 				isSubmitting = true;
 
-				return async ({ update }) => {
+				return async ({ result, update }) => {
+					const resultMessage = actionMessage(result, {
+						success: 'API key revoked.',
+						error: 'Failed to revoke API key'
+					});
+					if (resultMessage.type === 'success') {
+						toast.success(resultMessage.text);
+					} else {
+						toast.error(resultMessage.text);
+					}
 					await update();
 					isSubmitting = false;
 					openRevokeDialog = false;

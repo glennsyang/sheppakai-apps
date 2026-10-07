@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import PageShell from '$lib/components/app/PageShell.svelte';
+	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
 	import PageSkeleton from '$lib/components/skeletons/PageSkeleton.svelte';
 	import DailyAgendaView from '$lib/components/tasks/DailyAgendaView.svelte';
 	import MoodTrackerView from '$lib/components/tasks/MoodTrackerView.svelte';
@@ -155,6 +156,7 @@
 	<PageSkeleton color="orange" />
 {:else}
 	<PageShell class="min-w-0 overflow-x-hidden">
+		<LoadErrorAlert message={data.loadError} />
 		<div class="mobile-stack ruled mb-6 justify-between gap-3 pb-4 sm:flex-wrap lg:flex-nowrap">
 			<div class="min-w-0 flex-1">
 				<h1 class="page-title" style="--pen: oklch(var(--color-orange))">Tasks</h1>

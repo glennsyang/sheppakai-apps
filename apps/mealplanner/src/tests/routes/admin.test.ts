@@ -75,7 +75,11 @@ describe('admin load', () => {
 
 		const result = await load(loadCtx());
 
-		expect(result).toMatchObject({ users: [], allowlistedIds: [] });
+		expect(result).toMatchObject({
+			users: [],
+			allowlistedIds: [],
+			loadError: 'Failed to load users. Please try refreshing the page.'
+		});
 		expect(loggerMock.error).toHaveBeenCalled();
 	});
 });
@@ -109,7 +113,7 @@ describe('admin action happy paths', () => {
 			ctx({ user: ADMIN as App.Locals['user'] }, { userId: TARGET_ID, role: 'admin' })
 		);
 
-		expect(result).toBeUndefined();
+		expect(result).toMatchObject({ form: { message: { type: 'success', text: 'Role updated.' } } });
 		expect(apiMock.setRole).toHaveBeenCalledWith(
 			expect.objectContaining({ body: { userId: TARGET_ID, role: 'admin' } })
 		);
@@ -205,7 +209,7 @@ describe('admin action validation', () => {
 		);
 		expect(result).toMatchObject({
 			status: 403,
-			data: { error: 'You are not allowed to ban users' }
+			data: { form: { message: { type: 'error', text: 'You are not allowed to ban users' } } }
 		});
 		expect(loggerMock.warn).toHaveBeenCalled();
 		expect(loggerMock.error).not.toHaveBeenCalled();
@@ -340,8 +344,8 @@ describe('admin action sendWelcomeEmail', () => {
 		);
 
 		expect(emailMock).toHaveBeenCalledWith('listed@example.com', 'Listed', expect.any(Object));
-		expect(result).toEqual({
-			success: 'Welcome email sent to listed@example.com.'
+		expect(result).toMatchObject({
+			form: { message: { type: 'success', text: 'Welcome email sent to listed@example.com.' } }
 		});
 	});
 

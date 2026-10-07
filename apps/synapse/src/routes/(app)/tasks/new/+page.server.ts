@@ -1,10 +1,11 @@
 import { createTaskSchema, type TaskState, TaskStateEnum } from '$lib/schemas/task';
 import { requireAuth } from '$lib/server/actions/auth-guard';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import { toCommaSeparatedJson } from '$lib/server/actions/string-parsers';
 import { getDb } from '$lib/server/db';
 import { tasks } from '$lib/server/db/schema';
 import { logger } from '$lib/server/logger';
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { and, eq, sql } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -107,7 +108,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(createTaskSchema));
 
 		if (!form.valid) {
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		const duplicate = await getDb().query.tasks.findFirst({

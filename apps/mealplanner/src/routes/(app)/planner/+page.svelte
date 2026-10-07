@@ -385,6 +385,9 @@
 		<a href="/planner" class="act-text ink-blue mt-3 inline-block">Back to this week</a>
 	{/if}
 
+	{#if data.loadError}
+		<Alert variant="destructive" class="mt-6" role="alert">{data.loadError}</Alert>
+	{/if}
 	{#if actionError}
 		<Alert variant="destructive" class="mt-6 flex items-center justify-between gap-4" role="alert">
 			<span>{actionError}</span>

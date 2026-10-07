@@ -1,9 +1,9 @@
-import { editSessionSchema } from '$lib/schemas/meditation';
+import { deleteSessionSchema, editSessionSchema } from '$lib/schemas/meditation';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import { getDb } from '$lib/server/db';
 import { meditationSessions } from '$lib/server/db/schema';
 import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
-import { fail } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -13,7 +13,7 @@ export async function handleUpdateSession(request: Request, userId: string) {
 
 	if (!form.valid) {
 		logger.warn('Invalid edit session form data', { errors: form.errors });
-		return fail(400, { form });
+		return invalidForm(form);
 	}
 
 	try {
@@ -24,7 +24,7 @@ export async function handleUpdateSession(request: Request, userId: string) {
 		});
 
 		if (!session) {
-			return fail(404, { form });
+			return message(form, { type: 'error', text: 'Session not found' }, { status: 404 });
 		}
 
 		await db
@@ -51,12 +51,13 @@ export async function handleUpdateSession(request: Request, userId: string) {
 }
 
 export async function handleDeleteSession(request: Request, userId: string) {
-	const formData = await request.formData();
-	const sessionId = formData.get('session_id') as string;
+	const form = await superValidate(request, zod4(deleteSessionSchema));
 
-	if (!sessionId) {
-		return fail(400, { error: 'Session ID is required' });
+	if (!form.valid) {
+		return invalidForm(form, 'Session ID is required');
 	}
+
+	const sessionId = form.data.session_id;
 
 	try {
 		const db = getDb();
@@ -66,9 +67,9 @@ export async function handleDeleteSession(request: Request, userId: string) {
 			.where(and(eq(meditationSessions.id, sessionId), eq(meditationSessions.userId, userId)));
 
 		logger.info('Meditation session deleted', { sessionId, userId });
-		return { success: true };
+		return message(form, { type: 'success', text: 'Session deleted.' });
 	} catch (err) {
 		logger.error('Failed to delete session', err);
-		return fail(500, { error: 'Failed to delete session' });
+		return message(form, { type: 'error', text: 'Failed to delete session' }, { status: 500 });
 	}
 }

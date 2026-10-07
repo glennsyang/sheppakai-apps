@@ -2,7 +2,9 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { actionMessage } from '$lib/utils/actionMessage';
 	import ArchiveRestoreIcon from '@lucide/svelte/icons/archive-restore';
+	import { toast } from 'svelte-sonner';
 
 	import type { ArchivedPerson } from './archived-persons-columns';
 
@@ -38,7 +40,16 @@
 			use:enhance={() => {
 				isSubmitting = true;
 
-				return async ({ update }) => {
+				return async ({ result, update }) => {
+					const resultMessage = actionMessage(result, {
+						success: 'Person unarchived.',
+						error: 'Failed to unarchive person'
+					});
+					if (resultMessage.type === 'success') {
+						toast.success(resultMessage.text);
+					} else {
+						toast.error(resultMessage.text);
+					}
 					await update();
 					isSubmitting = false;
 					openUnarchiveDialog = false;

@@ -36,7 +36,7 @@ Unlike some of the other sibling repos, **DB column names here are camelCase**, 
 
 `npm run check:redirect-throws` statically enforces that `+page.server.ts` / `+layout.server.ts` / `+server.ts` files always `throw redirect(...)` (not call it bare). Always `if (isRedirect(err)) throw err` when catching around auth calls.
 
-Load and action error handling: follow `docs/ERROR_HANDLING_POLICY.md` at the repo root. Many existing actions still return bare `fail(...)`; new code and routes you touch should use `message(form, …, { status })`.
+Load and action error handling: follow `docs/ERROR_HANDLING_POLICY.md` at the repo root. Loads that query the DB return a `loadError` (rendered with `LoadErrorAlert`); actions answer with `invalidForm(form)` / `message(form, …, { status })`, never a bare `fail(...)` — the Daily Agenda actions are the one documented exception. Components that submit with plain `use:enhance` read the result through `actionMessage()` (`src/lib/utils/actionMessage.ts`).
 
 ### Logging
 

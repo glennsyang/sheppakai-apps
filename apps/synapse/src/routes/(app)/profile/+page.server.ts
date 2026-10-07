@@ -30,10 +30,10 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const db = getDb();
 	const userId = getUser(locals).id;
 
 	try {
+		const db = getDb();
 		const [fullUserData, accountData, visitThresholds, dashboardGoals] = await Promise.all([
 			db.query.user.findFirst({ where: eq(user.id, userId) }),
 			db.query.account.findFirst({ where: eq(account.userId, userId) }),
@@ -81,7 +81,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			visitThresholds: DEFAULT_VISIT_STATUS_THRESHOLDS,
 			dashboardGoalSettingsForm: await superValidate(zod4(updateDashboardGoalSettingsSchema)),
 			dashboardGoals: DEFAULT_DASHBOARD_GOALS,
-			passwordUpdatedAt: null
+			passwordUpdatedAt: null,
+			loadError: 'Failed to load profile data. Please try refreshing the page.'
 		};
 	}
 };

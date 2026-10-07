@@ -9,6 +9,7 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { personSchema, scheduleVisitSchema, visitSchema } from '$lib/schemas/visits';
+	import { actionMessage } from '$lib/utils/actionMessage';
 	import { formatDateLong, formatDateShort } from '$lib/utils/date';
 	import { getStatusLabel } from '$lib/utils/visit-status';
 	import { Archive, ArrowLeft, Calendar, CalendarClock, Pencil, Trash2 } from '@lucide/svelte';
@@ -584,10 +585,14 @@
 						showScheduleVisitDialog = false;
 
 						return async ({ result, update }) => {
-							if (result.type === 'success') {
-								toast.success('Scheduled visit cleared');
+							const resultMessage = actionMessage(result, {
+								success: 'Scheduled visit cleared',
+								error: 'Failed to clear scheduled visit'
+							});
+							if (resultMessage.type === 'success') {
+								toast.success(resultMessage.text);
 							} else {
-								toast.error('Failed to clear scheduled visit');
+								toast.error(resultMessage.text);
 							}
 
 							await update();

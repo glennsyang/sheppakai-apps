@@ -1,10 +1,11 @@
 import { personSchema } from '$lib/schemas/visits';
 import { requireAuth } from '$lib/server/actions/auth-guard';
+import { invalidForm } from '$lib/server/actions/form-responses';
 import { getDb } from '$lib/server/db';
 import { people } from '$lib/server/db/schema';
 import { generateId, withAuditFieldsForCreate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
@@ -21,7 +22,7 @@ export const actions = {
 
 		if (!form.valid) {
 			logger.warn('Invalid person form data', { errors: form.errors });
-			return fail(400, { form });
+			return invalidForm(form);
 		}
 
 		try {
