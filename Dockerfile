@@ -45,7 +45,7 @@ RUN pnpm fetch --prod=false
 # The filter selects the app by path (braces are needed for `...` to also pull in its
 # workspace dependencies), so no package name is needed.
 COPY . .
-RUN pnpm install --offline --frozen-lockfile --prod=false --filter "{./apps/${APP}}..."
+RUN pnpm install --offline --frozen-lockfile --prod=false --fail-if-no-match --filter "{./apps/${APP}}..."
 
 WORKDIR /repo/apps/${APP}
 
@@ -59,8 +59,10 @@ RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
 # Strip source maps from server bundle (adapter-node hardcodes sourcemap: true)
 RUN find build -name "*.map" -delete
 
-# Write a standalone production node_modules for the runtime image (resolves workspace:*)
-RUN pnpm --filter "./apps/${APP}" deploy --prod --legacy /prod
+# Write a standalone production node_modules for the runtime image (resolves workspace:*).
+# Back to the workspace root: the filter path is relative to the current directory.
+WORKDIR /repo
+RUN pnpm --fail-if-no-match --filter "./apps/${APP}" deploy --prod --legacy /prod
 
 
 # Final stage for app image
