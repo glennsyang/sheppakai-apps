@@ -197,10 +197,10 @@ soft-deletes and so cannot use `deleteAction`.
   between page load and submit, and `actionMessage()` keeps its `data.error` fallback for it.
   Contrast `adminAuthFailure` (`src/lib/server/actions/admin-guard.ts`), which always runs after
   validation and answers with `message(form, ...)`.
-- **Admin actions in budget use `adminFormAction`, never `requireAdmin`**: the shared `requireAdmin` checks
-  the DB `role` only, while budget's admin check (`isAdminUser`, via `assertAdmin` /
-  `adminFormAction`) also honours the `ADMIN_USER_IDS` bootstrap. Importing `requireAdmin` outside
-  its own test is an oxlint error (`no-restricted-imports` in `oxlint.config.ts`).
+- **Admin actions in budget use `adminFormAction`**: it answers with `message(form, ...)` after
+  validation. Its admin check is the same one `requireAdmin` / `assertAdmin` use
+  (`createAdminGuards` in `packages/shared/src/auth-guard.ts`), which honours both the DB `role`
+  and the `ADMIN_USER_IDS` bootstrap in every app.
 - **Detail-page loads throw `error()`**: synapse's `journal/[id]`, `tasks/[id]/edit`, `visits/[id]`
   and `meditation/routines/[id]` loads throw `error(404)` for a missing entity and `error(500)` for
   a failed query, rather than returning a `loadError`. The page cannot render anything useful

@@ -8,18 +8,23 @@ import {
 import { getRequestEvent } from '$app/server';
 import { logger } from '$lib/server/logger';
 import { apiKey } from '@better-auth/api-key';
-import { error } from '@sveltejs/kit';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin, haveIBeenPwned } from 'better-auth/plugins';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
+import { eq } from 'drizzle-orm';
 
-import { isAdminUser } from './admin-status';
-import { createAllowlistBeforeHook, parseAllowedEmails } from './auth-allowlist-hook';
+import {
+	createAllowlistBeforeHook,
+	createAllowlistSessionGuard,
+	parseAllowedEmails
+} from './auth-allowlist-hook';
 import { createAuthAfterHooks, logPasswordResetAudit } from './auth-audit-hooks';
 import { getDb } from './db';
 import * as schema from './db/schema';
 import { sendPasswordChangedEmail, sendPasswordResetEmail, sendVerificationEmail } from './email';
+
+export const allowedEmails = parseAllowedEmails(ALLOWED_EMAILS);
 
 export const auth = betterAuth({
 	appName: 'Sheppakai Budget',
@@ -39,6 +44,11 @@ export const auth = betterAuth({
 			rateLimit: schema.rateLimit
 		}
 	}),
+	verification: {
+		// Store reset/verification tokens hashed so a DB dump or leaked query log can't
+		// be replayed to take over an account.
+		storeIdentifier: 'hashed'
+	},
 	emailAndPassword: {
 		enabled: true,
 		// Accounts are created by an admin only (Admin → Users → Add User).
@@ -71,17 +81,34 @@ export const auth = betterAuth({
 		sendOnSignUp: true,
 		sendOnSignIn: true,
 		autoSignInAfterVerification: true,
-		sendVerificationEmail: async ({ user, url, token }) => {
+		sendVerificationEmail: async ({ user, url }) => {
 			logger.debug('✉️ Email verification sent');
-			const verifyUrl = `${url}?token=${token}`;
-			void sendVerificationEmail(user.email, user.name, verifyUrl);
+			// `url` is already the complete verification link (token + callbackURL);
+			// appending `?token=` again produced a malformed double-`?` URL.
+			void sendVerificationEmail(user.email, user.name, url);
 		}
 	},
 	hooks: {
 		// Public sign-up is off (disableSignUp above); this also restricts sign-in to
 		// the exact ALLOWED_EMAILS list.
-		before: createAllowlistBeforeHook('Sheppakai Budget', parseAllowedEmails(ALLOWED_EMAILS)),
+		before: createAllowlistBeforeHook('Sheppakai Budget', allowedEmails),
 		after: createAuthAfterHooks('Sheppakai Budget')
+	},
+	databaseHooks: {
+		session: {
+			create: {
+				// Backstop for every session-creating flow (sign-in, verify-email auto sign-in,
+				// impersonation, …), not just the paths hooks.before sees.
+				before: createAllowlistSessionGuard(allowedEmails, async (userId) => {
+					const [row] = await getDb()
+						.select({ email: schema.user.email })
+						.from(schema.user)
+						.where(eq(schema.user.id, userId))
+						.limit(1);
+					return row?.email;
+				})
+			}
+		}
 	},
 	advanced: {
 		cookiePrefix: 'sheppakai_budget',
@@ -148,25 +175,5 @@ export const auth = betterAuth({
 	] // make sure this is the last plugin in the array
 });
 
-/**
- * Assert the current user is an admin, throwing a SvelteKit `error(401|403)` otherwise.
- *
- * This is budget's superforms-aware extension of the canonical admin guard: it
- * additionally honours the `ADMIN_USER_IDS` env bootstrap (grant admin by id without a DB
- * write), on top of the `role === 'admin'` check that `requireAdmin` in
- * `./actions/auth-guard` performs in every repo. Use it directly in
- * `+layout.server.ts` / `+page.server.ts` load functions; for actions that need to attach the
- * failure to a superforms message, wrap them in `adminFormAction` from `./actions/admin-guard`.
- *
- * @param locals - SvelteKit locals object containing user data
- * @throws {HttpError} 401 when unauthenticated, 403 when authenticated but not an admin
- */
-export function assertAdmin(locals: App.Locals): void {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-
-	if (!isAdminUser(locals.user)) {
-		throw error(403, 'Forbidden');
-	}
-}
+// Kept here for existing `$lib/server/auth` importers; the guard itself is shared.
+export { assertAdmin } from './actions/auth-guard';

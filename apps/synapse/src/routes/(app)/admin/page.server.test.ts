@@ -27,7 +27,8 @@ const mockSendAuthAlerts = vi.hoisted(() => vi.fn<(message: string) => Promise<b
 
 vi.mock('$app/env/private', () => ({
 	BETTER_AUTH_BASE_URL: 'https://synapse.example.com',
-	FLY_APP_NAME: 'synapse-test'
+	FLY_APP_NAME: 'synapse-test',
+	ADMIN_USER_IDS: ''
 }));
 
 vi.mock('$lib/server/auth', () => ({

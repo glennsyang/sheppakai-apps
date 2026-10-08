@@ -5,6 +5,7 @@
 	"type": "module",
 	"exports": {
 		"./api-response": "./src/api-response.ts",
+		"./auth-allowlist": "./src/auth-allowlist.ts",
 		"./auth-guard": "./src/auth-guard.ts",
 		"./auth-routes": "./src/auth-routes.ts",
 		"./bearer-token": "./src/bearer-token.ts",
@@ -24,6 +25,7 @@
 		"@sentry/sveltekit": "catalog:",
 		"@sveltejs/kit": "catalog:",
 		"@types/node": "catalog:",
+		"better-auth": "catalog:",
 		"oxfmt": "catalog:",
 		"oxlint": "catalog:",
 		"svelte": "catalog:",
@@ -33,6 +35,7 @@
 	},
 	"peerDependencies": {
 		"@sentry/sveltekit": "^11",
-		"@sveltejs/kit": "^2"
+		"@sveltejs/kit": "^2",
+		"better-auth": "^1"
 	}
 }

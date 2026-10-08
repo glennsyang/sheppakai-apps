@@ -2,6 +2,8 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { isRedirect } from '@sveltejs/kit';
 import { describe, expect, it, vi } from 'vitest';
 
+vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: 'env_admin' }));
+
 import { getUser, requireAdmin, requireAuth } from './auth-guard';
 
 type MockLocals = App.Locals;
@@ -84,6 +86,13 @@ describe('requireAdmin', () => {
 
 		expect(handler).toHaveBeenCalledOnce();
 		expect(result).toEqual({ success: true });
+	});
+
+	it('calls the handler for an ADMIN_USER_IDS admin without the admin role', async () => {
+		const handler = vi.fn<() => Promise<{ ok: boolean }>>().mockResolvedValue({ ok: true });
+		const user = { ...mockUser, id: 'env_admin' } as App.Locals['user'];
+
+		expect(await requireAdmin(handler)(makeEvent({ user }))).toEqual({ ok: true });
 	});
 });
 

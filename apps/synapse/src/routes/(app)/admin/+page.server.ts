@@ -6,7 +6,7 @@ import type { AdminApiLogEntry } from '$lib/components/admin/api-logs-columns';
 import { createUserSchema, sendWelcomeEmailSchema } from '$lib/schemas/admin-user';
 import { createApiKeySchema, revokeApiKeySchema } from '$lib/schemas/api-key';
 import { unarchivePersonSchema } from '$lib/schemas/visits';
-import { getUser, requireAdmin } from '$lib/server/actions/auth-guard';
+import { assertAdmin, requireAdmin } from '$lib/server/actions/auth-guard';
 import { invalidForm } from '$lib/server/actions/form-responses';
 import { allowedEmails, auth } from '$lib/server/auth';
 import { buildAllowlistCommand, formatAlertEmail } from '$lib/server/auth-allowlist-hook';
@@ -16,7 +16,7 @@ import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
 import { sendWelcomeEmail } from '$lib/server/email';
 import { logger } from '$lib/server/logger';
 import { sendAuthAlerts } from '$lib/server/notifications';
-import { error, isRedirect } from '@sveltejs/kit';
+import { isRedirect } from '@sveltejs/kit';
 import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -54,7 +54,7 @@ function parsePermissions(raw: string | null): Record<string, string[]> | null {
 
 export const load: PageServerLoad = async ({ locals }) => {
 	// Server loads run in parallel with the layout's guard, so check here too.
-	if (getUser(locals).role !== 'admin') error(403, 'Forbidden');
+	assertAdmin(locals);
 
 	const [createApiKeyForm, createUserForm] = await Promise.all([
 		superValidate(zod4(createApiKeySchema), { id: 'createApiKey' }),

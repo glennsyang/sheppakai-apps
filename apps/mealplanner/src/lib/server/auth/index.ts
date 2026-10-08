@@ -40,6 +40,11 @@ export const auth = betterAuth({
 			rateLimit: schema.rateLimit
 		}
 	}),
+	verification: {
+		// Store reset/verification tokens hashed so a DB dump or leaked query log can't
+		// be replayed to take over an account.
+		storeIdentifier: 'hashed'
+	},
 	emailAndPassword: {
 		enabled: true,
 		// Public sign-up is closed: the shared-data model (CLAUDE.md) relies on the app

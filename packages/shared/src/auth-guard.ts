@@ -1,5 +1,5 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { fail, redirect } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 
 import { SIGN_IN_ROUTE } from './auth-routes';
 
@@ -54,34 +54,68 @@ export function getUser(locals: App.Locals): AuthenticatedUser {
 	return locals.user;
 }
 
+type RoleFields = { id: string; role?: string | null };
+
 /**
- * Authorization wrapper for SvelteKit actions.
- * Ensures the user is authenticated and has the 'admin' role before executing
- * the action handler. Returns `fail(401)` when unauthenticated, `fail(403)` when
- * authenticated but not an admin.
+ * Admin checks bound to an app's `ADMIN_USER_IDS`. An admin is anyone listed there or
+ * carrying `role === 'admin'` — the same rule the better-auth `admin` plugin applies
+ * (`adminUserIds` + `adminRoles`), so an admin bootstrapped by id is never 403'd by the
+ * app's own guards. Each app builds these once in `$lib/server/actions/auth-guard`.
  *
- * Shared by every app. It checks the DB `role` only.
- *
- * @example
- * export const actions = {
- *   restore: requireAdmin(async (event, user) => {
- *     // user is guaranteed to be an authenticated admin here
- *   })
- * };
+ * @param getAdminUserIds - returns the comma-separated `ADMIN_USER_IDS` env value. Read
+ *   lazily, so importing the guards never touches the env (route tests that mock
+ *   `$app/env/private` without it keep working).
  */
-export function requireAdmin<
-	T,
-	Params extends Partial<Record<string, string>> = Partial<Record<string, string>>
->(
-	handler: (event: RequestEvent<Params>, user: AuthenticatedUser) => Promise<T>
-): (event: RequestEvent<Params>) => Promise<T | ReturnType<typeof fail>> {
-	return async (event: RequestEvent<Params>) => {
-		if (!event.locals.user) {
-			return fail(401, { error: 'Unauthorized' });
+export function createAdminGuards(getAdminUserIds: () => string) {
+	function isAdminUser(user: RoleFields): boolean {
+		if (user.role === 'admin') {
+			return true;
 		}
-		if (event.locals.user.role !== 'admin') {
-			return fail(403, { error: 'Forbidden' });
+		return getAdminUserIds()
+			.split(',')
+			.some((id) => id.trim() !== '' && id.trim() === user.id);
+	}
+
+	/**
+	 * Authorization wrapper for SvelteKit actions. Returns `fail(401)` when
+	 * unauthenticated, `fail(403)` when authenticated but not an admin.
+	 *
+	 * @example
+	 * export const actions = {
+	 *   restore: requireAdmin(async (event, user) => {
+	 *     // user is guaranteed to be an authenticated admin here
+	 *   })
+	 * };
+	 */
+	function requireAdmin<
+		T,
+		Params extends Partial<Record<string, string>> = Partial<Record<string, string>>
+	>(
+		handler: (event: RequestEvent<Params>, user: AuthenticatedUser) => Promise<T>
+	): (event: RequestEvent<Params>) => Promise<T | ReturnType<typeof fail>> {
+		return async (event: RequestEvent<Params>) => {
+			if (!event.locals.user) {
+				return fail(401, { error: 'Unauthorized' });
+			}
+			if (!isAdminUser(event.locals.user)) {
+				return fail(403, { error: 'Forbidden' });
+			}
+			return handler(event, event.locals.user);
+		};
+	}
+
+	/**
+	 * Load-function guard: redirects to SIGN_IN_ROUTE when unauthenticated (as `getUser`
+	 * does), throws `error(403)` when authenticated but not an admin, and returns the
+	 * narrowed user otherwise.
+	 */
+	function assertAdmin(locals: App.Locals): AuthenticatedUser {
+		const user = getUser(locals);
+		if (!isAdminUser(user)) {
+			throw error(403, 'Forbidden');
 		}
-		return handler(event, event.locals.user);
-	};
+		return user;
+	}
+
+	return { isAdminUser, requireAdmin, assertAdmin };
 }
