@@ -23,7 +23,13 @@ export default defineConfig({
 			provider: 'v8',
 			include: ['src/**/*.{ts,svelte.ts}'],
 			exclude: ['src/**/*.test.ts', 'src/**/*.d.ts', 'src/routes/**', 'src/app.ts'],
-			reporter: ['text', 'lcov', 'html', 'json-summary', 'json']
+			reporter: ['text', 'lcov', 'html', 'json-summary', 'json'],
+			thresholds: {
+				statements: 40,
+				branches: 40,
+				functions: 40,
+				lines: 40
+			}
 		},
 		reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions'] : ['default']
 	}

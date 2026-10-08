@@ -1,5 +1,5 @@
+import { building, dev } from '$app/env';
 import { SENTRY_DSN } from '$app/env/public';
-import { building, dev } from '$app/environment';
 import { sentryDataCollection } from '$lib/sentry-data-collection';
 import { allowedEmails, auth } from '$lib/server/auth';
 import { isUserAccessAllowed } from '$lib/server/auth/allowlist-hook';
