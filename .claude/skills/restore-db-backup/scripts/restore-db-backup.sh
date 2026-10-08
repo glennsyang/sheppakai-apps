@@ -165,10 +165,13 @@ fi
 mkdir -p "$(dirname "$DB_PATH")"
 if [ -f "$DB_PATH" ]; then
   BACKUP_DB="${DB_PATH}.backup-$(date +%Y%m%d-%H%M%S)"
-  cp "$DB_PATH" "$BACKUP_DB"
+  # .backup, not cp: the apps run in WAL mode, so recent writes may still sit in the -wal file.
+  sqlite3 "$DB_PATH" ".backup '$BACKUP_DB'"
   echo "Backed up existing db to $BACKUP_DB"
   rm -f "$DB_PATH"
 fi
+# A stale -wal left beside the new file would be replayed onto it.
+rm -f "${DB_PATH}-wal" "${DB_PATH}-shm"
 
 echo "Restoring..."
 sqlite3 "$DB_PATH" < "$ARCHIVED_SQL"

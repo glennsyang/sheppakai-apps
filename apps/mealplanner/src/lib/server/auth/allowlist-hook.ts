@@ -3,11 +3,7 @@ import { createAllowlistBeforeHook as createSharedBeforeHook } from '@sheppakai/
 
 import { sendAuthAlerts } from '../notifications';
 
-export {
-	createAllowlistSessionGuard,
-	isUserAccessAllowed,
-	parseAllowedEmails
-} from '@sheppakai/shared/auth-allowlist';
+export { createAllowlistSessionGuard, parseAllowedEmails } from '@sheppakai/shared/auth-allowlist';
 
 export function createAllowlistBeforeHook(appName: string, allowedEmails: Set<string>) {
 	return createSharedBeforeHook(appName, allowedEmails, { sendAlert: sendAuthAlerts });

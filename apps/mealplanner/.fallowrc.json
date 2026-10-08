@@ -16,6 +16,7 @@
 		"@sveltejs/kit",
 		"@tailwindcss/vite",
 		"@tanstack/svelte-table",
+		"better-sqlite3",
 		"bits-ui",
 		"clsx",
 		"svelte",

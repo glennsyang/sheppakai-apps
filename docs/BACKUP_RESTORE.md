@@ -112,7 +112,7 @@ flyctl ssh console -a "$FLY_APP" -C "sqlite3 $DB_PATH .dump" \
 flyctl ssh console -a "$FLY_APP" -C "sh -c 'sqlite3 $DB_PATH.restore < /tmp/restore.sql'"
 flyctl ssh console -a "$FLY_APP" -C "sqlite3 $DB_PATH.restore 'PRAGMA integrity_check;'"
 
-# 4. Swap it in. Move the WAL/SHM files aside too (mealplanner runs in WAL mode),
+# 4. Swap it in. Move the WAL/SHM files aside too (every app runs in WAL mode),
 #    then restart straight away so the app reopens the new file.
 flyctl ssh console -a "$FLY_APP" -C "sh -c 'mv $DB_PATH $DB_PATH.old; for s in -wal -shm; do [ -f $DB_PATH\$s ] && mv $DB_PATH\$s $DB_PATH.old\$s; done; mv $DB_PATH.restore $DB_PATH'"
 flyctl apps restart "$FLY_APP"

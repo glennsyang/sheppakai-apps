@@ -4,7 +4,9 @@
 declare global {
 	namespace App {
 		interface Locals {
+			requestId?: string;
 			user?: { id: string; role?: string | null } | null;
+			session?: { token: string };
 		}
 	}
 }

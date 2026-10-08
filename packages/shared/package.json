@@ -9,9 +9,12 @@
 		"./auth-guard": "./src/auth-guard.ts",
 		"./auth-routes": "./src/auth-routes.ts",
 		"./bearer-token": "./src/bearer-token.ts",
+		"./db": "./src/db.ts",
 		"./forgot-password-response": "./src/forgot-password-response.ts",
+		"./healthz": "./src/healthz.ts",
 		"./name-guard": "./src/name-guard.ts",
-		"./sentry-data-collection": "./src/sentry-data-collection.ts"
+		"./sentry-data-collection": "./src/sentry-data-collection.ts",
+		"./server-handle": "./src/server-handle.ts"
 	},
 	"scripts": {
 		"check": "tsc --noEmit",
@@ -25,8 +28,11 @@
 	"devDependencies": {
 		"@sentry/sveltekit": "catalog:",
 		"@sveltejs/kit": "catalog:",
+		"@types/better-sqlite3": "catalog:",
 		"@types/node": "catalog:",
 		"better-auth": "catalog:",
+		"better-sqlite3": "catalog:",
+		"drizzle-orm": "catalog:",
 		"oxfmt": "catalog:",
 		"oxlint": "catalog:",
 		"svelte": "catalog:",
@@ -37,6 +43,8 @@
 	"peerDependencies": {
 		"@sentry/sveltekit": "^11",
 		"@sveltejs/kit": "^2",
-		"better-auth": "^1"
+		"better-auth": "^1",
+		"better-sqlite3": "^13",
+		"drizzle-orm": ">=0.45"
 	}
 }

@@ -10,10 +10,14 @@ moved into this monorepo.
 `hooks.server.ts` wires `Sentry.sentryHandle()` first in the `handle` sequence:
 
 ```ts
-export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
-  // ...app handle logic
-});
+export const handle = sequence(
+  Sentry.sentryHandle(),
+  createServerHandle({ auth, logger, allowedEmails, dev, building })
+);
 ```
+
+`createServerHandle` and `createHandleError` live in `packages/shared/src/server-handle.ts`;
+`Sentry.init` stays in each app's `hooks.server.ts`.
 
 All three apps already set `tracesSampleRate: 1.0` in their server `Sentry.init`, and
 `sentryHandle()` is what actually turns that into per-request tracing spans and
@@ -26,10 +30,10 @@ per-request CSP nonce SvelteKit generates (see [CSP.md](./CSP.md)). Without it, 
 The shared logger (`packages/logger`, re-exported as each app's `$lib/server/logger`)
 already forwards unhandled errors to Sentry:
 `logger.error()` calls `Sentry.captureException()` (or `captureMessage()` for non-`Error`
-values) internally whenever it's invoked outside dev. `hooks.server.ts`'s `handleError`
+values) internally whenever it's invoked outside dev. `handleError` (`createHandleError`)
 calls `logger.error('Unhandled server error', ...)` on every unhandled error, so wrapping
 `handleError` itself with `Sentry.handleErrorWithSentry()` would double-report every one
-of them. Each `hooks.server.ts` documents this with a comment directly above `handleError`.
+of them. `createHandleError` documents this with a comment directly above it.
 
 **Client-side is different and unaffected**: `hooks.client.ts` in all three apps uses
 `export const handleError = handleErrorWithSentry();` — there is no structured logger

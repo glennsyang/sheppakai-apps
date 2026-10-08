@@ -22,10 +22,11 @@ SvelteKit generates a per-request nonce, injects it into every inline `<script>`
 `<style>` it emits during SSR, and sets the `Content-Security-Policy` response header
 itself. Sentry's `sentryHandle()` (where used) reads the same nonce.
 
-`hooks.server.ts` **must never set `Content-Security-Policy`** — doing so overrides the
-nonce-bearing header SvelteKit emits. The other security headers (`X-Frame-Options`,
-`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS, `X-Request-ID`)
-stay in `hooks.server.ts`.
+The server handle (`createServerHandle` in `packages/shared/src/server-handle.ts`, wired
+into each app's `hooks.server.ts`) **must never set `Content-Security-Policy`** — doing so
+overrides the nonce-bearing header SvelteKit emits. The other security headers
+(`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS,
+`X-Request-ID`) are set there.
 
 > Historical note: `synapse` previously hand-built CSP in `hooks.server.ts` — a
 > per-request nonce plus a `transformPageChunk` pass that rewrote every `<script>` tag,
