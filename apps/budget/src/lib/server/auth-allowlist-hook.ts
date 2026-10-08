@@ -6,7 +6,6 @@ import { sendAuthAlerts } from './notifications';
 export {
 	buildAllowlistCommand,
 	createAllowlistSessionGuard,
-	isUserAccessAllowed,
 	parseAllowedEmails
 } from '@sheppakai/shared/auth-allowlist';
 
