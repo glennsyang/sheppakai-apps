@@ -27,7 +27,8 @@ vi.mock('$lib/server/logger', () => ({ logger: loggerMock }));
 vi.mock('$lib/server/email', () => ({ sendAccountCreatedEmail: emailMock }));
 vi.mock('$lib/server/notifications', () => ({ sendAuthAlerts: alertsMock }));
 vi.mock('$app/env/private', () => ({
-	BETTER_AUTH_BASE_URL: 'https://app.example.com'
+	BETTER_AUTH_BASE_URL: 'https://app.example.com',
+	ADMIN_USER_IDS: ''
 }));
 
 import { actions, load } from '../../routes/(app)/admin/+page.server';

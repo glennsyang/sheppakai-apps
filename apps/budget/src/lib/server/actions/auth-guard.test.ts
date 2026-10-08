@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: 'env_admin' }));
+
 const mockFail = vi.hoisted(() =>
 	vi.fn<
 		(

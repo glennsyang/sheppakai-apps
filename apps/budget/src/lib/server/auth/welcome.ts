@@ -17,7 +17,7 @@ export function isEmailAllowlisted(email: string): boolean {
 }
 
 export function allowlistCommandFor(email: string): string {
-	return buildAllowlistCommand(ALLOWED_EMAILS, email, FLY_APP);
+	return buildAllowlistCommand(parseAllowedEmails(ALLOWED_EMAILS), email, FLY_APP);
 }
 
 /**

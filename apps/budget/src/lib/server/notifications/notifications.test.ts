@@ -2,13 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
 	fetch: vi.fn<(input: string, init?: RequestInit) => Promise<unknown>>(),
-	loggerError: vi.fn<() => void>()
+	loggerError: vi.fn<() => void>(),
+	env: {
+		AUTH_ALERTS_URL: 'https://alerts.example.com/auth',
+		BUDGET_ALERTS_URL: 'https://alerts.example.com/budget'
+	}
 }));
 
-vi.mock('$app/env/private', () => ({
-	AUTH_ALERTS_URL: 'https://alerts.example.com/auth',
-	BUDGET_ALERTS_URL: 'https://alerts.example.com/budget'
-}));
+vi.mock('$app/env/private', () => mockState.env);
 
 vi.mock('../logger', () => ({
 	logger: {
@@ -121,5 +122,24 @@ describe('sendBudgetAlerts', () => {
 		const result = await sendBudgetAlerts('msg');
 		expect(result).toBe(false);
 		expect(mockState.loggerError).toHaveBeenCalled();
+	});
+});
+
+describe('unset alerts URL', () => {
+	beforeEach(() => {
+		mockState.fetch.mockReset();
+		mockState.env.AUTH_ALERTS_URL = 'https://auth-alerts.invalid';
+		mockState.env.BUDGET_ALERTS_URL = 'https://budget-alerts.invalid';
+	});
+
+	afterEach(() => {
+		mockState.env.AUTH_ALERTS_URL = 'https://alerts.example.com/auth';
+		mockState.env.BUDGET_ALERTS_URL = 'https://alerts.example.com/budget';
+	});
+
+	it('skips the request for a .invalid placeholder host', async () => {
+		expect(await sendAuthAlerts('user@example.com signed in')).toBe(false);
+		expect(await sendBudgetAlerts('Groceries at 90%')).toBe(false);
+		expect(mockState.fetch).not.toHaveBeenCalled();
 	});
 });

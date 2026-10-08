@@ -10,18 +10,15 @@ vi.mock('better-auth/api', async (importOriginal) => ({
 	createAuthMiddleware: (fn: unknown) => fn
 }));
 
-vi.mock('./notifications', () => ({
-	sendAuthAlerts: mockState.sendAuthAlerts
-}));
-
 import {
 	buildAllowlistCommand,
 	createAllowlistBeforeHook,
 	createAllowlistSessionGuard,
 	formatAlertEmail,
+	isBanActive,
 	isUserAccessAllowed,
 	parseAllowedEmails
-} from './auth-allowlist-hook';
+} from './auth-allowlist';
 
 type FakeCtx = { path: string; body?: { email?: unknown } };
 
@@ -31,7 +28,7 @@ type FakeHook = (ctx: FakeCtx) => Promise<void>;
 const hook = createAllowlistBeforeHook(
 	'Test App',
 	parseAllowedEmails(' Owner@Example.com , partner@example.com,, '),
-	{ alertWindowMs: 0 }
+	{ sendAlert: mockState.sendAuthAlerts, alertWindowMs: 0 }
 ) as unknown as FakeHook;
 
 beforeEach(() => mockState.sendAuthAlerts.mockClear());
@@ -125,6 +122,7 @@ describe('createAllowlistBeforeHook alert debounce', () => {
 			'Test App',
 			parseAllowedEmails('owner@example.com'),
 			{
+				sendAlert: mockState.sendAuthAlerts,
 				alertWindowMs: WINDOW_MS,
 				now: () => clock
 			}
@@ -262,5 +260,25 @@ describe('buildAllowlistCommand', () => {
 
 	it('falls back to an <app> placeholder', () => {
 		expect(buildAllowlistCommand(allowed, 'c@example.com')).toMatch(/ -a <app>$/);
+	});
+});
+
+describe('isBanActive', () => {
+	const now = new Date('2026-09-25T00:00:00Z');
+
+	it('is false when not banned', () => {
+		expect(isBanActive({ banned: false }, now)).toBe(false);
+		expect(isBanActive({ banned: null }, now)).toBe(false);
+	});
+
+	it('is true for a ban with no expiry', () => {
+		expect(isBanActive({ banned: true, banExpires: null }, now)).toBe(true);
+	});
+
+	it('is true until the expiry, false after it', () => {
+		expect(isBanActive({ banned: true, banExpires: new Date('2026-09-26T00:00:00Z') }, now)).toBe(
+			true
+		);
+		expect(isBanActive({ banned: true, banExpires: '2026-09-24T00:00:00Z' }, now)).toBe(false);
 	});
 });
