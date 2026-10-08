@@ -1,4 +1,6 @@
+import type { RequestEvent } from '@sveltejs/kit';
 import { RetryAfterRateLimiter } from 'sveltekit-rate-limiter/server';
+import type { Rate, RateLimiterPlugin } from 'sveltekit-rate-limiter/server';
 import { message } from 'sveltekit-superforms';
 import type { SuperValidated } from 'sveltekit-superforms';
 
@@ -31,4 +33,28 @@ export function rateLimitedMessage<TForm extends Record<string, unknown>>(
 		},
 		{ status: 429 as MessageOptions['status'] }
 	);
+}
+
+class UserIdRateLimiter implements RateLimiterPlugin<{ userId: string }> {
+	readonly rate: Rate | Rate[];
+
+	constructor(rate: Rate | Rate[]) {
+		this.rate = rate;
+	}
+
+	hash(_: RequestEvent, extraData: { userId: string }) {
+		return extraData.userId;
+	}
+}
+
+/**
+ * One limiter per authenticated action (call this once per route, at module scope),
+ * keyed by `user.id` rather than IP.
+ */
+export function createUserRateLimiter(
+	rate: Rate | Rate[]
+): RetryAfterRateLimiter<{ userId: string }> {
+	return new RetryAfterRateLimiter<{ userId: string }>({
+		plugins: [new UserIdRateLimiter(rate)]
+	});
 }

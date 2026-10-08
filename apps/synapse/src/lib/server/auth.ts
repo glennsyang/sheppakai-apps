@@ -8,6 +8,7 @@ import {
 import { getRequestEvent } from '$app/server';
 import { logger } from '$lib/server/logger';
 import { apiKey } from '@better-auth/api-key';
+import { assertNameLength } from '@sheppakai/shared/name-guard';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin, haveIBeenPwned } from 'better-auth/plugins';
@@ -23,7 +24,7 @@ import {
 import { createAuthAfterHooks, logPasswordResetAudit } from './auth-audit-hooks';
 import { getDb } from './db';
 import * as schema from './db/schema';
-import { sendPasswordResetEmail, sendVerificationEmail } from './email';
+import { sendPasswordChangedEmail, sendPasswordResetEmail, sendVerificationEmail } from './email';
 import { sendAuthAlerts } from './notifications';
 
 export const allowedEmails = parseAllowedEmails(ALLOWED_EMAILS);
@@ -84,7 +85,12 @@ export const auth = betterAuth({
 			// through — its own originCheck middleware already validated
 			// callbackURL against trustedOrigins, and the verifier itself checks
 			// the token before redirecting to /reset-password.
-			void sendPasswordResetEmail(user.email, user.name, url);
+			//
+			// Await the send (don't fire-and-forget): it throws on failure, and letting that
+			// propagate keeps the send tied to the request lifecycle (Fly can suspend the
+			// machine as soon as the response returns) and surfaces delivery failures in the
+			// logs / Sentry instead of a silent "link sent" with no email.
+			await sendPasswordResetEmail(user.email, user.name || user.email, url);
 			void sendAuthAlerts(
 				`Password reset requested for ${user.email}`,
 				'Synapse - Password Reset Alert',
@@ -93,6 +99,14 @@ export const auth = betterAuth({
 		},
 		onPasswordReset: async ({ user }) => {
 			logPasswordResetAudit(user, 'Synapse');
+			// Fire-and-forget: the reset has already succeeded, so a failing confirmation
+			// email must not break the response.
+			void sendPasswordChangedEmail({
+				to: user.email,
+				name: user.name || user.email,
+				changedAt: new Date(),
+				source: 'Password reset flow'
+			}).catch((err: unknown) => logger.error('Password changed email failed', err));
 		}
 	},
 	emailVerification: {
@@ -102,11 +116,6 @@ export const auth = betterAuth({
 		sendVerificationEmail: async ({ user, url }) => {
 			logger.debug('✉️ Sending verification email');
 			await sendVerificationEmail(user.email, user.name || user.email, url);
-			void sendAuthAlerts(
-				`Verification email sent to ${user.email}`,
-				'Synapse - Verification Alert',
-				3
-			);
 		}
 	},
 	hooks: {
@@ -116,6 +125,10 @@ export const auth = betterAuth({
 		after: createAuthAfterHooks('Synapse')
 	},
 	databaseHooks: {
+		user: {
+			create: { before: assertNameLength },
+			update: { before: assertNameLength }
+		},
 		session: {
 			create: {
 				// Backstop for every session-creating flow (sign-in, verify-email auto sign-in,
@@ -149,9 +162,12 @@ export const auth = betterAuth({
 	session: {
 		expiresIn: 60 * 60 * 24 * 7, // 7 days
 		updateAge: 60 * 60 * 24, // Update every 24 hours
+		// No cookie cache: getSession checks the session row on every request, so a
+		// password change/reset, ban, removal or role change takes effect on the next
+		// request instead of after the cache expires. On local SQLite the extra read is
+		// negligible.
 		cookieCache: {
-			enabled: true,
-			maxAge: 60 * 5 // 5 minutes client-side cache
+			enabled: false
 		}
 	},
 	trustedOrigins: [

@@ -115,6 +115,17 @@ describe('sendPasswordChangedEmail', () => {
 		const html = sentHtml();
 		expect(html).toContain('Unavailable');
 	});
+
+	it('rethrows a Brevo failure so callers can log it', async () => {
+		mockState.send.mockRejectedValue(new Error('brevo down'));
+		await expect(
+			sendPasswordChangedEmail({
+				to: 'user@example.com',
+				name: 'Glenn',
+				changedAt: new Date('2026-08-27T00:00:00Z')
+			})
+		).rejects.toThrow('brevo down');
+	});
 });
 
 describe('sendNewUserEmail', () => {

@@ -182,7 +182,7 @@ export async function sendVerificationEmail(to: string, name: string, verificati
 		});
 	} catch (error) {
 		logger.error('❌ Failed to send verification email:', error);
-		return error;
+		throw error;
 	}
 	logger.debug('✅ Verification email sent successfully:', { to, result });
 }
@@ -235,7 +235,7 @@ export async function sendPasswordResetEmail(to: string, name: string, resetUrl:
 		});
 	} catch (error) {
 		logger.error('❌ Failed to send password reset email:', error);
-		return error;
+		throw error;
 	}
 	logger.debug('✅ Password reset email sent successfully:', { to, result });
 }
@@ -288,7 +288,7 @@ export async function sendPasswordChangedEmail(payload: PasswordChangedEmailPayl
 		});
 	} catch (error) {
 		logger.error('❌ Failed to send password changed email:', error);
-		return error;
+		throw error;
 	}
 	logger.debug('✅ Password changed email sent successfully:', {
 		to: payload.to,

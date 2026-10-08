@@ -48,7 +48,7 @@ apps/
 packages/
   logger/         @sheppakai/logger: structured JSON logging with PII redaction and Sentry forwarding
   shared/         @sheppakai/shared: auth guards, API envelope, bearer-token parsing, Sentry config
-docs/             Repo-wide docs: backup/restore, CSP, Sentry, error handling, API conventions, env vars
+docs/             Repo-wide docs: auth policy, backup/restore, CSP, Sentry, error handling, API conventions, env vars
 ```
 
 App-specific docs (environment variables, external API endpoints) live in `apps/<app>/docs/`.

@@ -128,6 +128,70 @@ export async function sendPasswordResetEmail(to: string, name: string, resetUrl:
 	logger.info('Password reset email sent', { to, brevoMessageId: result.messageId });
 }
 
+type PasswordChangedEmailPayload = {
+	to: string;
+	name: string;
+	changedAt: Date;
+	ipAddress?: string;
+	userAgent?: string;
+	source?: string;
+};
+
+/** Security notice sent after a password change or reset, so an unexpected change gets noticed. */
+export async function sendPasswordChangedEmail(payload: PasswordChangedEmailPayload) {
+	const { to } = payload;
+	logger.debug('📧 Sending Password Changed Email to:', { to });
+
+	const changedAtText = escapeHtml(payload.changedAt.toLocaleString());
+	const ipAddress = escapeHtml(payload.ipAddress || 'Unavailable');
+	const userAgent = escapeHtml(payload.userAgent || 'Unavailable');
+	const source = escapeHtml(payload.source || 'Account settings');
+
+	let result;
+	try {
+		result = await brevo.transactionalEmails.sendTransacEmail({
+			sender: { name: 'Synapse', email: BREVO_FROM_ADDRESS },
+			to: [{ email: to, name: payload.name }],
+			subject: '[Synapse] Your password was changed',
+			htmlContent: `
+				<!DOCTYPE html>
+				<html>
+				<head>
+					<meta charset="utf-8">
+					<meta name="viewport" content="width=device-width, initial-scale=1.0">
+					<title>Password changed</title>
+				</head>
+				<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+						<h1 style="color: white; margin: 0; font-size: 28px;">Password Updated</h1>
+					</div>
+					<div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+						<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(payload.name)},</p>
+						<p style="font-size: 16px; margin-bottom: 20px;">
+							Your Synapse password was successfully changed.
+						</p>
+						<p style="font-size: 14px; margin-bottom: 8px;"><strong>When:</strong> ${changedAtText}</p>
+						<p style="font-size: 14px; margin-bottom: 8px;"><strong>Source:</strong> ${source}</p>
+						<p style="font-size: 14px; margin-bottom: 8px;"><strong>IP:</strong> ${ipAddress}</p>
+						<p style="font-size: 14px; margin-bottom: 20px;"><strong>Device:</strong> ${userAgent}</p>
+						<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+							If this wasn't you, reset your password immediately.
+						</p>
+					</div>
+					<div style="text-align: center; margin-top: 20px; padding: 20px; color: #9ca3af; font-size: 12px;">
+						<p>Synapse - Your Personal Second Brain</p>
+					</div>
+				</body>
+				</html>
+			`
+		});
+	} catch (error) {
+		logger.error('❌ Failed to send password changed email:', error, { to });
+		throw error;
+	}
+	logger.info('Password changed email sent', { to, brevoMessageId: result.messageId });
+}
+
 /**
  * Sent when an admin creates an account. Links to the forgot-password page rather than
  * embedding a reset token, since reset tokens expire in 10 minutes and this email may sit
