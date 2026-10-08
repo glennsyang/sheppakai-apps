@@ -10,6 +10,7 @@
 		"./auth-routes": "./src/auth-routes.ts",
 		"./bearer-token": "./src/bearer-token.ts",
 		"./forgot-password-response": "./src/forgot-password-response.ts",
+		"./name-guard": "./src/name-guard.ts",
 		"./sentry-data-collection": "./src/sentry-data-collection.ts"
 	},
 	"scripts": {

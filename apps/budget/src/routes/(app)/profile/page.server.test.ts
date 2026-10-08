@@ -83,4 +83,24 @@ describe('profile changePassword action', () => {
 		);
 		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
 	});
+
+	it('rate-limits repeated attempts per user', async () => {
+		const user = { ...currentUser, id: 'user-rate-limited' };
+		const attempt = () =>
+			actions.changePassword({
+				request: changePasswordRequest(),
+				getClientAddress: () => '203.0.113.7',
+				locals: { user }
+			} as never);
+
+		for (let i = 0; i < 5; i++) {
+			await attempt();
+		}
+		changePasswordMock.mockClear();
+
+		const result = await attempt();
+
+		expect(changePasswordMock).not.toHaveBeenCalled();
+		expect(result).toMatchObject({ status: 429 });
+	});
 });

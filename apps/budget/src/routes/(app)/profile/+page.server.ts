@@ -6,11 +6,16 @@ import { accountQueries, userQueries } from '$lib/server/db/queries';
 import { updateUserName } from '$lib/server/db/writes/users';
 import { sendPasswordChangedEmail } from '$lib/server/email';
 import { logger } from '$lib/server/logger';
+import { createUserRateLimiter, rateLimitedMessage } from '$lib/server/rate-limiter';
 import { getBetterAuthErrorMessage } from '$lib/utils';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import type { Actions, PageServerLoad } from './$types';
+
+// Keyed by user id (not IP): this is an authenticated action, and the current-password
+// check is the thing worth rate limiting against brute-forcing.
+const changePasswordLimiter = createUserRateLimiter([5, 'm']);
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const currentUser = getUser(locals);
@@ -75,11 +80,17 @@ export const actions = {
 		}
 	}),
 
-	changePassword: requireAuth(async ({ request, getClientAddress }, currentUser) => {
+	changePassword: requireAuth(async (event, currentUser) => {
+		const { request, getClientAddress } = event;
 		const form = await superValidate(request, zod4(changePasswordSchema));
 
 		if (!form.valid) {
 			return invalidForm(form);
+		}
+
+		const rateLimitStatus = await changePasswordLimiter.check(event, { userId: currentUser.id });
+		if (rateLimitStatus.limited) {
+			return rateLimitedMessage(form, rateLimitStatus.retryAfter);
 		}
 
 		try {

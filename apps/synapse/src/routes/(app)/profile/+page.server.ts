@@ -14,7 +14,9 @@ import {
 	withAuditFieldsForCreate,
 	withAuditFieldsForUpdate
 } from '$lib/server/db/utils';
+import { sendPasswordChangedEmail } from '$lib/server/email';
 import { logger } from '$lib/server/logger';
+import { createUserRateLimiter, rateLimitedMessage } from '$lib/server/rate-limiter';
 import { getVisitStatusThresholdsForUser } from '$lib/server/visit-status-settings';
 import { getBetterAuthErrorMessage } from '$lib/utils/auth';
 import { DEFAULT_DASHBOARD_GOALS, normalizeDashboardGoals } from '$lib/utils/dashboard-goals';
@@ -28,6 +30,10 @@ import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import type { Actions, PageServerLoad } from './$types';
+
+// Keyed by user id (not IP): this is an authenticated action, and the current-password
+// check is the thing worth rate limiting against brute-forcing.
+const changePasswordLimiter = createUserRateLimiter([5, 'm']);
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = getUser(locals).id;
@@ -116,7 +122,8 @@ export const actions = {
 		}
 	}),
 
-	changePassword: requireAuth(async ({ request }, currentUser) => {
+	changePassword: requireAuth(async (event, currentUser) => {
+		const { request } = event;
 		const form = await superValidate(request, zod4(changePasswordSchema));
 		if (!form.valid) {
 			return message(
@@ -126,7 +133,22 @@ export const actions = {
 			);
 		}
 
+		const rateLimitStatus = await changePasswordLimiter.check(event, { userId: currentUser.id });
+		if (rateLimitStatus.limited) {
+			return rateLimitedMessage(form, rateLimitStatus.retryAfter);
+		}
+
 		try {
+			// Not X-Forwarded-For: its first entry is client-supplied. getClientAddress()
+			// reads the proxy-set Fly-Client-IP (ADDRESS_HEADER in fly.toml).
+			let ipAddress: string | undefined;
+			try {
+				ipAddress = event.getClientAddress() || undefined;
+			} catch {
+				ipAddress = undefined;
+			}
+			const userAgent = request.headers.get('user-agent') || undefined;
+
 			await auth.api.changePassword({
 				body: {
 					currentPassword: form.data.currentPassword,
@@ -135,6 +157,21 @@ export const actions = {
 				},
 				headers: request.headers
 			});
+
+			logger.info('Security event: password changed and other sessions revoked', {
+				userId: currentUser.id,
+				ipAddress,
+				userAgent
+			});
+
+			void sendPasswordChangedEmail({
+				to: currentUser.email,
+				name: currentUser.name || currentUser.email,
+				changedAt: new Date(),
+				ipAddress,
+				userAgent,
+				source: 'Profile settings'
+			}).catch((err: unknown) => logger.error('Password changed email failed', err));
 
 			return message(form, {
 				type: 'success',

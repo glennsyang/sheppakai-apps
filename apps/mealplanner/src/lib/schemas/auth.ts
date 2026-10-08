@@ -16,8 +16,8 @@ export const resendVerificationSchema = z.object({
 	email: emailField
 });
 
-// Also enforced server-side for direct /api/auth/* writes (src/lib/server/auth/name-guard.ts).
-export const MAX_NAME_LENGTH = 100;
+// Also enforced server-side for direct /api/auth/* writes (`@sheppakai/shared/name-guard`, same limit).
+const MAX_NAME_LENGTH = 100;
 
 export const updateNameSchema = z.object({
 	name: z

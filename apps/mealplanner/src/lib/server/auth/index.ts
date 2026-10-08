@@ -6,6 +6,7 @@ import {
 	NODE_ENV
 } from '$app/env/private';
 import { getRequestEvent } from '$app/server';
+import { assertNameLength } from '@sheppakai/shared/name-guard';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin, haveIBeenPwned } from 'better-auth/plugins';
@@ -16,13 +17,13 @@ import { getDb } from '../db';
 import * as schema from '../db/schema';
 import { sendPasswordChangedEmail, sendPasswordResetEmail, sendVerificationEmail } from '../email';
 import { logger } from '../logger';
+import { sendAuthAlerts } from '../notifications';
 import {
 	createAllowlistBeforeHook,
 	createAllowlistSessionGuard,
 	parseAllowedEmails
 } from './allowlist-hook';
 import { createAuthAfterHooks, logPasswordResetAudit } from './audit-hooks';
-import { assertNameLength } from './name-guard';
 
 export const allowedEmails = parseAllowedEmails(ALLOWED_EMAILS);
 
@@ -74,6 +75,11 @@ export const auth = betterAuth({
 			// and surfaces delivery failures in the logs / Sentry instead of a silent
 			// "link sent" with no email.
 			await sendPasswordResetEmail(user.email, user.name || user.email, url);
+			void sendAuthAlerts(
+				`Password reset requested for ${user.email}`,
+				'Meal Planner - Password Reset Alert',
+				4
+			);
 		},
 		// Runs after a reset completes and every session has been revoked
 		// (revokeSessionsOnPasswordReset above). Fire-and-forget: the reset itself
