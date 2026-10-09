@@ -7,43 +7,45 @@ import RoleBadge from './RoleBadge.svelte';
 import StatusBadge from './StatusBadge.svelte';
 import UsersTableActions from './users-table-actions.svelte';
 
-export const columns: ColumnDef<Features, User>[] = [
-	{
-		accessorKey: 'email',
-		header: ({ column }) =>
-			renderComponent(DataTableSortButton, {
-				columnName: 'Email',
-				onclick: column.getToggleSortingHandler()
-			})
-	},
-	{
-		accessorKey: 'name',
-		header: ({ column }) =>
-			renderComponent(DataTableSortButton, {
-				columnName: 'Name',
-				onclick: column.getToggleSortingHandler()
-			})
-	},
-	{
-		accessorKey: 'role',
-		header: 'Role',
-		cell: ({ row }) => renderComponent(RoleBadge, { role: row.original.role ?? 'user' })
-	},
-	{
-		accessorKey: 'status',
-		header: 'Status',
-		accessorFn: (row) => (row.banned ? 'Banned' : 'Active'),
-		cell: ({ row }) => renderComponent(StatusBadge, { banned: row.original.banned })
-	},
-	{
-		accessorKey: 'createdAt',
-		header: 'Created',
-		cell: ({ row }) => {
-			return new Date(row.original.createdAt).toLocaleDateString();
+export function makeColumns(currentUserId: string): ColumnDef<Features, User>[] {
+	return [
+		{
+			accessorKey: 'email',
+			header: ({ column }) =>
+				renderComponent(DataTableSortButton, {
+					columnName: 'Email',
+					onclick: column.getToggleSortingHandler()
+				})
+		},
+		{
+			accessorKey: 'name',
+			header: ({ column }) =>
+				renderComponent(DataTableSortButton, {
+					columnName: 'Name',
+					onclick: column.getToggleSortingHandler()
+				})
+		},
+		{
+			accessorKey: 'role',
+			header: 'Role',
+			cell: ({ row }) => renderComponent(RoleBadge, { role: row.original.role ?? 'user' })
+		},
+		{
+			accessorKey: 'status',
+			header: 'Status',
+			accessorFn: (row) => (row.banned ? 'Banned' : 'Active'),
+			cell: ({ row }) => renderComponent(StatusBadge, { banned: row.original.banned })
+		},
+		{
+			accessorKey: 'createdAt',
+			header: 'Created',
+			cell: ({ row }) => {
+				return new Date(row.original.createdAt).toLocaleDateString();
+			}
+		},
+		{
+			id: 'actions',
+			cell: ({ row }) => renderComponent(UsersTableActions, { user: row.original, currentUserId })
 		}
-	},
-	{
-		id: 'actions',
-		cell: ({ row }) => renderComponent(UsersTableActions, { user: row.original })
-	}
-];
+	];
+}

@@ -3,7 +3,14 @@ import { randomBytes } from 'node:crypto';
 import { BETTER_AUTH_BASE_URL, FLY_APP_NAME } from '$app/env/private';
 import { scopesToPermissions, type ApiScope } from '$lib/api-scopes';
 import type { AdminApiLogEntry } from '$lib/components/admin/api-logs-columns';
-import { createUserSchema, sendWelcomeEmailSchema } from '$lib/schemas/admin-user';
+import {
+	banUserSchema,
+	createUserSchema,
+	removeUserSchema,
+	sendWelcomeEmailSchema,
+	setRoleSchema,
+	unbanUserSchema
+} from '$lib/schemas/admin-user';
 import { createApiKeySchema, revokeApiKeySchema } from '$lib/schemas/api-key';
 import { unarchivePersonSchema } from '$lib/schemas/visits';
 import { assertAdmin, requireAdmin } from '$lib/server/actions/auth-guard';
@@ -17,11 +24,39 @@ import { sendWelcomeEmail } from '$lib/server/email';
 import { logger } from '$lib/server/logger';
 import { sendAuthAlerts } from '$lib/server/notifications';
 import { isRedirect } from '@sveltejs/kit';
+import { APIError } from 'better-auth/api';
 import { asc, desc, eq, inArray } from 'drizzle-orm';
-import { message, setError, superValidate } from 'sveltekit-superforms';
+import { message, setError, superValidate, type SuperValidated } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import type { Actions, PageServerLoad } from './$types';
+
+type MessageStatus = NonNullable<Parameters<typeof message>[2]>['status'];
+
+/**
+ * Turns a failed `auth.api.*` admin call into a `message(form, …)` failure. better-auth raises
+ * `APIError` for expected rejections (insufficient permission, target not found, "can't ban an
+ * admin", …), so surface those with their real status and message and log at `warn`. Anything
+ * else is unexpected: log at `error` and return a generic 500. Redirects are re-thrown.
+ */
+function adminActionError<TForm extends Record<string, unknown>>(
+	form: SuperValidated<TForm>,
+	context: string,
+	err: unknown,
+	fallback: string
+) {
+	if (isRedirect(err)) throw err;
+	if (err instanceof APIError) {
+		logger.warn(context, { status: err.statusCode, reason: err.message });
+		return message(
+			form,
+			{ type: 'error', text: err.body?.message || fallback },
+			{ status: (err.statusCode || 400) as MessageStatus }
+		);
+	}
+	logger.error(context, err);
+	return message(form, { type: 'error', text: fallback }, { status: 500 });
+}
 
 function isAllowlisted(email: string): boolean {
 	return allowedEmails.has(email.trim().toLowerCase());
@@ -283,6 +318,122 @@ export const actions = {
 				{ status: 500 }
 			);
 		}
+	}),
+
+	setRole: requireAdmin(async ({ request }, admin) => {
+		const form = await superValidate(request, zod4(setRoleSchema));
+
+		if (!form.valid) {
+			return invalidForm(form, 'Invalid role change request');
+		}
+
+		const { userId, role } = form.data;
+
+		if (userId === admin.id) {
+			return invalidForm(form, 'You cannot change your own role');
+		}
+
+		try {
+			const { user: target } = await auth.api.setRole({
+				body: { userId, role },
+				headers: request.headers
+			});
+			logger.info('User role changed by admin', { adminId: admin.id, userId, role });
+			await sendAuthAlerts(
+				`🔑 Admin ${formatAlertEmail(admin.email)} set ${formatAlertEmail(target.email)}'s role to ${role}.`,
+				'Synapse - Role Changed Alert',
+				3
+			);
+		} catch (err) {
+			return adminActionError(form, 'Failed to change user role', err, 'Failed to change role');
+		}
+
+		return message(form, { type: 'success', text: `Role changed to ${role}.` });
+	}),
+
+	banUser: requireAdmin(async ({ request }, admin) => {
+		const form = await superValidate(request, zod4(banUserSchema));
+
+		if (!form.valid) {
+			return invalidForm(form, 'Invalid ban request');
+		}
+
+		const { userId, banReason } = form.data;
+
+		if (userId === admin.id) {
+			return invalidForm(form, 'You cannot ban yourself');
+		}
+
+		try {
+			// better-auth also revokes the user's sessions, so a ban takes effect immediately.
+			const { user: target } = await auth.api.banUser({
+				body: { userId, ...(banReason ? { banReason } : {}) },
+				headers: request.headers
+			});
+			logger.info('User banned by admin', { adminId: admin.id, userId });
+			await sendAuthAlerts(
+				`🚫 Admin ${formatAlertEmail(admin.email)} banned ${formatAlertEmail(target.email)}.`,
+				'Synapse - User Banned Alert',
+				3
+			);
+		} catch (err) {
+			return adminActionError(form, 'Failed to ban user', err, 'Failed to ban user');
+		}
+
+		return message(form, { type: 'success', text: 'User banned.' });
+	}),
+
+	unbanUser: requireAdmin(async ({ request }, admin) => {
+		const form = await superValidate(request, zod4(unbanUserSchema));
+
+		if (!form.valid) {
+			return invalidForm(form, 'Invalid unban request');
+		}
+
+		try {
+			await auth.api.unbanUser({ body: { userId: form.data.userId }, headers: request.headers });
+			logger.info('User unbanned by admin', { adminId: admin.id, userId: form.data.userId });
+		} catch (err) {
+			return adminActionError(form, 'Failed to unban user', err, 'Failed to unban user');
+		}
+
+		return message(form, { type: 'success', text: 'User unbanned.' });
+	}),
+
+	removeUser: requireAdmin(async ({ request }, admin) => {
+		const form = await superValidate(request, zod4(removeUserSchema));
+
+		if (!form.valid) {
+			return invalidForm(form, 'Invalid remove request');
+		}
+
+		const { userId } = form.data;
+
+		if (userId === admin.id) {
+			return invalidForm(form, 'You cannot remove your own account');
+		}
+
+		try {
+			// removeUser returns only { success }, so look the email up first for the alert.
+			const target = await getDb().query.user.findFirst({ where: eq(user.id, userId) });
+
+			if (!target) {
+				return message(form, { type: 'error', text: 'User not found' }, { status: 404 });
+			}
+
+			// Every user-scoped table cascades on user.id, so this deletes all their data too.
+			await auth.api.removeUser({ body: { userId }, headers: request.headers });
+			logger.info('User removed by admin', { adminId: admin.id, userId });
+			await sendAuthAlerts(
+				`🗑️ Admin ${formatAlertEmail(admin.email)} removed ${formatAlertEmail(target.email)} and all their data.`,
+				'Synapse - User Removed Alert',
+				3
+			);
+		} catch (err) {
+			return adminActionError(form, 'Failed to remove user', err, 'Failed to remove user');
+		}
+
+		return message(form, { type: 'success', text: 'User removed.' });
 	}),
 
 	unarchivePerson: requireAdmin(async ({ request }) => {

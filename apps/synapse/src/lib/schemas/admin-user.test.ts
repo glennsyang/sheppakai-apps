@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { createUserSchema, sendWelcomeEmailSchema } from './admin-user';
+import {
+	banUserSchema,
+	createUserSchema,
+	removeUserSchema,
+	sendWelcomeEmailSchema,
+	setRoleSchema,
+	unbanUserSchema
+} from './admin-user';
 
 describe('createUserSchema', () => {
 	it('accepts a valid user and defaults the role to user', () => {
@@ -39,5 +46,38 @@ describe('sendWelcomeEmailSchema', () => {
 	it('requires a user id', () => {
 		expect(sendWelcomeEmailSchema.safeParse({ userId: '' }).success).toBe(false);
 		expect(sendWelcomeEmailSchema.safeParse({ userId: 'abc' }).success).toBe(true);
+	});
+});
+
+describe('setRoleSchema', () => {
+	it('accepts a known role', () => {
+		expect(setRoleSchema.safeParse({ userId: 'abc', role: 'admin' }).success).toBe(true);
+	});
+
+	it('rejects an unknown role', () => {
+		expect(setRoleSchema.safeParse({ userId: 'abc', role: 'owner' }).success).toBe(false);
+	});
+});
+
+describe('banUserSchema', () => {
+	it('treats the reason as optional and trims it', () => {
+		expect(banUserSchema.safeParse({ userId: 'abc' }).success).toBe(true);
+		expect(banUserSchema.parse({ userId: 'abc', banReason: '  spam  ' }).banReason).toBe('spam');
+	});
+
+	it('rejects an overly long reason', () => {
+		expect(banUserSchema.safeParse({ userId: 'abc', banReason: 'x'.repeat(501) }).success).toBe(
+			false
+		);
+	});
+});
+
+describe.each([
+	['unbanUserSchema', unbanUserSchema],
+	['removeUserSchema', removeUserSchema]
+])('%s', (_name, schema) => {
+	it('requires a user id', () => {
+		expect(schema.safeParse({ userId: '' }).success).toBe(false);
+		expect(schema.safeParse({ userId: 'abc' }).success).toBe(true);
 	});
 });
