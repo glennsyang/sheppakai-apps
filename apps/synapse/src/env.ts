@@ -1,61 +1,16 @@
 import { building } from '$app/env';
+import { cronSecretEnvVar, sharedEnvVars } from '@sheppakai/shared/env';
 import { defineEnvVars } from '@sveltejs/kit/env';
 import { z } from 'zod';
 
 export const variables = defineEnvVars({
-	DATABASE_URL: {
-		description: 'Path to the SQLite database file',
-		schema: building ? z.string().catch('file:///tmp/build.db') : z.string().min(1)
-	},
-	BETTER_AUTH_SECRET: {
-		description: 'Secret key for Better Auth session signing (min 32 characters)',
-		schema: building
-			? z.string().catch('build_time_dummy_secret_min_32_chars_long')
-			: z.string().min(32)
-	},
-	BETTER_AUTH_BASE_URL: {
-		description: 'Base URL for Better Auth',
-		schema: building ? z.string().catch('http://localhost:5173') : z.url()
-	},
-	AUTH_ALERTS_URL: {
-		description: 'ntfy.sh topic URL for auth push notifications',
-		schema: building ? z.string().catch('https://ntfy.sh/placeholder') : z.url()
-	},
+	// DATABASE_URL, BETTER_AUTH_*, BREVO_*, ADMIN_USER_IDS, ALLOWED_EMAILS, AUTH_ALERTS_URL,
+	// NODE_ENV and LOG_LEVEL, with the build-time placeholder guards.
+	...sharedEnvVars(building),
+	...cronSecretEnvVar(building),
 	REMINDER_ALERTS_URL: {
 		description: 'ntfy.sh topic URL for reminder push notifications',
 		schema: building ? z.string().catch('https://ntfy.sh/placeholder') : z.url()
-	},
-	BREVO_API_KEY: {
-		description: 'Brevo API key for sending transactional emails',
-		schema: building ? z.string().catch('build_time_dummy_key') : z.string().min(1)
-	},
-	BREVO_FROM_ADDRESS: {
-		description:
-			'From address for outgoing transactional emails (must be a confirmed Brevo sender)',
-		schema: building ? z.string().catch('noreply@example.com') : z.email()
-	},
-	ADMIN_USER_IDS: {
-		description:
-			'Comma-separated list of user IDs bootstrapped as admins by the better-auth admin plugin',
-		schema: z.string().default('dummy_admin_id')
-	},
-	ALLOWED_EMAILS: {
-		description:
-			'Comma-separated list of the only emails allowed to sign in (exact, case-insensitive match)',
-		schema: building ? z.string().catch('') : z.string().min(1)
-	},
-	CRON_SECRET: {
-		description: 'Bearer token for authorizing cron job requests',
-		schema: building ? z.string().catch('build_time_dummy_secret_min_16_chars') : z.string().min(16)
-	},
-	NODE_ENV: {
-		description: 'Application environment (development, production, test)',
-		schema: z.enum(['development', 'production', 'test']).default('development')
-	},
-	LOG_LEVEL: {
-		description:
-			'Minimum log level to emit (debug, info, warn, error); defaults to debug in dev, info in prod',
-		schema: z.enum(['debug', 'info', 'warn', 'error']).optional()
 	},
 	FLY_APP_NAME: {
 		description:

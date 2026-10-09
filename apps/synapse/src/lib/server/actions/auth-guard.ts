@@ -5,4 +5,4 @@ import { createAdminGuards } from '@sheppakai/shared/auth-guard';
 
 export { getUser, requireAuth } from '@sheppakai/shared/auth-guard';
 
-export const { requireAdmin, assertAdmin } = createAdminGuards(() => ADMIN_USER_IDS);
+export const { isAdminUser, requireAdmin, assertAdmin } = createAdminGuards(() => ADMIN_USER_IDS);
