@@ -178,7 +178,7 @@
 				</Card>
 			{/if}
 
-			<AdminUsersTable users={data.users} />
+			<AdminUsersTable users={data.users} currentUserId={data.user.id} />
 		</Tabs.Content>
 
 		<Tabs.Content value="archived-persons" class="mt-0 w-full space-y-4">
