@@ -10,13 +10,14 @@ vi.mock('better-auth/api', () => ({
 import { createAuthAfterHooks, logPasswordResetAudit } from './auth-audit-hooks';
 
 const mockState = {
-	sendNewUserEmail: vi.fn<(to: string, name: string) => void>(),
+	sendNewUserEmail: vi.fn<(to: string, name: string) => unknown>(),
 	sendAuthAlerts: vi.fn<(message: string, title: string, priority: number) => void>(),
-	loggerInfo: vi.fn<(message: string, meta?: Record<string, unknown>) => void>()
+	loggerInfo: vi.fn<(message: string, meta?: Record<string, unknown>) => void>(),
+	loggerError: vi.fn<(message: string, error?: unknown) => void>()
 };
 
 const deps = {
-	logger: { info: mockState.loggerInfo },
+	logger: { info: mockState.loggerInfo, error: mockState.loggerError },
 	sendNewUserEmail: mockState.sendNewUserEmail,
 	sendAuthAlerts: mockState.sendAuthAlerts
 };
@@ -60,6 +61,30 @@ describe('createAuthAfterHooks', () => {
 			'Test App - New User Alert',
 			4
 		);
+	});
+
+	it('logs a rejecting welcome email instead of rejecting the hook', async () => {
+		const failure = new Error('brevo down');
+		mockState.sendNewUserEmail.mockRejectedValueOnce(failure);
+
+		await expect(
+			afterHook(
+				fakeCtx({
+					path: '/sign-up/email',
+					context: {
+						newSession: {
+							user: { email: 'new@example.com', name: 'New User' },
+							session: { ipAddress: '1.2.3.4' }
+						}
+					}
+				})
+			)
+		).resolves.toBeUndefined();
+
+		await vi.waitFor(() =>
+			expect(mockState.loggerError).toHaveBeenCalledWith('New user email failed', failure)
+		);
+		expect(mockState.sendAuthAlerts).toHaveBeenCalled();
 	});
 
 	it('does nothing on /sign-up/email without a new session', async () => {
