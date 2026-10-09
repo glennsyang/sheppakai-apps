@@ -17,10 +17,12 @@
 		"./bearer-token": "./src/bearer-token.ts",
 		"./better-auth-errors": "./src/better-auth-errors.ts",
 		"./db": "./src/db.ts",
+		"./email": "./src/email.ts",
 		"./env": "./src/env.ts",
 		"./forgot-password-response": "./src/forgot-password-response.ts",
 		"./healthz": "./src/healthz.ts",
 		"./name-guard": "./src/name-guard.ts",
+		"./ntfy": "./src/ntfy.ts",
 		"./rate-limiter": "./src/rate-limiter.ts",
 		"./sentry-data-collection": "./src/sentry-data-collection.ts",
 		"./server-handle": "./src/server-handle.ts"
@@ -35,6 +37,7 @@
 		"lint:github": "oxlint --format=github"
 	},
 	"devDependencies": {
+		"@getbrevo/brevo": "catalog:",
 		"@sentry/sveltekit": "catalog:",
 		"@sveltejs/kit": "catalog:",
 		"@types/better-sqlite3": "catalog:",
@@ -53,6 +56,7 @@
 		"zod": "catalog:"
 	},
 	"peerDependencies": {
+		"@getbrevo/brevo": "^6",
 		"@sentry/sveltekit": "^11",
 		"@sveltejs/kit": "^2",
 		"better-auth": "^1",

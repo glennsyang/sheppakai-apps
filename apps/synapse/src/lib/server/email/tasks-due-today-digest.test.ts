@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	buildTasksDueTodayDigestMessage,
 	buildTasksDueTodayDigestTitle,
+	buildTasksDueTodayEmailHtml,
 	type TasksDueTodayTaskSummary
 } from './tasks-due-today-digest';
 
@@ -44,5 +45,20 @@ describe('tasks-due-today-digest', () => {
 
 		expect(message).toContain('No tasks are due today');
 		expect(message).toContain('Keep your momentum');
+	});
+});
+
+describe('buildTasksDueTodayEmailHtml', () => {
+	it('escapes the recipient name and task titles', () => {
+		const html = buildTasksDueTodayEmailHtml(
+			'<b>Jane</b>',
+			[createTask({ title: '<img src=x onerror=alert(1)>' })],
+			'2026-03-30'
+		);
+
+		expect(html).not.toContain('<img');
+		expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+		expect(html).toContain('Hi &lt;b&gt;Jane&lt;/b&gt;,');
+		expect(html).toContain('Task #12');
 	});
 });

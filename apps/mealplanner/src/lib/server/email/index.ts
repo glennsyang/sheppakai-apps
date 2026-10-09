@@ -1,131 +1,76 @@
 import { BREVO_API_KEY, BREVO_FROM_ADDRESS } from '$app/env/private';
-import { BrevoClient } from '@getbrevo/brevo';
+import { createMailer, escapeHtml, renderEmailLayout } from '@sheppakai/shared/email';
 
 import { logger } from '../logger';
 
-const brevo = new BrevoClient({ apiKey: BREVO_API_KEY });
+const APP_NAME = 'Meal Planner';
 
-/** Escapes the five HTML-significant characters so user-controlled values (name,
- *  user agent, …) can't inject markup into a transactional email body. */
-function escapeHtml(value: string): string {
-	return value
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
+const mailer = createMailer({
+	apiKey: BREVO_API_KEY,
+	from: BREVO_FROM_ADDRESS,
+	appName: APP_NAME,
+	logger
+});
+
+const BUTTON_STYLE =
+	'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;';
+
+function layout(title: string, heading: string, body: string): string {
+	return renderEmailLayout({ title, heading, body, footer: APP_NAME });
 }
 
 export async function sendVerificationEmail(to: string, name: string, verificationUrl: string) {
-	// This is intentionally info-level: production suppresses debug logs, and
-	// this event distinguishes an untriggered auth flow from a provider failure.
-	logger.info('Sending verification email', { to });
-
-	let result;
-	try {
-		result = await brevo.transactionalEmails.sendTransacEmail({
-			sender: { name: 'Meal Planner', email: BREVO_FROM_ADDRESS },
-			to: [{ email: to, name }],
-			subject: '[Meal Planner] Verify your email address',
-			htmlContent: `
-				<!DOCTYPE html>
-				<html>
-				<head>
-					<meta charset="utf-8">
-					<meta name="viewport" content="width=device-width, initial-scale=1.0">
-					<title>Verify your email</title>
-				</head>
-				<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-						<h1 style="color: white; margin: 0; font-size: 28px;">Welcome to Meal Planner</h1>
-					</div>
-					<div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-						<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
-						<p style="font-size: 16px; margin-bottom: 20px;">
-							Thanks for signing up! Please verify your email address to get started with Meal Planner.
-						</p>
-						<div style="text-align: center; margin: 30px 0;">
-							<a href="${verificationUrl}"
-							   style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;">
-								Verify Email Address
-							</a>
-						</div>
-						<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-							If you didn't create an account, you can safely ignore this email.
-						</p>
-						<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
-							This link will expire in 10 minutes.
-						</p>
-					</div>
-					<div style="text-align: center; margin-top: 20px; padding: 20px; color: #9ca3af; font-size: 12px;">
-						<p>Meal Planner</p>
-					</div>
-				</body>
-				</html>
+	await mailer.send({
+		to,
+		name,
+		subject: '[Meal Planner] Verify your email address',
+		label: 'verification email',
+		html: layout(
+			'Verify your email',
+			'Welcome to Meal Planner',
 			`
-		});
-	} catch (cause) {
-		logger.error('Failed to send verification email', cause, { to });
-		throw cause instanceof Error ? cause : new Error('Brevo request failed', { cause });
-	}
-
-	logger.info('Verification email sent', { to, brevoMessageId: result.messageId });
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			Thanks for signing up! Please verify your email address to get started with Meal Planner.
+		</p>
+		<div style="text-align: center; margin: 30px 0;">
+			<a href="${escapeHtml(verificationUrl)}" style="${BUTTON_STYLE}">Verify Email Address</a>
+		</div>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
+			If you didn't create an account, you can safely ignore this email.
+		</p>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
+			This link will expire in 10 minutes.
+		</p>`
+		)
+	});
 }
 
 export async function sendPasswordResetEmail(to: string, name: string, resetUrl: string) {
-	// Info-level for the same reason as sendVerificationEmail: it separates an
-	// untriggered reset flow from a provider failure in production logs.
-	logger.info('Sending password reset email', { to });
-
-	let result;
-	try {
-		result = await brevo.transactionalEmails.sendTransacEmail({
-			sender: { name: 'Meal Planner', email: BREVO_FROM_ADDRESS },
-			to: [{ email: to, name }],
-			subject: '[Meal Planner] Reset your password',
-			htmlContent: `
-				<!DOCTYPE html>
-				<html>
-				<head>
-					<meta charset="utf-8">
-					<meta name="viewport" content="width=device-width, initial-scale=1.0">
-					<title>Reset your password</title>
-				</head>
-				<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-						<h1 style="color: white; margin: 0; font-size: 28px;">Reset your password</h1>
-					</div>
-					<div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-						<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
-						<p style="font-size: 16px; margin-bottom: 20px;">
-							We received a request to reset your Meal Planner password. Click the button below to choose a new one.
-						</p>
-						<div style="text-align: center; margin: 30px 0;">
-							<a href="${resetUrl}"
-							   style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;">
-								Reset Password
-							</a>
-						</div>
-						<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-							If you didn't request a password reset, you can safely ignore this email — your password won't change.
-						</p>
-						<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
-							This link will expire in 10 minutes.
-						</p>
-					</div>
-					<div style="text-align: center; margin-top: 20px; padding: 20px; color: #9ca3af; font-size: 12px;">
-						<p>Meal Planner</p>
-					</div>
-				</body>
-				</html>
+	await mailer.send({
+		to,
+		name,
+		subject: '[Meal Planner] Reset your password',
+		label: 'password reset email',
+		html: layout(
+			'Reset your password',
+			'Reset your password',
 			`
-		});
-	} catch (cause) {
-		logger.error('Failed to send password reset email', cause, { to });
-		throw cause instanceof Error ? cause : new Error('Brevo request failed', { cause });
-	}
-
-	logger.info('Password reset email sent', { to, brevoMessageId: result.messageId });
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			We received a request to reset your Meal Planner password. Click the button below to choose a new one.
+		</p>
+		<div style="text-align: center; margin: 30px 0;">
+			<a href="${escapeHtml(resetUrl)}" style="${BUTTON_STYLE}">Reset Password</a>
+		</div>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
+			If you didn't request a password reset, you can safely ignore this email — your password won't change.
+		</p>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
+			This link will expire in 10 minutes.
+		</p>`
+		)
+	});
 }
 
 type PasswordChangedEmailPayload = {
@@ -144,107 +89,51 @@ type PasswordChangedEmailPayload = {
  * user-controlled.
  */
 export async function sendPasswordChangedEmail(payload: PasswordChangedEmailPayload) {
-	// Info-level for the same reason as the other sends: it separates an
-	// untriggered flow from a provider failure in production logs.
-	logger.info('Sending password changed email', { to: payload.to });
-
 	const changedAtText = escapeHtml(payload.changedAt.toLocaleString());
 	const ipAddress = escapeHtml(payload.ipAddress || 'Unavailable');
 	const userAgent = escapeHtml(payload.userAgent || 'Unavailable');
 	const source = escapeHtml(payload.source || 'Account settings');
-	const name = escapeHtml(payload.name);
 
-	let result;
-	try {
-		result = await brevo.transactionalEmails.sendTransacEmail({
-			sender: { name: 'Meal Planner', email: BREVO_FROM_ADDRESS },
-			to: [{ email: payload.to, name: payload.name }],
-			subject: '[Meal Planner] Your password was changed',
-			htmlContent: `
-				<!DOCTYPE html>
-				<html>
-				<head>
-					<meta charset="utf-8">
-					<meta name="viewport" content="width=device-width, initial-scale=1.0">
-					<title>Password changed</title>
-				</head>
-				<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-						<h1 style="color: white; margin: 0; font-size: 28px;">Password Updated</h1>
-					</div>
-					<div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-						<p style="font-size: 16px; margin-bottom: 20px;">Hi ${name},</p>
-						<p style="font-size: 16px; margin-bottom: 20px;">
-							Your Meal Planner password was successfully changed.
-						</p>
-						<p style="font-size: 14px; margin-bottom: 8px;"><strong>When:</strong> ${changedAtText}</p>
-						<p style="font-size: 14px; margin-bottom: 8px;"><strong>Source:</strong> ${source}</p>
-						<p style="font-size: 14px; margin-bottom: 8px;"><strong>IP:</strong> ${ipAddress}</p>
-						<p style="font-size: 14px; margin-bottom: 20px;"><strong>Device:</strong> ${userAgent}</p>
-						<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
-							If this wasn't you, reset your password immediately and contact support.
-						</p>
-					</div>
-					<div style="text-align: center; margin-top: 20px; padding: 20px; color: #9ca3af; font-size: 12px;">
-						<p>Meal Planner</p>
-					</div>
-				</body>
-				</html>
-			`
-		});
-	} catch (cause) {
-		logger.error('Failed to send password changed email', cause, { to: payload.to });
-		throw cause instanceof Error ? cause : new Error('Brevo request failed', { cause });
-	}
-
-	logger.info('Password changed email sent', {
+	await mailer.send({
 		to: payload.to,
-		brevoMessageId: result.messageId
+		name: payload.name,
+		subject: '[Meal Planner] Your password was changed',
+		label: 'password changed email',
+		html: layout(
+			'Password changed',
+			'Password Updated',
+			`
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(payload.name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			Your Meal Planner password was successfully changed.
+		</p>
+		<p style="font-size: 14px; margin-bottom: 8px;"><strong>When:</strong> ${changedAtText}</p>
+		<p style="font-size: 14px; margin-bottom: 8px;"><strong>Source:</strong> ${source}</p>
+		<p style="font-size: 14px; margin-bottom: 8px;"><strong>IP:</strong> ${ipAddress}</p>
+		<p style="font-size: 14px; margin-bottom: 20px;"><strong>Device:</strong> ${userAgent}</p>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+			If this wasn't you, reset your password immediately and contact support.
+		</p>`
+		)
 	});
 }
 
 export async function sendNewUserEmail(to: string, name: string) {
-	// Info-level for the same reason as the other sends: it separates an
-	// untriggered flow from a provider failure in production logs.
-	logger.info('Sending new user welcome email', { to });
-
-	let result;
-	try {
-		result = await brevo.transactionalEmails.sendTransacEmail({
-			sender: { name: 'Meal Planner', email: BREVO_FROM_ADDRESS },
-			to: [{ email: to, name }],
-			subject: '[Meal Planner] Welcome to Meal Planner!',
-			htmlContent: `
-				<!DOCTYPE html>
-				<html>
-				<head>
-					<meta charset="utf-8">
-					<meta name="viewport" content="width=device-width, initial-scale=1.0">
-					<title>Welcome to Meal Planner</title>
-				</head>
-				<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-						<h1 style="color: white; margin: 0; font-size: 28px;">Welcome to Meal Planner</h1>
-					</div>
-					<div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-						<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name || to)},</p>
-						<p style="font-size: 16px; margin-bottom: 20px;">
-							Thanks for signing up! We're excited to have you on board.
-						</p>
-					</div>
-					<div style="text-align: center; margin-top: 20px; padding: 20px; color: #9ca3af; font-size: 12px;">
-						<p>Meal Planner</p>
-					</div>
-				</body>
-				</html>
+	await mailer.send({
+		to,
+		name,
+		subject: '[Meal Planner] Welcome to Meal Planner!',
+		label: 'new user welcome email',
+		html: layout(
+			'Welcome to Meal Planner',
+			'Welcome to Meal Planner',
 			`
-		});
-	} catch (cause) {
-		logger.error('Failed to send new user welcome email', cause, { to });
-		throw cause instanceof Error ? cause : new Error('Brevo request failed', { cause });
-	}
-
-	logger.info('New user welcome email sent', { to, brevoMessageId: result.messageId });
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name || to)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			Thanks for signing up! We're excited to have you on board.
+		</p>`
+		)
+	});
 }
 
 type AccountCreatedEmailLinks = {
@@ -265,73 +154,39 @@ export async function sendAccountCreatedEmail(
 	name: string,
 	links: AccountCreatedEmailLinks
 ) {
-	// Info-level for the same reason as the other sends: it separates an
-	// untriggered flow from a provider failure in production logs.
-	logger.info('Sending account created email', { to });
-
-	const safeName = escapeHtml(name || to);
 	const appUrl = escapeHtml(links.appUrl);
 	const forgotPasswordUrl = escapeHtml(links.forgotPasswordUrl);
 	const profileUrl = escapeHtml(links.profileUrl);
-	const safeEmail = escapeHtml(to);
 
-	let result;
-	try {
-		result = await brevo.transactionalEmails.sendTransacEmail({
-			sender: { name: 'Meal Planner', email: BREVO_FROM_ADDRESS },
-			to: [{ email: to, name }],
-			subject: '[Meal Planner] Your account is ready',
-			htmlContent: `
-				<!DOCTYPE html>
-				<html>
-				<head>
-					<meta charset="utf-8">
-					<meta name="viewport" content="width=device-width, initial-scale=1.0">
-					<title>Your Meal Planner account</title>
-				</head>
-				<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-					<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-						<h1 style="color: white; margin: 0; font-size: 28px;">Welcome to Meal Planner</h1>
-					</div>
-					<div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-						<p style="font-size: 16px; margin-bottom: 20px;">Hi ${safeName},</p>
-						<p style="font-size: 16px; margin-bottom: 20px;">
-							An account has been created for you on Meal Planner (<a href="${appUrl}">${appUrl}</a>)
-							with the email <strong>${safeEmail}</strong>.
-						</p>
-						<p style="font-size: 16px; margin-bottom: 8px;"><strong>To sign in for the first time:</strong></p>
-						<ol style="font-size: 16px; margin-bottom: 20px; padding-left: 20px;">
-							<li>Open the <a href="${forgotPasswordUrl}">Forgot password</a> page and enter your email.</li>
-							<li>Click the link in the reset email and choose your own password (at least 12 characters). No password has been shared with anyone.</li>
-							<li>Sign in. The first time, you'll get a verification email — click the link in it to finish signing in.</li>
-						</ol>
-						<div style="text-align: center; margin: 30px 0;">
-							<a href="${forgotPasswordUrl}"
-							   style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;">
-								Set your password
-							</a>
-						</div>
-						<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-							You can change your password any time from your <a href="${profileUrl}">profile page</a>.
-						</p>
-						<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
-							If you weren't expecting this, you can safely ignore this email.
-						</p>
-					</div>
-					<div style="text-align: center; margin-top: 20px; padding: 20px; color: #9ca3af; font-size: 12px;">
-						<p>Meal Planner</p>
-					</div>
-				</body>
-				</html>
-			`
-		});
-	} catch (cause) {
-		logger.error('Failed to send account created email', cause, { to });
-		throw cause instanceof Error ? cause : new Error('Brevo request failed', { cause });
-	}
-
-	logger.info('Account created email sent', {
+	await mailer.send({
 		to,
-		brevoMessageId: result.messageId
+		name,
+		subject: '[Meal Planner] Your account is ready',
+		label: 'account created email',
+		html: layout(
+			'Your Meal Planner account',
+			'Welcome to Meal Planner',
+			`
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name || to)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			An account has been created for you on Meal Planner (<a href="${appUrl}">${appUrl}</a>)
+			with the email <strong>${escapeHtml(to)}</strong>.
+		</p>
+		<p style="font-size: 16px; margin-bottom: 8px;"><strong>To sign in for the first time:</strong></p>
+		<ol style="font-size: 16px; margin-bottom: 20px; padding-left: 20px;">
+			<li>Open the <a href="${forgotPasswordUrl}">Forgot password</a> page and enter your email.</li>
+			<li>Click the link in the reset email and choose your own password (at least 12 characters). No password has been shared with anyone.</li>
+			<li>Sign in. The first time, you'll get a verification email — click the link in it to finish signing in.</li>
+		</ol>
+		<div style="text-align: center; margin: 30px 0;">
+			<a href="${forgotPasswordUrl}" style="${BUTTON_STYLE}">Set your password</a>
+		</div>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
+			You can change your password any time from your <a href="${profileUrl}">profile page</a>.
+		</p>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
+			If you weren't expecting this, you can safely ignore this email.
+		</p>`
+		)
 	});
 }
