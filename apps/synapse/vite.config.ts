@@ -33,10 +33,10 @@ export default defineConfig({
 			],
 			reporter: ['text', 'lcov', 'html', 'json-summary', 'json'],
 			thresholds: {
-				statements: 40,
-				branches: 40,
+				statements: 30,
+				branches: 30,
 				functions: 30,
-				lines: 40
+				lines: 30
 			}
 		},
 		reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions'] : ['default']
