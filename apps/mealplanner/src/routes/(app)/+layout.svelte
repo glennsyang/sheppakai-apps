@@ -12,7 +12,7 @@
 
 	const user = $derived(data.user);
 	const isDark = $derived(mode.current === 'dark');
-	const isAdmin = $derived(user?.role === 'admin');
+	const isAdmin = $derived(data.isAdmin);
 
 	const navLinks: { href: string; label: string; icon: IconName }[] = [
 		{ href: '/', label: 'Tonight', icon: 'home' },

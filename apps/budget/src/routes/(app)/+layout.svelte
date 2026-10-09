@@ -27,7 +27,7 @@
 
 <Sidebar.Provider style="--header-height: calc(var(--spacing) * 12);">
 	{#if data.user}
-		<AppSidebar {sidebarData} user={data.user} />
+		<AppSidebar {sidebarData} user={data.user} isAdmin={data.isAdmin} />
 		<Sidebar.Inset>
 			<SiteHeader {sidebarData} />
 			<!-- Phones navigate from the bottom tab bar, so leave room for it under the content. -->
@@ -44,6 +44,6 @@
 				{/if}
 			</main>
 		</Sidebar.Inset>
-		<MobileTabBar {sidebarData} user={data.user} />
+		<MobileTabBar {sidebarData} user={data.user} isAdmin={data.isAdmin} />
 	{/if}
 </Sidebar.Provider>

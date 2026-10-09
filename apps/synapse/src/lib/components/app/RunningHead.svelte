@@ -8,9 +8,10 @@
 	interface Props {
 		items: SidebarNav['navMain'];
 		user: User;
+		isAdmin: boolean;
 	}
 
-	let { items, user }: Props = $props();
+	let { items, user, isAdmin }: Props = $props();
 
 	const section = $derived(items.find((i) => i.url && page.url.pathname.startsWith(i.url)));
 
@@ -67,6 +68,6 @@
 
 	<div class="ml-auto flex items-center gap-1 md:ml-2">
 		<ThemeToggle class="hover:bg-muted size-9" />
-		<UserMenu {user} showAdmin side="bottom" class="bg-muted" />
+		<UserMenu {user} showAdmin={isAdmin} side="bottom" class="bg-muted" />
 	</div>
 </header>
