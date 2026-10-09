@@ -7,7 +7,6 @@ export {
 	buildAllowlistCommand,
 	createAllowlistSessionGuard,
 	formatAlertEmail,
-	isUserAccessAllowed,
 	parseAllowedEmails
 } from '@sheppakai/shared/auth-allowlist';
 

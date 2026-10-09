@@ -12,18 +12,18 @@ Fly app: `sheppakai-budget`. Validated in [`src/env.ts`](../src/env.ts) unless n
 | ---------------------- | -------- | ------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `DATABASE_URL`         | Yes      | Fly secret          | `file:///tmp/build.db`. Only matters for local dev.                                                          |
 | `BETTER_AUTH_SECRET`   | Yes      | Fly secret          | At least 32 characters.                                                                                      |
-| `BETTER_AUTH_BASE_URL` | No       | Fly secret          | Defaults to `http://localhost:5173`. Same host as the `APP_URL` GitHub secret, but a separate value.         |
+| `BETTER_AUTH_BASE_URL` | Yes      | Fly secret          | Shared entry (`packages/shared/src/env.ts`). Same host as the `APP_URL` GitHub secret, but a separate value. |
 | `CRON_SECRET`          | Yes      | Fly secret          | Bearer token for `/api/cron/*`. **Also a GitHub Actions secret, and the two must match** (see the root doc). |
 | `BREVO_API_KEY`        | Yes      | Fly secret          |                                                                                                              |
 | `BREVO_FROM_ADDRESS`   | Yes      | Fly secret          | Must be a confirmed Brevo sender.                                                                            |
-| `ADMIN_USER_IDS`       | No       | Fly secret          | Defaults to `dummy_admin_id`.                                                                                |
+| `ADMIN_USER_IDS`       | Yes      | Fly secret          | The build dummy `dummy_admin_id` is rejected at runtime.                                                     |
 | `ALLOWED_EMAILS`       | Yes      | Fly secret          | Enforced by `src/lib/server/auth-allowlist-hook.ts`. Add users from **Admin → Users → Add User**.            |
 | `AUTH_ALERTS_URL`      | No       | Fly secret          | ntfy.sh topic. Has a dummy default.                                                                          |
 | `BUDGET_ALERTS_URL`    | No       | Fly secret          | ntfy.sh topic for budget alerts. Has a dummy default.                                                        |
 | `NODE_ENV`             | No       | Dockerfile `ENV`    | `production` in the image.                                                                                   |
 | `ADDRESS_HEADER`       | No       | `fly.toml` `[env]`  | `Fly-Client-IP`. Not in `env.ts`.                                                                            |
 | `SENTRY_DSN`           | No       | Default in `env.ts` | Public.                                                                                                      |
-| `LOG_LEVEL`            | No       | Not set             | Not in `env.ts`; read by `packages/logger`.                                                                  |
+| `LOG_LEVEL`            | No       | Not set             | Declared in the shared env entries; read by `packages/logger` from `process.env`.                            |
 
 ## GitHub Actions secrets
 

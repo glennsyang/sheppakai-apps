@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getBetterAuthErrorMessage } from '../../lib/server/auth/errors';
+import { getBetterAuthErrorCode, getBetterAuthErrorMessage } from './better-auth-errors';
 
 describe('getBetterAuthErrorMessage', () => {
 	it('returns a mapped message for a recognised error code', () => {
@@ -51,6 +51,23 @@ describe('getBetterAuthErrorMessage', () => {
 		const error = { body: { code: 'PASSWORD_COMPROMISED' } };
 		expect(getBetterAuthErrorMessage(error)).toBe(
 			'This password has appeared in a data breach. Please choose a different password.'
+		);
+	});
+});
+
+describe('getBetterAuthErrorCode', () => {
+	it('reads the code off a better-auth error body', () => {
+		expect(getBetterAuthErrorCode({ body: { code: 'USER_ALREADY_EXISTS' } })).toBe(
+			'USER_ALREADY_EXISTS'
+		);
+		expect(getBetterAuthErrorCode(new Error('boom'))).toBeUndefined();
+	});
+});
+
+describe('PASSWORD_TOO_SHORT', () => {
+	it('matches the 12-character minimum every app configures', () => {
+		expect(getBetterAuthErrorMessage({ body: { code: 'PASSWORD_TOO_SHORT' } })).toContain(
+			'at least 12 characters'
 		);
 	});
 });
