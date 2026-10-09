@@ -3,9 +3,10 @@ import type { Redirect } from '@sveltejs/kit';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { createAuthLoadForm, redirectIfAuthenticated } from './form-helpers';
+import { createAuthLoadForm, createRedirectIfAuthenticated } from './auth-form-helpers';
 
-const mockUser = { id: 'user_123', name: 'Alice', email: 'alice@example.com' };
+const mockUser = { id: 'user_123' };
+const redirectIfAuthenticated = createRedirectIfAuthenticated('/dashboard');
 const schema = z.object({ email: z.string() });
 const at = (path: string) => new URL(`https://example.com${path}`);
 

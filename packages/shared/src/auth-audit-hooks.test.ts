@@ -1,11 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-const mockState = vi.hoisted(() => ({
-	sendNewUserEmail: vi.fn<(to: string, name: string) => void>(),
-	sendAuthAlerts: vi.fn<(message: string, title?: string, priority?: number) => void>(),
-	loggerInfo: vi.fn<(message: string, meta?: unknown) => void>(),
-	loggerDebug: vi.fn<(message: string) => void>()
-}));
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('better-auth/api', () => ({
 	// The real createAuthMiddleware wraps the callback in better-call's
@@ -14,13 +7,23 @@ vi.mock('better-auth/api', () => ({
 	createAuthMiddleware: (fn: unknown) => fn
 }));
 
-vi.mock('./email', () => ({ sendNewUserEmail: mockState.sendNewUserEmail }));
-vi.mock('./notifications', () => ({ sendAuthAlerts: mockState.sendAuthAlerts }));
-vi.mock('./logger', () => ({
-	logger: { info: mockState.loggerInfo, debug: mockState.loggerDebug }
-}));
-
 import { createAuthAfterHooks, logPasswordResetAudit } from './auth-audit-hooks';
+
+const mockState = {
+	sendNewUserEmail: vi.fn<(to: string, name: string) => void>(),
+	sendAuthAlerts: vi.fn<(message: string, title: string, priority: number) => void>(),
+	loggerInfo: vi.fn<(message: string, meta?: Record<string, unknown>) => void>()
+};
+
+const deps = {
+	logger: { info: mockState.loggerInfo },
+	sendNewUserEmail: mockState.sendNewUserEmail,
+	sendAuthAlerts: mockState.sendAuthAlerts
+};
+
+beforeEach(() => {
+	vi.clearAllMocks();
+});
 
 type FakeCtx = {
 	path: string;
@@ -34,7 +37,9 @@ function fakeCtx(overrides: Partial<FakeCtx> = {}): FakeCtx {
 }
 
 describe('createAuthAfterHooks', () => {
-	const afterHook = createAuthAfterHooks('Test App') as unknown as (ctx: FakeCtx) => Promise<void>;
+	const afterHook = createAuthAfterHooks('Test App', deps) as unknown as (
+		ctx: FakeCtx
+	) => Promise<void>;
 
 	it('sends the welcome email and admin alert on /sign-up/email with a new session', async () => {
 		await afterHook(
@@ -103,7 +108,7 @@ describe('createAuthAfterHooks', () => {
 
 describe('logPasswordResetAudit', () => {
 	it('logs and alerts with the given user and app name', () => {
-		logPasswordResetAudit({ id: 'user-1', email: 'reset@example.com' }, 'Test App');
+		logPasswordResetAudit({ id: 'user-1', email: 'reset@example.com' }, 'Test App', deps);
 
 		expect(mockState.loggerInfo).toHaveBeenCalledWith(
 			expect.stringContaining('password reset completed'),
