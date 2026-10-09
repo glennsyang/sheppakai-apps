@@ -5,6 +5,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 	import type { User } from '$lib/types';
 	import { actionMessage } from '$lib/utils/actionMessage';
 	import BanIcon from '@lucide/svelte/icons/ban';
@@ -85,13 +86,20 @@
 	<span class="text-muted-foreground px-3 text-sm">you</span>
 {:else}
 	<DropdownMenu.Root>
-		<DropdownMenu.Trigger>
-			{#snippet child({ props })}
-				<Button {...props} variant="ghost" size="icon" aria-label="Actions for {user.email}">
-					<EllipsisIcon class="size-4" />
-				</Button>
-			{/snippet}
-		</DropdownMenu.Trigger>
+		<Tooltip.Root>
+			<DropdownMenu.Trigger>
+				{#snippet child({ props: menuProps })}
+					<Tooltip.Trigger {...menuProps}>
+						{#snippet child({ props })}
+							<Button {...props} variant="ghost" size="icon" aria-label="Actions for {user.email}">
+								<EllipsisIcon class="size-4" />
+							</Button>
+						{/snippet}
+					</Tooltip.Trigger>
+				{/snippet}
+			</DropdownMenu.Trigger>
+			<Tooltip.Content>User actions</Tooltip.Content>
+		</Tooltip.Root>
 		<DropdownMenu.Content align="end" class="w-48">
 			<DropdownMenu.Item onclick={() => open('sendWelcomeEmail')}>
 				<MailIcon class="size-4" />
