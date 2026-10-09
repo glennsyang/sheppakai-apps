@@ -1,0 +1,70 @@
+// Auth-action wrapper. Each app binds its logger and Better Auth error-message map
+// via `createAuthFormHandler` in its own `$lib/server/actions/auth-form-handler`.
+
+import { isRedirect } from '@sveltejs/kit';
+import { message } from 'sveltekit-superforms/server';
+import type { SuperValidated } from 'sveltekit-superforms/server';
+
+type MessageOptions = NonNullable<Parameters<typeof message>[2]>;
+
+interface AuthFormActionOptions {
+	loggerContext: string;
+	fallbackMessage: string;
+	/**
+	 * Banner style for the failure path. Defaults to `'error'`; routes that must
+	 * stay indistinguishable between success and failure (see forgot-password,
+	 * which hides whether an account exists) pass `'success'` instead.
+	 */
+	errorType?: App.Superforms.Message['type'];
+	status?: MessageOptions['status'];
+}
+
+interface AuthFormHandlerDeps {
+	logger: { error(message: string, error?: unknown): void };
+	/** Maps a Better Auth error to user-facing text, or returns `fallback`. */
+	getErrorMessage: (error: unknown, fallback: string) => string;
+}
+
+/**
+ * The single validation-failure response for auth actions. Superforms turns a
+ * `message(...)` with a 4xx status into `fail(status, { form })`, so the page
+ * gets field errors *and* a banner from one call — no route needs a bare
+ * `fail(...)` and no page has to branch on which shape it received.
+ */
+export function invalidAuthForm<TForm extends Record<string, unknown>>(
+	form: SuperValidated<TForm>,
+	text = 'Please correct the errors in the form.'
+) {
+	return message(form, { type: 'error', text }, { status: 400 });
+}
+
+/**
+ * Returns `handleAuthFormAction`: runs an auth action, rethrows redirects, and turns
+ * any other error into a logged, user-facing form banner.
+ */
+export function createAuthFormHandler(deps: AuthFormHandlerDeps) {
+	const { logger, getErrorMessage } = deps;
+
+	return async function handleAuthFormAction<TForm extends Record<string, unknown>>(
+		form: SuperValidated<TForm>,
+		action: () => Promise<unknown>,
+		options: AuthFormActionOptions
+	): Promise<unknown> {
+		try {
+			return await action();
+		} catch (error) {
+			if (isRedirect(error)) {
+				throw error;
+			}
+
+			logger.error(options.loggerContext, error);
+			const errorMessage = getErrorMessage(error, options.fallbackMessage);
+
+			return message(
+				form,
+				{ type: options.errorType ?? 'error', text: errorMessage },
+				{ status: (options.status ?? 400) as MessageOptions['status'] }
+			);
+		}
+	};
+}

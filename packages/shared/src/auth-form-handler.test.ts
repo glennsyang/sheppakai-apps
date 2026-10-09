@@ -1,19 +1,22 @@
 import { redirect } from '@sveltejs/kit';
-import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+import { superValidate } from 'sveltekit-superforms/server';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { handleAuthFormAction, invalidAuthForm } from './auth-form-handler';
+import { createAuthFormHandler, invalidAuthForm } from './auth-form-handler';
 
-vi.mock('$lib/server/logger', () => ({ logger: { error: vi.fn<() => void>() } }));
+const logger = { error: vi.fn() };
+const getErrorMessage = vi.fn((_error: unknown, fallback: string) => fallback);
+const handleAuthFormAction = createAuthFormHandler({ logger, getErrorMessage });
 
-const testSchema = z.object({ email: z.string().email() });
-const makeForm = () => superValidate(zod4(testSchema));
+const testSchema = z.object({
+	email: z.string().email()
+});
 
 describe('invalidAuthForm', () => {
-	it('returns a 400 form failure carrying an error banner', async () => {
-		const form = await makeForm();
+	it('returns a 400 form failure carrying a renderable error banner', async () => {
+		const form = await superValidate(zod4(testSchema));
 
 		expect(invalidAuthForm(form)).toMatchObject({
 			status: 400,
@@ -27,7 +30,7 @@ describe('invalidAuthForm', () => {
 	});
 
 	it('honours a custom message text', async () => {
-		const form = await makeForm();
+		const form = await superValidate(zod4(testSchema));
 
 		expect(invalidAuthForm(form, 'That reset link is no longer valid.')).toMatchObject({
 			data: {
@@ -41,7 +44,7 @@ describe('invalidAuthForm', () => {
 
 describe('handleAuthFormAction', () => {
 	it('rethrows redirect errors without converting them to form failures', async () => {
-		const form = await makeForm();
+		const form = await superValidate(zod4(testSchema));
 
 		await expect(
 			handleAuthFormAction(
@@ -49,20 +52,28 @@ describe('handleAuthFormAction', () => {
 				async () => {
 					throw redirect(302, '/dashboard');
 				},
-				{ loggerContext: 'test', fallbackMessage: 'fallback' }
+				{
+					loggerContext: 'test',
+					fallbackMessage: 'fallback'
+				}
 			)
-		).rejects.toMatchObject({ status: 302, location: '/dashboard' });
+		).rejects.toMatchObject({
+			status: 302,
+			location: '/dashboard'
+		});
 	});
 
-	it('returns a 400 form failure with the fallback text for auth errors', async () => {
-		const form = await makeForm();
-
+	it('returns a form failure payload for auth errors', async () => {
+		const form = await superValidate(zod4(testSchema));
 		const result = await handleAuthFormAction(
 			form,
 			async () => {
 				throw new Error('boom');
 			},
-			{ loggerContext: 'test', fallbackMessage: 'fallback' }
+			{
+				loggerContext: 'test',
+				fallbackMessage: 'fallback'
+			}
 		);
 
 		expect(result).toMatchObject({
@@ -77,8 +88,7 @@ describe('handleAuthFormAction', () => {
 	});
 
 	it('honours errorType so a route can keep failures indistinguishable from successes', async () => {
-		const form = await makeForm();
-
+		const form = await superValidate(zod4(testSchema));
 		const result = await handleAuthFormAction(
 			form,
 			async () => {
@@ -86,7 +96,7 @@ describe('handleAuthFormAction', () => {
 			},
 			{
 				loggerContext: 'test',
-				fallbackMessage: 'If an account exists with that email, a link is on its way.',
+				fallbackMessage: 'If an account exists with that email, you will receive a link.',
 				errorType: 'success'
 			}
 		);
@@ -96,28 +106,33 @@ describe('handleAuthFormAction', () => {
 				form: expect.objectContaining({
 					message: {
 						type: 'success',
-						text: 'If an account exists with that email, a link is on its way.'
+						text: 'If an account exists with that email, you will receive a link.'
 					}
 				})
 			}
 		});
 	});
 
-	it('maps a Better Auth error code to its user-facing message', async () => {
-		const form = await makeForm();
+	it('logs the error and uses the mapped Better Auth message', async () => {
+		const form = await superValidate(zod4(testSchema));
+		const failure = new Error('INVALID_EMAIL_OR_PASSWORD');
+		getErrorMessage.mockReturnValueOnce('Invalid email or password.');
 
 		const result = await handleAuthFormAction(
 			form,
 			async () => {
-				throw { body: { code: 'INVALID_EMAIL_OR_PASSWORD' } };
+				throw failure;
 			},
-			{ loggerContext: 'test', fallbackMessage: 'Sign-in failed' }
+			{ loggerContext: 'Sign-in failed', fallbackMessage: 'fallback', status: 401 }
 		);
 
+		expect(logger.error).toHaveBeenCalledWith('Sign-in failed', failure);
+		expect(getErrorMessage).toHaveBeenCalledWith(failure, 'fallback');
 		expect(result).toMatchObject({
+			status: 401,
 			data: {
 				form: expect.objectContaining({
-					message: { type: 'error', text: 'Invalid email or password. Please try again.' }
+					message: { type: 'error', text: 'Invalid email or password.' }
 				})
 			}
 		});

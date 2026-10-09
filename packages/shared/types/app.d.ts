@@ -8,6 +8,10 @@ declare global {
 			user?: { id: string; role?: string | null } | null;
 			session?: { token: string };
 		}
+
+		namespace Superforms {
+			type Message = { type: 'error' | 'success'; text: string };
+		}
 	}
 }
 

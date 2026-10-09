@@ -143,6 +143,12 @@ vi.mock('sveltekit-superforms', () => ({
 	message: mockState.message
 }));
 
+// invalidForm comes from @sheppakai/shared, which imports superforms' server entry.
+vi.mock('sveltekit-superforms/server', () => ({
+	superValidate: mockState.superValidate,
+	message: mockState.message
+}));
+
 vi.mock('sveltekit-superforms/adapters', () => ({
 	zod4: (schema: unknown) => schema
 }));
