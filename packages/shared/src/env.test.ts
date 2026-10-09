@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DUMMY_ENV, sharedEnvVars } from './env';
+import { cronSecretEnvVar, DUMMY_ENV, sharedEnvVars } from './env';
 
 const runtime = sharedEnvVars(false);
 const build = sharedEnvVars(true);
@@ -60,5 +60,19 @@ describe('sharedEnvVars at runtime', () => {
 		expect(runtime.NODE_ENV.schema.parse(undefined)).toBe('development');
 		expect(runtime.LOG_LEVEL.schema.parse(undefined)).toBeUndefined();
 		expect(runtime.LOG_LEVEL.schema.safeParse('verbose').success).toBe(false);
+	});
+});
+
+describe('cronSecretEnvVar', () => {
+	it('falls back to its placeholder at build time', () => {
+		expect(cronSecretEnvVar(true).CRON_SECRET.schema.parse(undefined)).toBe(DUMMY_ENV.CRON_SECRET);
+	});
+
+	it('requires at least 16 characters and rejects the placeholder at runtime', () => {
+		const { schema } = cronSecretEnvVar(false).CRON_SECRET;
+		expect(schema.safeParse('x'.repeat(15)).success).toBe(false);
+		expect(schema.safeParse(DUMMY_ENV.CRON_SECRET).success).toBe(false);
+		expect(schema.safeParse(undefined).success).toBe(false);
+		expect(schema.parse('x'.repeat(16))).toHaveLength(16);
 	});
 });

@@ -1,5 +1,5 @@
 import { building } from '$app/env';
-import { sharedEnvVars } from '@sheppakai/shared/env';
+import { cronSecretEnvVar, sharedEnvVars } from '@sheppakai/shared/env';
 import { defineEnvVars } from '@sveltejs/kit/env';
 import { z } from 'zod';
 
@@ -7,13 +7,10 @@ export const variables = defineEnvVars({
 	// DATABASE_URL, BETTER_AUTH_*, BREVO_*, ADMIN_USER_IDS, ALLOWED_EMAILS, AUTH_ALERTS_URL,
 	// NODE_ENV and LOG_LEVEL, with the build-time placeholder guards.
 	...sharedEnvVars(building),
+	...cronSecretEnvVar(building),
 	REMINDER_ALERTS_URL: {
 		description: 'ntfy.sh topic URL for reminder push notifications',
 		schema: building ? z.string().catch('https://ntfy.sh/placeholder') : z.url()
-	},
-	CRON_SECRET: {
-		description: 'Bearer token for authorizing cron job requests',
-		schema: building ? z.string().catch('build_time_dummy_secret_min_16_chars') : z.string().min(16)
 	},
 	FLY_APP_NAME: {
 		description:

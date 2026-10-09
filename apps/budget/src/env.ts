@@ -1,18 +1,13 @@
 import { building } from '$app/env';
-import { sharedEnvVars } from '@sheppakai/shared/env';
+import { cronSecretEnvVar, sharedEnvVars } from '@sheppakai/shared/env';
 import { defineEnvVars } from '@sveltejs/kit/env';
 import { z } from 'zod';
-
-const DUMMY_CRON_SECRET = 'dummy_cron_secret_for_build';
 
 export const variables = defineEnvVars({
 	// DATABASE_URL, BETTER_AUTH_*, BREVO_*, ADMIN_USER_IDS, ALLOWED_EMAILS, AUTH_ALERTS_URL,
 	// NODE_ENV and LOG_LEVEL, with the build-time placeholder guards.
 	...sharedEnvVars(building),
-	CRON_SECRET: {
-		description: 'Secret token for authenticating cron job HTTP requests',
-		schema: building ? z.string().default(DUMMY_CRON_SECRET) : z.string().min(1)
-	},
+	...cronSecretEnvVar(building),
 	BUDGET_ALERTS_URL: {
 		description:
 			'Ntfy.sh URL for budget threshold alert push notifications. Defaults to a ' +
