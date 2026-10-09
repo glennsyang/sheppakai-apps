@@ -12,9 +12,10 @@
 	interface Props {
 		sidebarData: SidebarData;
 		user: User;
+		isAdmin: boolean;
 	}
 
-	let { sidebarData, user, ...restProps }: Props = $props();
+	let { sidebarData, user, isAdmin, ...restProps }: Props = $props();
 
 	// Longest matching nav URL wins, so /window-cleaning/jobs doesn't also light up /window-cleaning.
 	let activeUrl = $derived(
@@ -55,7 +56,7 @@
 		<NavSecondary title="Savings" items={sidebarData.navSavings} {activeUrl} />
 		<NavSecondary title="Receipts" items={sidebarData.navReceipts} {activeUrl} />
 		<NavSecondary title="Window cleaning" items={sidebarData.navWindows} {activeUrl} />
-		<NavSecondary title="Setup" items={sidebarData.navSetup} {user} {activeUrl} />
+		<NavSecondary title="Setup" items={sidebarData.navSetup} {isAdmin} {activeUrl} />
 	</Sidebar.Content>
 	<Sidebar.Footer>
 		<NavUser {user} />

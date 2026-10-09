@@ -1,23 +1,20 @@
 <script lang="ts">
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import type { User } from '$lib/types';
 	import type { Component } from 'svelte';
 
 	let {
 		title,
 		items,
-		user,
+		isAdmin = false,
 		activeUrl = null
 	}: {
 		activeUrl?: string | null;
 		title: string;
-		items: { title: string; url: string; icon?: Component; visible?: (role: string) => boolean }[];
-		user?: User;
+		items: { title: string; url: string; icon?: Component; adminOnly?: boolean }[];
+		isAdmin?: boolean;
 	} = $props();
 
-	const visibleItems = $derived(
-		user ? items.filter((item) => !item.visible || item.visible(user.role ?? '')) : items
-	);
+	const visibleItems = $derived(items.filter((item) => !item.adminOnly || isAdmin));
 </script>
 
 <Sidebar.Group class="group-data-[collapsible=icon]:hidden">

@@ -127,6 +127,7 @@ export type SidebarData = {
 		title: string;
 		url: string;
 		icon?: Component;
-		visible?(role: string): role is 'admin';
+		/** Shown only when the layout's `isAdmin` is true. */
+		adminOnly?: boolean;
 	}[];
 };

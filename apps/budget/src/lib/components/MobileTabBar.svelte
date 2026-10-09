@@ -21,9 +21,10 @@
 	interface Props {
 		sidebarData: SidebarData;
 		user: User;
+		isAdmin: boolean;
 	}
 
-	let { sidebarData, user }: Props = $props();
+	let { sidebarData, user, isAdmin }: Props = $props();
 
 	// Four destinations used most on a phone, then More. Labels stay one short word so
 	// five tabs fit a 320px screen.
@@ -55,7 +56,7 @@
 					(item) =>
 						!!item.url &&
 						!['/dashboard', '/transactions', '/budget', '/window-cleaning'].includes(item.url) &&
-						(!item.visible || item.visible(user.role ?? ''))
+						(!item.adminOnly || isAdmin)
 				)
 			}))
 			.filter((section) => section.items.length > 0)

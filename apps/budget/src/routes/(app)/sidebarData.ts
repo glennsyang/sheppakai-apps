@@ -87,7 +87,7 @@ export const sidebarData: SidebarData = {
 			title: 'Admin',
 			url: '/admin',
 			icon: ShieldIcon,
-			visible: (role: string) => role === 'admin'
+			adminOnly: true
 		}
 	]
 };

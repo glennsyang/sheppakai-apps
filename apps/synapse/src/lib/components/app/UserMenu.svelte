@@ -8,7 +8,7 @@
 
 	interface Props {
 		user: User;
-		/** Show the Admin link here (mobile, where it has no tab). */
+		/** Show the Admin link here (mobile, where it has no tab). Pass `data.isAdmin`. */
 		showAdmin?: boolean;
 		side?: 'right' | 'bottom';
 		class?: string;
@@ -34,7 +34,7 @@
 			<CircleUserIcon />
 			Profile
 		</DropdownMenu.Item>
-		{#if showAdmin && user.role === 'admin'}
+		{#if showAdmin}
 			<DropdownMenu.Item onclick={() => goto('/admin')}>
 				<Shield />
 				Admin

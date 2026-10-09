@@ -1,4 +1,5 @@
 import { SIGN_IN_ROUTE } from '$lib/auth-routes';
+import { isAdminUser } from '$lib/server/actions/auth-guard';
 import { categoryQueries } from '$lib/server/db/queries';
 import { logger } from '$lib/server/logger';
 import { redirect } from '@sveltejs/kit';
@@ -12,15 +13,19 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		throw redirect(302, SIGN_IN_ROUTE);
 	}
 
+	// Computed here, not from `role`, so an admin listed in ADMIN_USER_IDS sees the admin nav.
+	const isAdmin = isAdminUser(locals.user);
+
 	try {
 		const categories = await categoryQueries.findAll();
 
 		// `user` comes from the root layout; this guard only narrows who reaches the group.
-		return { categories };
+		return { categories, isAdmin };
 	} catch (error) {
 		logger.error('Failed to load categories:', error);
 		return {
 			categories: [],
+			isAdmin,
 			categoriesLoadError: 'Failed to load categories. Please try refreshing the page.'
 		};
 	}

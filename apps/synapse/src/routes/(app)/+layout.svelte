@@ -12,7 +12,7 @@
 	let { data, children } = $props();
 
 	const filteredNavItems = $derived(
-		navItems.navMain.filter((item) => !item.adminOnly || data.user?.role === 'admin')
+		navItems.navMain.filter((item) => !item.adminOnly || data.isAdmin)
 	);
 </script>
 
@@ -25,7 +25,7 @@
 			<div
 				class="grid-paper flex min-w-0 flex-1 flex-col pb-20 md:my-2.5 md:mr-2.5 md:rounded-[3px] md:pb-0"
 			>
-				<RunningHead items={filteredNavItems} user={data.user} />
+				<RunningHead items={filteredNavItems} user={data.user} isAdmin={data.isAdmin} />
 				<main class="flex min-w-0 flex-1 flex-col px-4 py-5 md:px-8 md:py-7">
 					{@render children()}
 				</main>
