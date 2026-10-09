@@ -1,8 +1,14 @@
 import { createAuthMiddleware } from 'better-auth/api';
 
-/** Each app's side effects for the audit hooks. None of them may throw. */
+/**
+ * Each app's side effects for the audit hooks. `sendNewUserEmail` may reject (the
+ * hook catches and logs it); the others must not throw.
+ */
 export interface AuthAuditDeps {
-	logger: { info(message: string, meta?: Record<string, unknown>): void };
+	logger: {
+		info(message: string, meta?: Record<string, unknown>): void;
+		error(message: string, error?: unknown): void;
+	};
 	sendNewUserEmail: (to: string, name: string) => unknown;
 	sendAuthAlerts: (message: string, title: string, priority: number) => unknown;
 }
@@ -25,7 +31,11 @@ export function createAuthAfterHooks(appName: string, deps: AuthAuditDeps) {
 		if (ctx.path === '/sign-up/email') {
 			const newSession = ctx.context.newSession;
 			if (newSession) {
-				void sendNewUserEmail(newSession.user.email, newSession.user.name);
+				// Not awaited, so sign-up isn't slowed by Brevo; a rejection is logged rather
+				// than left unhandled (which would crash the process).
+				Promise.resolve(sendNewUserEmail(newSession.user.email, newSession.user.name)).catch(
+					(err) => logger.error('New user email failed', err)
+				);
 				void sendAuthAlerts(
 					`New user registered: ${newSession.user.email}`,
 					`${appName} - New User Alert`,

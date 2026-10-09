@@ -201,17 +201,13 @@ export async function sendPasswordChangedEmail(payload: PasswordChangedEmailPayl
  * already logged by the mailer) instead of thrown.
  */
 export async function sendNewUserEmail(to: string, name: string) {
-	try {
-		await mailer.send({
-			to,
-			name,
-			subject: '[Sheppakai Budget] New User was registered!',
-			label: 'new user email',
-			html: `Hi ${escapeHtml(name || to)}!<br><br>Welcome to Sheppakai Budget! We're excited to have you on board.<br><br>Thank you,<br>Sheppakai Budget Team`
-		});
-	} catch (error) {
-		return error;
-	}
+	await mailer.send({
+		to,
+		name,
+		subject: '[Sheppakai Budget] New User was registered!',
+		label: 'new user email',
+		html: `Hi ${escapeHtml(name || to)}!<br><br>Welcome to Sheppakai Budget! We're excited to have you on board.<br><br>Thank you,<br>Sheppakai Budget Team`
+	});
 }
 
 type WelcomeEmailPayload = {
