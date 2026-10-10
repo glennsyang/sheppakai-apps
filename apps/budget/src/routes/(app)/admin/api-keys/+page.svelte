@@ -23,29 +23,28 @@
 
 	let revealedKey = $state<string | null>(null);
 
-	const createFormInstance = $derived(
-		superForm(data.createForm, {
-			id: 'createApiKey',
-			dataType: 'json',
-			resetForm: true,
-			onUpdate: ({ form, result }) => {
-				// Read form.message, not $message: superforms clears the store on submit and only
-				// repopulates it after onUpdate has run, so the store is always undefined here.
-				if (form.message?.type === 'success') {
-					toast.success(form.message.text);
-					const resultData = result.data as { apiKey?: string } | undefined;
-					revealedKey = resultData?.apiKey ?? null;
-				} else if (form.message?.type === 'error') {
-					toast.error(form.message.text);
-				}
-			},
-			onError: ({ result }) => {
-				toast.error(`Failed to create API key: ${result.error.message}`);
+	// Created once at init, not in $derived: re-running superForm when `data` changes tears down
+	// the old instance, which removes the <form> it enhanced from the DOM.
+	// svelte-ignore state_referenced_locally
+	const { form, errors, enhance, submitting } = superForm(data.createForm, {
+		id: 'createApiKey',
+		dataType: 'json',
+		resetForm: true,
+		onUpdate: ({ form, result }) => {
+			// Read form.message, not $message: superforms clears the store on submit and only
+			// repopulates it after onUpdate has run, so the store is always undefined here.
+			if (form.message?.type === 'success') {
+				toast.success(form.message.text);
+				const resultData = result.data as { apiKey?: string } | undefined;
+				revealedKey = resultData?.apiKey ?? null;
+			} else if (form.message?.type === 'error') {
+				toast.error(form.message.text);
 			}
-		})
-	);
-
-	const { form, errors, enhance, submitting } = $derived(createFormInstance);
+		},
+		onError: ({ result }) => {
+			toast.error(`Failed to create API key: ${result.error.message}`);
+		}
+	});
 
 	function toggleScope(scope: ApiScope, checked: boolean) {
 		if (checked) {
