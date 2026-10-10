@@ -16,29 +16,26 @@
 
 	let { open = $bindable(), initialData, isEditing, savingsForm }: Props = $props();
 
-	const formInstance = $derived(
-		superForm(savingsForm, {
-			resetForm: true,
-			onUpdate: ({ form }) => {
-				// Read form.message, not $message: superforms clears the store on submit and only
-				// repopulates it after onUpdate has run, so the store is always undefined here.
-				if (form.message?.type === 'success') {
-					open = false;
-					toast.success(form.message.text);
-				} else if (form.message?.type === 'error') {
-					toast.error(form.message.text);
-				}
-			},
-			onError: ({ result }) => {
-				// Catastrophic DB crashes (Form data is lost)
-				toast.error(
-					`There was an error ${isEditing ? 'updating' : 'creating'} the savings entry. Reason: ${result.error.message}`
-				);
+	// svelte-ignore state_referenced_locally
+	const { form, errors, enhance, submitting } = superForm(savingsForm, {
+		resetForm: true,
+		onUpdate: ({ form }) => {
+			// Read form.message, not $message: superforms clears the store on submit and only
+			// repopulates it after onUpdate has run, so the store is always undefined here.
+			if (form.message?.type === 'success') {
+				open = false;
+				toast.success(form.message.text);
+			} else if (form.message?.type === 'error') {
+				toast.error(form.message.text);
 			}
-		})
-	);
-
-	const { form, errors, enhance, submitting } = $derived(formInstance);
+		},
+		onError: ({ result }) => {
+			// Catastrophic DB crashes (Form data is lost)
+			toast.error(
+				`There was an error ${isEditing ? 'updating' : 'creating'} the savings entry. Reason: ${result.error.message}`
+			);
+		}
+	});
 
 	$effect(() => {
 		if (open) {

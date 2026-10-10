@@ -21,28 +21,23 @@
 
 	let open = $state(false);
 
-	const formInstance = $derived(
-		superForm(dashboardVisibilityForm, {
-			dataType: 'json',
-			resetForm: false,
-			onUpdate: ({ form }) => {
-				// Read form.message, not $message: superforms clears the store on submit and only
-				// repopulates it after onUpdate has run, so the store is always undefined here.
-				if (form.message?.type === 'success') {
-					open = false;
-				} else if (form.message?.type === 'error') {
-					toast.error(form.message.text);
-				}
-			},
-			onError: ({ result }) => {
-				toast.error(
-					`There was an error saving your dashboard preferences: ${result.error.message}`
-				);
+	// svelte-ignore state_referenced_locally
+	const { form, enhance, submitting } = superForm(dashboardVisibilityForm, {
+		dataType: 'json',
+		resetForm: false,
+		onUpdate: ({ form }) => {
+			// Read form.message, not $message: superforms clears the store on submit and only
+			// repopulates it after onUpdate has run, so the store is always undefined here.
+			if (form.message?.type === 'success') {
+				open = false;
+			} else if (form.message?.type === 'error') {
+				toast.error(form.message.text);
 			}
-		})
-	);
-
-	const { form, enhance, submitting } = $derived(formInstance);
+		},
+		onError: ({ result }) => {
+			toast.error(`There was an error saving your dashboard preferences: ${result.error.message}`);
+		}
+	});
 
 	function toggleSection(key: string, hidden: boolean) {
 		if (hidden) {

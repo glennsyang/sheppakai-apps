@@ -24,28 +24,25 @@
 		preselectedCustomerId
 	}: Props = $props();
 
-	const formInstance = $derived(
-		superForm(jobForm, {
-			resetForm: true,
-			onUpdate: ({ form }) => {
-				// Read form.message, not $message: superforms clears the store on submit and only
-				// repopulates it after onUpdate has run, so the store is always undefined here.
-				if (form.message?.type === 'success') {
-					open = false;
-					toast.success(form.message.text);
-				} else if (form.message?.type === 'error') {
-					toast.error(form.message.text);
-				}
-			},
-			onError: ({ result }) => {
-				toast.error(
-					`There was an error ${isEditing ? 'updating' : 'logging'} the job. Reason: ${result.error.message}`
-				);
+	// svelte-ignore state_referenced_locally
+	const { form, errors, enhance, submitting } = superForm(jobForm, {
+		resetForm: true,
+		onUpdate: ({ form }) => {
+			// Read form.message, not $message: superforms clears the store on submit and only
+			// repopulates it after onUpdate has run, so the store is always undefined here.
+			if (form.message?.type === 'success') {
+				open = false;
+				toast.success(form.message.text);
+			} else if (form.message?.type === 'error') {
+				toast.error(form.message.text);
 			}
-		})
-	);
-
-	const { form, errors, enhance, submitting } = $derived(formInstance);
+		},
+		onError: ({ result }) => {
+			toast.error(
+				`There was an error ${isEditing ? 'updating' : 'logging'} the job. Reason: ${result.error.message}`
+			);
+		}
+	});
 
 	$effect(() => {
 		if (open) {
