@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import { getMondayOf } from '$lib/dates';
 import { logger } from '$lib/server/logger';
 import type { MealPlan, MealPlanEntry, MealPlanEntryWithRecipe } from '$lib/types';
@@ -7,6 +5,7 @@ import { eq } from 'drizzle-orm';
 
 import { getDb } from '../db';
 import { mealPlans, mealPlanEntries, recipes } from '../db/schema';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '../db/utils';
 import { rowToRecipe } from './recipes';
 
 function rowToMealPlan(row: typeof mealPlans.$inferSelect): MealPlan {
@@ -37,10 +36,9 @@ type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
  * Upsert on the unique `week_start_date` index so concurrent callers converge on one
  * shared plan per week. Must run inside the caller's transaction.
  */
-function getOrCreateMealPlan(tx: Tx, userId: string, weekStartDate: string): MealPlan {
-	const now = new Date();
+function getOrCreateMealPlan(tx: Tx, userId: string, weekStartDate: string, now: Date): MealPlan {
 	tx.insert(mealPlans)
-		.values({ id: randomUUID(), userId, weekStartDate, createdAt: now, updatedAt: now })
+		.values({ id: generateId(), userId, weekStartDate, ...withTimestampsForCreate(now) })
 		.onConflictDoNothing({ target: mealPlans.weekStartDate })
 		.run();
 
@@ -84,21 +82,21 @@ export async function addMealPlanEntry(
 	// index makes the upsert replace the day's recipe instead of adding a second row.
 	const db = getDb();
 	return db.transaction((tx) => {
-		const plan = getOrCreateMealPlan(tx, userId, weekStartDate);
+		// One timestamp for the plan (if new) and its entry
 		const now = new Date();
+		const plan = getOrCreateMealPlan(tx, userId, weekStartDate, now);
 		const entry = tx
 			.insert(mealPlanEntries)
 			.values({
-				id: randomUUID(),
+				id: generateId(),
 				mealPlanId: plan.id,
 				dayOfWeek,
 				recipeId,
-				createdAt: now,
-				updatedAt: now
+				...withTimestampsForCreate(now)
 			})
 			.onConflictDoUpdate({
 				target: [mealPlanEntries.mealPlanId, mealPlanEntries.dayOfWeek],
-				set: { recipeId, updatedAt: now }
+				set: { recipeId, ...withTimestampsForUpdate(now) }
 			})
 			.returning()
 			.get();

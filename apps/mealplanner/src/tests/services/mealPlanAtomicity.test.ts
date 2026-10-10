@@ -161,6 +161,31 @@ describe('addMealPlanEntry (#164)', () => {
 		expect(sqlite.prepare(`SELECT COUNT(*) FROM meal_plan_entries`).pluck().get()).toBe(1);
 	});
 
+	it('gives a new plan and its first entry the same timestamp', async () => {
+		// Columns store whole seconds, so make every clock read a second later than the last
+		const RealDate = Date;
+		let reads = 0;
+		vi.stubGlobal(
+			'Date',
+			class extends RealDate {
+				constructor(...args: ConstructorParameters<typeof Date>) {
+					if (args.length > 0) super(...args);
+					else super(RealDate.UTC(2026, 8, 28) + reads++ * 1000);
+				}
+			}
+		);
+
+		try {
+			await addMealPlanEntry('u1', '2026-09-28', 0, 'r1');
+		} finally {
+			vi.unstubAllGlobals();
+		}
+
+		const plan = sqlite.prepare(`SELECT created_at, updated_at FROM meal_plans`).get();
+		const entry = sqlite.prepare(`SELECT created_at, updated_at FROM meal_plan_entries`).get();
+		expect(entry).toEqual(plan);
+	});
+
 	it('handles concurrent calls for the same day without duplicates', async () => {
 		await Promise.all([
 			addMealPlanEntry('u1', '2026-10-05', 4, 'r1'),

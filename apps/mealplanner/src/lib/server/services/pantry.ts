@@ -1,11 +1,10 @@
-import { randomUUID } from 'node:crypto';
-
 import { logger } from '$lib/server/logger';
 import type { PantryItem } from '$lib/types';
 import { eq } from 'drizzle-orm';
 
 import { getDb } from '../db';
 import { pantryItems } from '../db/schema';
+import { generateId, withTimestampsForCreate } from '../db/utils';
 
 function rowToItem(row: typeof pantryItems.$inferSelect): PantryItem {
 	return {
@@ -33,8 +32,7 @@ export async function addPantryItem(
 	unit?: string | null
 ): Promise<PantryItem> {
 	logger.debug('addPantryItem', { userId, name });
-	const now = new Date();
-	const id = randomUUID();
+	const id = generateId();
 	const db = getDb();
 	await db.insert(pantryItems).values({
 		id,
@@ -42,8 +40,7 @@ export async function addPantryItem(
 		name,
 		quantity: quantity ?? null,
 		unit: unit ?? null,
-		createdAt: now,
-		updatedAt: now
+		...withTimestampsForCreate()
 	});
 	const [row] = db.select().from(pantryItems).where(eq(pantryItems.id, id)).all();
 	return rowToItem(row);
