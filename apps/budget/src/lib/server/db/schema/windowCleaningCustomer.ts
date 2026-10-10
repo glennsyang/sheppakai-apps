@@ -1,5 +1,5 @@
-import { relations, sql } from 'drizzle-orm';
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { relations } from 'drizzle-orm';
+import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 import { generateId } from '../utils';
 import user from './user';
@@ -14,23 +14,17 @@ const windowCleaningCustomer = sqliteTable('window_cleaning_customers', {
 	phoneNumber: text('phone_number'),
 	email: text('email'),
 	notes: text('notes'),
-	deletedAt: text('deleted_at'),
+	deletedAt: integer('deleted_at', { mode: 'timestamp' }),
 	deletedBy: text('deleted_by').references(() => user.id),
 	userId: text('user_id')
 		.notNull()
 		.references(() => user.id),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.default(sql`(current_timestamp)`),
-	createdBy: text('created_by')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.references(() => user.id),
-	updatedAt: text('updated_at')
-		.notNull()
-		.default(sql`(current_timestamp)`),
-	updatedBy: text('updated_by')
-		.notNull()
-		.references(() => user.id)
+		.$defaultFn(() => new Date())
 });
 
 export const windowCleaningCustomerRelations = relations(windowCleaningCustomer, ({ one }) => ({

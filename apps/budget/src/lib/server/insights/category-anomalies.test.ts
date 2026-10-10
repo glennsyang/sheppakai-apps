@@ -17,7 +17,7 @@ const fixtureUser: Transaction['user'] = {
 	updatedAt: new Date('2026-01-01')
 };
 
-const audit = { createdAt: '', createdBy: 'user-1', updatedAt: '', updatedBy: 'user-1' };
+const audit = { createdAt: new Date(0), updatedAt: new Date(0) };
 
 function buildTx(
 	categoryId: string,

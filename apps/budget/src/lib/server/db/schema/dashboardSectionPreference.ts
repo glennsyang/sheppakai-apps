@@ -1,5 +1,5 @@
-import { relations, sql } from 'drizzle-orm';
-import { sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { relations } from 'drizzle-orm';
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 import { generateId } from '../utils';
 import user from './user';
@@ -14,12 +14,12 @@ const dashboardSectionPreference = sqliteTable(
 		// Presence of a row means this section is hidden for this user (opt-out model),
 		// so sections added later default to visible with no backfill needed.
 		sectionKey: text('section_key').notNull(),
-		createdAt: text('created_at')
+		createdAt: integer('created_at', { mode: 'timestamp' })
 			.notNull()
-			.default(sql`(current_timestamp)`),
-		updatedAt: text('updated_at')
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
 			.notNull()
-			.default(sql`(current_timestamp)`)
+			.$defaultFn(() => new Date())
 	},
 	(table) => [
 		uniqueIndex('dashboard_section_preference_user_section_idx').on(table.userId, table.sectionKey)

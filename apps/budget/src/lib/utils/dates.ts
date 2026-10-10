@@ -1,5 +1,3 @@
-import { formatTimestamp } from '@sheppakai/shared/timestamps';
-
 /**
  * Date Utilities for Local Timezone Storage
  *
@@ -157,14 +155,6 @@ export function getTodayDate(): string {
 	const month = padMonth(String(now.getMonth() + 1));
 	const day = padMonth(String(now.getDate()));
 	return `${year}-${month}-${day}`;
-}
-
-/**
- * Get current UTC timestamp for audit fields
- * Matches SQLite's current_timestamp format
- */
-export function getCurrentUTCTimestamp(): string {
-	return formatTimestamp(new Date(), 'sqlite');
 }
 
 /**

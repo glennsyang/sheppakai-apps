@@ -24,7 +24,7 @@ const user: Transaction['user'] = {
 	updatedAt: new Date('2026-01-01')
 };
 
-const audit = { createdAt: '', createdBy: 'u1', updatedAt: '', updatedBy: 'u1' };
+const audit = { createdAt: new Date(0), updatedAt: new Date(0) };
 
 const transaction: Transaction = {
 	id: 't1',

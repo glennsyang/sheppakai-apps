@@ -14,12 +14,11 @@ export type AdminApiLogEntry = {
 	path: string;
 	action: string;
 	statusCode: number;
-	createdAt: string;
+	createdAt: Date;
 };
 
-function formatAuditTimestamp(createdAt: string): string {
-	// createdAt is written by SQLite's `current_timestamp`, which is UTC with no offset suffix.
-	return new Date(`${createdAt.replace(' ', 'T')}Z`).toLocaleString('en-US', {
+function formatAuditTimestamp(createdAt: Date): string {
+	return createdAt.toLocaleString('en-US', {
 		month: 'short',
 		day: 'numeric',
 		hour: 'numeric',

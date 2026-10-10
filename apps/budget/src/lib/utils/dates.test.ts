@@ -10,7 +10,6 @@ import {
 	formatTime12h,
 	getCalendarYearMonthsRange,
 	getCurrentPeriodDueDate,
-	getCurrentUTCTimestamp,
 	getDaysUntilDue,
 	getMonthDateRange,
 	getMonthProgress,
@@ -189,29 +188,6 @@ describe('Date Utilities - Local Timezone Storage', () => {
 			vi.setSystemTime(new Date('2026-01-01T00:00:00'));
 			const result = getTodayDate();
 			expect(result).toBe('2026-01-01');
-		});
-	});
-
-	describe('getCurrentUTCTimestamp', () => {
-		beforeEach(() => {
-			vi.useFakeTimers();
-		});
-
-		afterEach(() => {
-			vi.useRealTimers();
-		});
-
-		it('should return UTC timestamp in correct format', () => {
-			vi.setSystemTime(new Date('2026-01-15T14:30:45.123Z'));
-			const result = getCurrentUTCTimestamp();
-			expect(result).toBe('2026-01-15 14:30:45');
-		});
-
-		it('should match SQLite current_timestamp format', () => {
-			vi.setSystemTime(new Date('2026-03-20T09:05:03.456Z'));
-			const result = getCurrentUTCTimestamp();
-			expect(result).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
-			expect(result).toBe('2026-03-20 09:05:03');
 		});
 	});
 

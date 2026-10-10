@@ -1,60 +1,10 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-// WithAuditFieldsForUpdate stamps updatedAt from the clock by default, so we
+// WithUpdatedAt stamps updatedAt from the clock by default, so we
 // Can control the clock via fake timers.
-import { generateId, withAuditFieldsForCreate, withAuditFieldsForUpdate } from './utils';
+import { generateId, withUpdatedAt } from './utils';
 
-const makeUser = (id = 'user-1') =>
-	({
-		createdAt: new Date(),
-		email: 'test@example.com',
-		emailVerified: false,
-		id,
-		name: 'Test User',
-		updatedAt: new Date()
-	}) as unknown as Parameters<typeof withAuditFieldsForCreate>[1];
-
-describe('withAuditFieldsForCreate', () => {
-	it('accepts a bare userId string', () => {
-		const result = withAuditFieldsForCreate({ name: 'x' }, 'api-user');
-
-		expect(result.createdBy).toBe('api-user');
-		expect(result.updatedBy).toBe('api-user');
-	});
-
-	it('adds createdBy and updatedBy from user.id', () => {
-		const data = { amount: 50, name: 'groceries' };
-		const result = withAuditFieldsForCreate(data, makeUser('abc'));
-
-		expect(result.createdBy).toBe('abc');
-		expect(result.updatedBy).toBe('abc');
-	});
-
-	it('preserves all original data fields', () => {
-		const data = { amount: 1200, categoryId: 'cat-1', name: 'rent' };
-		const result = withAuditFieldsForCreate(data, makeUser());
-
-		expect(result.name).toBe('rent');
-		expect(result.amount).toBe(1200);
-		expect(result.categoryId).toBe('cat-1');
-	});
-
-	it('does not mutate the original data object', () => {
-		const data = { name: 'original' };
-		withAuditFieldsForCreate(data, makeUser());
-
-		expect(Object.keys(data)).not.toContain('createdBy');
-	});
-});
-
-describe('withAuditFieldsForUpdate', () => {
-	it('accepts a bare userId string', () => {
-		const result = withAuditFieldsForUpdate({ paid: true }, 'api-user');
-
-		expect(result.updatedBy).toBe('api-user');
-		expect(result.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
-	});
-
+describe('withUpdatedAt', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date('2026-03-15T10:30:00.000Z'));
@@ -64,30 +14,18 @@ describe('withAuditFieldsForUpdate', () => {
 		vi.useRealTimers();
 	});
 
-	it('adds updatedBy from user.id', () => {
-		const result = withAuditFieldsForUpdate({ amount: 200 }, makeUser('xyz'));
-		expect(result.updatedBy).toBe('xyz');
-	});
-
-	it('adds updatedAt as SQLite-compatible UTC timestamp', () => {
-		const result = withAuditFieldsForUpdate({ amount: 200 }, makeUser());
-		// SQLite current_timestamp format: YYYY-MM-DD HH:MM:SS (space-separated, no milliseconds)
-		expect(result.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
-		expect(result.updatedAt).toBe('2026-03-15 10:30:00');
+	it('adds updatedAt as a Date from the clock', () => {
+		const result = withUpdatedAt({ amount: 200 });
+		expect(result.updatedAt).toEqual(new Date('2026-03-15T10:30:00.000Z'));
 	});
 
 	it('uses the given now instead of the clock', () => {
-		const result = withAuditFieldsForUpdate(
-			{ amount: 200 },
-			makeUser(),
-			new Date('2025-01-02T03:04:05.678Z')
-		);
-		expect(result.updatedAt).toBe('2025-01-02 03:04:05');
+		const now = new Date('2025-01-02T03:04:05.678Z');
+		expect(withUpdatedAt({ amount: 200 }, now).updatedAt).toBe(now);
 	});
 
 	it('preserves all original data fields', () => {
-		const data = { amount: 99, name: 'updated name' };
-		const result = withAuditFieldsForUpdate(data, makeUser());
+		const result = withUpdatedAt({ amount: 99, name: 'updated name' });
 
 		expect(result.name).toBe('updated name');
 		expect(result.amount).toBe(99);
@@ -95,9 +33,9 @@ describe('withAuditFieldsForUpdate', () => {
 
 	it('does not mutate the original data object', () => {
 		const data = { name: 'original' };
-		withAuditFieldsForUpdate(data, makeUser());
+		withUpdatedAt(data);
 
-		expect(Object.keys(data)).not.toContain('updatedBy');
+		expect(Object.keys(data)).not.toContain('updatedAt');
 	});
 });
 

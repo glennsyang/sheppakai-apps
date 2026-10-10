@@ -1,7 +1,6 @@
 import { getDb } from '$lib/server/db';
 import { windowCleaningJobQueries } from '$lib/server/db/queries';
 import { windowCleaningJob } from '$lib/server/db/schema';
-import { withAuditFieldsForCreate } from '$lib/server/db/utils';
 import type { WindowCleaningJob } from '$lib/types';
 import { formatDateForStorage } from '$lib/utils/dates';
 
@@ -34,7 +33,7 @@ export async function createWindowCleaningJob(
 ): Promise<WindowCleaningJob> {
 	const [inserted] = await getDb()
 		.insert(windowCleaningJob)
-		.values(withAuditFieldsForCreate({ ...toWindowCleaningJobRow(input), userId }, userId))
+		.values({ ...toWindowCleaningJobRow(input), userId })
 		.returning();
 
 	const withRelations = await windowCleaningJobQueries.findById(inserted.id);

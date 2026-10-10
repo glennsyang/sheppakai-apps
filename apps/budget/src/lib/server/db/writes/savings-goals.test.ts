@@ -20,13 +20,12 @@ vi.mock('$lib/server/db/schema', () => ({ savingsGoal: { id: 'savingsGoal.id' } 
 import { unarchiveSavingsGoal } from './savings-goals';
 
 describe('unarchiveSavingsGoal', () => {
-	it('sets the goal active with audit fields, scoped to the goal id', async () => {
-		await unarchiveSavingsGoal('goal-1', 'user-1');
+	it('sets the goal active with updatedAt, scoped to the goal id', async () => {
+		await unarchiveSavingsGoal('goal-1');
 
 		const setValues = mockUpdateSet.mock.calls[0][0];
 		expect(setValues.status).toBe('active');
-		expect(setValues.updatedBy).toBe('user-1');
-		expect(typeof setValues.updatedAt).toBe('string');
+		expect(setValues.updatedAt).toBeInstanceOf(Date);
 		expect(mockUpdateWhere).toHaveBeenCalledWith({ field: 'savingsGoal.id', value: 'goal-1' });
 	});
 });

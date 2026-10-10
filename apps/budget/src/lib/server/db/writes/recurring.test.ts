@@ -31,17 +31,16 @@ describe('markRecurringPaid', () => {
 		mockFindById.mockClear();
 	});
 
-	it('sets paid, updatedBy, and updatedAt', async () => {
-		await markRecurringPaid('rec-1', true, 'user-1');
+	it('sets paid and updatedAt', async () => {
+		await markRecurringPaid('rec-1', true);
 
 		const setValues = mockUpdateSet.mock.calls[0][0] as Record<string, unknown>;
 		expect(setValues.paid).toBe(true);
-		expect(setValues.updatedBy).toBe('user-1');
-		expect(typeof setValues.updatedAt).toBe('string');
+		expect(setValues.updatedAt).toBeInstanceOf(Date);
 	});
 
 	it('re-fetches the updated record', async () => {
-		const result = await markRecurringPaid('rec-1', false, 'user-1');
+		const result = await markRecurringPaid('rec-1', false);
 
 		expect(mockFindById).toHaveBeenCalledWith('rec-1');
 		expect(result).toEqual({ id: 'rec-1', paid: true });
@@ -50,7 +49,7 @@ describe('markRecurringPaid', () => {
 	it('returns undefined when the record does not exist', async () => {
 		mockFindById.mockResolvedValueOnce(undefined);
 
-		const result = await markRecurringPaid('missing', true, 'user-1');
+		const result = await markRecurringPaid('missing', true);
 
 		expect(result).toBeUndefined();
 	});

@@ -29,9 +29,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions = {
-	restore: adminFormAction(restoreCustomerSchema, async (_event, form, user) => {
+	restore: adminFormAction(restoreCustomerSchema, async (_event, form) => {
 		try {
-			await restoreWindowCleaningCustomer(form.data.customerId, user.id);
+			await restoreWindowCleaningCustomer(form.data.customerId);
 
 			logger.info(`Customer restored: ${form.data.customerId}`);
 			return message(form, { type: 'success', text: 'Customer restored successfully' });

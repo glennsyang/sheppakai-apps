@@ -34,7 +34,7 @@ export const columns: ColumnDef<Features, DeletedCustomer>[] = [
 		accessorKey: 'deletedAt',
 		header: 'Deleted',
 		cell: ({ row }) =>
-			row.original.deletedAt ? formatLocalTimestamp(row.original.deletedAt) : '—',
+			row.original.deletedAt ? formatLocalTimestamp(row.original.deletedAt.toISOString()) : '—',
 		meta: { mobile: 'subvalue' }
 	},
 	{

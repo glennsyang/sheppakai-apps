@@ -1,7 +1,6 @@
 import { getDb } from '$lib/server/db';
 import { transactionQueries } from '$lib/server/db/queries';
 import { transaction } from '$lib/server/db/schema';
-import { withAuditFieldsForCreate } from '$lib/server/db/utils';
 import { evaluateCreatedTransactionBudgetAlert } from '$lib/server/notifications/budget-threshold-alerts';
 import type { Transaction } from '$lib/types';
 import { formatDateForStorage } from '$lib/utils/dates';
@@ -41,7 +40,7 @@ export async function createTransaction(
 ): Promise<Transaction> {
 	const [inserted] = await getDb()
 		.insert(transaction)
-		.values(withAuditFieldsForCreate({ ...toTransactionRow(input), userId }, userId))
+		.values({ ...toTransactionRow(input), userId })
 		.returning();
 
 	await evaluateCreatedTransactionBudgetAlert(inserted);

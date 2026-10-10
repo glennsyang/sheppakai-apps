@@ -1,4 +1,4 @@
-import { relations, sql } from 'drizzle-orm';
+import { relations } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 import { generateId } from '../utils';
@@ -16,9 +16,9 @@ const apiAuditLog = sqliteTable('api_audit_log', {
 	path: text('path').notNull(),
 	action: text('action').notNull(),
 	statusCode: integer('status_code').notNull(),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.default(sql`(current_timestamp)`)
+		.$defaultFn(() => new Date())
 });
 
 export const apiAuditLogRelations = relations(apiAuditLog, ({ one }) => ({

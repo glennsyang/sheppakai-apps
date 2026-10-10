@@ -24,7 +24,7 @@ export const PATCH: RequestHandler = async ({ request, url, params }) => {
 	}
 
 	try {
-		const updated = await markRecurringPaid(params.id, parsed.data.paid, auth.userId);
+		const updated = await markRecurringPaid(params.id, parsed.data.paid);
 		if (!updated) {
 			return apiError('not_found', 'Recurring expense not found.', 404);
 		}

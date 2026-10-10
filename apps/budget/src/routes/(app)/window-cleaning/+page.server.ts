@@ -5,12 +5,11 @@ import { deleteJob, updateJob } from '$lib/server/actions/window-cleaning-jobs';
 import { getDb } from '$lib/server/db';
 import { windowCleaningCustomerQueries, windowCleaningJobQueries } from '$lib/server/db/queries';
 import { windowCleaningCustomer, windowCleaningJob } from '$lib/server/db/schema';
-import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
+import { withUpdatedAt } from '$lib/server/db/utils';
 import { toWindowCleaningCustomerRow } from '$lib/server/db/writes/window-cleaning-customers';
 import { toWindowCleaningJobRow } from '$lib/server/db/writes/window-cleaning-jobs';
 import { logger } from '$lib/server/logger';
 import type { WindowCleaningJob } from '$lib/types';
-import { getCurrentUTCTimestamp } from '$lib/utils/dates';
 import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -119,17 +118,10 @@ export const actions = {
 		const id = form.data.id;
 
 		try {
+			const now = new Date();
 			await getDb()
 				.update(windowCleaningCustomer)
-				.set(
-					withAuditFieldsForUpdate(
-						{
-							deletedAt: getCurrentUTCTimestamp(),
-							deletedBy: user.id
-						},
-						user
-					)
-				)
+				.set(withUpdatedAt({ deletedAt: now, deletedBy: user.id }, now))
 				.where(eq(windowCleaningCustomer.id, id));
 
 			logger.info(`Customer soft-deleted: ${id} by ${user.id}`);
