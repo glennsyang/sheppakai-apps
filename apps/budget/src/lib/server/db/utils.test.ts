@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-// WithAuditFieldsForUpdate stamps updatedAt via getCurrentUTCTimestamp, so we
+// WithAuditFieldsForUpdate stamps updatedAt from the clock by default, so we
 // Can control the clock via fake timers.
 import { generateId, withAuditFieldsForCreate, withAuditFieldsForUpdate } from './utils';
 
@@ -74,6 +74,15 @@ describe('withAuditFieldsForUpdate', () => {
 		// SQLite current_timestamp format: YYYY-MM-DD HH:MM:SS (space-separated, no milliseconds)
 		expect(result.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
 		expect(result.updatedAt).toBe('2026-03-15 10:30:00');
+	});
+
+	it('uses the given now instead of the clock', () => {
+		const result = withAuditFieldsForUpdate(
+			{ amount: 200 },
+			makeUser(),
+			new Date('2025-01-02T03:04:05.678Z')
+		);
+		expect(result.updatedAt).toBe('2025-01-02 03:04:05');
 	});
 
 	it('preserves all original data fields', () => {

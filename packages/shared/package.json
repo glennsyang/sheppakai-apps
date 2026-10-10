@@ -25,7 +25,8 @@
 		"./ntfy": "./src/ntfy.ts",
 		"./rate-limiter": "./src/rate-limiter.ts",
 		"./sentry-data-collection": "./src/sentry-data-collection.ts",
-		"./server-handle": "./src/server-handle.ts"
+		"./server-handle": "./src/server-handle.ts",
+		"./timestamps": "./src/timestamps.ts"
 	},
 	"scripts": {
 		"check": "tsc --noEmit",

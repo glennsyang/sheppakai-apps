@@ -272,6 +272,8 @@ export const actions = {
 		try {
 			const db = getDb();
 			const workoutId = generateId();
+			// One timestamp for the workout log and its exercises
+			const now = new Date();
 
 			// The better-sqlite3 driver runs transaction callbacks synchronously, so every
 			// query inside must use `.run()` instead of `await`.
@@ -286,7 +288,7 @@ export const actions = {
 						durationMinutes: form.data.durationMinutes || null,
 						steps: form.data.steps || null,
 						notes: form.data.notes || null,
-						...withTimestampsForCreate()
+						...withTimestampsForCreate(now)
 					})
 					.run();
 
@@ -300,7 +302,7 @@ export const actions = {
 								sets: exercise.sets || null,
 								reps: exercise.reps || null,
 								weightLbs: exercise.weightLbs || null,
-								...withTimestampsForCreate()
+								...withTimestampsForCreate(now)
 							}))
 						)
 						.run();
@@ -650,6 +652,9 @@ export const actions = {
 				return message(form, { type: 'error', text: 'Workout not found.' }, { status: 404 });
 			}
 
+			// One timestamp for the workout log and its exercises
+			const now = new Date();
+
 			// The better-sqlite3 driver runs transaction callbacks synchronously, so every
 			// query inside must use its sync execution method (`.run()`) instead of `await`
 			// — an `async` callback throws "Transaction function cannot return a promise"
@@ -663,7 +668,7 @@ export const actions = {
 						durationMinutes: form.data.durationMinutes || null,
 						steps: form.data.steps || null,
 						notes: form.data.notes || null,
-						...withTimestampsForUpdate()
+						...withTimestampsForUpdate(now)
 					})
 					.where(and(eq(workoutLogs.id, form.data.id), eq(workoutLogs.userId, user.id)))
 					.run();
@@ -680,7 +685,7 @@ export const actions = {
 								sets: exercise.sets || null,
 								reps: exercise.reps || null,
 								weightLbs: exercise.weightLbs || null,
-								...withTimestampsForCreate()
+								...withTimestampsForCreate(now)
 							}))
 						)
 						.run();

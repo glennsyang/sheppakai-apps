@@ -126,6 +126,8 @@ export const actions = {
 			const companions = toCommaSeparatedJson(form.data.companions);
 
 			const visitId = generateId();
+			// One timestamp for the visit and the person it clears
+			const now = new Date();
 
 			await db.insert(visits).values({
 				id: visitId,
@@ -136,14 +138,14 @@ export const actions = {
 				companions,
 				notes: form.data.notes || null,
 				followUpDate: form.data.followUpDate || null,
-				...withTimestampsForCreate()
+				...withTimestampsForCreate(now)
 			});
 
 			// A real visit's follow-up date now takes over as the source of truth
 			if (person.scheduledVisitDate) {
 				await db
 					.update(people)
-					.set({ scheduledVisitDate: null, ...withTimestampsForUpdate() })
+					.set({ scheduledVisitDate: null, ...withTimestampsForUpdate(now) })
 					.where(and(eq(people.id, params.id), eq(people.userId, user.id)));
 			}
 
