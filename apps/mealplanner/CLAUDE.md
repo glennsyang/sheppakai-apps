@@ -59,7 +59,7 @@ Always use **Node.js 22.23.3** for all development, testing, and tooling. Do not
 - **snake_case** for all DB column names.
 - Every table has `created_at` and `updated_at` audit columns.
 - IDs are `crypto.randomUUID()` text strings — use `generateId()` from `$lib/server/db/utils.ts`.
-- Set timestamps with `withTimestampsForCreate(now?)` / `withTimestampsForUpdate(now?)` from `$lib/server/db/utils.ts` (wrapping `@sheppakai/shared/timestamps`; they return `Date`s for the `integer(..., { mode: 'timestamp' })` columns). When one write touches several rows (e.g. a meal plan and its entry), create one `const now = new Date()` and pass it to every call.
+- Set timestamps with `withTimestampsForCreate(now?)` / `withTimestampsForUpdate(now?)` from `$lib/server/db/utils.ts` (re-exported from `@sheppakai/shared/timestamps`; they return `Date`s for the `integer(..., { mode: 'timestamp' })` columns). When one write touches several rows (e.g. a meal plan and its entry), create one `const now = new Date()` and pass it to every call.
 
 ### Forms
 

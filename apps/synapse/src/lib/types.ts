@@ -31,8 +31,8 @@ export type JournalEntry = {
 		temp?: number;
 		condition?: string;
 	} | null;
-	createdAt: string;
-	updatedAt: string;
+	createdAt: Date;
+	updatedAt: Date;
 };
 
 export type Exercise = {
@@ -76,7 +76,7 @@ export type DailyAgendaEntry = {
 	sourceType: DailyAgendaSourceType;
 	sortOrder: number;
 	completed: boolean;
-	completedAt: string | null;
+	completedAt: Date | null;
 };
 
 export type DailyAgendaDay = {

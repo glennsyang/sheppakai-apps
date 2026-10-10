@@ -15,7 +15,7 @@ import { logger } from '$lib/server/logger';
 import { getVisitStatusThresholdsByUserIds } from '$lib/server/visit-status-settings';
 import { APP_TIME_ZONE, getTodayString } from '$lib/utils/date';
 import { getWorkoutNotificationTag } from '$lib/utils/workout';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, gte, sql } from 'drizzle-orm';
 
 import { loadDailyAgendaEntriesForDate } from '../daily-agenda';
 import { getDb } from '../db';
@@ -116,9 +116,9 @@ async function alreadySentToday(
 		.get();
 
 	// Compare in Pacific time rather than the UTC date SQLite's DATE() would
-	// extract from the stored ISO timestamp, since sentAt is stored in UTC
-	// but "today" is defined in Pacific time throughout this file.
-	return !!existing && getTodayString(new Date(existing.sentAt)) === today;
+	// extract from the stored epoch timestamp, since "today" is defined in
+	// Pacific time throughout this file.
+	return !!existing && getTodayString(existing.sentAt) === today;
 }
 
 /**
@@ -135,7 +135,7 @@ async function logNotification(
 		userId,
 		notificationType,
 		entityId,
-		sentAt: new Date().toISOString(),
+		sentAt: new Date(),
 		emailSubject: subject
 	});
 }
@@ -405,7 +405,7 @@ async function processVisitWarnings(): Promise<void> {
 					eq(emailNotifications.userId, userData.id),
 					eq(emailNotifications.notificationType, 'visit_warning'),
 					eq(emailNotifications.entityId, warningEntityId),
-					sql`${emailNotifications.sentAt} >= ${sevenDaysAgo.toISOString()}`
+					gte(emailNotifications.sentAt, sevenDaysAgo)
 				)
 			)
 			.get();

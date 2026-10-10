@@ -241,8 +241,8 @@ function moveTaskIdToIndex(taskIds: string[], taskId: string, targetIndex: numbe
 function getCompletedAtForTaskStateChange(
 	fromState: TaskState,
 	toState: TaskState,
-	timestamp: string
-): string | null | undefined {
+	timestamp: Date
+): Date | null | undefined {
 	if (fromState !== 'done' && toState === 'done') {
 		return timestamp;
 	}
@@ -269,7 +269,7 @@ function applyTaskSortOrder(
 	db: TaskBoardClient,
 	userId: string,
 	taskIds: string[],
-	timestamp: string
+	timestamp: Date
 ): void {
 	for (let index = 0; index < taskIds.length; index += 1) {
 		db.update(tasks)
@@ -293,7 +293,7 @@ function moveTaskWithinBoard(
 	taskId: string,
 	toState: TaskState,
 	toIndex: number,
-	timestamp: string
+	timestamp: Date
 ): MoveTaskWithinBoardResult | null {
 	const existing = db
 		.select({ id: tasks.id, state: tasks.state })
@@ -323,8 +323,8 @@ function moveTaskWithinBoard(
 	const completedAt = getCompletedAtForTaskStateChange(fromState, toState, timestamp);
 	const stateUpdate: {
 		state: TaskState;
-		updatedAt: string;
-		completedAt?: string | null;
+		updatedAt: Date;
+		completedAt?: Date | null;
 	} = {
 		state: toState,
 		updatedAt: timestamp
@@ -659,7 +659,7 @@ export const actions = {
 		if (!form.valid) return invalidForm(form);
 
 		try {
-			const timestamp = new Date().toISOString();
+			const timestamp = new Date();
 			const moveResult = getDb().transaction((tx) =>
 				moveTaskWithinBoard(
 					tx,
@@ -706,7 +706,7 @@ export const actions = {
 				return { form };
 			}
 
-			const timestamp = new Date().toISOString();
+			const timestamp = new Date();
 			const moveResult = getDb().transaction((tx) =>
 				moveTaskWithinBoard(
 					tx,

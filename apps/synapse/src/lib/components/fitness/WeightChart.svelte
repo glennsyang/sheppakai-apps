@@ -18,7 +18,7 @@
 		date: string;
 		time: string | null;
 		weightLbs: number;
-		createdAt: string;
+		createdAt: Date;
 	}
 
 	let { title, description, entries, goalWeight }: Props = $props();

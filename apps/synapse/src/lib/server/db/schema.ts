@@ -122,11 +122,11 @@ export const emailNotifications = sqliteTable('email_notifications', {
 		.references(() => user.id, { onDelete: 'cascade' }),
 	notificationType: text('notification_type').notNull(), // 'workout_reminder' | 'meditation_reminder' | 'visit_warning' | 'daily_agenda_digest'
 	entityId: text('entity_id'), // ID of related entity (workout_reminder, meditation_schedule, or person)
-	sentAt: text('sent_at').notNull(), // ISO 8601 timestamp
+	sentAt: integer('sent_at', { mode: 'timestamp' }).notNull(),
 	emailSubject: text('email_subject').notNull(),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const emailNotificationsRelations = relations(emailNotifications, ({ one }) => ({
@@ -149,12 +149,12 @@ export const journalEntries = sqliteTable('journal_entries', {
 	content: text('content').notNull(),
 	location: text('location'), // Optional location string
 	weather: text('weather'), // Optional weather JSON object
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const journalEntriesRelations = relations(journalEntries, ({ one }) => ({
@@ -179,12 +179,12 @@ export const moodLogs = sqliteTable(
 		mood: text('mood').notNull(),
 		customMood: text('custom_mood'),
 		notes: text('notes'),
-		createdAt: text('created_at')
+		createdAt: integer('created_at', { mode: 'timestamp' })
 			.notNull()
-			.$defaultFn(() => new Date().toISOString()),
-		updatedAt: text('updated_at')
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
 			.notNull()
-			.$defaultFn(() => new Date().toISOString())
+			.$defaultFn(() => new Date())
 	},
 	(table) => [
 		index('mood_logs_user_date_idx').on(table.userId, table.date),
@@ -218,13 +218,13 @@ export const tasks = sqliteTable(
 		sortOrder: integer('sort_order').notNull().default(0),
 		priority: integer('priority').notNull(), // 1-4 (1=highest, required)
 		tags: text('tags'), // JSON array of strings
-		createdAt: text('created_at')
+		createdAt: integer('created_at', { mode: 'timestamp' })
 			.notNull()
-			.$defaultFn(() => new Date().toISOString()),
-		updatedAt: text('updated_at')
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
 			.notNull()
-			.$defaultFn(() => new Date().toISOString()),
-		completedAt: text('completed_at') // ISO timestamp when state changed to 'done'
+			.$defaultFn(() => new Date()),
+		completedAt: integer('completed_at', { mode: 'timestamp' }) // when state changed to 'done'
 	},
 	(table) => [index('tasks_user_state_sort_idx').on(table.userId, table.state, table.sortOrder)]
 );
@@ -253,12 +253,12 @@ export const dailyAgendaTemplates = sqliteTable(
 		daysOfWeek: text('days_of_week').notNull().default('[0,1,2,3,4,5,6]'),
 		startsOn: text('starts_on').notNull(), // YYYY-MM-DD
 		endsOn: text('ends_on'), // YYYY-MM-DD
-		createdAt: text('created_at')
+		createdAt: integer('created_at', { mode: 'timestamp' })
 			.notNull()
-			.$defaultFn(() => new Date().toISOString()),
-		updatedAt: text('updated_at')
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
 			.notNull()
-			.$defaultFn(() => new Date().toISOString())
+			.$defaultFn(() => new Date())
 	},
 	(table) => [
 		index('daily_agenda_templates_user_range_idx').on(table.userId, table.startsOn, table.endsOn),
@@ -294,13 +294,13 @@ export const dailyAgendaEntries = sqliteTable(
 		sourceType: text('source_type').notNull().default('default'), // 'default' | 'custom'
 		sortOrder: integer('sort_order').notNull().default(0),
 		completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
-		completedAt: text('completed_at'),
-		createdAt: text('created_at')
+		completedAt: integer('completed_at', { mode: 'timestamp' }),
+		createdAt: integer('created_at', { mode: 'timestamp' })
 			.notNull()
-			.$defaultFn(() => new Date().toISOString()),
-		updatedAt: text('updated_at')
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
 			.notNull()
-			.$defaultFn(() => new Date().toISOString())
+			.$defaultFn(() => new Date())
 	},
 	(table) => [
 		index('daily_agenda_entries_user_date_idx').on(table.userId, table.date),
@@ -340,12 +340,12 @@ export const weightEntries = sqliteTable('weight_entries', {
 	date: text('date').notNull(), // YYYY-MM-DD
 	time: text('time'), // Optional HH:MM
 	weightLbs: integer('weight_lbs').notNull(),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const weightEntriesRelations = relations(weightEntries, ({ one }) => ({
@@ -367,12 +367,12 @@ export const goalWeights = sqliteTable('goal_weights', {
 		.references(() => user.id, { onDelete: 'cascade' }),
 	targetWeightLbs: integer('target_weight_lbs').notNull(),
 	setDate: text('set_date').notNull(), // YYYY-MM-DD
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const goalWeightsRelations = relations(goalWeights, ({ one }) => ({
@@ -397,12 +397,12 @@ export const workoutLogs = sqliteTable('workout_logs', {
 	durationMinutes: integer('duration_minutes'),
 	steps: integer('steps'), // For walk workouts
 	notes: text('notes'),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const workoutLogsRelations = relations(workoutLogs, ({ one, many }) => ({
@@ -426,12 +426,12 @@ export const workoutExercises = sqliteTable('workout_exercises', {
 	sets: integer('sets'),
 	reps: integer('reps'),
 	weightLbs: integer('weight_lbs'),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const workoutExercisesRelations = relations(workoutExercises, ({ one }) => ({
@@ -454,12 +454,12 @@ export const mealLogs = sqliteTable('meal_logs', {
 	timeOfDay: text('time_of_day').notNull(), // 'breakfast' | 'lunch' | 'dinner' | 'snack'
 	description: text('description').notNull(),
 	caloriesEstimate: integer('calories_estimate'),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const mealLogsRelations = relations(mealLogs, ({ one }) => ({
@@ -481,12 +481,12 @@ export const dailyCalorieTargets = sqliteTable('daily_calorie_targets', {
 		.references(() => user.id, { onDelete: 'cascade' }),
 	targetCalories: integer('target_calories').notNull(),
 	setDate: text('set_date').notNull(), // YYYY-MM-DD
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const dailyCalorieTargetsRelations = relations(dailyCalorieTargets, ({ one }) => ({
@@ -510,12 +510,12 @@ export const workoutReminders = sqliteTable('workout_reminders', {
 	daysOfWeek: text('days_of_week'), // JSON array of day numbers (0-6, 0=Sunday)
 	time: text('time').notNull(), // HH:MM
 	enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const workoutRemindersRelations = relations(workoutReminders, ({ one }) => ({
@@ -538,12 +538,12 @@ export const meditationRoutines = sqliteTable('meditation_routines', {
 	durationMinutes: integer('duration_minutes').notNull(),
 	moodTags: text('mood_tags').notNull(), // JSON array: ["Anxious", "Focused", etc.]
 	isPredefined: integer('is_predefined', { mode: 'boolean' }).notNull().default(false),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const meditationRoutinesRelations = relations(meditationRoutines, ({ one, many }) => ({
@@ -571,12 +571,12 @@ export const meditationSchedules = sqliteTable('meditation_schedules', {
 	daysOfWeek: text('days_of_week'), // JSON array of day numbers (0-6, 0=Sunday)
 	time: text('time').notNull(), // HH:MM
 	enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const meditationSchedulesRelations = relations(meditationSchedules, ({ one }) => ({
@@ -602,16 +602,16 @@ export const meditationSessions = sqliteTable('meditation_sessions', {
 	routineId: text('routine_id')
 		.notNull()
 		.references(() => meditationRoutines.id, { onDelete: 'cascade' }),
-	completedAt: text('completed_at').notNull(),
+	completedAt: integer('completed_at', { mode: 'timestamp' }).notNull(),
 	preMoodRating: integer('pre_mood_rating'), // 1-5 pre-meditation mood
 	moodRating: integer('mood_rating'), // 1-5 post-meditation mood
 	notes: text('notes'),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const meditationSessionsRelations = relations(meditationSessions, ({ one }) => ({
@@ -637,14 +637,14 @@ export const people = sqliteTable('people', {
 	name: text('name').notNull(),
 	isExempt: integer('is_exempt', { mode: 'boolean' }).notNull().default(false),
 	isArchived: integer('is_archived', { mode: 'boolean' }).notNull().default(false),
-	archivedAt: text('archived_at'),
+	archivedAt: integer('archived_at', { mode: 'timestamp' }),
 	scheduledVisitDate: text('scheduled_visit_date'),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const peopleRelations = relations(people, ({ one, many }) => ({
@@ -672,12 +672,12 @@ export const visits = sqliteTable('visits', {
 	companions: text('companions'), // JSON array of companion names
 	notes: text('notes'),
 	followUpDate: text('follow_up_date'),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const visitsRelations = relations(visits, ({ one }) => ({
@@ -703,12 +703,12 @@ export const visitStatusSettings = sqliteTable('visit_status_settings', {
 		.references(() => user.id, { onDelete: 'cascade' }),
 	recentToOverdueDays: integer('recent_to_overdue_days').notNull(),
 	overdueToCriticalDays: integer('overdue_to_critical_days').notNull(),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const visitStatusSettingsRelations = relations(visitStatusSettings, ({ one }) => ({
@@ -732,12 +732,12 @@ export const dashboardGoalSettings = sqliteTable('dashboard_goal_settings', {
 	meditationWeeklyGoal: integer('meditation_weekly_goal').notNull(),
 	workoutGreenThreshold: integer('workout_green_threshold').notNull(),
 	workoutAmberThreshold: integer('workout_amber_threshold').notNull(),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const dashboardGoalSettingsRelations = relations(dashboardGoalSettings, ({ one }) => ({
@@ -827,9 +827,9 @@ export const apiAuditLog = sqliteTable('api_audit_log', {
 	path: text('path').notNull(),
 	action: text('action').notNull(),
 	statusCode: integer('status_code').notNull(),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.$defaultFn(() => new Date().toISOString())
+		.$defaultFn(() => new Date())
 });
 
 export const apiAuditLogRelations = relations(apiAuditLog, ({ one }) => ({

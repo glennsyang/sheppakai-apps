@@ -1,6 +1,6 @@
 import { type Features, renderComponent } from '$lib/components/ui/data-table';
 import type { people } from '$lib/server/db/schema';
-import { formatDateMedium } from '$lib/utils/date';
+import { formatDateMedium, getTodayString } from '$lib/utils/date';
 import type { ColumnDef } from '@tanstack/table-core';
 
 import DataTableActions from './archived-table-actions.svelte';
@@ -34,7 +34,7 @@ export const columns: ColumnDef<Features, ArchivedPerson>[] = [
 		accessorKey: 'archivedAt',
 		header: 'Archived Date',
 		cell: ({ row }) =>
-			row.original.archivedAt ? formatDateMedium(row.original.archivedAt.slice(0, 10)) : '—'
+			row.original.archivedAt ? formatDateMedium(getTodayString(row.original.archivedAt)) : '—'
 	},
 	{
 		id: 'actions',

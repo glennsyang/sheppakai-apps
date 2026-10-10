@@ -218,7 +218,7 @@ async function ensureDefaultEntriesForDates(userId: string, dates: string[]): Pr
 			.map((entry) => `${entry.templateGroupId}:${entry.date}`)
 	);
 
-	const timestamp = new Date().toISOString();
+	const timestamp = new Date();
 	const inserts = [] as Array<typeof dailyAgendaEntries.$inferInsert>;
 
 	for (const template of templateRows) {
@@ -384,7 +384,7 @@ export async function createDailyAgendaTemplate(
 ): Promise<void> {
 	const db = getDb();
 	const today = getTodayString();
-	const timestamp = new Date().toISOString();
+	const timestamp = new Date();
 	const serializedDays = serializeTemplateDays(daysOfWeek);
 
 	db.transaction((tx) => {
@@ -427,7 +427,7 @@ export async function updateDailyAgendaTemplate(
 ): Promise<void> {
 	const db = getDb();
 	const today = getTodayString();
-	const timestamp = new Date().toISOString();
+	const timestamp = new Date();
 	const normalizedDays = normalizeTemplateDays(daysOfWeek);
 	const serializedDays = JSON.stringify(normalizedDays);
 
@@ -554,7 +554,7 @@ export async function updateDailyAgendaTemplate(
 export async function deleteDailyAgendaTemplate(userId: string, templateId: string): Promise<void> {
 	const db = getDb();
 	const today = getTodayString();
-	const timestamp = new Date().toISOString();
+	const timestamp = new Date();
 
 	db.transaction((tx) => {
 		const existing = tx
@@ -604,7 +604,7 @@ export async function createDailyAgendaCustomEntry(
 	assertDateIsEditable(input.date);
 
 	const db = getDb();
-	const timestamp = new Date().toISOString();
+	const timestamp = new Date();
 
 	db.transaction((tx) => {
 		const sortOrderRow = tx
@@ -692,12 +692,13 @@ export async function toggleDailyAgendaEntry(
 
 	assertDateIsEditable(existing.date);
 
+	const now = new Date();
 	await db
 		.update(dailyAgendaEntries)
 		.set({
 			completed,
-			completedAt: completed ? new Date().toISOString() : null,
-			updatedAt: new Date().toISOString()
+			completedAt: completed ? now : null,
+			updatedAt: now
 		})
 		.where(eq(dailyAgendaEntries.id, entryId));
 }

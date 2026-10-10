@@ -15,7 +15,7 @@ export type AdminApiLogEntry = {
 	path: string;
 	action: string;
 	statusCode: number;
-	createdAt: string;
+	createdAt: Date;
 };
 
 export const columns: ColumnDef<Features, AdminApiLogEntry>[] = [

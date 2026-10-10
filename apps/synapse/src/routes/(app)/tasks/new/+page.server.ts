@@ -55,7 +55,7 @@ async function createTaskWithTaskNumber(
 					.where(and(eq(tasks.userId, userId), eq(tasks.state, input.state)))
 					.all();
 
-				const timestamp = new Date().toISOString();
+				const timestamp = new Date();
 				const nextTaskNumber = taskNumberRow?.nextTaskNumber ?? 1;
 				const nextSortOrder = (sortOrderRow?.maxSortOrder ?? -1) + 1;
 

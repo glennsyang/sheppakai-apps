@@ -284,7 +284,7 @@ export const actions = {
 				id: sessionId,
 				userId: user.id,
 				routineId: routineId,
-				completedAt: new Date(form.data.completed_at).toISOString(),
+				completedAt: new Date(form.data.completed_at),
 				preMoodRating: form.data.pre_mood_rating || null,
 				moodRating: form.data.mood_rating || null,
 				notes: form.data.notes || null,

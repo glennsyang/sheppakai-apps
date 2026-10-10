@@ -273,13 +273,13 @@ export function getRollingDateRange(endDate: string, dayCount: number): string[]
 /**
  * Format an ISO timestamp for display with date and time.
  *
- * @param timestamp - ISO timestamp string
+ * @param timestamp - Date or ISO timestamp string
  * @returns Formatted timestamp (e.g., "Feb 9, 2026, 2:30 PM")
  *
  * @example
  * formatTimestampLong('2026-02-09T14:30:00.000Z') // "Feb 9, 2026, 2:30 PM"
  */
-export function formatTimestampLong(timestamp: string): string {
+export function formatTimestampLong(timestamp: Date | string): string {
 	const date = new Date(timestamp);
 	return date.toLocaleString('en-US', {
 		timeZone: APP_TIME_ZONE,
@@ -294,13 +294,13 @@ export function formatTimestampLong(timestamp: string): string {
 /**
  * Format an ISO timestamp for display with date and time.
  *
- * @param timestamp - ISO timestamp string
+ * @param timestamp - Date or ISO timestamp string
  * @returns Formatted timestamp (e.g., "Sat, Feb 9, 2:30 PM")
  *
  * @example
  * formatTimestampMedium('2026-02-09T14:30:00.000Z') // "Sat, Feb 9, 2:30 PM"
  */
-export function formatTimestampMedium(timestamp: string): string {
+export function formatTimestampMedium(timestamp: Date | string): string {
 	const date = new Date(timestamp);
 	return date.toLocaleString('en-US', {
 		timeZone: APP_TIME_ZONE,
@@ -315,13 +315,13 @@ export function formatTimestampMedium(timestamp: string): string {
 /**
  * Format an ISO timestamp for short display with date only.
  *
- * @param timestamp - ISO timestamp string
+ * @param timestamp - Date or ISO timestamp string
  * @returns Formatted date (e.g., "Feb 9, 2026")
  *
  * @example
  * formatTimestampShort('2026-02-09T14:30:00.000Z') // "Feb 9, 2026"
  */
-export function formatTimestampShort(timestamp: string): string {
+export function formatTimestampShort(timestamp: Date | string): string {
 	const date = new Date(timestamp);
 	return date.toLocaleDateString('en-US', {
 		timeZone: APP_TIME_ZONE,
@@ -332,7 +332,7 @@ export function formatTimestampShort(timestamp: string): string {
 }
 
 export function formatTimestampDateHeuristic(
-	timestamp: string,
+	timestamp: Date | string,
 	options: HeuristicDateOptions = {}
 ): string {
 	const dateString = formatDateParts(new Date(timestamp), appDateFormatter);
@@ -342,13 +342,13 @@ export function formatTimestampDateHeuristic(
 /**
  * Format just the time portion of an ISO timestamp.
  *
- * @param timestamp - ISO timestamp string
+ * @param timestamp - Date or ISO timestamp string
  * @returns Formatted time (e.g., "2:30 PM")
  *
  * @example
  * formatTimeFromTimestamp('2026-02-09T14:30:00.000Z') // "2:30 PM"
  */
-export function formatTimeFromTimestamp(timestamp: string): string {
+export function formatTimeFromTimestamp(timestamp: Date | string): string {
 	const date = new Date(timestamp);
 	return date.toLocaleTimeString('en-US', {
 		timeZone: APP_TIME_ZONE,
