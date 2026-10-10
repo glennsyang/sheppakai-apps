@@ -116,7 +116,7 @@ $effect(() => {
 ### Database Patterns
 
 - Primary ownership pattern is `userId`/`user_id` foreign keys to `user.id`; timestamp fields are `createdAt`/`updatedAt` or `created_at`/`updated_at` depending on table
-- Helper utilities `withTimestampsForCreate()` and `withTimestampsForUpdate()` in `$lib/server/db/utils.ts` return `createdAt`/`updatedAt` timestamps only (no `createdBy`/`updatedBy`, unlike budget's `withAuditFields*`)
+- Helper utilities `withTimestampsForCreate()` and `withTimestampsForUpdate()` in `$lib/server/db/utils.ts` return `createdAt`/`updatedAt` timestamps only (no `createdBy`/`updatedBy`)
 - Schema is defined in `/src/lib/server/db/schema.ts`
 - Use Drizzle's relational query API: `db.query.journalEntries.findMany({ with: { user: true } })`
 - Migrations are generated to `/src/lib/server/db/migrations/` via `drizzle.config.ts`
