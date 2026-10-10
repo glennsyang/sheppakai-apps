@@ -22,7 +22,9 @@ import {
 	getStartOfWeek,
 	getTodayString,
 	getWeekDates,
+	parseAppDateTime,
 	parseLocalDateString,
+	toAppDatetimeLocal,
 	toLocalDateString
 } from './date';
 
@@ -224,5 +226,40 @@ describe('formatMonthDay', () => {
 	it('formats a date string as short month and day', () => {
 		expect(formatMonthDay('2026-02-09')).toBe('Feb 9');
 		expect(formatMonthDay('2026-12-31')).toBe('Dec 31');
+	});
+});
+
+describe('app-timezone datetime-local helpers', () => {
+	it('parses a zone-less datetime as Pacific daylight time', () => {
+		expect(parseAppDateTime('2026-10-10T08:00').toISOString()).toBe('2026-10-10T15:00:00.000Z');
+	});
+
+	it('parses a zone-less datetime as Pacific standard time', () => {
+		expect(parseAppDateTime('2026-01-15T08:00').toISOString()).toBe('2026-01-15T16:00:00.000Z');
+	});
+
+	it('keeps strings with an explicit offset as-is', () => {
+		expect(parseAppDateTime('2026-03-15T08:00:00.000Z').toISOString()).toBe(
+			'2026-03-15T08:00:00.000Z'
+		);
+		expect(parseAppDateTime('2026-03-15T08:00:00-07:00').toISOString()).toBe(
+			'2026-03-15T15:00:00.000Z'
+		);
+	});
+
+	it('throws on an invalid datetime', () => {
+		expect(() => parseAppDateTime('not-a-date')).toThrow('Invalid ISO 8601 date time string');
+	});
+
+	it('formats a timestamp as a datetime-local value in Pacific time', () => {
+		expect(toAppDatetimeLocal(new Date('2026-10-10T15:00:00.000Z'))).toBe('2026-10-10T08:00');
+		expect(toAppDatetimeLocal('2026-01-15T16:00:00.000Z')).toBe('2026-01-15T08:00');
+		expect(toAppDatetimeLocal(new Date('2026-01-16T07:30:00.000Z'))).toBe('2026-01-15T23:30');
+	});
+
+	it('round-trips through parse and format', () => {
+		for (const value of ['2026-10-10T08:00', '2026-01-15T00:05', '2026-07-04T23:59']) {
+			expect(toAppDatetimeLocal(parseAppDateTime(value))).toBe(value);
+		}
 	});
 });

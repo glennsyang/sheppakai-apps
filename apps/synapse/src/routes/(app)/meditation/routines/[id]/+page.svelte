@@ -9,7 +9,12 @@
 	import * as Select from '$lib/components/ui/select';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { daysOfWeek, formatTime12Hour, formatTimestampLong } from '$lib/utils/date';
+	import {
+		daysOfWeek,
+		formatTime12Hour,
+		formatTimestampLong,
+		toAppDatetimeLocal
+	} from '$lib/utils/date';
 	import {
 		ArrowLeft,
 		Calendar,
@@ -138,21 +143,9 @@
 		}
 	}
 
-	function getNowDatetimeLocal(): string {
-		const now = new Date();
-		const pad = (n: number) => String(n).padStart(2, '0');
-		return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-	}
-
-	function toDatetimeLocal(timestamp: Date | string): string {
-		const d = new Date(timestamp);
-		const pad = (n: number) => String(n).padStart(2, '0');
-		return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-	}
-
 	function openEditSession(session: (typeof data.sessions)[number]) {
 		$editSessionForm.id = session.id;
-		$editSessionForm.completed_at = toDatetimeLocal(session.completedAt);
+		$editSessionForm.completed_at = toAppDatetimeLocal(session.completedAt);
 		$editSessionForm.pre_mood_rating = session.preMoodRating ?? undefined;
 		$editSessionForm.mood_rating = session.moodRating ?? undefined;
 		$editSessionForm.notes = session.notes ?? undefined;
@@ -161,7 +154,7 @@
 
 	$effect(() => {
 		if (showSessionDialog) {
-			$sessionForm.completed_at = getNowDatetimeLocal();
+			$sessionForm.completed_at = toAppDatetimeLocal();
 		}
 	});
 </script>
