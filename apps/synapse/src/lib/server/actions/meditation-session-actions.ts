@@ -4,6 +4,7 @@ import { getDb } from '$lib/server/db';
 import { meditationSessions } from '$lib/server/db/schema';
 import { withTimestampsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
+import { parseAppDateTime } from '$lib/utils/date';
 import { and, eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -30,7 +31,7 @@ export async function handleUpdateSession(request: Request, userId: string) {
 		await db
 			.update(meditationSessions)
 			.set({
-				completedAt: new Date(form.data.completed_at),
+				completedAt: parseAppDateTime(form.data.completed_at),
 				preMoodRating: form.data.pre_mood_rating ?? null,
 				moodRating: form.data.mood_rating ?? null,
 				notes: form.data.notes || null,

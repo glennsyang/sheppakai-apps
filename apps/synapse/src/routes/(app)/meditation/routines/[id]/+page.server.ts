@@ -16,6 +16,7 @@ import { getDb } from '$lib/server/db';
 import { meditationRoutines, meditationSchedules, meditationSessions } from '$lib/server/db/schema';
 import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
+import { parseAppDateTime } from '$lib/utils/date';
 import { safeParse } from '$lib/utils/json';
 import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { and, desc, eq, or } from 'drizzle-orm';
@@ -284,7 +285,7 @@ export const actions = {
 				id: sessionId,
 				userId: user.id,
 				routineId: routineId,
-				completedAt: new Date(form.data.completed_at),
+				completedAt: parseAppDateTime(form.data.completed_at),
 				preMoodRating: form.data.pre_mood_rating || null,
 				moodRating: form.data.mood_rating || null,
 				notes: form.data.notes || null,

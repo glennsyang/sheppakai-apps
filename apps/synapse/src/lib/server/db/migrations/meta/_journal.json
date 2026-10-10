@@ -218,6 +218,13 @@
 			"when": 1791610779134,
 			"tag": "0030_integer_timestamps",
 			"breakpoints": true
+		},
+		{
+			"idx": 31,
+			"version": "6",
+			"when": 1791651273142,
+			"tag": "0031_fix_meditation_completed_at_tz",
+			"breakpoints": true
 		}
 	]
 }

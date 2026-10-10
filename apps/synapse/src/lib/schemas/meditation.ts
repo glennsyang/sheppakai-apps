@@ -1,3 +1,4 @@
+import { isValidAppDateTime } from '$lib/utils/date';
 import { z } from 'zod';
 
 /**
@@ -42,7 +43,10 @@ export const scheduleSchema = z.object({
  * Schema for completing a meditation session
  */
 export const completeSessionSchema = z.object({
-	completed_at: z.string().min(1, 'Date and time is required'),
+	completed_at: z
+		.string()
+		.min(1, 'Date and time is required')
+		.refine(isValidAppDateTime, 'Invalid date and time'),
 	pre_mood_rating: z.coerce.number().int().min(1).max(5).optional(),
 	mood_rating: z.coerce.number().int().min(1).max(5).optional(),
 	notes: z.string().optional()
@@ -53,7 +57,10 @@ export const completeSessionSchema = z.object({
  */
 export const editSessionSchema = z.object({
 	id: z.string().min(1),
-	completed_at: z.string().min(1, 'Date and time is required'),
+	completed_at: z
+		.string()
+		.min(1, 'Date and time is required')
+		.refine(isValidAppDateTime, 'Invalid date and time'),
 	pre_mood_rating: z.coerce.number().int().min(1).max(5).optional(),
 	mood_rating: z.coerce.number().int().min(1).max(5).optional(),
 	notes: z.string().optional()

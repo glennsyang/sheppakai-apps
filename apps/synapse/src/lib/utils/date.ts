@@ -8,6 +8,8 @@
  * These utilities ensure dates are parsed and displayed in the local timezone.
  */
 
+import { parseDateTime } from '@internationalized/date';
+
 export const APP_TIME_ZONE = 'America/Los_Angeles';
 
 const appDateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -355,6 +357,67 @@ export function formatTimeFromTimestamp(timestamp: Date | string): string {
 		hour: 'numeric',
 		minute: '2-digit'
 	});
+}
+
+const appDatetimeLocalFormatter = new Intl.DateTimeFormat('en-US', {
+	timeZone: APP_TIME_ZONE,
+	year: 'numeric',
+	month: '2-digit',
+	day: '2-digit',
+	hour: '2-digit',
+	minute: '2-digit',
+	hourCycle: 'h23'
+});
+
+const EXPLICIT_OFFSET_PATTERN = /(Z|[+-]\d{2}:?\d{2})$/i;
+
+/**
+ * Parse a `datetime-local` value (YYYY-MM-DDTHH:mm) as wall-clock time in the app timezone.
+ * Strings with an explicit offset (e.g. ISO `...Z`) are parsed as-is.
+ * Never relies on the server process timezone.
+ *
+ * @param value - Datetime string, with or without an offset
+ * @returns Date for the given instant
+ * @throws If the value is not a valid datetime
+ *
+ * @example
+ * parseAppDateTime('2026-10-10T08:00') // 2026-10-10T15:00:00.000Z (8:00 AM PDT)
+ */
+export function parseAppDateTime(value: string): Date {
+	const date = EXPLICIT_OFFSET_PATTERN.test(value)
+		? new Date(value)
+		: parseDateTime(value).toDate(APP_TIME_ZONE);
+
+	if (Number.isNaN(date.getTime())) {
+		throw new Error(`Invalid datetime string: ${value}`);
+	}
+
+	return date;
+}
+
+export function isValidAppDateTime(value: string): boolean {
+	try {
+		parseAppDateTime(value);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Format a timestamp as a `datetime-local` input value (YYYY-MM-DDTHH:mm) in the app timezone.
+ *
+ * @param timestamp - Date or ISO timestamp string (defaults to now)
+ * @returns Value suitable for `<input type="datetime-local">`
+ *
+ * @example
+ * toAppDatetimeLocal('2026-10-10T15:00:00.000Z') // "2026-10-10T08:00"
+ */
+export function toAppDatetimeLocal(timestamp: Date | string = new Date()): string {
+	const parts = appDatetimeLocalFormatter.formatToParts(new Date(timestamp));
+	const get = (type: Intl.DateTimeFormatPartTypes) =>
+		parts.find((part) => part.type === type)?.value;
+	return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
 }
 
 /**

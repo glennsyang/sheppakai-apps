@@ -137,6 +137,16 @@ describe('completeSessionSchema', () => {
 	it('rejects an empty completed_at', () => {
 		expect(completeSessionSchema.safeParse({ completed_at: '' }).success).toBe(false);
 	});
+
+	it('accepts a datetime-local completed_at', () => {
+		expect(completeSessionSchema.safeParse({ completed_at: '2026-10-10T08:00' }).success).toBe(
+			true
+		);
+	});
+
+	it('rejects an invalid completed_at', () => {
+		expect(completeSessionSchema.safeParse({ completed_at: 'yesterday' }).success).toBe(false);
+	});
 });
 
 describe('editSessionSchema', () => {

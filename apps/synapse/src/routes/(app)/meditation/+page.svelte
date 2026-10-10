@@ -17,7 +17,11 @@
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { formatTimeFromTimestamp, formatTimestampDateHeuristic } from '$lib/utils/date';
+	import {
+		formatTimeFromTimestamp,
+		formatTimestampDateHeuristic,
+		toAppDatetimeLocal
+	} from '$lib/utils/date';
 	import {
 		CirclePlay,
 		Clock,
@@ -60,16 +64,10 @@
 		}
 	});
 
-	function toDatetimeLocal(timestamp: Date | string): string {
-		const d = new Date(timestamp);
-		const pad = (n: number) => String(n).padStart(2, '0');
-		return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-	}
-
 	function openEditSession(session: (typeof data.sessions)[number]) {
 		selectedSession = session;
 		$editSessionForm.id = session.id;
-		$editSessionForm.completed_at = toDatetimeLocal(session.completedAt);
+		$editSessionForm.completed_at = toAppDatetimeLocal(session.completedAt);
 		$editSessionForm.pre_mood_rating = session.preMoodRating ?? undefined;
 		$editSessionForm.mood_rating = session.moodRating ?? undefined;
 		$editSessionForm.notes = session.notes ?? undefined;
