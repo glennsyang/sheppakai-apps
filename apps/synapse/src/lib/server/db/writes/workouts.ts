@@ -5,11 +5,7 @@ import type {
 } from '$lib/server/api/schemas/workouts';
 import { getDb } from '$lib/server/db';
 import { workoutExercises, workoutLogs } from '$lib/server/db/schema';
-import {
-	generateId,
-	withAuditFieldsForCreate,
-	withAuditFieldsForUpdate
-} from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { and, eq } from 'drizzle-orm';
 
 /**
@@ -30,7 +26,7 @@ export async function createWorkout(userId: string, input: ApiCreateWorkoutInput
 		durationMinutes: input.durationMinutes ?? null,
 		steps: input.steps ?? null,
 		notes: input.notes ?? null,
-		...withAuditFieldsForCreate()
+		...withTimestampsForCreate()
 	});
 
 	if (input.type === 'strength' && input.exercises && input.exercises.length > 0) {
@@ -44,7 +40,7 @@ export async function createWorkout(userId: string, input: ApiCreateWorkoutInput
 					sets: exercise.sets ?? null,
 					reps: exercise.reps ?? null,
 					weightLbs: exercise.weightLbs ?? null,
-					...withAuditFieldsForCreate()
+					...withTimestampsForCreate()
 				}))
 		);
 	}
@@ -87,7 +83,7 @@ export async function updateWorkout(
 					input.durationMinutes !== undefined ? input.durationMinutes : existing.durationMinutes,
 				steps: input.steps !== undefined ? input.steps : existing.steps,
 				notes: input.notes !== undefined ? input.notes : existing.notes,
-				...withAuditFieldsForUpdate()
+				...withTimestampsForUpdate()
 			})
 			.where(and(eq(workoutLogs.id, workoutId), eq(workoutLogs.userId, userId)))
 			.run();
@@ -107,7 +103,7 @@ export async function updateWorkout(
 								sets: exercise.sets ?? null,
 								reps: exercise.reps ?? null,
 								weightLbs: exercise.weightLbs ?? null,
-								...withAuditFieldsForCreate()
+								...withTimestampsForCreate()
 							}))
 					)
 					.run();

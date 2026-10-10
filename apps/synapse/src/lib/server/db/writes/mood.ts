@@ -1,11 +1,7 @@
 import type { ApiUpsertMoodInput } from '$lib/server/api/schemas/mood';
 import { getDb } from '$lib/server/db';
 import { moodLogs } from '$lib/server/db/schema';
-import {
-	generateId,
-	withAuditFieldsForCreate,
-	withAuditFieldsForUpdate
-} from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { and, eq } from 'drizzle-orm';
 
 function normalizeOptionalText(value: string | undefined): string | null {
@@ -36,7 +32,7 @@ export async function upsertMood(userId: string, input: ApiUpsertMoodInput) {
 				mood: input.mood,
 				customMood,
 				notes,
-				...withAuditFieldsForUpdate()
+				...withTimestampsForUpdate()
 			})
 			.where(and(eq(moodLogs.id, existing.id), eq(moodLogs.userId, userId)));
 
@@ -51,7 +47,7 @@ export async function upsertMood(userId: string, input: ApiUpsertMoodInput) {
 		mood: input.mood,
 		customMood,
 		notes,
-		...withAuditFieldsForCreate()
+		...withTimestampsForCreate()
 	});
 
 	return db.query.moodLogs.findFirst({ where: eq(moodLogs.id, moodLogId) });

@@ -95,7 +95,7 @@ src/
 
 - Use `userId`/`user_id` foreign keys to `user.id` for record ownership.
 - Timestamps vary by table: `createdAt`/`updatedAt` and `created_at`/`updated_at`.
-- `withAuditFieldsForCreate(...)` and `withAuditFieldsForUpdate(...)` exist for explicit audit metadata usage.
+- `withTimestampsForCreate()` and `withTimestampsForUpdate()` return `createdAt`/`updatedAt` timestamps only (no `createdBy`/`updatedBy`).
 - Source of truth schema: `src/lib/server/db/schema.ts`.
 - Prefer Drizzle relational query API (`db.query.<table>.findMany(...)`).
 

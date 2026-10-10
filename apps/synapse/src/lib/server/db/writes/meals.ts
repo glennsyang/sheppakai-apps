@@ -2,11 +2,7 @@ import { ApiWriteError } from '$lib/server/api/errors';
 import type { ApiCreateMealInput, ApiUpdateMealInput } from '$lib/server/api/schemas/meals';
 import { getDb } from '$lib/server/db';
 import { mealLogs } from '$lib/server/db/schema';
-import {
-	generateId,
-	withAuditFieldsForCreate,
-	withAuditFieldsForUpdate
-} from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { and, eq } from 'drizzle-orm';
 
 /**
@@ -25,7 +21,7 @@ export async function createMeal(userId: string, input: ApiCreateMealInput) {
 		timeOfDay: input.timeOfDay,
 		description: input.description,
 		caloriesEstimate: input.caloriesEstimate ?? null,
-		...withAuditFieldsForCreate()
+		...withTimestampsForCreate()
 	});
 
 	return db.query.mealLogs.findFirst({ where: eq(mealLogs.id, mealId) });
@@ -55,7 +51,7 @@ export async function updateMeal(userId: string, mealId: string, input: ApiUpdat
 			description: input.description ?? existing.description,
 			caloriesEstimate:
 				input.caloriesEstimate !== undefined ? input.caloriesEstimate : existing.caloriesEstimate,
-			...withAuditFieldsForUpdate()
+			...withTimestampsForUpdate()
 		})
 		.where(and(eq(mealLogs.id, mealId), eq(mealLogs.userId, userId)));
 

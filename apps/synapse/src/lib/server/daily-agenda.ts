@@ -1,6 +1,6 @@
 import { getDb } from '$lib/server/db';
 import { dailyAgendaEntries, dailyAgendaTemplates } from '$lib/server/db/schema';
-import { generateId, withAuditFieldsForUpdate } from '$lib/server/db/utils';
+import { generateId, withTimestampsForUpdate } from '$lib/server/db/utils';
 import type {
 	DailyAgendaChartPoint,
 	DailyAgendaData,
@@ -653,7 +653,7 @@ export async function updateDailyAgendaCustomEntry(
 
 	await db
 		.update(dailyAgendaEntries)
-		.set({ title, ...withAuditFieldsForUpdate() })
+		.set({ title, ...withTimestampsForUpdate() })
 		.where(eq(dailyAgendaEntries.id, entryId));
 }
 

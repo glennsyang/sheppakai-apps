@@ -26,11 +26,7 @@ import {
 	workoutLogs,
 	workoutReminders
 } from '$lib/server/db/schema';
-import {
-	generateId,
-	withAuditFieldsForCreate,
-	withAuditFieldsForUpdate
-} from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { getTodayString } from '$lib/utils/date';
 import { redirect } from '@sveltejs/kit';
@@ -184,7 +180,7 @@ export const actions = {
 				date: form.data.date,
 				time: form.data.time || null,
 				weightLbs: form.data.weightLbs,
-				...withAuditFieldsForCreate()
+				...withTimestampsForCreate()
 			});
 
 			logger.info('Weight entry logged', { entryId, userId: user.id });
@@ -226,7 +222,7 @@ export const actions = {
 					.set({
 						targetWeightLbs: form.data.targetWeightLbs,
 						setDate: today,
-						...withAuditFieldsForUpdate()
+						...withTimestampsForUpdate()
 					})
 					.where(eq(goalWeights.userId, user.id));
 			} else {
@@ -235,7 +231,7 @@ export const actions = {
 					userId: user.id,
 					targetWeightLbs: form.data.targetWeightLbs,
 					setDate: today,
-					...withAuditFieldsForCreate()
+					...withTimestampsForCreate()
 				});
 			}
 
@@ -290,7 +286,7 @@ export const actions = {
 						durationMinutes: form.data.durationMinutes || null,
 						steps: form.data.steps || null,
 						notes: form.data.notes || null,
-						...withAuditFieldsForCreate()
+						...withTimestampsForCreate()
 					})
 					.run();
 
@@ -304,7 +300,7 @@ export const actions = {
 								sets: exercise.sets || null,
 								reps: exercise.reps || null,
 								weightLbs: exercise.weightLbs || null,
-								...withAuditFieldsForCreate()
+								...withTimestampsForCreate()
 							}))
 						)
 						.run();
@@ -389,7 +385,7 @@ export const actions = {
 					.set({
 						targetCalories: form.data.targetCalories,
 						setDate: today,
-						...withAuditFieldsForUpdate()
+						...withTimestampsForUpdate()
 					})
 					.where(eq(dailyCalorieTargets.userId, user.id));
 			} else {
@@ -398,7 +394,7 @@ export const actions = {
 					userId: user.id,
 					targetCalories: form.data.targetCalories,
 					setDate: today,
-					...withAuditFieldsForCreate()
+					...withTimestampsForCreate()
 				});
 			}
 
@@ -438,7 +434,7 @@ export const actions = {
 				daysOfWeek: form.data.daysOfWeek || null,
 				time: form.data.time,
 				enabled: form.data.enabled,
-				...withAuditFieldsForCreate()
+				...withTimestampsForCreate()
 			});
 
 			logger.info('Workout reminder created', { reminderId, userId: user.id });
@@ -478,7 +474,7 @@ export const actions = {
 					daysOfWeek: form.data.daysOfWeek || null,
 					time: form.data.time,
 					enabled: form.data.enabled,
-					...withAuditFieldsForUpdate()
+					...withTimestampsForUpdate()
 				})
 				.where(and(eq(workoutReminders.id, form.data.id), eq(workoutReminders.userId, user.id)))
 				.returning({ id: workoutReminders.id });
@@ -576,7 +572,7 @@ export const actions = {
 					date: form.data.date,
 					time: form.data.time || null,
 					weightLbs: form.data.weightLbs,
-					...withAuditFieldsForUpdate()
+					...withTimestampsForUpdate()
 				})
 				.where(and(eq(weightEntries.id, form.data.id), eq(weightEntries.userId, user.id)));
 
@@ -667,7 +663,7 @@ export const actions = {
 						durationMinutes: form.data.durationMinutes || null,
 						steps: form.data.steps || null,
 						notes: form.data.notes || null,
-						...withAuditFieldsForUpdate()
+						...withTimestampsForUpdate()
 					})
 					.where(and(eq(workoutLogs.id, form.data.id), eq(workoutLogs.userId, user.id)))
 					.run();
@@ -684,7 +680,7 @@ export const actions = {
 								sets: exercise.sets || null,
 								reps: exercise.reps || null,
 								weightLbs: exercise.weightLbs || null,
-								...withAuditFieldsForCreate()
+								...withTimestampsForCreate()
 							}))
 						)
 						.run();
@@ -758,7 +754,7 @@ export const actions = {
 					timeOfDay: form.data.timeOfDay,
 					description: form.data.description,
 					caloriesEstimate: form.data.caloriesEstimate || null,
-					...withAuditFieldsForUpdate()
+					...withTimestampsForUpdate()
 				})
 				.where(and(eq(mealLogs.id, form.data.id), eq(mealLogs.userId, user.id)));
 

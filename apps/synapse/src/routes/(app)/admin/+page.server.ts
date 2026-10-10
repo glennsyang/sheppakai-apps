@@ -19,7 +19,7 @@ import { allowedEmails, auth } from '$lib/server/auth';
 import { buildAllowlistCommand, formatAlertEmail } from '$lib/server/auth-allowlist-hook';
 import { getDb } from '$lib/server/db';
 import { apiAuditLog, apiKey, people, user, visits } from '$lib/server/db/schema';
-import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
+import { withTimestampsForUpdate } from '$lib/server/db/utils';
 import { sendWelcomeEmail } from '$lib/server/email';
 import { logger } from '$lib/server/logger';
 import { sendAuthAlerts } from '$lib/server/notifications';
@@ -450,7 +450,7 @@ export const actions = {
 
 			await db
 				.update(people)
-				.set({ isArchived: false, archivedAt: null, ...withAuditFieldsForUpdate() })
+				.set({ isArchived: false, archivedAt: null, ...withTimestampsForUpdate() })
 				.where(eq(people.id, personId));
 
 			logger.info('Person unarchived', { personId });

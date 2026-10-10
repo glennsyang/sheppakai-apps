@@ -3,7 +3,7 @@ import { requireAuth } from '$lib/server/actions/auth-guard';
 import { invalidForm } from '$lib/server/actions/form-responses';
 import { getDb } from '$lib/server/db';
 import { journalEntries } from '$lib/server/db/schema';
-import { generateId, withAuditFieldsForCreate } from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { getTodayString } from '$lib/utils/date';
 import { redirect } from '@sveltejs/kit';
@@ -46,7 +46,7 @@ export const actions = {
 					content: form.data.content,
 					location,
 					weather,
-					...withAuditFieldsForCreate()
+					...withTimestampsForCreate()
 				});
 
 			logger.info('Journal entry created', { entryId, userId: user.id });

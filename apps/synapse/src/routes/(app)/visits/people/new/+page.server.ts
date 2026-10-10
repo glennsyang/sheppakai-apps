@@ -3,7 +3,7 @@ import { requireAuth } from '$lib/server/actions/auth-guard';
 import { invalidForm } from '$lib/server/actions/form-responses';
 import { getDb } from '$lib/server/db';
 import { people } from '$lib/server/db/schema';
-import { generateId, withAuditFieldsForCreate } from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
@@ -36,7 +36,7 @@ export const actions = {
 					name: form.data.name,
 					isExempt: false,
 					isArchived: false,
-					...withAuditFieldsForCreate()
+					...withTimestampsForCreate()
 				});
 
 			logger.info('Person created', { personId, userId: user.id });

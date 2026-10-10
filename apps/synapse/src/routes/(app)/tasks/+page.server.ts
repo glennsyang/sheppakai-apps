@@ -32,11 +32,7 @@ import {
 } from '$lib/server/daily-agenda';
 import { getDb } from '$lib/server/db';
 import { moodLogs, tasks } from '$lib/server/db/schema';
-import {
-	generateId,
-	withAuditFieldsForCreate,
-	withAuditFieldsForUpdate
-} from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import {
 	addDaysToDateString,
@@ -958,7 +954,7 @@ export const actions = {
 						mood: form.data.mood,
 						customMood,
 						notes,
-						...withAuditFieldsForUpdate()
+						...withTimestampsForUpdate()
 					})
 					.where(and(eq(moodLogs.id, existingMoodLog.id), eq(moodLogs.userId, user.id)));
 
@@ -974,7 +970,7 @@ export const actions = {
 				mood: form.data.mood,
 				customMood,
 				notes,
-				...withAuditFieldsForCreate()
+				...withTimestampsForCreate()
 			});
 
 			logger.info('Mood log created', { moodLogId, userId: user.id });

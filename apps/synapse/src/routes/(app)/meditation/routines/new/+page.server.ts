@@ -4,7 +4,7 @@ import { invalidForm } from '$lib/server/actions/form-responses';
 import { splitCommaSeparated } from '$lib/server/actions/string-parsers';
 import { getDb } from '$lib/server/db';
 import { meditationRoutines } from '$lib/server/db/schema';
-import { generateId, withAuditFieldsForCreate } from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
@@ -59,7 +59,7 @@ export const actions = {
 					durationMinutes: form.data.duration_minutes,
 					moodTags: moodTagsJson,
 					isPredefined: false,
-					...withAuditFieldsForCreate()
+					...withTimestampsForCreate()
 				});
 
 			logger.info('Meditation routine created', { routineId, userId: user.id });

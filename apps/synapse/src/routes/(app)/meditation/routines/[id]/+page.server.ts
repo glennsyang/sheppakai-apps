@@ -14,11 +14,7 @@ import {
 import { splitCommaSeparated } from '$lib/server/actions/string-parsers';
 import { getDb } from '$lib/server/db';
 import { meditationRoutines, meditationSchedules, meditationSessions } from '$lib/server/db/schema';
-import {
-	generateId,
-	withAuditFieldsForCreate,
-	withAuditFieldsForUpdate
-} from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { safeParse } from '$lib/utils/json';
 import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
@@ -183,7 +179,7 @@ export const actions = {
 						daysOfWeek: daysOfWeekJson,
 						time: form.data.time,
 						enabled: true,
-						...withAuditFieldsForUpdate()
+						...withTimestampsForUpdate()
 					})
 					.where(eq(meditationSchedules.id, existingSchedule.id));
 
@@ -203,7 +199,7 @@ export const actions = {
 					daysOfWeek: daysOfWeekJson,
 					time: form.data.time,
 					enabled: true,
-					...withAuditFieldsForCreate()
+					...withTimestampsForCreate()
 				});
 
 				logger.info('Meditation schedule created', {
@@ -292,7 +288,7 @@ export const actions = {
 				preMoodRating: form.data.pre_mood_rating || null,
 				moodRating: form.data.mood_rating || null,
 				notes: form.data.notes || null,
-				...withAuditFieldsForCreate()
+				...withTimestampsForCreate()
 			});
 
 			logger.info('Meditation session completed', {
@@ -352,7 +348,7 @@ export const actions = {
 					linkUrl: form.data.link_url,
 					durationMinutes: form.data.duration_minutes,
 					moodTags: moodTagsJson,
-					...withAuditFieldsForUpdate()
+					...withTimestampsForUpdate()
 				})
 				.where(and(eq(meditationRoutines.id, routineId), eq(meditationRoutines.userId, user.id)));
 

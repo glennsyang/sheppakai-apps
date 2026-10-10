@@ -3,11 +3,7 @@ import { ApiWriteError } from '$lib/server/api/errors';
 import type { ApiCreateJournalInput, ApiUpdateJournalInput } from '$lib/server/api/schemas/journal';
 import { getDb } from '$lib/server/db';
 import { journalEntries } from '$lib/server/db/schema';
-import {
-	generateId,
-	withAuditFieldsForCreate,
-	withAuditFieldsForUpdate
-} from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { and, eq } from 'drizzle-orm';
 
 /**
@@ -50,7 +46,7 @@ export async function createJournalEntry(userId: string, input: ApiCreateJournal
 		content: input.content,
 		location: input.location ?? null,
 		weather: buildWeatherJson(input.weatherTemp, input.weatherCondition),
-		...withAuditFieldsForCreate()
+		...withTimestampsForCreate()
 	});
 
 	return db.query.journalEntries.findFirst({ where: eq(journalEntries.id, entryId) });
@@ -83,7 +79,7 @@ export async function updateJournalEntry(
 			content: input.content ?? existing.content,
 			location: input.location !== undefined ? input.location : existing.location,
 			weather: updatedWeatherJson(existing.weather, input),
-			...withAuditFieldsForUpdate()
+			...withTimestampsForUpdate()
 		})
 		.where(and(eq(journalEntries.id, entryId), eq(journalEntries.userId, userId)));
 

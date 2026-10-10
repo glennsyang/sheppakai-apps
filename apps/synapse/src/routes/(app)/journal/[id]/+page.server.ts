@@ -4,7 +4,7 @@ import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
 import { invalidForm } from '$lib/server/actions/form-responses';
 import { getDb } from '$lib/server/db';
 import { journalEntries } from '$lib/server/db/schema';
-import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
+import { withTimestampsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { safeParse } from '$lib/utils/json';
 import { error, redirect } from '@sveltejs/kit';
@@ -62,7 +62,7 @@ export const actions = {
 					content: form.data.content,
 					location,
 					weather,
-					...withAuditFieldsForUpdate()
+					...withTimestampsForUpdate()
 				})
 				.where(and(eq(journalEntries.id, entryId), eq(journalEntries.userId, user.id)));
 
