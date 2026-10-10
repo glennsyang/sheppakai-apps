@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import { storedIngredientListSchema, storedInstructionListSchema } from '$lib/schemas/mealPlan';
 import { logger } from '$lib/server/logger';
 import type { Recipe, Ingredient, RecipeSource } from '$lib/types';
@@ -8,6 +6,7 @@ import type { z } from 'zod';
 
 import { getDb } from '../db';
 import { recipes } from '../db/schema';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '../db/utils';
 
 // Rows saved before input validation may hold any JSON, so a malformed one degrades to an empty
 // list instead of throwing and breaking every page that lists recipes.
@@ -69,8 +68,7 @@ export async function saveRecipe(
 	}
 ): Promise<Recipe> {
 	logger.debug('saveRecipe', { userId, name: data.name });
-	const now = new Date();
-	const id = randomUUID();
+	const id = generateId();
 	const db = getDb();
 	await db.insert(recipes).values({
 		id,
@@ -82,8 +80,7 @@ export async function saveRecipe(
 		prepTimeMinutes: data.prepTimeMinutes,
 		servings: data.servings,
 		source: data.source ?? 'ai',
-		createdAt: now,
-		updatedAt: now
+		...withTimestampsForCreate()
 	});
 	const [row] = db.select().from(recipes).where(eq(recipes.id, id)).all();
 	return rowToRecipe(row);
@@ -112,7 +109,7 @@ export async function updateRecipe(
 			instructionsJson: JSON.stringify(data.instructionsJson),
 			prepTimeMinutes: data.prepTimeMinutes,
 			servings: data.servings,
-			updatedAt: new Date()
+			...withTimestampsForUpdate()
 		})
 		.where(eq(recipes.id, id))
 		.returning()
