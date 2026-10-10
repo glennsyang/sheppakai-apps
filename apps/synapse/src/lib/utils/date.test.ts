@@ -6,6 +6,7 @@ import {
 	formatDateLong,
 	formatDateMedium,
 	formatDateShort,
+	formatMonthDay,
 	formatTime12Hour,
 	formatTimestampDateHeuristic,
 	formatTimeFromTimestamp,
@@ -216,5 +217,12 @@ describe('timestamp formatters', () => {
 		expect(formatTime12Hour('14:30')).toContain('PM');
 		expect(formatTime12Hour('09:05')).toContain('9:05');
 		expect(formatTime12Hour('09:05')).toContain('AM');
+	});
+});
+
+describe('formatMonthDay', () => {
+	it('formats a date string as short month and day', () => {
+		expect(formatMonthDay('2026-02-09')).toBe('Feb 9');
+		expect(formatMonthDay('2026-12-31')).toBe('Dec 31');
 	});
 });

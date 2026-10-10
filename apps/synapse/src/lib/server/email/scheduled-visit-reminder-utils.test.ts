@@ -6,6 +6,7 @@ import {
 	buildScheduledVisitReminderSubject,
 	buildVisitTodayReminderEntityId,
 	buildVisitTodayReminderEntityIdForPerson,
+	buildVisitTodayReminderSubject,
 	formatReminderDate,
 	getDateDaysAhead
 } from './scheduled-visit-reminder-utils';
@@ -90,5 +91,13 @@ describe('buildScheduledVisitReminderSubject', () => {
 
 	it('includes the emoji marker in the subject', () => {
 		expect(buildScheduledVisitReminderSubject('Bob')).toContain('📅');
+	});
+});
+
+describe('buildVisitTodayReminderSubject', () => {
+	it('includes the person name', () => {
+		expect(buildVisitTodayReminderSubject('Mum')).toBe(
+			'[Synapse] 🗓️ You have a visit with Mum today'
+		);
 	});
 });
