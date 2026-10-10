@@ -179,9 +179,6 @@ importers:
       '@better-auth/api-key':
         specifier: 'catalog:'
         version: 1.7.7(@better-auth/core@1.7.7(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.2)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.6)(nanostores@1.5.4))(@better-auth/utils@0.4.2)(better-auth@1.7.7(@opentelemetry/api@1.9.1)(@sveltejs/kit@2.70.3(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(drizzle-kit@0.31.11)(drizzle-orm@0.45.3(@opentelemetry/api@1.9.1)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(kysely@0.29.6))(svelte@5.57.1)(vitest@5.0.3))(better-call@1.4.0(zod@4.6.5))
-      '@fontsource-variable/inter':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@getbrevo/brevo':
         specifier: 'catalog:'
         version: 6.0.3
@@ -200,21 +197,9 @@ importers:
       better-sqlite3:
         specifier: 'catalog:'
         version: 13.0.3
-      canvas-confetti:
-        specifier: 'catalog:'
-        version: 1.9.4
-      d3-scale:
-        specifier: 'catalog:'
-        version: 4.0.2
-      d3-shape:
-        specifier: 'catalog:'
-        version: 3.2.0
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.3(@opentelemetry/api@1.9.1)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(kysely@0.29.6)
-      mode-watcher:
-        specifier: 'catalog:'
-        version: 1.1.0(svelte@5.57.1)
       sveltekit-rate-limiter:
         specifier: 'catalog:'
         version: 0.8.0(@sveltejs/kit@2.70.3(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
@@ -222,6 +207,9 @@ importers:
       '@flydotio/dockerfile':
         specifier: 'catalog:'
         version: 0.7.10(@types/node@26.6.4)
+      '@fontsource-variable/inter':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.4
@@ -270,9 +258,18 @@ importers:
       bits-ui:
         specifier: 'catalog:'
         version: 2.19.5(@internationalized/date@3.12.4)(@sveltejs/kit@2.70.3(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)
+      canvas-confetti:
+        specifier: 'catalog:'
+        version: 1.9.4
       clsx:
         specifier: 'catalog:'
         version: 2.1.1
+      d3-scale:
+        specifier: 'catalog:'
+        version: 4.0.2
+      d3-shape:
+        specifier: 'catalog:'
+        version: 3.2.0
       drizzle-kit:
         specifier: 'catalog:'
         version: 0.31.11
@@ -288,6 +285,9 @@ importers:
       lint-staged:
         specifier: 'catalog:'
         version: 17.6.0
+      mode-watcher:
+        specifier: 'catalog:'
+        version: 1.1.0(svelte@5.57.1)
       oxfmt:
         specifier: 'catalog:'
         version: 0.72.0(svelte@5.57.1)
@@ -339,9 +339,6 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.131.0
         version: 0.131.0(zod@4.6.5)
-      '@formkit/auto-animate':
-        specifier: ^0.10.0
-        version: 0.10.0
       '@getbrevo/brevo':
         specifier: 'catalog:'
         version: 6.0.3
@@ -366,9 +363,6 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.3(@opentelemetry/api@1.9.1)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(kysely@0.29.6)
-      mode-watcher:
-        specifier: 'catalog:'
-        version: 1.1.0(svelte@5.57.1)
       sveltekit-rate-limiter:
         specifier: 'catalog:'
         version: 0.8.0(@sveltejs/kit@2.70.3(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
@@ -376,6 +370,9 @@ importers:
       '@flydotio/dockerfile':
         specifier: 'catalog:'
         version: 0.7.10(@types/node@26.6.4)
+      '@formkit/auto-animate':
+        specifier: ^0.10.0
+        version: 0.10.0
       '@sveltejs/adapter-node':
         specifier: 'catalog:'
         version: 5.5.7(@sveltejs/kit@2.70.3(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
@@ -421,6 +418,9 @@ importers:
       lint-staged:
         specifier: 'catalog:'
         version: 17.6.0
+      mode-watcher:
+        specifier: 'catalog:'
+        version: 1.1.0(svelte@5.57.1)
       oxfmt:
         specifier: 'catalog:'
         version: 0.72.0(svelte@5.57.1)
@@ -469,9 +469,6 @@ importers:
       '@better-auth/api-key':
         specifier: 'catalog:'
         version: 1.7.7(@better-auth/core@1.7.7(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.2)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.6)(nanostores@1.5.4))(@better-auth/utils@0.4.2)(better-auth@1.7.7(@opentelemetry/api@1.9.1)(@sveltejs/kit@2.70.3(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(drizzle-kit@0.31.11)(drizzle-orm@0.45.3(@opentelemetry/api@1.9.1)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(kysely@0.29.6))(svelte@5.57.1)(vitest@5.0.3))(better-call@1.4.0(zod@4.6.5))
-      '@fontsource/zen-kaku-gothic-new':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@getbrevo/brevo':
         specifier: 'catalog:'
         version: 6.0.3
@@ -490,24 +487,12 @@ importers:
       better-sqlite3:
         specifier: 'catalog:'
         version: 13.0.3
-      canvas-confetti:
-        specifier: 'catalog:'
-        version: 1.9.4
-      d3-scale:
-        specifier: 'catalog:'
-        version: 4.0.2
-      d3-shape:
-        specifier: 'catalog:'
-        version: 3.2.0
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.3(@opentelemetry/api@1.9.1)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(kysely@0.29.6)
       markdown-it:
         specifier: ^15.0.2
         version: 15.0.2
-      mode-watcher:
-        specifier: 'catalog:'
-        version: 1.1.0(svelte@5.57.1)
       sveltekit-rate-limiter:
         specifier: 'catalog:'
         version: 0.8.0(@sveltejs/kit@2.70.3(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
@@ -515,6 +500,9 @@ importers:
       '@flydotio/dockerfile':
         specifier: 'catalog:'
         version: 0.7.10(@types/node@26.6.4)
+      '@fontsource/zen-kaku-gothic-new':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.4
@@ -569,9 +557,18 @@ importers:
       bits-ui:
         specifier: 'catalog:'
         version: 2.19.5(@internationalized/date@3.12.4)(@sveltejs/kit@2.70.3(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)
+      canvas-confetti:
+        specifier: 'catalog:'
+        version: 1.9.4
       clsx:
         specifier: 'catalog:'
         version: 2.1.1
+      d3-scale:
+        specifier: 'catalog:'
+        version: 4.0.2
+      d3-shape:
+        specifier: 'catalog:'
+        version: 3.2.0
       dotenv:
         specifier: ^18.0.5
         version: 18.0.5
@@ -593,6 +590,9 @@ importers:
       lint-staged:
         specifier: 'catalog:'
         version: 17.6.0
+      mode-watcher:
+        specifier: 'catalog:'
+        version: 1.1.0(svelte@5.57.1)
       oxfmt:
         specifier: 'catalog:'
         version: 0.72.0(svelte@5.57.1)
