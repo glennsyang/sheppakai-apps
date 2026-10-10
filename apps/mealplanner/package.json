@@ -29,7 +29,6 @@
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.131.0",
-		"@formkit/auto-animate": "^0.10.0",
 		"@getbrevo/brevo": "catalog:",
 		"@google/genai": "^2.27.0",
 		"@sentry/sveltekit": "catalog:",
@@ -38,11 +37,11 @@
 		"better-auth": "catalog:",
 		"better-sqlite3": "catalog:",
 		"drizzle-orm": "catalog:",
-		"mode-watcher": "catalog:",
 		"sveltekit-rate-limiter": "catalog:"
 	},
 	"devDependencies": {
 		"@flydotio/dockerfile": "catalog:",
+		"@formkit/auto-animate": "^0.10.0",
 		"@sveltejs/adapter-node": "catalog:",
 		"@sveltejs/kit": "catalog:",
 		"@sveltejs/vite-plugin-svelte": "catalog:",
@@ -58,6 +57,7 @@
 		"fallow": "catalog:",
 		"lefthook": "catalog:",
 		"lint-staged": "catalog:",
+		"mode-watcher": "catalog:",
 		"oxfmt": "catalog:",
 		"oxlint": "catalog:",
 		"oxlint-tsgolint": "catalog:",
