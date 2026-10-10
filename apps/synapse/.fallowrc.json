@@ -4,8 +4,8 @@
 	"ignoreCommandEntries": ["node"],
 	"ignorePatterns": [
 		"**/*.generated.ts",
-		"src/lib/components/ui/**",
 		"**/*.config.ts",
+		"src/lib/components/ui/**",
 		"src/env.ts",
 		"src/lib/index.ts",
 		"src/lib/utils.ts"

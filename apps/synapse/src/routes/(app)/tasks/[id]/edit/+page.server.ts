@@ -13,7 +13,7 @@ import { invalidForm } from '$lib/server/actions/form-responses';
 import { parseTaskTags, toCommaSeparatedJson } from '$lib/server/actions/string-parsers';
 import { getDb } from '$lib/server/db';
 import { tasks } from '$lib/server/db/schema';
-import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
+import { withTimestampsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { redirect } from '@sveltejs/kit';
 import { and, eq, ne, sql } from 'drizzle-orm';
@@ -27,7 +27,7 @@ function buildTaskUpdateData(
 	existingState: string
 ): Partial<typeof tasks.$inferInsert> {
 	const updateData: Partial<typeof tasks.$inferInsert> = {
-		...withAuditFieldsForUpdate()
+		...withTimestampsForUpdate()
 	};
 
 	if (formData.title !== undefined) updateData.title = formData.title;

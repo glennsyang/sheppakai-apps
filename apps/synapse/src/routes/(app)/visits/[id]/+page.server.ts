@@ -14,11 +14,7 @@ import { invalidForm } from '$lib/server/actions/form-responses';
 import { toCommaSeparatedJson } from '$lib/server/actions/string-parsers';
 import { getDb } from '$lib/server/db';
 import { people, visits } from '$lib/server/db/schema';
-import {
-	generateId,
-	withAuditFieldsForCreate,
-	withAuditFieldsForUpdate
-} from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import { getVisitStatusThresholdsForUser } from '$lib/server/visit-status-settings';
 import { getTodayString } from '$lib/utils/date';
@@ -140,14 +136,14 @@ export const actions = {
 				companions,
 				notes: form.data.notes || null,
 				followUpDate: form.data.followUpDate || null,
-				...withAuditFieldsForCreate()
+				...withTimestampsForCreate()
 			});
 
 			// A real visit's follow-up date now takes over as the source of truth
 			if (person.scheduledVisitDate) {
 				await db
 					.update(people)
-					.set({ scheduledVisitDate: null, ...withAuditFieldsForUpdate() })
+					.set({ scheduledVisitDate: null, ...withTimestampsForUpdate() })
 					.where(and(eq(people.id, params.id), eq(people.userId, user.id)));
 			}
 
@@ -215,7 +211,7 @@ export const actions = {
 					companions,
 					notes: form.data.notes || null,
 					followUpDate: form.data.followUpDate || null,
-					...withAuditFieldsForUpdate()
+					...withTimestampsForUpdate()
 				})
 				.where(
 					and(eq(visits.id, visitId), eq(visits.userId, user.id), eq(visits.personId, params.id))
@@ -271,7 +267,7 @@ export const actions = {
 				.set({
 					name: form.data.name,
 					isExempt: form.data.isExempt,
-					...withAuditFieldsForUpdate()
+					...withTimestampsForUpdate()
 				})
 				.where(and(eq(people.id, params.id), eq(people.userId, user.id)));
 
@@ -320,7 +316,7 @@ export const actions = {
 				.update(people)
 				.set({
 					scheduledVisitDate: form.data.scheduledVisitDate,
-					...withAuditFieldsForUpdate()
+					...withTimestampsForUpdate()
 				})
 				.where(and(eq(people.id, params.id), eq(people.userId, user.id)));
 
@@ -362,7 +358,7 @@ export const actions = {
 
 			await db
 				.update(people)
-				.set({ scheduledVisitDate: null, ...withAuditFieldsForUpdate() })
+				.set({ scheduledVisitDate: null, ...withTimestampsForUpdate() })
 				.where(and(eq(people.id, params.id), eq(people.userId, user.id)));
 
 			logger.info('Scheduled visit cancelled', { personId: params.id, userId: user.id });
@@ -400,7 +396,7 @@ export const actions = {
 				.set({
 					isArchived: true,
 					archivedAt: new Date().toISOString(),
-					...withAuditFieldsForUpdate()
+					...withTimestampsForUpdate()
 				})
 				.where(and(eq(people.id, params.id), eq(people.userId, user.id)));
 

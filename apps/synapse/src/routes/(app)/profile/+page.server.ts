@@ -9,11 +9,7 @@ import { auth } from '$lib/server/auth';
 import { getDashboardGoalsForUser } from '$lib/server/dashboard-goal-settings';
 import { getDb } from '$lib/server/db';
 import { account, dashboardGoalSettings, user, visitStatusSettings } from '$lib/server/db/schema';
-import {
-	generateId,
-	withAuditFieldsForCreate,
-	withAuditFieldsForUpdate
-} from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { sendPasswordChangedEmail } from '$lib/server/email';
 import { logger } from '$lib/server/logger';
 import { createUserRateLimiter, rateLimitedMessage } from '$lib/server/rate-limiter';
@@ -230,7 +226,7 @@ export const actions = {
 					.set({
 						recentToOverdueDays: normalizedThresholds.recentToOverdueDays,
 						overdueToCriticalDays: normalizedThresholds.overdueToCriticalDays,
-						...withAuditFieldsForUpdate()
+						...withTimestampsForUpdate()
 					})
 					.where(eq(visitStatusSettings.userId, currentUser.id));
 			} else {
@@ -239,7 +235,7 @@ export const actions = {
 					userId: currentUser.id,
 					recentToOverdueDays: normalizedThresholds.recentToOverdueDays,
 					overdueToCriticalDays: normalizedThresholds.overdueToCriticalDays,
-					...withAuditFieldsForCreate()
+					...withTimestampsForCreate()
 				});
 			}
 
@@ -287,7 +283,7 @@ export const actions = {
 					.update(dashboardGoalSettings)
 					.set({
 						...normalizedGoals,
-						...withAuditFieldsForUpdate()
+						...withTimestampsForUpdate()
 					})
 					.where(eq(dashboardGoalSettings.userId, currentUser.id));
 			} else {
@@ -295,7 +291,7 @@ export const actions = {
 					id: generateId(),
 					userId: currentUser.id,
 					...normalizedGoals,
-					...withAuditFieldsForCreate()
+					...withTimestampsForCreate()
 				});
 			}
 

@@ -4,9 +4,8 @@
 	"ignoreCommandEntries": ["node"],
 	"ignorePatterns": [
 		"**/*.generated.ts",
-		"**/*.d.ts",
+		"**/*.config.ts",
 		"src/lib/components/ui/**",
-		"*.config.ts",
 		"src/env.ts",
 		"src/instrumentation.server.ts",
 		"src/lib/hooks/is-mobile.svelte.ts"

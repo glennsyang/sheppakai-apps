@@ -2,11 +2,7 @@ import { ApiWriteError } from '$lib/server/api/errors';
 import type { ApiCreateVisitInput, ApiUpdateVisitInput } from '$lib/server/api/schemas/visits';
 import { getDb } from '$lib/server/db';
 import { people, visits } from '$lib/server/db/schema';
-import {
-	generateId,
-	withAuditFieldsForCreate,
-	withAuditFieldsForUpdate
-} from '$lib/server/db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { and, eq } from 'drizzle-orm';
 
 function companionsToJson(companions: string[] | undefined | null): string | null {
@@ -42,13 +38,13 @@ export async function createVisit(userId: string, input: ApiCreateVisitInput) {
 		companions: companionsToJson(input.companions),
 		notes: input.notes ?? null,
 		followUpDate: input.followUpDate ?? null,
-		...withAuditFieldsForCreate()
+		...withTimestampsForCreate()
 	});
 
 	if (person.scheduledVisitDate) {
 		await db
 			.update(people)
-			.set({ scheduledVisitDate: null, ...withAuditFieldsForUpdate() })
+			.set({ scheduledVisitDate: null, ...withTimestampsForUpdate() })
 			.where(and(eq(people.id, input.personId), eq(people.userId, userId)));
 	}
 
@@ -80,7 +76,7 @@ export async function updateVisit(userId: string, visitId: string, input: ApiUpd
 				input.companions !== undefined ? companionsToJson(input.companions) : existing.companions,
 			notes: input.notes !== undefined ? input.notes : existing.notes,
 			followUpDate: input.followUpDate !== undefined ? input.followUpDate : existing.followUpDate,
-			...withAuditFieldsForUpdate()
+			...withTimestampsForUpdate()
 		})
 		.where(and(eq(visits.id, visitId), eq(visits.userId, userId)));
 

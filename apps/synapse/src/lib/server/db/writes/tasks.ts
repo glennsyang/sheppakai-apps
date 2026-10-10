@@ -3,7 +3,7 @@ import { ApiWriteError } from '$lib/server/api/errors';
 import type { ApiCreateTaskInput, ApiUpdateTaskInput } from '$lib/server/api/schemas/tasks';
 import { getDb } from '$lib/server/db';
 import { tasks } from '$lib/server/db/schema';
-import { withAuditFieldsForUpdate } from '$lib/server/db/utils';
+import { withTimestampsForUpdate } from '$lib/server/db/utils';
 import { and, eq, ne, sql } from 'drizzle-orm';
 
 const MAX_TASK_NUMBER_ATTEMPTS = 3;
@@ -117,7 +117,7 @@ export async function updateTask(userId: string, taskId: string, input: ApiUpdat
 
 	const buildUpdateData = (existingState: string) => {
 		const updateData: Partial<typeof tasks.$inferInsert> = {
-			...withAuditFieldsForUpdate()
+			...withTimestampsForUpdate()
 		};
 
 		if (input.title !== undefined) updateData.title = input.title;
