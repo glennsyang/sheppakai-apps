@@ -344,8 +344,7 @@ export const actions = {
 				timeOfDay: form.data.timeOfDay,
 				description: form.data.description,
 				caloriesEstimate: form.data.caloriesEstimate || null,
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString()
+				...withTimestampsForCreate()
 			});
 
 			logger.info('Meal logged', { mealId, userId: user.id });

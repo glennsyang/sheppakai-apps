@@ -393,12 +393,13 @@ export const actions = {
 				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
 			}
 
+			const now = new Date();
 			await db
 				.update(people)
 				.set({
 					isArchived: true,
-					archivedAt: new Date().toISOString(),
-					...withTimestampsForUpdate()
+					archivedAt: now,
+					...withTimestampsForUpdate(now)
 				})
 				.where(and(eq(people.id, params.id), eq(people.userId, user.id)));
 

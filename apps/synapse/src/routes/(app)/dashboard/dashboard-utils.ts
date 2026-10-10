@@ -13,14 +13,14 @@ export type DashboardDateRanges = {
 	startOfMonthDate: string;
 	thisWeekDates: string[];
 	lastWeekDates: string[];
-	meditationRangeStartIso: string;
-	meditationRangeEndIso: string;
+	meditationRangeStart: Date;
+	meditationRangeEnd: Date;
 	agenda8WeeksStart: string;
 	last4WeeksStart: string;
 	workout4WeeksStart: string;
 	upcomingEndDate: string;
-	tasksCompletionRangeStartIso: string;
-	tasksCompletionRangeEndIso: string;
+	tasksCompletionRangeStart: Date;
+	tasksCompletionRangeEnd: Date;
 	dueSoonEndDate: string;
 };
 
@@ -36,14 +36,16 @@ export function buildDateRanges(today: string): DashboardDateRanges {
 		startOfMonthDate: addDaysToDateString(today, -30),
 		thisWeekDates: getWeekDates(startOfThisWeekDate),
 		lastWeekDates: getWeekDates(startOfLastWeekDate),
-		meditationRangeStartIso: `${addDaysToDateString(startOfLastWeekDate, -1)}T00:00:00.000Z`,
-		meditationRangeEndIso: `${addDaysToDateString(endOfThisWeekDate, 1)}T00:00:00.000Z`,
+		meditationRangeStart: new Date(`${addDaysToDateString(startOfLastWeekDate, -1)}T00:00:00.000Z`),
+		meditationRangeEnd: new Date(`${addDaysToDateString(endOfThisWeekDate, 1)}T00:00:00.000Z`),
 		agenda8WeeksStart: addDaysToDateString(startOfThisWeekDate, -49),
 		last4WeeksStart: addDaysToDateString(startOfThisWeekDate, -21),
 		workout4WeeksStart: addDaysToDateString(today, -28),
 		upcomingEndDate: addDaysToDateString(today, 90),
-		tasksCompletionRangeStartIso: `${addDaysToDateString(startOfLastWeekDate, -1)}T00:00:00.000Z`,
-		tasksCompletionRangeEndIso: `${addDaysToDateString(endOfThisWeekDate, 1)}T00:00:00.000Z`,
+		tasksCompletionRangeStart: new Date(
+			`${addDaysToDateString(startOfLastWeekDate, -1)}T00:00:00.000Z`
+		),
+		tasksCompletionRangeEnd: new Date(`${addDaysToDateString(endOfThisWeekDate, 1)}T00:00:00.000Z`),
 		dueSoonEndDate: addDaysToDateString(today, 7)
 	};
 }

@@ -34,7 +34,7 @@ export interface PersonWithStatus {
 	status: VisitStatus;
 	daysSinceLastVisit: number | null;
 	daysUntilStatusChange: number | null;
-	createdAt: string;
+	createdAt: Date;
 }
 
 function isValidThresholdDay(value: number): boolean {

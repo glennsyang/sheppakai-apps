@@ -58,7 +58,7 @@ export async function createTask(userId: string, input: ApiCreateTaskInput) {
 					.where(and(eq(tasks.userId, userId), eq(tasks.state, input.state)))
 					.all();
 
-				const timestamp = new Date().toISOString();
+				const timestamp = new Date();
 				const nextTaskNumber = taskNumberRow?.nextTaskNumber ?? 1;
 				const nextSortOrder = (sortOrderRow?.maxSortOrder ?? -1) + 1;
 
@@ -129,7 +129,7 @@ export async function updateTask(userId: string, taskId: string, input: ApiUpdat
 		if (input.state !== undefined) {
 			updateData.state = input.state;
 			if (input.state === 'done' && existingState !== 'done') {
-				updateData.completedAt = new Date().toISOString();
+				updateData.completedAt = new Date();
 			} else if (input.state !== 'done' && existingState === 'done') {
 				updateData.completedAt = null;
 			}
@@ -145,7 +145,7 @@ export async function updateTask(userId: string, taskId: string, input: ApiUpdat
 			.set(updateData)
 			.where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)));
 	} else {
-		const timestamp = new Date().toISOString();
+		const timestamp = new Date();
 
 		// The better-sqlite3 driver runs transaction callbacks synchronously, so every
 		// query inside must use its sync execution method (`.all()`/`.run()`/`.sync()`)

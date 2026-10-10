@@ -14,7 +14,7 @@
 		date: string;
 		time: string | null;
 		weightLbs: number;
-		createdAt: string;
+		createdAt: Date;
 	}
 
 	interface WeightStats {

@@ -14,5 +14,5 @@ export function withUpdatedAt<T extends Record<string, unknown>>(
 	data: T,
 	now: Date = new Date()
 ): T & { updatedAt: Date } {
-	return { ...data, ...withTimestampsForUpdate(now, 'date') };
+	return { ...data, ...withTimestampsForUpdate(now) };
 }

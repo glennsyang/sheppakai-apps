@@ -39,7 +39,7 @@ function buildTaskUpdateData(
 	if (formData.state !== undefined) {
 		updateData.state = formData.state;
 		if (formData.state === 'done' && existingState !== 'done') {
-			updateData.completedAt = new Date().toISOString();
+			updateData.completedAt = new Date();
 		} else if (formData.state !== 'done' && existingState === 'done') {
 			updateData.completedAt = null;
 		}
@@ -123,7 +123,7 @@ export const actions = {
 					.set(updateData)
 					.where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
 			} else {
-				const timestamp = new Date().toISOString();
+				const timestamp = new Date();
 
 				// The better-sqlite3 driver runs transaction callbacks synchronously, so every
 				// query inside must use its sync execution method (`.all()`/`.run()`/`.sync()`)

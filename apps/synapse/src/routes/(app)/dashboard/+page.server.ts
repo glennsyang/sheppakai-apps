@@ -32,7 +32,7 @@ import {
 	type VisitStatusThresholds
 } from '$lib/utils/visit-status';
 import { getWorkoutLabel } from '$lib/utils/workout';
-import { and, desc, eq, gte, lte, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, lt, lte, ne, sql } from 'drizzle-orm';
 
 import type { PageServerLoad } from './$types';
 import { buildAgendaItemStats, buildDateRanges, type DashboardDateRanges } from './dashboard-utils';
@@ -43,7 +43,7 @@ type ActivityItem = {
 	href: string;
 	title: string;
 	meta: string;
-	timestamp: string;
+	timestamp: Date;
 };
 
 type VisitHealthBucket = 'critical' | 'overdue' | 'healthy' | 'noVisits';
@@ -214,8 +214,8 @@ async function runDashboardQueries(
 			.where(
 				and(
 					eq(meditationSessions.userId, userId),
-					gte(meditationSessions.completedAt, r.meditationRangeStartIso),
-					sql`${meditationSessions.completedAt} < ${r.meditationRangeEndIso}`
+					gte(meditationSessions.completedAt, r.meditationRangeStart),
+					lt(meditationSessions.completedAt, r.meditationRangeEnd)
 				)
 			),
 		db
@@ -262,8 +262,8 @@ async function runDashboardQueries(
 				and(
 					eq(tasks.userId, userId),
 					eq(tasks.state, 'done'),
-					gte(tasks.completedAt, r.tasksCompletionRangeStartIso),
-					sql`${tasks.completedAt} < ${r.tasksCompletionRangeEndIso}`
+					gte(tasks.completedAt, r.tasksCompletionRangeStart),
+					lt(tasks.completedAt, r.tasksCompletionRangeEnd)
 				)
 			),
 		db
@@ -427,13 +427,13 @@ function sumCountsByDate(countByDate: Map<string, number>, dates: string[]): num
 }
 
 function buildMeditationCountByDate(
-	sessions: { completedAt: string }[],
+	sessions: { completedAt: Date }[],
 	startOfLastWeekDate: string,
 	endOfThisWeekDate: string
 ): Map<string, number> {
 	const map = new Map<string, number>();
 	for (const session of sessions) {
-		const localDate = getTodayString(new Date(session.completedAt));
+		const localDate = getTodayString(session.completedAt);
 		if (localDate < startOfLastWeekDate || localDate >= endOfThisWeekDate) continue;
 		map.set(localDate, (map.get(localDate) ?? 0) + 1);
 	}
@@ -458,7 +458,7 @@ function buildAgendaCompletionTrend(
 }
 
 function buildTaskStats(
-	completionRaw: { title: string; completedAt: string | null }[],
+	completionRaw: { title: string; completedAt: Date | null }[],
 	openHighPriorityResult: { count: number }[],
 	openTotalResult: { count: number }[],
 	openHighPriorityTitlesRaw: { title: string }[],
@@ -473,7 +473,7 @@ function buildTaskStats(
 	const completedThisWeekTitles: string[] = [];
 	for (const row of completionRaw) {
 		if (row.completedAt === null) continue;
-		const localDate = getTodayString(new Date(row.completedAt));
+		const localDate = getTodayString(row.completedAt);
 		if (thisWeekDateSet.has(localDate)) {
 			completedThisWeek++;
 			if (completedThisWeekTitles.length < 5) completedThisWeekTitles.push(row.title);
@@ -539,7 +539,7 @@ function buildActivityFeed(
 			timestamp: s.completedAt
 		})),
 		...data.recentTaskRaw
-			.filter((t): t is typeof t & { completedAt: string } => t.completedAt !== null)
+			.filter((t): t is typeof t & { completedAt: Date } => t.completedAt !== null)
 			.map((t) => ({
 				type: 'task' as const,
 				id: t.id,
@@ -557,7 +557,7 @@ function buildActivityFeed(
 			timestamp: v.createdAt
 		}))
 	]
-		.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+		.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 		.slice(0, 10);
 }
 

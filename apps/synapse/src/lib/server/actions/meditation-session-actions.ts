@@ -30,7 +30,7 @@ export async function handleUpdateSession(request: Request, userId: string) {
 		await db
 			.update(meditationSessions)
 			.set({
-				completedAt: new Date(form.data.completed_at).toISOString(),
+				completedAt: new Date(form.data.completed_at),
 				preMoodRating: form.data.pre_mood_rating ?? null,
 				moodRating: form.data.mood_rating ?? null,
 				notes: form.data.notes || null,
