@@ -53,13 +53,13 @@ describe('createWindowCleaningCustomer', () => {
 		mockFindById.mockClear();
 	});
 
-	it('inserts with createdBy/updatedBy stamped to the acting user', async () => {
+	it('inserts without createdBy/updatedBy', async () => {
 		await createWindowCleaningCustomer(input, 'user-1');
 
 		const insertedValues = mockInsertValues.mock.calls[0][0] as Record<string, unknown>;
 		expect(insertedValues.userId).toBe('user-1');
-		expect(insertedValues.createdBy).toBe('user-1');
-		expect(insertedValues.updatedBy).toBe('user-1');
+		expect(insertedValues).not.toHaveProperty('createdBy');
+		expect(insertedValues).not.toHaveProperty('updatedBy');
 		expect(insertedValues.unitNumber).toBeNull();
 	});
 
@@ -87,17 +87,16 @@ describe('updateWindowCleaningCustomer', () => {
 		mockFindById.mockClear();
 	});
 
-	it('sets fields with updatedBy/updatedAt stamped to the acting user', async () => {
-		await updateWindowCleaningCustomer('cust-1', input, 'user-1');
+	it('sets fields with updatedAt stamped', async () => {
+		await updateWindowCleaningCustomer('cust-1', input);
 
 		const setValues = mockUpdateSet.mock.calls[0][0] as Record<string, unknown>;
 		expect(setValues.name).toBe('Jane Doe');
-		expect(setValues.updatedBy).toBe('user-1');
-		expect(typeof setValues.updatedAt).toBe('string');
+		expect(setValues.updatedAt).toBeInstanceOf(Date);
 	});
 
 	it('re-fetches the updated record', async () => {
-		const result = await updateWindowCleaningCustomer('cust-1', input, 'user-1');
+		const result = await updateWindowCleaningCustomer('cust-1', input);
 
 		expect(mockFindById).toHaveBeenCalledWith('cust-1');
 		expect(result).toEqual({ id: 'cust-1', name: 'Jane Doe' });
@@ -106,7 +105,7 @@ describe('updateWindowCleaningCustomer', () => {
 	it('returns undefined when the record does not exist', async () => {
 		mockFindById.mockResolvedValueOnce(undefined);
 
-		const result = await updateWindowCleaningCustomer('missing', input, 'user-1');
+		const result = await updateWindowCleaningCustomer('missing', input);
 
 		expect(result).toBeUndefined();
 	});
@@ -118,13 +117,13 @@ describe('restoreWindowCleaningCustomer', () => {
 		mockUpdateWhere.mockClear();
 	});
 
-	it('clears the soft-delete markers with audit fields, scoped to the customer id', async () => {
-		await restoreWindowCleaningCustomer('cust-1', 'user-1');
+	it('clears the soft-delete markers with updatedAt, scoped to the customer id', async () => {
+		await restoreWindowCleaningCustomer('cust-1');
 
 		const setValues = mockUpdateSet.mock.calls[0][0];
 		expect(setValues.deletedAt).toBeNull();
 		expect(setValues.deletedBy).toBeNull();
-		expect(setValues.updatedBy).toBe('user-1');
+		expect(setValues.updatedAt).toBeInstanceOf(Date);
 		expect(mockUpdateWhere).toHaveBeenCalled();
 	});
 });

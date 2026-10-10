@@ -51,7 +51,7 @@ export const actions = {
 			dueMonth: data.dueMonth ?? null
 		})
 	}),
-	togglePaid: requireAuth(async ({ request }, user) => {
+	togglePaid: requireAuth(async ({ request }) => {
 		const form = await superValidate(request, zod4(togglePaidSchema));
 
 		if (!form.valid) {
@@ -59,7 +59,7 @@ export const actions = {
 		}
 
 		try {
-			await markRecurringPaid(form.data.id, form.data.paid, user.id);
+			await markRecurringPaid(form.data.id, form.data.paid);
 			logger.info(`Toggled paid status for recurring expense ${form.data.id} to ${form.data.paid}`);
 			return message(form, { type: 'success', text: 'Paid status updated' });
 		} catch (error) {

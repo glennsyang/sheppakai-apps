@@ -10,8 +10,6 @@ type InsertedRow = {
 	excludedFromBudget: boolean;
 	categoryId: string;
 	userId: string;
-	createdBy: string;
-	updatedBy: string;
 };
 type FoundTransaction = { id: string; amount: number; category: null; user: object };
 
@@ -26,9 +24,7 @@ const mockInsertReturning = vi.hoisted(() =>
 			gstAmount: undefined,
 			excludedFromBudget: false,
 			categoryId: 'cat-1',
-			userId: 'user-1',
-			createdBy: 'user-1',
-			updatedBy: 'user-1'
+			userId: 'user-1'
 		}
 	])
 );
@@ -73,7 +69,7 @@ describe('createTransaction', () => {
 		mockEvaluateBudgetAlert.mockClear();
 	});
 
-	it('inserts with createdBy/updatedBy stamped to the acting user', async () => {
+	it('inserts without createdBy/updatedBy', async () => {
 		await createTransaction(
 			{
 				amount: 42.5,
@@ -88,8 +84,8 @@ describe('createTransaction', () => {
 
 		const insertedValues = mockInsertValues.mock.calls[0][0] as Record<string, unknown>;
 		expect(insertedValues.userId).toBe('user-1');
-		expect(insertedValues.createdBy).toBe('user-1');
-		expect(insertedValues.updatedBy).toBe('user-1');
+		expect(insertedValues).not.toHaveProperty('createdBy');
+		expect(insertedValues).not.toHaveProperty('updatedBy');
 		expect(insertedValues.categoryId).toBe('cat-1');
 		expect(String(insertedValues.date)).toMatch(/^2020-06-15 \d{2}:\d{2}:\d{2}$/);
 	});

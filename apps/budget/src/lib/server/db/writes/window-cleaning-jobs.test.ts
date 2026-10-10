@@ -42,13 +42,13 @@ describe('createWindowCleaningJob', () => {
 		mockFindById.mockClear();
 	});
 
-	it('inserts with createdBy/updatedBy stamped to the acting user', async () => {
+	it('inserts without createdBy/updatedBy', async () => {
 		await createWindowCleaningJob(input, 'user-1');
 
 		const insertedValues = mockInsertValues.mock.calls[0][0] as Record<string, unknown>;
 		expect(insertedValues.userId).toBe('user-1');
-		expect(insertedValues.createdBy).toBe('user-1');
-		expect(insertedValues.updatedBy).toBe('user-1');
+		expect(insertedValues).not.toHaveProperty('createdBy');
+		expect(insertedValues).not.toHaveProperty('updatedBy');
 		expect(insertedValues.customerId).toBe('cust-1');
 		expect(String(insertedValues.jobDate)).toMatch(/^2026-08-12 \d{2}:\d{2}:\d{2}$/);
 	});

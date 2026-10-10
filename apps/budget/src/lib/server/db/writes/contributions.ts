@@ -1,7 +1,6 @@
 import { getDb } from '$lib/server/db';
 import { contributionQueries } from '$lib/server/db/queries';
 import { contribution } from '$lib/server/db/schema';
-import { withAuditFieldsForCreate } from '$lib/server/db/utils';
 import type { Contribution } from '$lib/types';
 import { formatDateForStorage } from '$lib/utils/dates';
 
@@ -28,7 +27,7 @@ export async function createContribution(
 ): Promise<Contribution> {
 	const [inserted] = await getDb()
 		.insert(contribution)
-		.values(withAuditFieldsForCreate({ ...toContributionRow(goalId, input), userId }, userId))
+		.values({ ...toContributionRow(goalId, input), userId })
 		.returning();
 
 	const withRelations = await contributionQueries.findById(inserted.id);

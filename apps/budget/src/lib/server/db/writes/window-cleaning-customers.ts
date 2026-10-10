@@ -1,7 +1,7 @@
 import { getDb } from '$lib/server/db';
 import { windowCleaningCustomerQueries } from '$lib/server/db/queries';
 import { windowCleaningCustomer } from '$lib/server/db/schema';
-import { withAuditFieldsForCreate, withAuditFieldsForUpdate } from '$lib/server/db/utils';
+import { withUpdatedAt } from '$lib/server/db/utils';
 import type { WindowCleaningCustomer } from '$lib/types';
 import { eq } from 'drizzle-orm';
 
@@ -36,7 +36,7 @@ export async function createWindowCleaningCustomer(
 ): Promise<WindowCleaningCustomer> {
 	const [inserted] = await getDb()
 		.insert(windowCleaningCustomer)
-		.values(withAuditFieldsForCreate({ ...toWindowCleaningCustomerRow(input), userId }, userId))
+		.values({ ...toWindowCleaningCustomerRow(input), userId })
 		.returning();
 
 	const withRelations = await windowCleaningCustomerQueries.findById(inserted.id);
@@ -48,21 +48,20 @@ export async function createWindowCleaningCustomer(
 
 export async function updateWindowCleaningCustomer(
 	id: string,
-	input: WindowCleaningCustomerInput,
-	userId: string
+	input: WindowCleaningCustomerInput
 ): Promise<WindowCleaningCustomer | undefined> {
 	await getDb()
 		.update(windowCleaningCustomer)
-		.set(withAuditFieldsForUpdate(toWindowCleaningCustomerRow(input), userId))
+		.set(withUpdatedAt(toWindowCleaningCustomerRow(input)))
 		.where(eq(windowCleaningCustomer.id, id));
 
 	return windowCleaningCustomerQueries.findById(id);
 }
 
 /** Clears the soft-delete markers on a customer (admin use). */
-export async function restoreWindowCleaningCustomer(id: string, userId: string): Promise<void> {
+export async function restoreWindowCleaningCustomer(id: string): Promise<void> {
 	await getDb()
 		.update(windowCleaningCustomer)
-		.set(withAuditFieldsForUpdate({ deletedAt: null, deletedBy: null }, userId))
+		.set(withUpdatedAt({ deletedAt: null, deletedBy: null }))
 		.where(eq(windowCleaningCustomer.id, id));
 }

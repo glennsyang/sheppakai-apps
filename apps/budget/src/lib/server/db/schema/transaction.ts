@@ -1,4 +1,4 @@
-import { relations, sql } from 'drizzle-orm';
+import { relations } from 'drizzle-orm';
 import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 import { generateId } from '../utils';
@@ -19,18 +19,12 @@ const transaction = sqliteTable('transactions', {
 	userId: text('user_id')
 		.notNull()
 		.references(() => user.id),
-	createdAt: text('created_at')
+	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
-		.default(sql`(current_timestamp)`),
-	createdBy: text('created_by')
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
-		.references(() => user.id),
-	updatedAt: text('updated_at')
-		.notNull()
-		.default(sql`(current_timestamp)`),
-	updatedBy: text('updated_by')
-		.notNull()
-		.references(() => user.id)
+		.$defaultFn(() => new Date())
 });
 
 export const transactionRelations = relations(transaction, ({ one }) => ({

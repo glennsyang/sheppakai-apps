@@ -40,14 +40,14 @@ describe('createContribution', () => {
 		mockFindById.mockClear();
 	});
 
-	it('inserts with the goalId from the path param and stamped audit fields', async () => {
+	it('inserts with the goalId from the path param', async () => {
 		await createContribution('goal-1', input, 'user-1');
 
 		const insertedValues = mockInsertValues.mock.calls[0][0] as Record<string, unknown>;
 		expect(insertedValues.goalId).toBe('goal-1');
 		expect(insertedValues.userId).toBe('user-1');
-		expect(insertedValues.createdBy).toBe('user-1');
-		expect(insertedValues.updatedBy).toBe('user-1');
+		expect(insertedValues).not.toHaveProperty('createdBy');
+		expect(insertedValues).not.toHaveProperty('updatedBy');
 		expect(String(insertedValues.date)).toMatch(/^2026-08-12 \d{2}:\d{2}:\d{2}$/);
 	});
 

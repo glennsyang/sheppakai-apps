@@ -1,7 +1,6 @@
 import { getDb } from '$lib/server/db';
 import { incomeQueries } from '$lib/server/db/queries';
 import { income } from '$lib/server/db/schema';
-import { withAuditFieldsForCreate } from '$lib/server/db/utils';
 import type { Income } from '$lib/types';
 import { formatDateForStorage } from '$lib/utils/dates';
 
@@ -30,7 +29,7 @@ export function toIncomeRow(input: CreateIncomeInput) {
 export async function createIncome(input: CreateIncomeInput, userId: string): Promise<Income> {
 	const [inserted] = await getDb()
 		.insert(income)
-		.values(withAuditFieldsForCreate({ ...toIncomeRow(input), userId }, userId))
+		.values({ ...toIncomeRow(input), userId })
 		.returning();
 
 	const withRelations = await incomeQueries.findById(inserted.id);

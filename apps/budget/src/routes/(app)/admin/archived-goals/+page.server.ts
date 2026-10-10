@@ -32,9 +32,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions = {
-	unarchive: adminFormAction(unArchiveSchema, async (_event, form, user) => {
+	unarchive: adminFormAction(unArchiveSchema, async (_event, form) => {
 		try {
-			await unarchiveSavingsGoal(form.data.goalId, user.id);
+			await unarchiveSavingsGoal(form.data.goalId);
 
 			logger.info(`Goal with ID ${form.data.goalId} updated successfully`);
 			return message(form, { type: 'success', text: 'Goal unarchived successfully' });

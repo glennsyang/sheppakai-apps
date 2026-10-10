@@ -1,6 +1,6 @@
 import { idSchema } from '$lib/formSchemas';
 import { getDb } from '$lib/server/db';
-import { withAuditFieldsForCreate, withAuditFieldsForUpdate } from '$lib/server/db/utils';
+import { withUpdatedAt } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import type { RequestEvent } from '@sveltejs/kit';
 import { eq, getTableColumns } from 'drizzle-orm';
@@ -132,7 +132,7 @@ function createCreateAction<
 			}
 
 			// Transform data if transformer provided
-			let dataToInsert: Partial<InferInsertType<TTable>> = config.transformCreate
+			const dataToInsert: Partial<InferInsertType<TTable>> = config.transformCreate
 				? config.transformCreate(form.data as InferSchemaType<TSchema>, userId)
 				: { ...form.data };
 
@@ -144,11 +144,6 @@ function createCreateAction<
 			if (!dataRecord.userId) {
 				dataRecord.userId = userId;
 			}
-
-			// Apply audit fields
-			dataToInsert = withAuditFieldsForCreate(dataToInsert, user) as Partial<
-				InferInsertType<TTable>
-			>;
 
 			// Insert into database
 			const result = await getDb()
@@ -228,10 +223,8 @@ function createUpdateAction<
 			const dataRecord = dataToUpdate as Record<string, unknown>;
 			delete dataRecord.id;
 
-			// Apply audit fields
-			dataToUpdate = withAuditFieldsForUpdate(dataToUpdate, user) as Partial<
-				InferInsertType<TTable>
-			>;
+			// Stamp updatedAt
+			dataToUpdate = withUpdatedAt(dataToUpdate) as Partial<InferInsertType<TTable>>;
 
 			// Update in database
 			const columns = getTableColumns(config.table);

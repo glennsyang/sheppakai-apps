@@ -24,7 +24,7 @@ export const PATCH: RequestHandler = async ({ request, url, params }) => {
 	}
 
 	try {
-		const updated = await updateWindowCleaningCustomer(params.id, parsed.data, auth.userId);
+		const updated = await updateWindowCleaningCustomer(params.id, parsed.data);
 		if (!updated) {
 			return apiError('not_found', 'Window cleaning customer not found.', 404);
 		}

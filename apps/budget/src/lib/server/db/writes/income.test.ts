@@ -7,8 +7,6 @@ type InsertedRow = {
 	date: string;
 	amount: number;
 	userId: string;
-	createdBy: string;
-	updatedBy: string;
 };
 type FoundIncome = { id: string; amount: number; user: object };
 
@@ -20,9 +18,7 @@ const mockInsertReturning = vi.hoisted(() =>
 			description: 'Invoice #42',
 			date: '2026-08-12 00:00:00',
 			amount: 500,
-			userId: 'user-1',
-			createdBy: 'user-1',
-			updatedBy: 'user-1'
+			userId: 'user-1'
 		}
 	])
 );
@@ -59,7 +55,7 @@ describe('createIncome', () => {
 		mockFindById.mockClear();
 	});
 
-	it('inserts with createdBy/updatedBy stamped to the acting user', async () => {
+	it('inserts without createdBy/updatedBy', async () => {
 		await createIncome(
 			{ name: 'Freelance payment', description: 'Invoice #42', date: '2026-08-12', amount: 500 },
 			'user-1'
@@ -67,8 +63,8 @@ describe('createIncome', () => {
 
 		const insertedValues = mockInsertValues.mock.calls[0][0] as Record<string, unknown>;
 		expect(insertedValues.userId).toBe('user-1');
-		expect(insertedValues.createdBy).toBe('user-1');
-		expect(insertedValues.updatedBy).toBe('user-1');
+		expect(insertedValues).not.toHaveProperty('createdBy');
+		expect(insertedValues).not.toHaveProperty('updatedBy');
 		expect(String(insertedValues.date)).toMatch(/^2026-08-12 \d{2}:\d{2}:\d{2}$/);
 	});
 

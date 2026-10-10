@@ -251,7 +251,7 @@ describe('crud-helpers', () => {
 		});
 	});
 
-	it('createAction inserts transformed data, applies audit fields, and runs hooks', async () => {
+	it('createAction inserts transformed data, and runs hooks', async () => {
 		const beforeCreate = mockState.beforeCreate as unknown as NonNullable<
 			Parameters<typeof createAction>[0]['beforeCreate']
 		>;
@@ -279,8 +279,8 @@ describe('crud-helpers', () => {
 		const inserted = mockState.insertValues.mock.calls[0][0] as Record<string, unknown>;
 		expect(inserted.id).toBeUndefined();
 		expect(inserted.userId).toBe('user-1');
-		expect(inserted.createdBy).toBe('user-1');
-		expect(inserted.updatedBy).toBe('user-1');
+		expect(inserted).not.toHaveProperty('createdBy');
+		expect(inserted).not.toHaveProperty('updatedBy');
 		expect(mockState.afterCreate).toHaveBeenCalledWith('new-id', {
 			id: 'new-id',
 			name: 'created'
@@ -348,8 +348,7 @@ describe('crud-helpers', () => {
 		expect(mockState.updateSet).toHaveBeenCalledTimes(1);
 		const updated = mockState.updateSet.mock.calls[0][0] as Record<string, unknown>;
 		expect(updated.id).toBeUndefined();
-		expect(updated.updatedBy).toBe('user-1');
-		expect(updated.updatedAt).toEqual(expect.any(String));
+		expect(updated.updatedAt).toBeInstanceOf(Date);
 		expect(mockState.updateWhere).toHaveBeenCalledWith({
 			field: 'id-column',
 			value: 'record-1'
