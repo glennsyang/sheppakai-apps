@@ -6,28 +6,41 @@ import {
 	loginSchema,
 	resetPasswordSchema,
 	updateDashboardGoalSettingsSchema,
-	updateProfileSchema
+	updateProfileSchema,
+	updateVisitStatusSettingsSchema
 } from './auth';
 
 describe('loginSchema', () => {
 	it('accepts valid credentials', () => {
 		expect(() =>
-			loginSchema.parse({ email: 'user@example.com', password: 'ValidPass123' })
+			loginSchema.parse({
+				email: 'user@example.com',
+				password: 'ValidPass123'
+			})
 		).not.toThrow();
 	});
 
 	it('rejects an invalid email', () => {
-		const result = loginSchema.safeParse({ email: 'bad', password: 'ValidPass123' });
+		const result = loginSchema.safeParse({
+			email: 'bad',
+			password: 'ValidPass123'
+		});
 		expect(result.success).toBe(false);
 	});
 
 	it('accepts a short legacy password (login only requires non-empty)', () => {
-		const result = loginSchema.safeParse({ email: 'user@example.com', password: 'short' });
+		const result = loginSchema.safeParse({
+			email: 'user@example.com',
+			password: 'short'
+		});
 		expect(result.success).toBe(true);
 	});
 
 	it('rejects an empty password', () => {
-		const result = loginSchema.safeParse({ email: 'user@example.com', password: '' });
+		const result = loginSchema.safeParse({
+			email: 'user@example.com',
+			password: ''
+		});
 		expect(result.success).toBe(false);
 	});
 });
@@ -170,5 +183,53 @@ describe('updateDashboardGoalSettingsSchema', () => {
 			workoutAmberThreshold: 8
 		});
 		expect(result.success).toBe(false);
+	});
+});
+
+describe('updateVisitStatusSettingsSchema', () => {
+	it('accepts increasing thresholds and defaults the unit to days', () => {
+		const result = updateVisitStatusSettingsSchema.safeParse({
+			recentToOverdueValue: '14',
+			overdueToCriticalValue: '30'
+		});
+		expect(result.success).toBe(true);
+		expect(result.data).toEqual({
+			thresholdUnit: 'days',
+			recentToOverdueValue: 14,
+			overdueToCriticalValue: 30
+		});
+	});
+
+	it('accepts increasing thresholds in months', () => {
+		const result = updateVisitStatusSettingsSchema.safeParse({
+			thresholdUnit: 'months',
+			recentToOverdueValue: 1,
+			overdueToCriticalValue: 2
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it('rejects a critical threshold that is not greater than the overdue threshold', () => {
+		const result = updateVisitStatusSettingsSchema.safeParse({
+			recentToOverdueValue: 30,
+			overdueToCriticalValue: 30
+		});
+		expect(result.success).toBe(false);
+		expect(result.error?.issues[0].path).toEqual(['overdueToCriticalValue']);
+	});
+
+	it('rejects non-numeric and non-positive values', () => {
+		expect(
+			updateVisitStatusSettingsSchema.safeParse({
+				recentToOverdueValue: 'abc',
+				overdueToCriticalValue: 30
+			}).success
+		).toBe(false);
+		expect(
+			updateVisitStatusSettingsSchema.safeParse({
+				recentToOverdueValue: 0,
+				overdueToCriticalValue: 30
+			}).success
+		).toBe(false);
 	});
 });
