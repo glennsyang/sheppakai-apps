@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { getCurrentUTCTimestamp } from '$lib/utils/dates';
+import { withTimestampsForUpdate } from '@sheppakai/shared/timestamps';
 
 // Use the user type from App.Locals to match the actual user object
 type AuthenticatedUser = NonNullable<App.Locals['user']>;
@@ -32,16 +32,18 @@ export function withAuditFieldsForCreate<T extends Record<string, unknown>>(
  * Add audit fields (updatedBy, updatedAt) to updated records
  * @param data Original data object
  * @param user Current user object, or its id
+ * @param now Timestamp to use; pass the same one to every row in a multi-row write
  */
 export function withAuditFieldsForUpdate<T extends Record<string, unknown>>(
 	data: T,
-	user: AuthenticatedUser | string
+	user: AuthenticatedUser | string,
+	now: Date = new Date()
 ): T & { updatedBy: string; updatedAt: string } {
 	const userId = resolveUserId(user);
 
 	return {
 		...data,
 		updatedBy: userId,
-		updatedAt: getCurrentUTCTimestamp()
+		...withTimestampsForUpdate(now, 'sqlite')
 	};
 }

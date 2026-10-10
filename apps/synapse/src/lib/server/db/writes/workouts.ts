@@ -16,6 +16,8 @@ import { and, eq } from 'drizzle-orm';
 export async function createWorkout(userId: string, input: ApiCreateWorkoutInput) {
 	const db = getDb();
 	const workoutId = generateId();
+	// One timestamp for the workout log and its exercises
+	const now = new Date();
 
 	await db.insert(workoutLogs).values({
 		id: workoutId,
@@ -26,7 +28,7 @@ export async function createWorkout(userId: string, input: ApiCreateWorkoutInput
 		durationMinutes: input.durationMinutes ?? null,
 		steps: input.steps ?? null,
 		notes: input.notes ?? null,
-		...withTimestampsForCreate()
+		...withTimestampsForCreate(now)
 	});
 
 	if (input.type === 'strength' && input.exercises && input.exercises.length > 0) {
@@ -40,7 +42,7 @@ export async function createWorkout(userId: string, input: ApiCreateWorkoutInput
 					sets: exercise.sets ?? null,
 					reps: exercise.reps ?? null,
 					weightLbs: exercise.weightLbs ?? null,
-					...withTimestampsForCreate()
+					...withTimestampsForCreate(now)
 				}))
 		);
 	}
@@ -69,6 +71,8 @@ export async function updateWorkout(
 	}
 
 	const nextType = input.type ?? existing.type;
+	// One timestamp for the workout log and its exercises
+	const now = new Date();
 
 	// The better-sqlite3 driver runs transaction callbacks synchronously, so every query
 	// inside must use its sync execution method (`.run()`) instead of `await` — an
@@ -83,7 +87,7 @@ export async function updateWorkout(
 					input.durationMinutes !== undefined ? input.durationMinutes : existing.durationMinutes,
 				steps: input.steps !== undefined ? input.steps : existing.steps,
 				notes: input.notes !== undefined ? input.notes : existing.notes,
-				...withTimestampsForUpdate()
+				...withTimestampsForUpdate(now)
 			})
 			.where(and(eq(workoutLogs.id, workoutId), eq(workoutLogs.userId, userId)))
 			.run();
@@ -103,7 +107,7 @@ export async function updateWorkout(
 								sets: exercise.sets ?? null,
 								reps: exercise.reps ?? null,
 								weightLbs: exercise.weightLbs ?? null,
-								...withTimestampsForCreate()
+								...withTimestampsForCreate(now)
 							}))
 					)
 					.run();

@@ -1,3 +1,5 @@
+import { formatTimestamp } from '@sheppakai/shared/timestamps';
+
 /**
  * Date Utilities for Local Timezone Storage
  *
@@ -162,7 +164,7 @@ export function getTodayDate(): string {
  * Matches SQLite's current_timestamp format
  */
 export function getCurrentUTCTimestamp(): string {
-	return new Date().toISOString().replace('T', ' ').split('.')[0];
+	return formatTimestamp(new Date(), 'sqlite');
 }
 
 /**

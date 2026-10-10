@@ -28,6 +28,8 @@ export async function createVisit(userId: string, input: ApiCreateVisitInput) {
 	}
 
 	const visitId = generateId();
+	// One timestamp for the visit and the person it clears
+	const now = new Date();
 
 	await db.insert(visits).values({
 		id: visitId,
@@ -38,13 +40,13 @@ export async function createVisit(userId: string, input: ApiCreateVisitInput) {
 		companions: companionsToJson(input.companions),
 		notes: input.notes ?? null,
 		followUpDate: input.followUpDate ?? null,
-		...withTimestampsForCreate()
+		...withTimestampsForCreate(now)
 	});
 
 	if (person.scheduledVisitDate) {
 		await db
 			.update(people)
-			.set({ scheduledVisitDate: null, ...withTimestampsForUpdate() })
+			.set({ scheduledVisitDate: null, ...withTimestampsForUpdate(now) })
 			.where(and(eq(people.id, input.personId), eq(people.userId, userId)));
 	}
 
