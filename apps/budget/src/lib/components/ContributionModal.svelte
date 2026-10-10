@@ -38,39 +38,36 @@
 
 	let activeGoals = $derived(goals.filter((g) => g.status !== 'archived'));
 
-	const formInstance = $derived(
-		superForm(contributionForm, {
-			resetForm: true,
-			onUpdate: ({ form }) => {
-				// Read form.message, not $message: superforms clears the store on submit and only
-				// repopulates it after onUpdate has run, so the store is always undefined here.
-				if (form.message?.type === 'success') {
-					const successPayload: ContributionSuccessPayload = {
-						goalId: form.data.goalId,
-						amount: form.data.amount
-					};
+	// svelte-ignore state_referenced_locally
+	const { form, errors, enhance, submitting } = superForm(contributionForm, {
+		resetForm: true,
+		onUpdate: ({ form }) => {
+			// Read form.message, not $message: superforms clears the store on submit and only
+			// repopulates it after onUpdate has run, so the store is always undefined here.
+			if (form.message?.type === 'success') {
+				const successPayload: ContributionSuccessPayload = {
+					goalId: form.data.goalId,
+					amount: form.data.amount
+				};
 
-					if (isEditing && initialData?.goalId && typeof initialData.amount === 'number') {
-						successPayload.previousGoalId = initialData.goalId;
-						successPayload.previousAmount = initialData.amount;
-					}
-
-					onSuccess?.(successPayload);
-					open = false;
-					toast.success(form.message.text);
-				} else if (form.message?.type === 'error') {
-					toast.error(form.message.text);
+				if (isEditing && initialData?.goalId && typeof initialData.amount === 'number') {
+					successPayload.previousGoalId = initialData.goalId;
+					successPayload.previousAmount = initialData.amount;
 				}
-			},
-			onError: ({ result }) => {
-				toast.error(
-					`There was an error ${isEditing ? 'updating' : 'adding'} the contribution. Reason: ${result.error.message}`
-				);
-			}
-		})
-	);
 
-	const { form, errors, enhance, submitting } = $derived(formInstance);
+				onSuccess?.(successPayload);
+				open = false;
+				toast.success(form.message.text);
+			} else if (form.message?.type === 'error') {
+				toast.error(form.message.text);
+			}
+		},
+		onError: ({ result }) => {
+			toast.error(
+				`There was an error ${isEditing ? 'updating' : 'adding'} the contribution. Reason: ${result.error.message}`
+			);
+		}
+	});
 
 	$effect(() => {
 		if (open) {
