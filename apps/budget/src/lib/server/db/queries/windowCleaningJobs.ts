@@ -3,6 +3,7 @@ import { and, desc, eq, max, sql } from 'drizzle-orm';
 
 import { getDb } from '../index';
 import { windowCleaningJob } from '../schema';
+import { dateInRange } from '../utils';
 import { createQueryBuilder } from './factory';
 
 const baseBuilder = createQueryBuilder({
@@ -49,10 +50,7 @@ export const windowCleaningJobQueries = {
 		const endDate = `${year}-${paddedMonth}-${String(lastDay).padStart(2, '0')}`;
 
 		return baseBuilder.findAll({
-			where: and(
-				sql`date(${windowCleaningJob.jobDate}) >= date(${startDate})`,
-				sql`date(${windowCleaningJob.jobDate}) <= date(${endDate})`
-			)
+			where: and(...dateInRange(windowCleaningJob.jobDate, startDate, endDate))
 		});
 	},
 
@@ -65,10 +63,7 @@ export const windowCleaningJobQueries = {
 		const startDate = `${safeYear}-01-01`;
 		const endDate = `${safeYear}-12-31`;
 		return baseBuilder.findAll({
-			where: and(
-				sql`date(${windowCleaningJob.jobDate}) >= date(${startDate})`,
-				sql`date(${windowCleaningJob.jobDate}) <= date(${endDate})`
-			)
+			where: and(...dateInRange(windowCleaningJob.jobDate, startDate, endDate))
 		});
 	}
 };

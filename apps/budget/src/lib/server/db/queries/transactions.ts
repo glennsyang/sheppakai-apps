@@ -3,6 +3,7 @@ import { and, desc, eq, isNotNull, ne, or, sql } from 'drizzle-orm';
 
 import { getDb } from '../index';
 import { transaction } from '../schema';
+import { dateInRange } from '../utils';
 import { createQueryBuilder } from './factory';
 
 // Hard cap on full-text search results. Leading-wildcard LIKE patterns cannot use a
@@ -31,10 +32,7 @@ export const transactionQueries = {
 	// Find by date range (most common pattern for transactions)
 	findByDateRange: async (startDate: string, endDate: string): Promise<Transaction[]> => {
 		return baseBuilder.findAll({
-			where: and(
-				sql`date(${transaction.date}) >= date(${startDate})`,
-				sql`date(${transaction.date}) <= date(${endDate})`
-			)
+			where: and(...dateInRange(transaction.date, startDate, endDate))
 		});
 	},
 
@@ -45,8 +43,7 @@ export const transactionQueries = {
 	): Promise<Transaction[]> => {
 		return baseBuilder.findAll({
 			where: and(
-				sql`date(${transaction.date}) >= date(${startDate})`,
-				sql`date(${transaction.date}) <= date(${endDate})`,
+				...dateInRange(transaction.date, startDate, endDate),
 				eq(transaction.excludedFromBudget, false)
 			)
 		});
@@ -59,8 +56,7 @@ export const transactionQueries = {
 	): Promise<Transaction[]> => {
 		return baseBuilder.findAll({
 			where: and(
-				sql`date(${transaction.date}) >= date(${startDate})`,
-				sql`date(${transaction.date}) <= date(${endDate})`,
+				...dateInRange(transaction.date, startDate, endDate),
 				eq(transaction.excludedFromBudget, true)
 			)
 		});
@@ -83,8 +79,7 @@ export const transactionQueries = {
 		const where = dateRange
 			? and(
 					eq(transaction.categoryId, categoryId),
-					sql`date(${transaction.date}) >= date(${dateRange.start})`,
-					sql`date(${transaction.date}) <= date(${dateRange.end})`
+					...dateInRange(transaction.date, dateRange.start, dateRange.end)
 				)
 			: eq(transaction.categoryId, categoryId);
 
@@ -123,8 +118,7 @@ export const transactionQueries = {
 		requireGst: boolean = false
 	): Promise<Transaction[]> => {
 		const conditions = [
-			sql`date(${transaction.date}) >= date(${startDate})`,
-			sql`date(${transaction.date}) <= date(${endDate})`,
+			...dateInRange(transaction.date, startDate, endDate),
 			ne(transaction.categoryId, excludeCategoryId)
 		];
 
@@ -147,8 +141,7 @@ export const transactionQueries = {
 			.from(transaction)
 			.where(
 				and(
-					sql`date(${transaction.date}) >= date(${startDate})`,
-					sql`date(${transaction.date}) <= date(${endDate})`,
+					...dateInRange(transaction.date, startDate, endDate),
 					eq(transaction.excludedFromBudget, false)
 				)
 			)

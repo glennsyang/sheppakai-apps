@@ -1,8 +1,12 @@
-import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
-
 // WithUpdatedAt stamps updatedAt from the clock by default, so we
 // Can control the clock via fake timers.
-import { generateId, withUpdatedAt } from './utils';
+import Database from 'better-sqlite3';
+import { and } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+
+import { dateInRange, generateId, withUpdatedAt } from './utils';
 
 describe('withUpdatedAt', () => {
 	beforeEach(() => {
@@ -53,5 +57,38 @@ describe('generateId', () => {
 	it('returns a unique value on each call', () => {
 		const ids = new Set(Array.from({ length: 20 }, generateId));
 		expect(ids.size).toBe(20);
+	});
+});
+
+describe('dateInRange', () => {
+	const rows = sqliteTable('rows', { date: text('date').notNull() });
+
+	function countInRange(dates: string[], start: string, end: string) {
+		const sqlite = new Database(':memory:');
+		sqlite.exec('CREATE TABLE rows (date TEXT NOT NULL)');
+		const insert = sqlite.prepare('INSERT INTO rows (date) VALUES (?)');
+		for (const date of dates) insert.run(date);
+		return drizzle(sqlite)
+			.select()
+			.from(rows)
+			.where(and(...dateInRange(rows.date, start, end)))
+			.all().length;
+	}
+
+	it('includes both bounds for date-only and date-time values', () => {
+		const dates = [
+			'2026-01-01',
+			'2026-01-01 00:00:00',
+			'2026-01-31',
+			'2026-01-31 23:59:59',
+			'2025-12-31 23:59:59',
+			'2026-02-01',
+			'2026-02-01 00:00:00'
+		];
+		expect(countInRange(dates, '2026-01-01', '2026-01-31')).toBe(4);
+	});
+
+	it('excludes empty dates', () => {
+		expect(countInRange(['', '2026-01-15'], '2026-01-01', '2026-01-31')).toBe(1);
 	});
 });
