@@ -96,9 +96,11 @@ export const auth = betterAuth({
 		}
 	},
 	emailVerification: {
+		// Explicit so the "expires in 1 hour" email copy stays true (Better Auth default is also 3600s).
+		expiresIn: 60 * 60, // 1 hour
 		sendOnSignUp: true,
 		// Without this, better-auth only sends the verification email once, on
-		// sign-up. A user who never received that first email (or let the 10-min
+		// sign-up. A user who never received that first email (or let the 1-hour
 		// link expire) then hits a dead end: signing in throws EMAIL_NOT_VERIFIED
 		// and the /verify-email page claims "we sent you a link" without anything
 		// actually being sent. sendOnSignIn re-sends a fresh link on every
