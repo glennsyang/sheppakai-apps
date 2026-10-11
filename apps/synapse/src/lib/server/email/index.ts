@@ -63,7 +63,7 @@ export async function sendVerificationEmail(to: string, name: string, verificati
 			If you didn't create an account, you can safely ignore this email.
 		</p>
 		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
-			This link will expire in 24 hours.
+			This link will expire in 1 hour.
 		</p>`
 		)
 	});
@@ -90,7 +90,7 @@ export async function sendPasswordResetEmail(to: string, name: string, resetUrl:
 			If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
 		</p>
 		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
-			This link will expire in 1 hour for security reasons.
+			This link will expire in 10 minutes for security reasons.
 		</p>`
 		)
 	});

@@ -92,6 +92,8 @@ export const auth = betterAuth({
 		}
 	},
 	emailVerification: {
+		// Explicit so the "expires in 1 hour" email copy stays true (Better Auth default is also 3600s).
+		expiresIn: 60 * 60, // 1 hour
 		sendOnSignUp: true,
 		sendOnSignIn: true,
 		autoSignInAfterVerification: true,
