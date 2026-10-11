@@ -13,6 +13,7 @@
 	"ignoreDependencies": [
 		"@flydotio/dockerfile",
 		"@fontsource-variable/inter",
+		"@getbrevo/brevo",
 		"@internationalized/date",
 		"@lucide/svelte",
 		"@sveltejs/kit",
@@ -35,7 +36,10 @@
 		"zod"
 	],
 	"ignoreExports": [
-		{ "file": "src/lib/utils.ts", "exports": ["WithoutChildrenOrChild", "WithElementRef"] }
+		{
+			"file": "src/lib/utils.ts",
+			"exports": ["WithoutChildrenOrChild", "WithElementRef"]
+		}
 	],
 	"duplicates": {
 		"ignore": ["src/lib/components/ui/**/*.{ts,tsx}"]

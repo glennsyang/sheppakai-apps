@@ -10,6 +10,7 @@
 		"./api-scopes": "./src/api-scopes.ts",
 		"./auth-allowlist": "./src/auth-allowlist.ts",
 		"./auth-audit-hooks": "./src/auth-audit-hooks.ts",
+		"./auth-config": "./src/auth-config.ts",
 		"./auth-form-handler": "./src/auth-form-handler.ts",
 		"./auth-form-helpers": "./src/auth-form-helpers.ts",
 		"./auth-guard": "./src/auth-guard.ts",

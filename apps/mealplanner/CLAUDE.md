@@ -119,7 +119,7 @@ src/
 ## Authentication
 
 - **better-auth v1** with email+password only (no OAuth).
-- **Public sign-up is disabled** (`emailAndPassword.disableSignUp: true`, no `/register` route) — the shared-data model depends on exactly two users (#124). Sign-in is also gated to the exact `ALLOWED_EMAILS` list (`src/lib/server/auth/allowlist-hook.ts`) — same as `budget` and `synapse`. New accounts: admin plugin's `createUser`, then add the email to `ALLOWED_EMAILS`.
+- **Public sign-up is disabled** (`emailAndPassword.disableSignUp: true`, no `/register` route) — the shared-data model depends on exactly two users (#124). Sign-in is also gated to the exact `ALLOWED_EMAILS` list (`createAppAuth` in `@sheppakai/shared/auth-config`) — same as `budget` and `synapse`. New accounts: admin plugin's `createUser`, then add the email to `ALLOWED_EMAILS`.
 - Minimum password length: **12 characters**.
 - `src/hooks.server.ts` runs the session middleware on every request, populating `event.locals.user` and `event.locals.session` via `svelteKitHandler`.
 - `(app)/+layout.server.ts` enforces the auth guard — redirects to `/sign-in` if no session. Auth route paths are centralised in `src/lib/auth-routes.ts` (`SIGN_IN_ROUTE`, etc.) — no inline route literals.
