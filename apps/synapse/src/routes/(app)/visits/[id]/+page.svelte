@@ -9,10 +9,10 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { personSchema, scheduleVisitSchema, visitSchema } from '$lib/schemas/visits';
-	import { actionMessage } from '$lib/utils/actionMessage';
 	import { formatDateLong, formatDateShort } from '$lib/utils/date';
 	import { getStatusLabel } from '$lib/utils/visit-status';
 	import { Archive, ArrowLeft, Calendar, CalendarClock, Pencil, Trash2 } from '@lucide/svelte';
+	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';

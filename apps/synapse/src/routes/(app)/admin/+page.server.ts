@@ -23,6 +23,7 @@ import { withTimestampsForUpdate } from '$lib/server/db/utils';
 import { sendWelcomeEmail } from '$lib/server/email';
 import { logger } from '$lib/server/logger';
 import { sendAuthAlerts } from '$lib/server/notifications';
+import { parsePermissions } from '@sheppakai/shared/api-scopes';
 import { isRedirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import { asc, desc, eq, inArray } from 'drizzle-orm';
@@ -73,17 +74,6 @@ async function trySendWelcomeEmail(to: string, name: string): Promise<boolean> {
 	} catch {
 		// sendWelcomeEmail already logged the failure.
 		return false;
-	}
-}
-
-// The api-key plugin stores permissions as a JSON string; tolerate a malformed value
-// rather than failing the whole dashboard load.
-function parsePermissions(raw: string | null): Record<string, string[]> | null {
-	if (!raw) return null;
-	try {
-		return JSON.parse(raw) as Record<string, string[]>;
-	} catch {
-		return null;
 	}
 }
 

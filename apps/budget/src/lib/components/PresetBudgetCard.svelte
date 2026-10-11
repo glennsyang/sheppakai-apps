@@ -3,8 +3,8 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { formatCurrency } from '$lib/utils';
-	import { actionMessage } from '$lib/utils/actionMessage';
 	import { padMonth } from '$lib/utils/dates';
+	import { actionMessage } from '@sheppakai/shared/action-message';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { toast } from 'svelte-sonner';
 

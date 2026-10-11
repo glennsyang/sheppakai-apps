@@ -2,8 +2,8 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import { actionMessage } from '$lib/utils/actionMessage';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 
 	import type { AdminApiKey } from './api-keys-columns';
