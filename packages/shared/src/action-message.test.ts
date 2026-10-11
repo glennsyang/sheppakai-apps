@@ -1,7 +1,7 @@
 import type { ActionResult } from '@sveltejs/kit';
 import { describe, expect, it } from 'vitest';
 
-import { actionMessage } from './actionMessage';
+import { actionMessage } from './action-message';
 
 const fallbacks = { success: 'Fallback success', error: 'Fallback error' };
 

@@ -20,3 +20,14 @@ export function permissionsForScope(scope: string): Record<string, string[]> {
 	const [resource, action] = scope.split(':');
 	return { [resource]: [action] };
 }
+
+/** Parses the JSON `permissions` column better-auth stores on an API key; null if absent or malformed. */
+export function parsePermissions(raw: string | null): Record<string, string[]> | null {
+	if (!raw) return null;
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		return parsed && typeof parsed === 'object' ? (parsed as Record<string, string[]>) : null;
+	} catch {
+		return null;
+	}
+}

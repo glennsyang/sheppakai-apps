@@ -9,7 +9,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import { recurringFormContext } from '$lib/contexts';
 	import { toRecurringFormData } from '$lib/formSchemas';
-	import { actionMessage } from '$lib/utils/actionMessage';
+	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 
 	let { id, recurringData }: { id: string; recurringData: Recurring } = $props();

@@ -7,13 +7,13 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import type { User } from '$lib/types';
-	import { actionMessage } from '$lib/utils/actionMessage';
 	import BanIcon from '@lucide/svelte/icons/ban';
 	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import UserCheckIcon from '@lucide/svelte/icons/user-check';
+	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 
 	let { user, currentUserId }: { user: User; currentUserId: string } = $props();

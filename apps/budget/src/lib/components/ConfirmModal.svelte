@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Dialog from '$lib/components/ui/dialog';
-	import { actionMessage } from '$lib/utils/actionMessage';
+	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 
 	interface Props {

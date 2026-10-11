@@ -16,9 +16,8 @@ function isMessage(value: unknown): value is App.Superforms.Message {
  * Read the `App.Superforms.Message` out of an ActionResult.
  *
  * Forms with a `superForm` instance read `$message` directly. Components that submit via plain
- * `use:enhance` from `$app/forms` (`ConfirmDialog` and the admin table row actions) see the raw
- * ActionResult instead, so this is the single place that knows how to unwrap one. Copied from
- * `apps/budget/src/lib/utils/actionMessage.ts`.
+ * `use:enhance` from `$app/forms` (confirm dialogs, table row actions) see the raw ActionResult
+ * instead, so this is the single place that knows how to unwrap one.
  *
  * The response shapes come from `docs/ERROR_HANDLING_POLICY.md`. Every action returns a form, so
  * the `data.error` branch is down to the `requireAuth` / `requireAdmin` 401/403 wall, which runs

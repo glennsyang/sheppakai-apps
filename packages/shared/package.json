@@ -4,6 +4,7 @@
 	"private": true,
 	"type": "module",
 	"exports": {
+		"./action-message": "./src/action-message.ts",
 		"./api-audit-log": "./src/api-audit-log.ts",
 		"./api-key": "./src/api-key.ts",
 		"./api-response": "./src/api-response.ts",
@@ -16,6 +17,7 @@
 		"./auth-routes": "./src/auth-routes.ts",
 		"./bearer-token": "./src/bearer-token.ts",
 		"./better-auth-errors": "./src/better-auth-errors.ts",
+		"./cn": "./src/cn.ts",
 		"./db": "./src/db.ts",
 		"./email": "./src/email.ts",
 		"./env": "./src/env.ts",
@@ -24,6 +26,7 @@
 		"./name-guard": "./src/name-guard.ts",
 		"./ntfy": "./src/ntfy.ts",
 		"./rate-limiter": "./src/rate-limiter.ts",
+		"./sentry-client": "./src/sentry-client.ts",
 		"./sentry-data-collection": "./src/sentry-data-collection.ts",
 		"./server-handle": "./src/server-handle.ts",
 		"./timestamps": "./src/timestamps.ts"
@@ -45,12 +48,14 @@
 		"@types/node": "catalog:",
 		"better-auth": "catalog:",
 		"better-sqlite3": "catalog:",
+		"clsx": "catalog:",
 		"drizzle-orm": "catalog:",
 		"oxfmt": "catalog:",
 		"oxlint": "catalog:",
 		"svelte": "catalog:",
 		"sveltekit-rate-limiter": "catalog:",
 		"sveltekit-superforms": "catalog:",
+		"tailwind-merge": "catalog:",
 		"typescript": "catalog:",
 		"vite": "catalog:",
 		"vitest": "catalog:",
@@ -62,9 +67,11 @@
 		"@sveltejs/kit": "^2",
 		"better-auth": "^1",
 		"better-sqlite3": "^13",
+		"clsx": "^2",
 		"drizzle-orm": ">=0.45",
 		"sveltekit-rate-limiter": ">=0.8",
 		"sveltekit-superforms": "^3",
+		"tailwind-merge": "^3",
 		"zod": "^4"
 	}
 }
