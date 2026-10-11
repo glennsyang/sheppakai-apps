@@ -1,4 +1,3 @@
-import { ApiWriteError } from '$lib/server/api/errors';
 import type {
 	ApiCreateWorkoutInput,
 	ApiUpdateWorkoutInput
@@ -6,6 +5,7 @@ import type {
 import { getDb } from '$lib/server/db';
 import { workoutExercises, workoutLogs } from '$lib/server/db/schema';
 import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
+import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { and, eq } from 'drizzle-orm';
 
 /**

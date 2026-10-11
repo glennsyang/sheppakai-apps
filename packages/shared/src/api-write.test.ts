@@ -1,19 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
-const mockRecordApiWrite = vi.hoisted(() => vi.fn<(...args: unknown[]) => Promise<void>>());
-const mockLoggerError = vi.hoisted(() => vi.fn<(...args: unknown[]) => void>());
+import { ApiWriteError, createHandleApiWrite, parseJsonBody } from './api-write';
 
-vi.mock('./audit-log', () => ({ recordApiWrite: mockRecordApiWrite }));
-vi.mock('$lib/server/logger', () => ({
-	logger: {
-		error: mockLoggerError,
-		warn: vi.fn<(...args: unknown[]) => void>(),
-		info: vi.fn<(...args: unknown[]) => void>()
-	}
-}));
+const mockRecordApiWrite = vi.fn<(...args: unknown[]) => Promise<void>>();
+const mockLoggerError = vi.fn<(...args: unknown[]) => void>();
 
-import { ApiWriteError } from './errors';
-import { handleApiWrite } from './handle-write';
+const handleApiWrite = createHandleApiWrite({
+	recordApiWrite: mockRecordApiWrite,
+	logger: { error: mockLoggerError }
+});
 
 const context = {
 	apiKeyId: 'key-1',
@@ -80,5 +76,47 @@ describe('handleApiWrite', () => {
 		});
 		expect(mockRecordApiWrite).toHaveBeenCalledWith({ ...context, statusCode: 500 });
 		expect(mockLoggerError).toHaveBeenCalled();
+	});
+});
+
+describe('ApiWriteError', () => {
+	it('carries the code, message, and status', () => {
+		const error = new ApiWriteError('not_found', 'Task not found.', 404);
+		expect(error).toBeInstanceOf(Error);
+		expect(error.name).toBe('ApiWriteError');
+		expect(error.code).toBe('not_found');
+		expect(error.message).toBe('Task not found.');
+		expect(error.status).toBe(404);
+	});
+});
+
+describe('parseJsonBody', () => {
+	const schema = z.object({ title: z.string().min(1, 'Title is required') });
+
+	function jsonRequest(body: string) {
+		return new Request('http://localhost/api/v1/tasks', { method: 'POST', body });
+	}
+
+	it('returns the parsed data', async () => {
+		expect(await parseJsonBody(jsonRequest('{"title":"Hi"}'), schema)).toEqual({
+			ok: true,
+			data: { title: 'Hi' }
+		});
+	});
+
+	it('answers invalid_json for a non-JSON body', async () => {
+		const result = await parseJsonBody(jsonRequest('{nope'), schema);
+		if (result.ok) throw new Error('expected failure');
+		expect(result.response.status).toBe(400);
+		expect(await result.response.json()).toMatchObject({ error: { code: 'invalid_json' } });
+	});
+
+	it('answers validation_failed with the issue messages', async () => {
+		const result = await parseJsonBody(jsonRequest('{"title":""}'), schema);
+		if (result.ok) throw new Error('expected failure');
+		expect(result.response.status).toBe(400);
+		expect(await result.response.json()).toEqual({
+			error: { code: 'validation_failed', message: 'Title is required' }
+		});
 	});
 });

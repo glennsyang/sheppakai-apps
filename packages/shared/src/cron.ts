@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 
-import { parseBearerToken, type BearerTokenFailureReason } from './http/bearer-token';
+import { parseBearerToken, type BearerTokenFailureReason } from './bearer-token';
 
 const MIN_CRON_SECRET_LENGTH = 32;
 
@@ -56,4 +56,46 @@ export function verifyCronAuthorization(
 	}
 
 	return { authorized: true };
+}
+
+/**
+ * Builds a cron `POST` handler: rejects anything not carrying `Bearer <secret>`, then runs
+ * the job and answers `{ success, timestamp, result? }`, or a logged 500 if it throws.
+ */
+export function createCronHandler(options: {
+	/** The app's `CRON_SECRET`; a missing, blank or short secret fails closed. */
+	secret: string | undefined;
+	/** Human-readable job name for the start/finish/failure log lines. */
+	name: string;
+	run: () => Promise<unknown>;
+	logger: {
+		info(message: string, meta?: unknown): void;
+		warn(message: string, meta?: unknown): void;
+		error(message: string, meta?: unknown): void;
+	};
+}): (event: { request: Request }) => Promise<Response> {
+	const { secret, name, run, logger } = options;
+
+	return async ({ request }) => {
+		const authResult = verifyCronAuthorization(request.headers.get('authorization'), secret);
+
+		if (!authResult.authorized) {
+			logger.warn('⚠️ Unauthorized cron job attempt', { reason: authResult.reason });
+			return Response.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		try {
+			logger.info(`⏰ Starting cron job: ${name}`);
+			const result = await run();
+			logger.info(`✅ Cron job completed: ${name}`);
+			return Response.json({
+				success: true,
+				timestamp: new Date().toISOString(),
+				...(result === undefined ? {} : { result })
+			});
+		} catch (error) {
+			logger.error(`❌ Cron job failed: ${name}`, { error });
+			return Response.json({ error: 'Job failed' }, { status: 500 });
+		}
+	};
 }

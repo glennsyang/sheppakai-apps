@@ -59,7 +59,7 @@ This repo already has a shared helper for the repeated "list page + form + serve
 - `src/lib/server/auth.ts` — better-auth with `drizzleAdapter`, `admin` plugin, `apiKey` plugin (`@better-auth/api-key` — there's a real API surface under `src/routes/api/v1`, protected by API keys, separate from session auth).
 - Min password length 12, session revoked on password reset, password reset tokens expire in 10 minutes.
 - `ADMIN_USER_IDS` env var gates the `admin` plugin's elevated role — check `src/lib/server/auth.ts` before assuming any user can hit `(app)/admin`.
-- Auth-adjacent helpers: `src/lib/server/actions/auth-guard.ts` (`requireAuth`), `src/lib/server/auth-guard-load.ts` for `+layout.server.ts` guards, `src/lib/server/cron-auth.ts` for the `api/cron` routes (separate auth path, not session-based).
+- Auth-adjacent helpers: `src/lib/server/actions/auth-guard.ts` (`requireAuth`), `src/lib/server/auth-guard-load.ts` for `+layout.server.ts` guards, `createCronHandler` from `@sheppakai/shared/cron` for the `api/cron` routes (separate auth path, not session-based).
 
 ---
 
