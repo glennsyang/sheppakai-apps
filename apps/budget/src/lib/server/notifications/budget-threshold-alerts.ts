@@ -4,6 +4,7 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { getDb } from '../db';
 import { budget, transaction } from '../db/schema';
+import { dateInRange } from '../db/utils';
 import { logger } from '../logger';
 import { sendBudgetAlerts } from './index';
 
@@ -166,19 +167,18 @@ async function loadCategoryMonthSpend(
 	year: number
 ): Promise<number> {
 	const { startDate, endDate } = getMonthDateRange(month, year);
-	const matchingTransactions = await getDb().query.transaction.findMany({
-		columns: {
-			amount: true
-		},
-		where: and(
-			eq(transaction.categoryId, categoryId),
-			eq(transaction.excludedFromBudget, false),
-			sql`date(${transaction.date}) >= date(${startDate})`,
-			sql`date(${transaction.date}) <= date(${endDate})`
-		)
-	});
+	const [row] = await getDb()
+		.select({ total: sql<number>`coalesce(sum(${transaction.amount}), 0)` })
+		.from(transaction)
+		.where(
+			and(
+				eq(transaction.categoryId, categoryId),
+				eq(transaction.excludedFromBudget, false),
+				...dateInRange(transaction.date, startDate, endDate)
+			)
+		);
 
-	return matchingTransactions.reduce((sum, row) => sum + row.amount, 0);
+	return row?.total ?? 0;
 }
 
 async function maybeSendBudgetThresholdAlert(params: {

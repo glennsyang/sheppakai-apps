@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
 	budgetFindMany: vi.fn<() => Promise<unknown[]>>(),
-	transactionFindMany: vi.fn<() => Promise<unknown[]>>(),
+	transactionSpendTotal: vi.fn<() => Promise<unknown[]>>(),
 	transactionFindFirst: vi.fn<() => Promise<unknown>>(),
 	sendBudgetAlerts: vi.fn<() => Promise<boolean>>(),
 	loggerInfo: vi.fn<() => void>(),
@@ -11,12 +11,12 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock('$lib/server/db', () => ({
 	getDb: () => ({
+		select: () => ({ from: () => ({ where: mockState.transactionSpendTotal }) }),
 		query: {
 			budget: {
 				findMany: mockState.budgetFindMany
 			},
 			transaction: {
-				findMany: mockState.transactionFindMany,
 				findFirst: mockState.transactionFindFirst
 			}
 		}
@@ -45,7 +45,7 @@ import {
 describe('budget-threshold-alerts', () => {
 	beforeEach(() => {
 		mockState.budgetFindMany.mockReset();
-		mockState.transactionFindMany.mockReset();
+		mockState.transactionSpendTotal.mockReset();
 		mockState.transactionFindFirst.mockReset();
 		mockState.sendBudgetAlerts.mockReset();
 		mockState.loggerInfo.mockReset();
@@ -71,7 +71,7 @@ describe('budget-threshold-alerts', () => {
 
 	it('sends a 90 percent alert when a create crosses into the near-threshold range', async () => {
 		mockState.budgetFindMany.mockResolvedValue([{ amount: 100, category: { name: 'Groceries' } }]);
-		mockState.transactionFindMany.mockResolvedValue([{ amount: 80 }, { amount: 10 }]);
+		mockState.transactionSpendTotal.mockResolvedValue([{ total: 90 }]);
 
 		await evaluateCreatedTransactionBudgetAlert({
 			id: 'tx-1',
@@ -91,7 +91,7 @@ describe('budget-threshold-alerts', () => {
 
 	it('sends only the over-budget alert when a create jumps from below 90 to above 100', async () => {
 		mockState.budgetFindMany.mockResolvedValue([{ amount: 100, category: { name: 'Groceries' } }]);
-		mockState.transactionFindMany.mockResolvedValue([{ amount: 80 }, { amount: 30 }]);
+		mockState.transactionSpendTotal.mockResolvedValue([{ total: 110 }]);
 
 		await evaluateCreatedTransactionBudgetAlert({
 			id: 'tx-2',
@@ -111,7 +111,7 @@ describe('budget-threshold-alerts', () => {
 
 	it('skips notifications when no budget exists for the category-month', async () => {
 		mockState.budgetFindMany.mockResolvedValue([]);
-		mockState.transactionFindMany.mockResolvedValue([{ amount: 25 }]);
+		mockState.transactionSpendTotal.mockResolvedValue([{ total: 25 }]);
 
 		await evaluateCreatedTransactionBudgetAlert({
 			id: 'tx-3',
@@ -164,7 +164,7 @@ describe('budget-threshold-alerts', () => {
 
 	it('sends a 90 percent alert when an update increases spend in the same bucket across the threshold', async () => {
 		mockState.budgetFindMany.mockResolvedValue([{ amount: 100, category: { name: 'Groceries' } }]);
-		mockState.transactionFindMany.mockResolvedValue([{ amount: 95 }]);
+		mockState.transactionSpendTotal.mockResolvedValue([{ total: 95 }]);
 
 		await evaluateUpdatedTransactionBudgetAlert(
 			{
@@ -193,7 +193,7 @@ describe('budget-threshold-alerts', () => {
 
 	it('evaluates the new bucket only when an update moves a transaction to another category-month', async () => {
 		mockState.budgetFindMany.mockResolvedValue([{ amount: 100, category: { name: 'Dining Out' } }]);
-		mockState.transactionFindMany.mockResolvedValue([{ amount: 80 }, { amount: 25 }]);
+		mockState.transactionSpendTotal.mockResolvedValue([{ total: 105 }]);
 
 		await evaluateUpdatedTransactionBudgetAlert(
 			{

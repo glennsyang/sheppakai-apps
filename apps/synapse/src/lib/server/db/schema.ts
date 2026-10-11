@@ -115,19 +115,30 @@ export const verification = sqliteTable('verification', {
  * Email Notifications
  * Tracks sent email notifications to prevent duplicates and enable audit trail
  */
-export const emailNotifications = sqliteTable('email_notifications', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	userId: text('userId')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	notificationType: text('notification_type').notNull(), // 'workout_reminder' | 'meditation_reminder' | 'visit_warning' | 'daily_agenda_digest'
-	entityId: text('entity_id'), // ID of related entity (workout_reminder, meditation_schedule, or person)
-	sentAt: integer('sent_at', { mode: 'timestamp' }).notNull(),
-	emailSubject: text('email_subject').notNull(),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const emailNotifications = sqliteTable(
+	'email_notifications',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		userId: text('userId')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		notificationType: text('notification_type').notNull(), // 'workout_reminder' | 'meditation_reminder' | 'visit_warning' | 'daily_agenda_digest'
+		entityId: text('entity_id'), // ID of related entity (workout_reminder, meditation_schedule, or person)
+		sentAt: integer('sent_at', { mode: 'timestamp' }).notNull(),
+		emailSubject: text('email_subject').notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [
+		index('email_notifications_lookup_idx').on(
+			table.userId,
+			table.notificationType,
+			table.entityId,
+			table.sentAt
+		)
+	]
+);
 
 export const emailNotificationsRelations = relations(emailNotifications, ({ one }) => ({
 	user: one(user, {
@@ -140,22 +151,26 @@ export const emailNotificationsRelations = relations(emailNotifications, ({ one 
  * Journal Entries
  * Daily journal entries with optional metadata (location, weather)
  */
-export const journalEntries = sqliteTable('journal_entries', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	date: text('date').notNull(), // YYYY-MM-DD format
-	content: text('content').notNull(),
-	location: text('location'), // Optional location string
-	weather: text('weather'), // Optional weather JSON object
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const journalEntries = sqliteTable(
+	'journal_entries',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		date: text('date').notNull(), // YYYY-MM-DD format
+		content: text('content').notNull(),
+		location: text('location'), // Optional location string
+		weather: text('weather'), // Optional weather JSON object
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('journal_entries_user_date_idx').on(table.userId, table.date)]
+);
 
 export const journalEntriesRelations = relations(journalEntries, ({ one }) => ({
 	user: one(user, {
@@ -332,21 +347,25 @@ export const dailyAgendaEntriesRelations = relations(dailyAgendaEntries, ({ one 
  * Weight Entries
  * Weight tracking records for trend analysis
  */
-export const weightEntries = sqliteTable('weight_entries', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	date: text('date').notNull(), // YYYY-MM-DD
-	time: text('time'), // Optional HH:MM
-	weightLbs: integer('weight_lbs').notNull(),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const weightEntries = sqliteTable(
+	'weight_entries',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		date: text('date').notNull(), // YYYY-MM-DD
+		time: text('time'), // Optional HH:MM
+		weightLbs: integer('weight_lbs').notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('weight_entries_user_date_idx').on(table.userId, table.date)]
+);
 
 export const weightEntriesRelations = relations(weightEntries, ({ one }) => ({
 	user: one(user, {
@@ -386,24 +405,28 @@ export const goalWeightsRelations = relations(goalWeights, ({ one }) => ({
  * Workout Logs
  * Exercise session records
  */
-export const workoutLogs = sqliteTable('workout_logs', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	date: text('date').notNull(), // YYYY-MM-DD
-	time: text('time'), // Optional HH:MM
-	type: text('type').notNull(), // 'strength' | 'cardio' | 'hiit' | 'walk' | 'stretch' | 'other'
-	durationMinutes: integer('duration_minutes'),
-	steps: integer('steps'), // For walk workouts
-	notes: text('notes'),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const workoutLogs = sqliteTable(
+	'workout_logs',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		date: text('date').notNull(), // YYYY-MM-DD
+		time: text('time'), // Optional HH:MM
+		type: text('type').notNull(), // 'strength' | 'cardio' | 'hiit' | 'walk' | 'stretch' | 'other'
+		durationMinutes: integer('duration_minutes'),
+		steps: integer('steps'), // For walk workouts
+		notes: text('notes'),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('workout_logs_user_date_idx').on(table.userId, table.date)]
+);
 
 export const workoutLogsRelations = relations(workoutLogs, ({ one, many }) => ({
 	user: one(user, {
@@ -417,22 +440,26 @@ export const workoutLogsRelations = relations(workoutLogs, ({ one, many }) => ({
  * Workout Exercises
  * Individual exercises within a strength workout
  */
-export const workoutExercises = sqliteTable('workout_exercises', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	workoutLogId: text('workout_log_id')
-		.notNull()
-		.references(() => workoutLogs.id, { onDelete: 'cascade' }),
-	exerciseName: text('exercise_name').notNull(),
-	sets: integer('sets'),
-	reps: integer('reps'),
-	weightLbs: integer('weight_lbs'),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const workoutExercises = sqliteTable(
+	'workout_exercises',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		workoutLogId: text('workout_log_id')
+			.notNull()
+			.references(() => workoutLogs.id, { onDelete: 'cascade' }),
+		exerciseName: text('exercise_name').notNull(),
+		sets: integer('sets'),
+		reps: integer('reps'),
+		weightLbs: integer('weight_lbs'),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('workout_exercises_log_idx').on(table.workoutLogId)]
+);
 
 export const workoutExercisesRelations = relations(workoutExercises, ({ one }) => ({
 	workoutLog: one(workoutLogs, {
@@ -445,22 +472,26 @@ export const workoutExercisesRelations = relations(workoutExercises, ({ one }) =
  * Meal Logs
  * Meal records with calorie tracking
  */
-export const mealLogs = sqliteTable('meal_logs', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	date: text('date').notNull(), // YYYY-MM-DD
-	timeOfDay: text('time_of_day').notNull(), // 'breakfast' | 'lunch' | 'dinner' | 'snack'
-	description: text('description').notNull(),
-	caloriesEstimate: integer('calories_estimate'),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const mealLogs = sqliteTable(
+	'meal_logs',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		date: text('date').notNull(), // YYYY-MM-DD
+		timeOfDay: text('time_of_day').notNull(), // 'breakfast' | 'lunch' | 'dinner' | 'snack'
+		description: text('description').notNull(),
+		caloriesEstimate: integer('calories_estimate'),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('meal_logs_user_date_idx').on(table.userId, table.date)]
+);
 
 export const mealLogsRelations = relations(mealLogs, ({ one }) => ({
 	user: one(user, {
@@ -500,23 +531,27 @@ export const dailyCalorieTargetsRelations = relations(dailyCalorieTargets, ({ on
  * Workout Reminders
  * Scheduled workout reminder notifications
  */
-export const workoutReminders = sqliteTable('workout_reminders', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	workoutType: text('workout_type').notNull(), // 'strength' | 'cardio' | 'hiit' | 'walk' | 'stretch' | 'other'
-	cadence: text('cadence').notNull(), // 'daily' | 'weekly'
-	daysOfWeek: text('days_of_week'), // JSON array of day numbers (0-6, 0=Sunday)
-	time: text('time').notNull(), // HH:MM
-	enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const workoutReminders = sqliteTable(
+	'workout_reminders',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		workoutType: text('workout_type').notNull(), // 'strength' | 'cardio' | 'hiit' | 'walk' | 'stretch' | 'other'
+		cadence: text('cadence').notNull(), // 'daily' | 'weekly'
+		daysOfWeek: text('days_of_week'), // JSON array of day numbers (0-6, 0=Sunday)
+		time: text('time').notNull(), // HH:MM
+		enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('workout_reminders_user_idx').on(table.userId)]
+);
 
 export const workoutRemindersRelations = relations(workoutReminders, ({ one }) => ({
 	user: one(user, {
@@ -529,22 +564,26 @@ export const workoutRemindersRelations = relations(workoutReminders, ({ one }) =
  * Meditation Routines
  * Predefined or user-created meditation routines
  */
-export const meditationRoutines = sqliteTable('meditation_routines', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
-	title: text('title').notNull(),
-	description: text('description'),
-	linkUrl: text('link_url').notNull(),
-	durationMinutes: integer('duration_minutes').notNull(),
-	moodTags: text('mood_tags').notNull(), // JSON array: ["Anxious", "Focused", etc.]
-	isPredefined: integer('is_predefined', { mode: 'boolean' }).notNull().default(false),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const meditationRoutines = sqliteTable(
+	'meditation_routines',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
+		title: text('title').notNull(),
+		description: text('description'),
+		linkUrl: text('link_url').notNull(),
+		durationMinutes: integer('duration_minutes').notNull(),
+		moodTags: text('mood_tags').notNull(), // JSON array: ["Anxious", "Focused", etc.]
+		isPredefined: integer('is_predefined', { mode: 'boolean' }).notNull().default(false),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('meditation_routines_user_idx').on(table.userId)]
+);
 
 export const meditationRoutinesRelations = relations(meditationRoutines, ({ one, many }) => ({
 	user: one(user, {
@@ -559,25 +598,29 @@ export const meditationRoutinesRelations = relations(meditationRoutines, ({ one,
  * Meditation Schedules
  * Recurring meditation reminder schedules
  */
-export const meditationSchedules = sqliteTable('meditation_schedules', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	routineId: text('routine_id')
-		.notNull()
-		.references(() => meditationRoutines.id, { onDelete: 'cascade' }),
-	cadence: text('cadence').notNull(), // 'daily' | 'weekly' | 'custom'
-	daysOfWeek: text('days_of_week'), // JSON array of day numbers (0-6, 0=Sunday)
-	time: text('time').notNull(), // HH:MM
-	enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const meditationSchedules = sqliteTable(
+	'meditation_schedules',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		routineId: text('routine_id')
+			.notNull()
+			.references(() => meditationRoutines.id, { onDelete: 'cascade' }),
+		cadence: text('cadence').notNull(), // 'daily' | 'weekly' | 'custom'
+		daysOfWeek: text('days_of_week'), // JSON array of day numbers (0-6, 0=Sunday)
+		time: text('time').notNull(), // HH:MM
+		enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('meditation_schedules_user_idx').on(table.userId)]
+);
 
 export const meditationSchedulesRelations = relations(meditationSchedules, ({ one }) => ({
 	user: one(user, {
@@ -594,25 +637,29 @@ export const meditationSchedulesRelations = relations(meditationSchedules, ({ on
  * Meditation Sessions
  * Completed meditation session logs
  */
-export const meditationSessions = sqliteTable('meditation_sessions', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	routineId: text('routine_id')
-		.notNull()
-		.references(() => meditationRoutines.id, { onDelete: 'cascade' }),
-	completedAt: integer('completed_at', { mode: 'timestamp' }).notNull(),
-	preMoodRating: integer('pre_mood_rating'), // 1-5 pre-meditation mood
-	moodRating: integer('mood_rating'), // 1-5 post-meditation mood
-	notes: text('notes'),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const meditationSessions = sqliteTable(
+	'meditation_sessions',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		routineId: text('routine_id')
+			.notNull()
+			.references(() => meditationRoutines.id, { onDelete: 'cascade' }),
+		completedAt: integer('completed_at', { mode: 'timestamp' }).notNull(),
+		preMoodRating: integer('pre_mood_rating'), // 1-5 pre-meditation mood
+		moodRating: integer('mood_rating'), // 1-5 post-meditation mood
+		notes: text('notes'),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('meditation_sessions_user_completed_idx').on(table.userId, table.completedAt)]
+);
 
 export const meditationSessionsRelations = relations(meditationSessions, ({ one }) => ({
 	user: one(user, {
@@ -629,23 +676,27 @@ export const meditationSessionsRelations = relations(meditationSessions, ({ one 
  * People
  * People to track visits for
  */
-export const people = sqliteTable('people', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	name: text('name').notNull(),
-	isExempt: integer('is_exempt', { mode: 'boolean' }).notNull().default(false),
-	isArchived: integer('is_archived', { mode: 'boolean' }).notNull().default(false),
-	archivedAt: integer('archived_at', { mode: 'timestamp' }),
-	scheduledVisitDate: text('scheduled_visit_date'),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const people = sqliteTable(
+	'people',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		name: text('name').notNull(),
+		isExempt: integer('is_exempt', { mode: 'boolean' }).notNull().default(false),
+		isArchived: integer('is_archived', { mode: 'boolean' }).notNull().default(false),
+		archivedAt: integer('archived_at', { mode: 'timestamp' }),
+		scheduledVisitDate: text('scheduled_visit_date'),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('people_user_idx').on(table.userId)]
+);
 
 export const peopleRelations = relations(people, ({ one, many }) => ({
 	user: one(user, {
@@ -659,26 +710,33 @@ export const peopleRelations = relations(people, ({ one, many }) => ({
  * Visits
  * Visit records with companions and follow-up tracking
  */
-export const visits = sqliteTable('visits', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	personId: text('person_id')
-		.notNull()
-		.references(() => people.id, { onDelete: 'cascade' }),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	date: text('date').notNull(),
-	time: text('time'),
-	companions: text('companions'), // JSON array of companion names
-	notes: text('notes'),
-	followUpDate: text('follow_up_date'),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const visits = sqliteTable(
+	'visits',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		personId: text('person_id')
+			.notNull()
+			.references(() => people.id, { onDelete: 'cascade' }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		date: text('date').notNull(),
+		time: text('time'),
+		companions: text('companions'), // JSON array of companion names
+		notes: text('notes'),
+		followUpDate: text('follow_up_date'),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [
+		index('visits_person_date_idx').on(table.personId, table.date),
+		index('visits_user_date_idx').on(table.userId, table.date)
+	]
+);
 
 export const visitsRelations = relations(visits, ({ one }) => ({
 	person: one(people, {
@@ -815,22 +873,26 @@ export const rateLimit = sqliteTable('rate_limit', {
  * Records which API key performed a write and what happened, for traceability of
  * external/programmatic activity against the app's data.
  */
-export const apiAuditLog = sqliteTable('api_audit_log', {
-	id: text('id').primaryKey().$defaultFn(generateId),
-	// Deliberately no FK to apiKey.id: the audit trail must survive a key being revoked
-	// (deleted), which is exactly the moment someone is most likely to want to review it.
-	apiKeyId: text('api_key_id').notNull(),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	method: text('method').notNull(),
-	path: text('path').notNull(),
-	action: text('action').notNull(),
-	statusCode: integer('status_code').notNull(),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
+export const apiAuditLog = sqliteTable(
+	'api_audit_log',
+	{
+		id: text('id').primaryKey().$defaultFn(generateId),
+		// Deliberately no FK to apiKey.id: the audit trail must survive a key being revoked
+		// (deleted), which is exactly the moment someone is most likely to want to review it.
+		apiKeyId: text('api_key_id').notNull(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		method: text('method').notNull(),
+		path: text('path').notNull(),
+		action: text('action').notNull(),
+		statusCode: integer('status_code').notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index('api_audit_log_user_created_idx').on(table.userId, table.createdAt)]
+);
 
 export const apiAuditLogRelations = relations(apiAuditLog, ({ one }) => ({
 	user: one(user, {
