@@ -1,7 +1,11 @@
 import { getDb } from '$lib/server/db';
 import { budget, category, transaction, user } from '$lib/server/db/schema';
 import { dateInRange } from '$lib/server/db/utils';
-import { sendWeeklySummaryEmail, type WeeklySummaryCategory } from '$lib/server/email';
+import {
+	sendWeeklySummaryEmail,
+	type WeeklySummaryCategory,
+	type WeeklySummaryExcludedTransaction
+} from '$lib/server/email';
 import { logger } from '$lib/server/logger';
 import { and, eq, inArray, ne } from 'drizzle-orm';
 
@@ -15,6 +19,7 @@ type WeeklySummaryRunResult = {
 	emailsFailed: number;
 	overBudgetCount: number;
 	nearLimitCount: number;
+	excludedCount: number;
 };
 
 type PacificDateParts = {
@@ -144,7 +149,8 @@ export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySu
 			emailsSent: 0,
 			emailsFailed: 0,
 			overBudgetCount: 0,
-			nearLimitCount: 0
+			nearLimitCount: 0,
+			excludedCount: 0
 		};
 	}
 
@@ -183,7 +189,8 @@ export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySu
 			emailsSent: 0,
 			emailsFailed: 0,
 			overBudgetCount: 0,
-			nearLimitCount: 0
+			nearLimitCount: 0,
+			excludedCount: 0
 		};
 	}
 
@@ -215,10 +222,29 @@ export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySu
 					.where(
 						and(
 							inArray(transaction.categoryId, budgetedCategoryIds),
+							eq(transaction.excludedFromBudget, false),
 							...dateInRange(transaction.date, monthRange.startDate, monthRange.endDate)
 						)
 					)
 			: [];
+
+	// Excluded transactions don't count toward any budget; they're listed separately in the email.
+	const excludedTransactions: WeeklySummaryExcludedTransaction[] = await db
+		.select({
+			date: transaction.date,
+			payee: transaction.payee,
+			categoryName: category.name,
+			amount: transaction.amount
+		})
+		.from(transaction)
+		.innerJoin(category, eq(transaction.categoryId, category.id))
+		.where(
+			and(
+				eq(transaction.excludedFromBudget, true),
+				...dateInRange(transaction.date, monthRange.startDate, monthRange.endDate)
+			)
+		);
+	excludedTransactions.sort((a, b) => a.date.localeCompare(b.date));
 
 	const spendByCategoryId = new Map<string, number>();
 	for (const txn of monthTransactions) {
@@ -244,7 +270,8 @@ export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySu
 				name: recipient.name ?? 'there',
 				monthLabel: monthRange.monthLabel,
 				overBudgetCategories: overBudgetRows,
-				nearLimitCategories: nearLimitRows
+				nearLimitCategories: nearLimitRows,
+				excludedTransactions
 			})
 		)
 	);
@@ -266,6 +293,7 @@ export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySu
 		emailsFailed,
 		overBudgetCount: overBudgetRows.length,
 		nearLimitCount: nearLimitRows.length,
+		excludedCount: excludedTransactions.length,
 		monthLabel: monthRange.monthLabel
 	};
 
@@ -283,6 +311,7 @@ export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySu
 		emailsSent,
 		emailsFailed,
 		overBudgetCount: overBudgetRows.length,
-		nearLimitCount: nearLimitRows.length
+		nearLimitCount: nearLimitRows.length,
+		excludedCount: excludedTransactions.length
 	};
 }

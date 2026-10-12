@@ -55,7 +55,8 @@ describe('sendWeeklySummaryEmail', () => {
 					overByAmount: 50
 				}
 			],
-			nearLimitCategories: []
+			nearLimitCategories: [],
+			excludedTransactions: []
 		});
 
 		const html = sentHtml();
@@ -69,12 +70,51 @@ describe('sendWeeklySummaryEmail', () => {
 			name: '<script>alert(1)</script>',
 			monthLabel: 'August 2026',
 			overBudgetCategories: [],
-			nearLimitCategories: []
+			nearLimitCategories: [],
+			excludedTransactions: []
 		});
 
 		const html = sentHtml();
 		expect(html).not.toContain('<script>alert(1)</script>');
 		expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+	});
+
+	it('lists excluded transactions with escaped payee and category', async () => {
+		await sendWeeklySummaryEmail({
+			to: 'user@example.com',
+			name: 'Glenn',
+			monthLabel: 'August 2026',
+			overBudgetCategories: [],
+			nearLimitCategories: [],
+			excludedTransactions: [
+				{
+					date: '2026-08-03',
+					payee: '<b>Airline</b>',
+					categoryName: '<i>Travel</i>',
+					amount: 400
+				}
+			]
+		});
+
+		const html = sentHtml();
+		expect(html).toContain('Excluded From Budget');
+		expect(html).toContain('2026-08-03');
+		expect(html).not.toContain('<b>Airline</b>');
+		expect(html).toContain('&lt;b&gt;Airline&lt;/b&gt;');
+		expect(html).toContain('&lt;i&gt;Travel&lt;/i&gt;');
+	});
+
+	it('shows an empty state when nothing was excluded', async () => {
+		await sendWeeklySummaryEmail({
+			to: 'user@example.com',
+			name: 'Glenn',
+			monthLabel: 'August 2026',
+			overBudgetCategories: [],
+			nearLimitCategories: [],
+			excludedTransactions: []
+		});
+
+		expect(sentHtml()).toContain('No transactions were excluded from the budget this month.');
 	});
 });
 

@@ -128,6 +128,12 @@ describe('runWeeklySummaryEmail', () => {
 					{ categoryId: 'cat-fuel', amount: 48 }, // within 10% (>= 45)
 					{ categoryId: 'cat-fun', amount: 5 } // well under threshold
 				])
+			)
+			.mockReturnValueOnce(
+				queryResult([
+					{ date: '2026-09-10', payee: 'Airline', categoryName: 'Travel', amount: 400 },
+					{ date: '2026-09-02', payee: 'Hotel', categoryName: 'Travel', amount: 250 }
+				])
 			);
 
 		const result = await runWeeklySummaryEmail(MONDAY_PACIFIC);
@@ -135,6 +141,7 @@ describe('runWeeklySummaryEmail', () => {
 		expect(result.skipped).toBe(false);
 		expect(result.overBudgetCount).toBe(1);
 		expect(result.nearLimitCount).toBe(1);
+		expect(result.excludedCount).toBe(2);
 		expect(result.emailsSent).toBe(2);
 		expect(result.emailsFailed).toBe(0);
 		expect(mockState.sendWeeklySummaryEmail).toHaveBeenCalledTimes(2);
@@ -145,7 +152,11 @@ describe('runWeeklySummaryEmail', () => {
 			overBudgetCategories: [
 				expect.objectContaining({ categoryName: 'Groceries', overByAmount: 20 })
 			],
-			nearLimitCategories: [expect.objectContaining({ categoryName: 'Fuel' })]
+			nearLimitCategories: [expect.objectContaining({ categoryName: 'Fuel' })],
+			excludedTransactions: [
+				expect.objectContaining({ payee: 'Hotel', date: '2026-09-02' }),
+				expect.objectContaining({ payee: 'Airline', date: '2026-09-10' })
+			]
 		});
 		expect(mockState.loggerInfo).toHaveBeenCalledWith(
 			'Weekly summary email run completed',
@@ -165,6 +176,7 @@ describe('runWeeklySummaryEmail', () => {
 			.mockReturnValueOnce(
 				queryResult([{ categoryId: 'cat-groceries', categoryName: 'Groceries', amount: 100 }])
 			)
+			.mockReturnValueOnce(queryResult([]))
 			.mockReturnValueOnce(queryResult([]));
 
 		const sendError = new Error('Brevo rejected the request');
@@ -189,5 +201,22 @@ describe('runWeeklySummaryEmail', () => {
 			'Weekly summary email run completed',
 			expect.anything()
 		);
+	});
+
+	it('leaves excluded transactions out of budget spend', async () => {
+		const spendQuery: { where?: SQL } = {};
+		mockState.select
+			.mockReturnValueOnce(queryResult([{ name: 'Glenn', email: 'glenn@example.com' }]))
+			.mockReturnValueOnce(
+				queryResult([{ categoryId: 'cat-groceries', categoryName: 'Groceries', amount: 100 }])
+			)
+			.mockReturnValueOnce(capturingQueryResult([], spendQuery))
+			.mockReturnValueOnce(queryResult([]));
+
+		await runWeeklySummaryEmail(MONDAY_PACIFIC);
+
+		expect(spendQuery.where).toBeDefined();
+		const { sql } = new SQLiteSyncDialect().sqlToQuery(spendQuery.where as SQL);
+		expect(sql).toContain('"excluded_from_budget" = ?');
 	});
 });
