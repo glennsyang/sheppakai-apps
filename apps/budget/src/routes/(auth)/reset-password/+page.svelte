@@ -42,9 +42,7 @@
 	{:else}
 		<Card.Header>
 			<Card.Title class="text-xl tracking-tight">Choose a new password</Card.Title>
-			<Card.Description
-				>12 or more characters, with upper and lower case, a number and a symbol.</Card.Description
-			>
+			<Card.Description>12 or more characters.</Card.Description>
 		</Card.Header>
 		<Card.Content>
 			<form method="POST" use:enhance>
