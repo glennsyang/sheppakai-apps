@@ -6,6 +6,7 @@ import {
 	visitSchema
 } from '$lib/schemas/visits';
 import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
+import { deleteAction } from '$lib/server/actions/crud-helpers';
 import {
 	getOwnedEntityOrNull,
 	getOwnedEntityOrThrow
@@ -412,66 +413,23 @@ export const actions = {
 		throw redirect(303, '/visits');
 	}),
 
-	deletePerson: requireAuth(async ({ request, params }, user) => {
-		const form = await superValidate(request, zod4(noFieldsSchema));
-
-		try {
-			const db = getDb();
-
-			// Verify person belongs to user
-			const person = await getOwnedEntityOrNull(() =>
-				db.query.people.findFirst({
-					where: and(eq(people.id, params.id), eq(people.userId, user.id))
-				})
-			);
-
-			if (!person) {
-				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
-			}
-
-			// Delete person (cascades to visits)
-			await db.delete(people).where(and(eq(people.id, params.id), eq(people.userId, user.id)));
-
-			logger.info('Person deleted', { personId: params.id, userId: user.id });
-		} catch (err) {
-			logger.error('Failed to delete person', err);
-			return message(form, { type: 'error', text: 'Failed to delete person' }, { status: 500 });
+	deletePerson: deleteAction({
+		schema: noFieldsSchema,
+		table: people,
+		entityName: 'Person',
+		// Visits cascade with the person.
+		getId: (_form, { params }) => params.id ?? '',
+		onSuccess: () => {
+			throw redirect(303, '/visits');
 		}
-
-		throw redirect(303, '/visits');
 	}),
 
-	deleteVisit: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(deleteVisitSchema));
-
-		if (!form.valid) {
-			return invalidForm(form, 'Visit ID is required');
-		}
-
-		const { visitId } = form.data;
-
-		try {
-			const db = getDb();
-
-			// Verify visit belongs to user
-			const visit = await getOwnedEntityOrNull(() =>
-				db.query.visits.findFirst({
-					where: and(eq(visits.id, visitId), eq(visits.userId, user.id))
-				})
-			);
-
-			if (!visit) {
-				return message(form, { type: 'error', text: 'Visit not found' }, { status: 404 });
-			}
-
-			await db.delete(visits).where(and(eq(visits.id, visitId), eq(visits.userId, user.id)));
-
-			logger.info('Visit deleted', { visitId, userId: user.id });
-
-			return message(form, { type: 'success', text: 'Visit deleted.' });
-		} catch (err) {
-			logger.error('Failed to delete visit', err);
-			return message(form, { type: 'error', text: 'Failed to delete visit' }, { status: 500 });
-		}
+	deleteVisit: deleteAction({
+		schema: deleteVisitSchema,
+		table: visits,
+		entityName: 'Visit',
+		invalidMessage: 'Visit ID is required',
+		getId: (form) => form.data.visitId,
+		onSuccess: (form) => message(form, { type: 'success', text: 'Visit deleted.' })
 	})
 } satisfies Actions;

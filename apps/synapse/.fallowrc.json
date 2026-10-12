@@ -20,6 +20,7 @@
 		"@tailwindcss/vite",
 		"@tanstack/svelte-table",
 		"@tanstack/table-core",
+		"better-sqlite3",
 		"bits-ui",
 		"canvas-confetti",
 		"clsx",

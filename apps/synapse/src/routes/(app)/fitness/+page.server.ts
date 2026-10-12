@@ -15,6 +15,7 @@ import {
 	workoutReminderSchema
 } from '$lib/schemas/fitness';
 import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
+import { createAction, deleteAction, updateAction } from '$lib/server/actions/crud-helpers';
 import { invalidForm } from '$lib/server/actions/form-responses';
 import { getDb } from '$lib/server/db';
 import {
@@ -33,10 +34,27 @@ import { redirect } from '@sveltejs/kit';
 import { and, desc, eq } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+import type { z } from 'zod';
 
 import type { Actions, PageServerLoad } from './$types';
 
 const INVALID_EXERCISES_MESSAGE = `Exercises are invalid. Each needs a name (max 100 characters) and positive whole numbers, up to ${MAX_WORKOUT_EXERCISES} exercises.`;
+
+// Columns shared by the log and update actions for each entry type.
+const toMealRow = (data: z.infer<typeof logMealSchema>) => ({
+	date: data.date,
+	timeOfDay: data.timeOfDay,
+	description: data.description,
+	caloriesEstimate: data.caloriesEstimate || null
+});
+
+const toReminderRow = (data: z.infer<typeof workoutReminderSchema>) => ({
+	workoutType: data.workoutType,
+	cadence: data.cadence,
+	daysOfWeek: data.daysOfWeek || null,
+	time: data.time,
+	enabled: data.enabled
+});
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const tab = (() => {
@@ -162,41 +180,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions = {
-	logWeight: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(logWeightSchema));
-
-		if (!form.valid) {
-			logger.warn('Invalid weight log form data', { errors: form.errors });
-			return invalidForm(form);
-		}
-
-		try {
-			const db = getDb();
-			const entryId = generateId();
-
-			await db.insert(weightEntries).values({
-				id: entryId,
-				userId: user.id,
-				date: form.data.date,
-				time: form.data.time || null,
-				weightLbs: form.data.weightLbs,
-				...withTimestampsForCreate()
-			});
-
-			logger.info('Weight entry logged', { entryId, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to log weight entry', error);
-			return message(
-				form,
-				{
-					type: 'error',
-					text: 'Failed to log weight entry. Please try again.'
-				},
-				{ status: 500 }
-			);
-		}
-
-		return { success: true, create: true, form };
+	logWeight: createAction({
+		schema: logWeightSchema,
+		table: weightEntries,
+		entityName: 'Weight entry',
+		toRow: (data) => ({ date: data.date, time: data.time || null, weightLbs: data.weightLbs })
 	}),
 
 	setGoal: requireAuth(async ({ request }, user) => {
@@ -325,42 +313,11 @@ export const actions = {
 		return { success: true, create: true, form };
 	}),
 
-	logMeal: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(logMealSchema));
-
-		if (!form.valid) {
-			logger.warn('Invalid meal log form data', { errors: form.errors });
-			return invalidForm(form);
-		}
-
-		try {
-			const db = getDb();
-			const mealId = generateId();
-
-			await db.insert(mealLogs).values({
-				id: mealId,
-				userId: user.id,
-				date: form.data.date,
-				timeOfDay: form.data.timeOfDay,
-				description: form.data.description,
-				caloriesEstimate: form.data.caloriesEstimate || null,
-				...withTimestampsForCreate()
-			});
-
-			logger.info('Meal logged', { mealId, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to log meal', error);
-			return message(
-				form,
-				{
-					type: 'error',
-					text: 'Failed to log meal. Please try again.'
-				},
-				{ status: 500 }
-			);
-		}
-
-		return { success: true, create: true, form };
+	logMeal: createAction({
+		schema: logMealSchema,
+		table: mealLogs,
+		entityName: 'Meal',
+		toRow: toMealRow
 	}),
 
 	setCalorieTarget: requireAuth(async ({ request }, user) => {
@@ -413,215 +370,45 @@ export const actions = {
 		}
 	}),
 
-	createReminder: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(workoutReminderSchema));
-
-		if (!form.valid) {
-			logger.warn('Invalid workout reminder form data', {
-				errors: form.errors
-			});
-			return invalidForm(form);
-		}
-
-		try {
-			const db = getDb();
-			const reminderId = generateId();
-
-			await db.insert(workoutReminders).values({
-				id: reminderId,
-				userId: user.id,
-				workoutType: form.data.workoutType,
-				cadence: form.data.cadence,
-				daysOfWeek: form.data.daysOfWeek || null,
-				time: form.data.time,
-				enabled: form.data.enabled,
-				...withTimestampsForCreate()
-			});
-
-			logger.info('Workout reminder created', { reminderId, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to create workout reminder', error);
-			return message(
-				form,
-				{
-					type: 'error',
-					text: 'Failed to create reminder. Please try again.'
-				},
-				{ status: 500 }
-			);
-		}
-
-		return { success: true, create: true, form };
+	createReminder: createAction({
+		schema: workoutReminderSchema,
+		table: workoutReminders,
+		entityName: 'Workout reminder',
+		toRow: toReminderRow
 	}),
 
-	updateReminder: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(updateWorkoutReminderSchema));
-
-		if (!form.valid) {
-			logger.warn('Invalid workout reminder update form data', {
-				errors: form.errors
-			});
-			return invalidForm(form);
+	updateReminder: updateAction({
+		schema: updateWorkoutReminderSchema,
+		table: workoutReminders,
+		entityName: 'Workout reminder',
+		toRow: toReminderRow,
+		onSuccess: () => {
+			throw redirect(303, '/fitness?tab=reminders&notice=reminder-disabled');
 		}
-
-		try {
-			const db = getDb();
-
-			const result = await db
-				.update(workoutReminders)
-				.set({
-					workoutType: form.data.workoutType,
-					cadence: form.data.cadence,
-					daysOfWeek: form.data.daysOfWeek || null,
-					time: form.data.time,
-					enabled: form.data.enabled,
-					...withTimestampsForUpdate()
-				})
-				.where(and(eq(workoutReminders.id, form.data.id), eq(workoutReminders.userId, user.id)))
-				.returning({ id: workoutReminders.id });
-
-			if (result.length === 0) {
-				return message(
-					form,
-					{ type: 'error', text: 'Reminder not found or access denied.' },
-					{ status: 404 }
-				);
-			}
-
-			logger.info('Workout reminder updated', {
-				reminderId: form.data.id,
-				userId: user.id
-			});
-		} catch (error) {
-			logger.error('Failed to update workout reminder', error);
-			return message(
-				form,
-				{
-					type: 'error',
-					text: 'Failed to update reminder. Please try again.'
-				},
-				{ status: 500 }
-			);
-		}
-
-		throw redirect(303, '/fitness?tab=reminders&notice=reminder-disabled');
 	}),
 
-	deleteReminder: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(deleteEntrySchema));
-
-		if (!form.valid) {
-			return message(
-				form,
-				{ type: 'error', text: 'Invalid workout reminder data' },
-				{ status: 400 }
-			);
+	deleteReminder: deleteAction({
+		schema: deleteEntrySchema,
+		table: workoutReminders,
+		entityName: 'Workout reminder',
+		invalidMessage: 'Invalid workout reminder data',
+		onSuccess: () => {
+			throw redirect(303, '/fitness?tab=reminders&notice=reminder-deleted');
 		}
-
-		try {
-			const db = getDb();
-
-			const result = await db
-				.delete(workoutReminders)
-				.where(and(eq(workoutReminders.id, form.data.id), eq(workoutReminders.userId, user.id)))
-				.returning({ id: workoutReminders.id });
-
-			if (result.length === 0) {
-				return message(
-					form,
-					{ type: 'error', text: 'Workout reminder not found' },
-					{ status: 404 }
-				);
-			}
-
-			logger.info('Workout reminder deleted', { reminderId: form.data.id, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to delete workout reminder', error, { reminderId: form.data.id });
-			return message(
-				form,
-				{
-					type: 'error',
-					text: 'Failed to delete reminder. Please try again.'
-				},
-				{ status: 500 }
-			);
-		}
-
-		throw redirect(303, '/fitness?tab=reminders&notice=reminder-deleted');
 	}),
 
-	updateWeight: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(updateWeightSchema));
-
-		if (!form.valid) {
-			return invalidForm(form);
-		}
-
-		try {
-			const db = getDb();
-			const existing = await db.query.weightEntries.findFirst({
-				where: and(eq(weightEntries.id, form.data.id), eq(weightEntries.userId, user.id))
-			});
-
-			if (!existing) {
-				return message(form, { type: 'error', text: 'Weight entry not found.' }, { status: 404 });
-			}
-
-			await db
-				.update(weightEntries)
-				.set({
-					date: form.data.date,
-					time: form.data.time || null,
-					weightLbs: form.data.weightLbs,
-					...withTimestampsForUpdate()
-				})
-				.where(and(eq(weightEntries.id, form.data.id), eq(weightEntries.userId, user.id)));
-
-			logger.info('Weight entry updated', { entryId: form.data.id, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to update weight entry', error);
-			return message(
-				form,
-				{ type: 'error', text: 'Failed to update weight entry. Please try again.' },
-				{ status: 500 }
-			);
-		}
-
-		return { success: true, update: true, form };
+	updateWeight: updateAction({
+		schema: updateWeightSchema,
+		table: weightEntries,
+		entityName: 'Weight entry',
+		toRow: (data) => ({ date: data.date, time: data.time || null, weightLbs: data.weightLbs })
 	}),
 
-	deleteWeight: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(deleteEntrySchema));
-
-		if (!form.valid) {
-			return message(form, { type: 'error', text: 'Invalid weight entry id' }, { status: 400 });
-		}
-
-		try {
-			const db = getDb();
-			const existing = await db.query.weightEntries.findFirst({
-				where: and(eq(weightEntries.id, form.data.id), eq(weightEntries.userId, user.id))
-			});
-
-			if (!existing) {
-				return message(form, { type: 'error', text: 'Weight entry not found' }, { status: 404 });
-			}
-
-			await db
-				.delete(weightEntries)
-				.where(and(eq(weightEntries.id, form.data.id), eq(weightEntries.userId, user.id)));
-
-			logger.info('Weight entry deleted', { entryId: form.data.id, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to delete weight entry', error);
-			return message(
-				form,
-				{ type: 'error', text: 'Failed to delete weight entry' },
-				{ status: 500 }
-			);
-		}
-
-		return { success: true };
+	deleteWeight: deleteAction({
+		schema: deleteEntrySchema,
+		table: weightEntries,
+		entityName: 'Weight entry',
+		invalidMessage: 'Invalid weight entry id'
 	}),
 
 	updateWorkout: requireAuth(async ({ request }, user) => {
@@ -704,104 +491,24 @@ export const actions = {
 		return { success: true, update: true, form };
 	}),
 
-	deleteWorkout: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(deleteEntrySchema));
-
-		if (!form.valid) {
-			return message(form, { type: 'error', text: 'Invalid workout id' }, { status: 400 });
-		}
-
-		try {
-			const db = getDb();
-			const existing = await db.query.workoutLogs.findFirst({
-				where: and(eq(workoutLogs.id, form.data.id), eq(workoutLogs.userId, user.id))
-			});
-
-			if (!existing) {
-				return message(form, { type: 'error', text: 'Workout not found' }, { status: 404 });
-			}
-
-			await db
-				.delete(workoutLogs)
-				.where(and(eq(workoutLogs.id, form.data.id), eq(workoutLogs.userId, user.id)));
-
-			logger.info('Workout deleted', { workoutId: form.data.id, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to delete workout', error);
-			return message(form, { type: 'error', text: 'Failed to delete workout' }, { status: 500 });
-		}
-
-		return { success: true };
+	deleteWorkout: deleteAction({
+		schema: deleteEntrySchema,
+		table: workoutLogs,
+		entityName: 'Workout',
+		invalidMessage: 'Invalid workout id'
 	}),
 
-	updateMeal: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(updateMealSchema));
-
-		if (!form.valid) {
-			return invalidForm(form);
-		}
-
-		try {
-			const db = getDb();
-			const existing = await db.query.mealLogs.findFirst({
-				where: and(eq(mealLogs.id, form.data.id), eq(mealLogs.userId, user.id))
-			});
-
-			if (!existing) {
-				return message(form, { type: 'error', text: 'Meal not found.' }, { status: 404 });
-			}
-
-			await db
-				.update(mealLogs)
-				.set({
-					date: form.data.date,
-					timeOfDay: form.data.timeOfDay,
-					description: form.data.description,
-					caloriesEstimate: form.data.caloriesEstimate || null,
-					...withTimestampsForUpdate()
-				})
-				.where(and(eq(mealLogs.id, form.data.id), eq(mealLogs.userId, user.id)));
-
-			logger.info('Meal updated', { mealId: form.data.id, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to update meal', error);
-			return message(
-				form,
-				{ type: 'error', text: 'Failed to update meal. Please try again.' },
-				{ status: 500 }
-			);
-		}
-
-		return { success: true, update: true, form };
+	updateMeal: updateAction({
+		schema: updateMealSchema,
+		table: mealLogs,
+		entityName: 'Meal',
+		toRow: toMealRow
 	}),
 
-	deleteMeal: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(deleteEntrySchema));
-
-		if (!form.valid) {
-			return message(form, { type: 'error', text: 'Invalid meal id' }, { status: 400 });
-		}
-
-		try {
-			const db = getDb();
-			const existing = await db.query.mealLogs.findFirst({
-				where: and(eq(mealLogs.id, form.data.id), eq(mealLogs.userId, user.id))
-			});
-
-			if (!existing) {
-				return message(form, { type: 'error', text: 'Meal not found' }, { status: 404 });
-			}
-
-			await db
-				.delete(mealLogs)
-				.where(and(eq(mealLogs.id, form.data.id), eq(mealLogs.userId, user.id)));
-
-			logger.info('Meal deleted', { mealId: form.data.id, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to delete meal', error);
-			return message(form, { type: 'error', text: 'Failed to delete meal' }, { status: 500 });
-		}
-
-		return { success: true };
+	deleteMeal: deleteAction({
+		schema: deleteEntrySchema,
+		table: mealLogs,
+		entityName: 'Meal',
+		invalidMessage: 'Invalid meal id'
 	})
 } satisfies Actions;

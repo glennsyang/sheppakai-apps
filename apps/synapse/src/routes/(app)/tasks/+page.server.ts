@@ -16,6 +16,7 @@ import {
 	updateTaskStateSchema
 } from '$lib/schemas/task';
 import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
+import { deleteAction } from '$lib/server/actions/crud-helpers';
 import { invalidForm } from '$lib/server/actions/form-responses';
 import {
 	createDailyAgendaCustomEntry,
@@ -259,33 +260,13 @@ export const actions = {
 		}
 	}),
 
-	delete: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(deleteTaskSchema));
-		if (!form.valid) return invalidForm(form);
-
-		try {
-			const existing = await getDb().query.tasks.findFirst({
-				where: and(eq(tasks.id, form.data.id), eq(tasks.userId, user.id))
-			});
-
-			if (!existing) {
-				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
-			}
-			await getDb()
-				.delete(tasks)
-				.where(and(eq(tasks.id, form.data.id), eq(tasks.userId, user.id)));
-
-			logger.info('Task deleted from board', {
-				taskId: form.data.id,
-				taskNumber: existing.taskNumber,
-				userId: user.id
-			});
-		} catch (error) {
-			logger.error('Failed to delete task from board', error, { form });
-			return message(form, { type: 'error', text: 'Failed to delete task' }, { status: 500 });
+	delete: deleteAction({
+		schema: deleteTaskSchema,
+		table: tasks,
+		entityName: 'Task',
+		onSuccess: () => {
+			throw redirect(303, '/tasks');
 		}
-
-		throw redirect(303, '/tasks');
 	}),
 
 	createAgendaTemplate: requireAuth(async ({ request }, user) => {
