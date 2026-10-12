@@ -689,6 +689,9 @@ importers:
       better-sqlite3:
         specifier: 'catalog:'
         version: 13.0.3
+      clsx:
+        specifier: 'catalog:'
+        version: 2.1.1
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.3(@opentelemetry/api@1.9.1)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(kysely@0.29.6)
@@ -707,6 +710,9 @@ importers:
       sveltekit-superforms:
         specifier: 'catalog:'
         version: 3.0.0(@sveltejs/kit@2.70.3(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.1)(typescript@6.0.3)
+      tailwind-merge:
+        specifier: 'catalog:'
+        version: 3.7.0
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

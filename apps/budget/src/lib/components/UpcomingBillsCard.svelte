@@ -7,8 +7,8 @@
 	import * as Separator from '$lib/components/ui/separator/index.js';
 	import type { Recurring } from '$lib/types';
 	import { formatCurrency } from '$lib/utils';
-	import { actionMessage } from '$lib/utils/actionMessage';
 	import { getCurrentPeriodDueDate, getDaysUntilDue } from '$lib/utils/dates';
+	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 
 	interface Props {

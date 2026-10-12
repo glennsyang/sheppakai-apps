@@ -2,8 +2,8 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import type { Recurring } from '$lib';
-	import { actionMessage } from '$lib/utils/actionMessage';
 	import CheckIcon from '@lucide/svelte/icons/check';
+	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 
 	let { recurring }: { recurring: Recurring } = $props();

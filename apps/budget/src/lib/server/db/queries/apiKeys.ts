@@ -1,3 +1,4 @@
+import { parsePermissions } from '@sheppakai/shared/api-scopes';
 import { desc, eq } from 'drizzle-orm';
 
 import { getDb } from '../index';
@@ -16,17 +17,6 @@ type ApiKeyWithOwner = {
 	ownerName: string;
 	ownerEmail: string;
 };
-
-/** The plugin stores `permissions` as a JSON string; a malformed value shows as "no scopes". */
-export function parsePermissions(raw: string | null): Record<string, string[]> | null {
-	if (!raw) return null;
-	try {
-		const parsed: unknown = JSON.parse(raw);
-		return parsed && typeof parsed === 'object' ? (parsed as Record<string, string[]>) : null;
-	} catch {
-		return null;
-	}
-}
 
 export const apiKeyQueries = {
 	/**

@@ -40,7 +40,7 @@ export async function sendVerificationEmail(to: string, name: string, verificati
 			If you didn't create an account, you can safely ignore this email.
 		</p>
 		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
-			This link will expire in 10 minutes.
+			This link will expire in 1 hour.
 		</p>`
 		)
 	});

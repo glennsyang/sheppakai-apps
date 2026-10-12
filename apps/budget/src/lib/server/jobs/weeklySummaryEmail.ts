@@ -1,8 +1,9 @@
 import { getDb } from '$lib/server/db';
 import { budget, category, transaction, user } from '$lib/server/db/schema';
+import { dateInRange } from '$lib/server/db/utils';
 import { sendWeeklySummaryEmail, type WeeklySummaryCategory } from '$lib/server/email';
 import { logger } from '$lib/server/logger';
-import { and, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne } from 'drizzle-orm';
 
 type WeeklySummaryRunResult = {
 	success: boolean;
@@ -214,8 +215,7 @@ export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySu
 					.where(
 						and(
 							inArray(transaction.categoryId, budgetedCategoryIds),
-							sql`date(${transaction.date}) >= date(${monthRange.startDate})`,
-							sql`date(${transaction.date}) <= date(${monthRange.endDate})`
+							...dateInRange(transaction.date, monthRange.startDate, monthRange.endDate)
 						)
 					)
 			: [];

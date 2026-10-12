@@ -72,7 +72,7 @@ export const auth = betterAuth({
 			// propagate keeps the send tied to the request lifecycle (Fly can suspend the
 			// machine as soon as the response returns) and surfaces delivery failures in the
 			// logs / Sentry instead of a silent "link sent" with no email.
-			await sendPasswordResetEmail(user.email, user.name, url);
+			await sendPasswordResetEmail(user.email, user.name || user.email, url);
 			void sendAuthAlerts(
 				`Password reset requested for ${user.email}`,
 				'Sheppakai Budget - Password Reset Alert',
@@ -85,13 +85,15 @@ export const auth = betterAuth({
 			// email must not break the response.
 			void sendPasswordChangedEmail({
 				to: user.email,
-				name: user.name,
+				name: user.name || user.email,
 				changedAt: new Date(),
 				source: 'Password reset flow'
 			}).catch((err: unknown) => logger.error('Password changed email failed', err));
 		}
 	},
 	emailVerification: {
+		// Explicit so the "expires in 1 hour" email copy stays true (Better Auth default is also 3600s).
+		expiresIn: 60 * 60, // 1 hour
 		sendOnSignUp: true,
 		sendOnSignIn: true,
 		autoSignInAfterVerification: true,
@@ -100,7 +102,7 @@ export const auth = betterAuth({
 			// `url` is already the complete verification link (token + callbackURL);
 			// appending `?token=` again produced a malformed double-`?` URL.
 			// Awaited for the same reason as the reset email above.
-			await sendVerificationEmail(user.email, user.name, url);
+			await sendVerificationEmail(user.email, user.name || user.email, url);
 		}
 	},
 	hooks: {

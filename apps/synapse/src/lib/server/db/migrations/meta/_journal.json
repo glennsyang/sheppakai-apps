@@ -225,6 +225,13 @@
 			"when": 1791651273142,
 			"tag": "0031_fix_meditation_completed_at_tz",
 			"breakpoints": true
+		},
+		{
+			"idx": 32,
+			"version": "6",
+			"when": 1791734857455,
+			"tag": "0032_synapse_indexes",
+			"breakpoints": true
 		}
 	]
 }

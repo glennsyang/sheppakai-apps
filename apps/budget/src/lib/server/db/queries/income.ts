@@ -1,7 +1,8 @@
 import type { Income } from '$lib/types';
-import { and, asc, sql } from 'drizzle-orm';
+import { and, asc } from 'drizzle-orm';
 
 import { income } from '../schema';
+import { dateInRange } from '../utils';
 import { createQueryBuilder } from './factory';
 
 const baseBuilder = createQueryBuilder({
@@ -15,10 +16,7 @@ export const incomeQueries = {
 	// Find by date range (most common pattern for income)
 	findByDateRange: async (startDate: string, endDate: string): Promise<Income[]> => {
 		return baseBuilder.findAll({
-			where: and(
-				sql`date(${income.date}) >= date(${startDate})`,
-				sql`date(${income.date}) <= date(${endDate})`
-			)
+			where: and(...dateInRange(income.date, startDate, endDate))
 		});
 	},
 
