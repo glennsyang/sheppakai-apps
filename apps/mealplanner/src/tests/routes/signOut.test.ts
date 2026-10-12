@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { signOutMock, loggerMock } = vi.hoisted(() => ({
 	signOutMock: vi.fn<() => Promise<unknown>>(),
-	loggerMock: { warn: vi.fn<() => void>() }
+	loggerMock: { error: vi.fn<() => void>() }
 }));
 
 vi.mock('$lib/server/auth', () => ({ auth: { api: { signOut: signOutMock } } }));
@@ -37,17 +37,15 @@ describe('sign-out action', () => {
 
 		expect(signOutMock).toHaveBeenCalledOnce();
 		expect(isRedirect(err) && err.location).toBe(SIGN_IN_ROUTE);
-		expect(loggerMock.warn).not.toHaveBeenCalled();
+		expect(loggerMock.error).not.toHaveBeenCalled();
 	});
 
-	it('still redirects to sign-in and logs a warning when better-auth fails', async () => {
+	it('still redirects to sign-in and logs an error when better-auth fails', async () => {
 		signOutMock.mockRejectedValueOnce(new Error('Session not found'));
 
 		const err = await runAction();
 
 		expect(isRedirect(err) && err.location).toBe(SIGN_IN_ROUTE);
-		expect(loggerMock.warn).toHaveBeenCalledWith('Sign-out failed', {
-			reason: 'Session not found'
-		});
+		expect(loggerMock.error).toHaveBeenCalledWith('Sign-out failed', expect.any(Error));
 	});
 });

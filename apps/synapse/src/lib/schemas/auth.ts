@@ -1,38 +1,10 @@
 import { convertVisitThresholdToDays } from '$lib/utils/visit-status';
+import { updateNameSchema } from '@sheppakai/shared/auth-schemas';
 import { z } from 'zod';
 
-// Canonical password rule for reset/change-password: length-only, per NIST SP 800-63B §5.1.1.2
-// (composition rules deliberately omitted). Matches minPasswordLength in src/lib/server/auth.ts.
-const passwordSchema = z.string().min(12, 'Password must be at least 12 characters');
+export { changePasswordSchema } from '@sheppakai/shared/auth-schemas';
 
-export const loginSchema = z.object({
-	email: z.email('Please enter a valid email address'),
-	password: z.string().min(1, 'Password is required')
-});
-
-export const resendVerificationSchema = z.object({
-	email: z.email('Please enter a valid email address')
-});
-
-export const forgotPasswordSchema = z.object({
-	email: z.email('Please enter a valid email address')
-});
-
-export const resetPasswordSchema = z
-	.object({
-		password: passwordSchema,
-		confirmPassword: z.string(),
-		// Hidden token field to verify the reset request
-		token: z.string().optional()
-	})
-	.refine((data) => data.password === data.confirmPassword, {
-		message: "Passwords don't match",
-		path: ['confirmPassword']
-	});
-
-export const updateProfileSchema = z.object({
-	name: z.string().min(1, 'Name is required').max(100, 'Name must be at most 100 characters')
-});
+export const updateProfileSchema = updateNameSchema;
 
 const visitSettingsUnitSchema = z.enum(['days', 'months']);
 
@@ -85,15 +57,4 @@ export const updateDashboardGoalSettingsSchema = z
 	.refine((data) => data.workoutGreenThreshold > data.workoutAmberThreshold, {
 		path: ['workoutAmberThreshold'],
 		message: 'Amber threshold must be less than the green threshold'
-	});
-
-export const changePasswordSchema = z
-	.object({
-		currentPassword: z.string().min(1, 'Current password is required'),
-		newPassword: z.string().min(12, 'New password must be at least 12 characters'),
-		confirmPassword: z.string().min(1, 'Please confirm your password')
-	})
-	.refine((data) => data.newPassword === data.confirmPassword, {
-		message: "Passwords don't match",
-		path: ['confirmPassword']
 	});

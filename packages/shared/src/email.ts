@@ -132,3 +132,149 @@ export function createMailer({ apiKey, from, appName, logger }: MailerOptions) {
 }
 
 export type Mailer = ReturnType<typeof createMailer>;
+
+export const EMAIL_BUTTON_STYLE =
+	'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;';
+
+export interface PasswordChangedEmailPayload {
+	to: string;
+	name: string;
+	changedAt: Date;
+	ipAddress?: string;
+	userAgent?: string;
+	source?: string;
+}
+
+export interface AuthEmailsOptions {
+	mailer: Mailer;
+	/** Used in subjects and copy, e.g. `'Sheppakai Budget'`. */
+	appName: string;
+	/** Footer line. Defaults to `appName`. */
+	footer?: string;
+}
+
+/**
+ * The four Better Auth emails every app sends (verification, password reset, password
+ * changed, new user), with one copy deck and `appName` filled in. Each send rethrows a
+ * Brevo failure (see `createMailer`); callers that must not fail, such as the
+ * fire-and-forget audit hooks, catch it themselves.
+ *
+ * The expiry lines must match `createAppAuth` in `./auth-config`: verification links
+ * last 1 hour and reset links 10 minutes.
+ */
+export function createAuthEmails({ mailer, appName, footer = appName }: AuthEmailsOptions) {
+	const app = escapeHtml(appName);
+	const subject = (text: string) => `[${appName}] ${text}`;
+	const layout = (title: string, heading: string, body: string) =>
+		renderEmailLayout({ title, heading, body, footer });
+
+	async function sendVerificationEmail(to: string, name: string, verificationUrl: string) {
+		await mailer.send({
+			to,
+			name,
+			subject: subject('Verify your email address'),
+			label: 'verification email',
+			html: layout(
+				'Verify your email',
+				`Welcome to ${appName}`,
+				`
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			Please verify your email address to get started with ${app}.
+		</p>
+		<div style="text-align: center; margin: 30px 0;">
+			<a href="${escapeHtml(verificationUrl)}" style="${EMAIL_BUTTON_STYLE}">Verify Email Address</a>
+		</div>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
+			If you weren't expecting this, you can safely ignore this email.
+		</p>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
+			This link will expire in 1 hour.
+		</p>`
+			)
+		});
+	}
+
+	async function sendPasswordResetEmail(to: string, name: string, resetUrl: string) {
+		await mailer.send({
+			to,
+			name,
+			subject: subject('Reset your password'),
+			label: 'password reset email',
+			html: layout(
+				'Reset your password',
+				'Password Reset',
+				`
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			We received a request to reset your ${app} password. Click the button below to choose a new one.
+		</p>
+		<div style="text-align: center; margin: 30px 0;">
+			<a href="${escapeHtml(resetUrl)}" style="${EMAIL_BUTTON_STYLE}">Reset Password</a>
+		</div>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
+			If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+		</p>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
+			This link will expire in 10 minutes for security reasons.
+		</p>`
+			)
+		});
+	}
+
+	/** Security notice after a password change or reset, so an unexpected change gets noticed. */
+	async function sendPasswordChangedEmail(payload: PasswordChangedEmailPayload) {
+		const changedAtText = escapeHtml(payload.changedAt.toLocaleString());
+		const ipAddress = escapeHtml(payload.ipAddress || 'Unavailable');
+		const userAgent = escapeHtml(payload.userAgent || 'Unavailable');
+		const source = escapeHtml(payload.source || 'Account settings');
+
+		await mailer.send({
+			to: payload.to,
+			name: payload.name,
+			subject: subject('Your password was changed'),
+			label: 'password changed email',
+			html: layout(
+				'Password changed',
+				'Password Updated',
+				`
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(payload.name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			Your ${app} password was successfully changed.
+		</p>
+		<p style="font-size: 14px; margin-bottom: 8px;"><strong>When:</strong> ${changedAtText}</p>
+		<p style="font-size: 14px; margin-bottom: 8px;"><strong>Source:</strong> ${source}</p>
+		<p style="font-size: 14px; margin-bottom: 8px;"><strong>IP:</strong> ${ipAddress}</p>
+		<p style="font-size: 14px; margin-bottom: 20px;"><strong>Device:</strong> ${userAgent}</p>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+			If this wasn't you, reset your password immediately and contact support.
+		</p>`
+			)
+		});
+	}
+
+	async function sendNewUserEmail(to: string, name: string) {
+		await mailer.send({
+			to,
+			name,
+			subject: subject(`Welcome to ${appName}!`),
+			label: 'new user email',
+			html: layout(
+				`Welcome to ${appName}`,
+				`Welcome to ${appName}`,
+				`
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name || to)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			We're excited to have you on board.
+		</p>`
+			)
+		});
+	}
+
+	return {
+		sendVerificationEmail,
+		sendPasswordResetEmail,
+		sendPasswordChangedEmail,
+		sendNewUserEmail
+	};
+}

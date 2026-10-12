@@ -25,7 +25,7 @@ vi.mock('$lib/server/rate-limiter', async (importOriginal) => {
 	};
 });
 
-import { FORGOT_PASSWORD_RESPONSE } from '$lib/server/auth/forgot-password-response';
+import { FORGOT_PASSWORD_RESPONSE } from '@sheppakai/shared/forgot-password-response';
 
 import { actions } from '../../routes/(auth)/forgot-password/+page.server';
 
@@ -73,7 +73,7 @@ describe('forgot-password default action', () => {
 		const result = await actions.default({ request: forgotRequest('user@example.com') } as never);
 
 		expect(loggerMock.error).toHaveBeenCalledWith(
-			'Failed to send password reset email',
+			'Password reset request failed',
 			expect.objectContaining({ message: 'Password reset request failed' })
 		);
 		expect(result).toMatchObject({
