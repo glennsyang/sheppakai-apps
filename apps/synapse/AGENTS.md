@@ -117,7 +117,7 @@ $effect(() => {
 
 - Primary ownership pattern is `userId`/`user_id` foreign keys to `user.id`; timestamp fields are `createdAt`/`updatedAt` or `created_at`/`updated_at` depending on table; every instant column (`createdAt`, `updatedAt`, `completedAt`, `archivedAt`, `sentAt`) is `integer(..., { mode: 'timestamp' })` and read/written as a `Date`, while calendar-day columns (`date`, `startsOn`, `endsOn`, `dueDate`) stay `YYYY-MM-DD` text
 - Helper utilities `withTimestampsForCreate(now?)` and `withTimestampsForUpdate(now?)` (re-exported from `@sheppakai/shared/timestamps` via `$lib/server/db/utils.ts`) return `createdAt`/`updatedAt` timestamps only (no `createdBy`/`updatedBy`). When one write touches several rows (e.g. a parent and its children), create one `const now = new Date()` and pass it to every call
-- Schema is defined in `/src/lib/server/db/schema.ts`
+- Schema is defined in `/src/lib/server/db/schema/` (one file per domain, re-exported from `index.ts`)
 - Use Drizzle's relational query API: `db.query.journalEntries.findMany({ with: { user: true } })`
 - Migrations are generated to `/src/lib/server/db/migrations/` via `drizzle.config.ts`
 

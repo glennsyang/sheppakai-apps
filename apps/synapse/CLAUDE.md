@@ -30,7 +30,7 @@ A personal life-management app: fitness (workouts/weight/meals), journal, medita
 
 ### Database — camelCase columns
 
-Unlike some of the other sibling repos, **DB column names here are camelCase**, not snake_case (e.g. `emailVerified`, `userId`, `createdAt` in `src/lib/server/db/schema.ts`). Don't port snake_case conventions in from another repo.
+Unlike some of the other sibling repos, **DB column names here are camelCase**, not snake_case (e.g. `emailVerified`, `userId`, `createdAt` in `src/lib/server/db/schema/`). Don't port snake_case conventions in from another repo.
 
 ### SvelteKit redirects
 
@@ -64,7 +64,7 @@ src/
 │   │   └── fitness/dialogs/ # see "Log-entry dialog pattern" below
 │   ├── schemas/              # Zod schemas per domain (fitness.ts, etc.)
 │   └── server/
-│       ├── db/schema.ts      # Drizzle tables — camelCase columns
+│       ├── db/schema/        # Drizzle tables, one file per domain
 │       ├── auth.ts           # betterAuth instance (drizzleAdapter, Brevo emails)
 │       ├── auth/             # form-helpers, auth-guard
 │       ├── email/            # digests: daily-agenda, tasks-due-today, visit-warning
