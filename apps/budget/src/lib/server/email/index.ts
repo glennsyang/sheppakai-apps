@@ -44,6 +44,14 @@ type WeeklySummaryEmailPayload = {
 	monthLabel: string;
 	overBudgetCategories: WeeklySummaryCategory[];
 	nearLimitCategories: WeeklySummaryCategory[];
+	excludedTransactions: WeeklySummaryExcludedTransaction[];
+};
+
+export type WeeklySummaryExcludedTransaction = {
+	date: string;
+	payee: string;
+	categoryName: string;
+	amount: number;
 };
 
 function renderWeeklyRows(
@@ -84,6 +92,45 @@ function renderWeeklyRows(
 	`;
 }
 
+function renderExcludedRows(rows: WeeklySummaryExcludedTransaction[]): string {
+	if (rows.length === 0) {
+		return '<p style="margin: 0; color: #4b5563;">No transactions were excluded from the budget this month.</p>';
+	}
+
+	const total = rows.reduce((acc, row) => acc + row.amount, 0);
+
+	return `
+		<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+			<thead>
+				<tr>
+					<th style="text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb;">Date</th>
+					<th style="text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb;">Payee</th>
+					<th style="text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb;">Category</th>
+					<th style="text-align: right; padding: 10px 8px; border-bottom: 1px solid #e5e7eb;">Amount</th>
+				</tr>
+			</thead>
+			<tbody>
+				${rows
+					.map(
+						(row) => `
+							<tr>
+								<td style="padding: 10px 8px; border-bottom: 1px solid #f3f4f6; white-space: nowrap;">${escapeHtml(row.date)}</td>
+								<td style="padding: 10px 8px; border-bottom: 1px solid #f3f4f6;">${escapeHtml(row.payee)}</td>
+								<td style="padding: 10px 8px; border-bottom: 1px solid #f3f4f6;">${escapeHtml(row.categoryName)}</td>
+								<td style="padding: 10px 8px; text-align: right; border-bottom: 1px solid #f3f4f6;">${formatCurrency(row.amount)}</td>
+							</tr>
+						`
+					)
+					.join('')}
+				<tr>
+					<td colspan="3" style="padding: 10px 8px; font-weight: 600;">Total</td>
+					<td style="padding: 10px 8px; text-align: right; font-weight: 600;">${formatCurrency(total)}</td>
+				</tr>
+			</tbody>
+		</table>
+	`;
+}
+
 export async function sendWeeklySummaryEmail(payload: WeeklySummaryEmailPayload) {
 	await mailer.send({
 		to: payload.to,
@@ -105,9 +152,15 @@ export async function sendWeeklySummaryEmail(payload: WeeklySummaryEmailPayload)
 			${renderWeeklyRows(payload.overBudgetCategories, 'over-budget')}
 		</section>
 
-		<section style="margin-bottom: 10px; background: #ffffff; border: 1px solid #d1fae5; border-radius: 8px; padding: 16px;">
+		<section style="margin-bottom: 28px; background: #ffffff; border: 1px solid #d1fae5; border-radius: 8px; padding: 16px;">
 			<h2 style="margin: 0 0 12px; color: #065f46; font-size: 18px;">Within 10% Of Budget Limit</h2>
 			${renderWeeklyRows(payload.nearLimitCategories, 'near-limit')}
+		</section>
+
+		<section style="margin-bottom: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+			<h2 style="margin: 0 0 4px; color: #374151; font-size: 18px;">Excluded From Budget</h2>
+			<p style="margin: 0 0 12px; font-size: 13px; color: #6b7280;">These transactions don't count toward any category budget above.</p>
+			${renderExcludedRows(payload.excludedTransactions)}
 		</section>`
 		})
 	});
