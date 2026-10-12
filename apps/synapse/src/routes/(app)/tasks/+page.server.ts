@@ -8,8 +8,7 @@ import {
 	updateDailyAgendaEntrySchema,
 	updateDailyAgendaTemplateSchema
 } from '$lib/schemas/daily-agenda';
-import { moodLogSchema, moodPeriodSchema } from '$lib/schemas/mood';
-import type { TaskState } from '$lib/schemas/task';
+import { moodLogSchema } from '$lib/schemas/mood';
 import {
 	deleteTaskSchema,
 	moveTaskBoardSchema,
@@ -17,12 +16,11 @@ import {
 	updateTaskStateSchema
 } from '$lib/schemas/task';
 import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
+import { deleteAction } from '$lib/server/actions/crud-helpers';
 import { invalidForm } from '$lib/server/actions/form-responses';
-import { parseTaskTags } from '$lib/server/actions/string-parsers';
 import {
 	createDailyAgendaCustomEntry,
 	createDailyAgendaTemplate,
-	DailyAgendaMutationError,
 	deleteDailyAgendaCustomEntry,
 	deleteDailyAgendaTemplate,
 	loadDailyAgendaData,
@@ -35,378 +33,32 @@ import { moodLogs, tasks } from '$lib/server/db/schema';
 import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { logger } from '$lib/server/logger';
 import {
-	addDaysToDateString,
+	buildAgendaActionPayload,
+	failAgendaMutation,
+	failAgendaValidation
+} from '$lib/server/tasks/agenda-responses';
+import { getAllTags, loadTaskBoardData, moveTaskWithinBoard } from '$lib/server/tasks/board';
+import {
+	buildEmptyMood,
+	buildMoodForm,
+	getMoodRangeStart,
+	getSelectedPeriod,
+	summarizeMood
+} from '$lib/server/tasks/mood';
+import {
 	formatDateShort,
 	getDateRange,
-	getDateUrgencyStatus,
-	getISODayOfWeek,
 	getStartOfMonth,
-	getStartOfQuarter,
 	getStartOfWeek,
 	getTodayString
 } from '$lib/utils/date';
-import {
-	getMoodChartColor,
-	getMoodScore,
-	normalizeOptionalMoodText,
-	resolveMoodLabel
-} from '$lib/utils/mood';
-import { fail, redirect } from '@sveltejs/kit';
-import { and, asc, eq, gte, like, lte, or } from 'drizzle-orm';
+import { normalizeOptionalMoodText } from '$lib/utils/mood';
+import { redirect } from '@sveltejs/kit';
+import { and, asc, eq, gte, lte } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import type { Actions, PageServerLoad } from './$types';
-
-type AgendaActionScope =
-	| 'create-template'
-	| 'update-template'
-	| 'delete-template'
-	| 'create-entry'
-	| 'update-entry'
-	| 'delete-entry'
-	| 'toggle-entry';
-
-type AgendaActionPayload = {
-	scope: AgendaActionScope;
-	type: 'success' | 'error' | 'validation-error';
-	text: string;
-	fieldErrors?: unknown;
-	values?: Record<string, unknown>;
-	entityId?: string;
-	date?: string;
-};
-
-function buildAgendaActionPayload(
-	scope: AgendaActionScope,
-	payload: Omit<AgendaActionPayload, 'scope'>
-) {
-	return {
-		agendaAction: {
-			scope,
-			...payload
-		}
-	};
-}
-
-function failAgendaValidation(
-	scope: AgendaActionScope,
-	form: Awaited<ReturnType<typeof superValidate>>,
-	extra: Partial<AgendaActionPayload> = {}
-) {
-	return fail(
-		400,
-		buildAgendaActionPayload(scope, {
-			type: 'validation-error',
-			text: 'Please correct the highlighted fields.',
-			fieldErrors: form.errors,
-			values: form.data,
-			...extra
-		})
-	);
-}
-
-function failAgendaMutation(
-	scope: AgendaActionScope,
-	error: unknown,
-	context: {
-		userId: string;
-		entityId?: string;
-		date?: string;
-		message: string;
-		logMessage: string;
-	}
-) {
-	if (error instanceof DailyAgendaMutationError) {
-		const status = error.code === 'not_found' ? 404 : 400;
-		return fail(
-			status,
-			buildAgendaActionPayload(scope, {
-				type: 'error',
-				text: error.message,
-				entityId: context.entityId,
-				date: context.date
-			})
-		);
-	}
-
-	logger.error(context.logMessage, error, {
-		userId: context.userId,
-		entityId: context.entityId,
-		date: context.date
-	});
-
-	return fail(
-		500,
-		buildAgendaActionPayload(scope, {
-			type: 'error',
-			text: context.message,
-			entityId: context.entityId,
-			date: context.date
-		})
-	);
-}
-
-function getSelectedPeriod(value: string | null): 'week' | 'month' | 'quarter' {
-	const parsed = moodPeriodSchema.safeParse(value ?? 'week');
-	return parsed.success ? parsed.data : 'week';
-}
-
-function getMoodRangeStart(today: string, period: 'week' | 'month' | 'quarter'): string {
-	if (period === 'month') return getStartOfMonth(today);
-	if (period === 'quarter') return getStartOfQuarter(today);
-	return getStartOfWeek(today);
-}
-
-async function buildMoodForm(todayMoodLog?: typeof moodLogs.$inferSelect | null) {
-	const today = getTodayString();
-	return superValidate(
-		{
-			date: todayMoodLog?.date ?? today,
-			mood: todayMoodLog?.mood ?? '',
-			customMood: todayMoodLog?.customMood ?? '',
-			notes: todayMoodLog?.notes ?? ''
-		},
-		zod4(moodLogSchema)
-	);
-}
-
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
-
-function buildWeekdayAvg(
-	entries: { date: string; mood: string }[]
-): { day: string; avgScore: number | null; count: number }[] {
-	const weekdayScores: number[][] = Array.from({ length: 7 }, () => []);
-
-	for (const entry of entries) {
-		// Mon=0…Sun=6
-		const dayIndex = getISODayOfWeek(entry.date);
-		weekdayScores[dayIndex].push(getMoodScore(entry.mood));
-	}
-
-	return WEEKDAY_LABELS.map((day, index) => ({
-		day,
-		avgScore:
-			weekdayScores[index].length > 0
-				? Number(
-						(weekdayScores[index].reduce((s, v) => s + v, 0) / weekdayScores[index].length).toFixed(
-							1
-						)
-					)
-				: null,
-		count: weekdayScores[index].length
-	}));
-}
-
-/**
- * Get all unique tags across the user's tasks
- */
-async function getAllTags(userId: string): Promise<string[]> {
-	const taskRows = await getDb().query.tasks.findMany({
-		where: eq(tasks.userId, userId),
-		columns: { tags: true }
-	});
-
-	const tagSet = new Set<string>();
-	for (const task of taskRows) {
-		for (const tag of parseTaskTags(task.tags) ?? []) {
-			tagSet.add(tag);
-		}
-	}
-
-	return Array.from(tagSet).sort((a, b) => a.localeCompare(b));
-}
-
-type TaskBoardClient = Pick<ReturnType<typeof getDb>, 'select' | 'update'>;
-
-function clampBoardIndex(index: number, maxLength: number): number {
-	if (index < 0) {
-		return 0;
-	}
-
-	if (index > maxLength) {
-		return maxLength;
-	}
-
-	return index;
-}
-
-function moveTaskIdToIndex(taskIds: string[], taskId: string, targetIndex: number): string[] {
-	const reorderedTaskIds = taskIds.filter((id) => id !== taskId);
-	const safeIndex = clampBoardIndex(targetIndex, reorderedTaskIds.length);
-	reorderedTaskIds.splice(safeIndex, 0, taskId);
-	return reorderedTaskIds;
-}
-
-function getCompletedAtForTaskStateChange(
-	fromState: TaskState,
-	toState: TaskState,
-	timestamp: Date
-): Date | null | undefined {
-	if (fromState !== 'done' && toState === 'done') {
-		return timestamp;
-	}
-
-	if (fromState === 'done' && toState !== 'done') {
-		return null;
-	}
-
-	return undefined;
-}
-
-function loadTaskIdsByState(db: TaskBoardClient, userId: string, state: TaskState): string[] {
-	const rows = db
-		.select({ id: tasks.id })
-		.from(tasks)
-		.where(and(eq(tasks.userId, userId), eq(tasks.state, state)))
-		.orderBy(asc(tasks.sortOrder), asc(tasks.taskNumber))
-		.all();
-
-	return rows.map((row) => row.id);
-}
-
-function applyTaskSortOrder(
-	db: TaskBoardClient,
-	userId: string,
-	taskIds: string[],
-	timestamp: Date
-): void {
-	for (let index = 0; index < taskIds.length; index += 1) {
-		db.update(tasks)
-			.set({
-				sortOrder: index,
-				updatedAt: timestamp
-			})
-			.where(and(eq(tasks.id, taskIds[index]), eq(tasks.userId, userId)))
-			.run();
-	}
-}
-
-type MoveTaskWithinBoardResult = {
-	fromState: TaskState;
-	toState: TaskState;
-};
-
-function moveTaskWithinBoard(
-	db: TaskBoardClient,
-	userId: string,
-	taskId: string,
-	toState: TaskState,
-	toIndex: number,
-	timestamp: Date
-): MoveTaskWithinBoardResult | null {
-	const existing = db
-		.select({ id: tasks.id, state: tasks.state })
-		.from(tasks)
-		.where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
-		.get();
-
-	if (!existing) {
-		return null;
-	}
-
-	const fromState = existing.state as TaskState;
-
-	if (fromState === toState) {
-		const columnTaskIds = loadTaskIdsByState(db, userId, toState);
-		const reorderedTaskIds = moveTaskIdToIndex(columnTaskIds, taskId, toIndex);
-		applyTaskSortOrder(db, userId, reorderedTaskIds, timestamp);
-		return { fromState, toState };
-	}
-
-	const sourceTaskIds = loadTaskIdsByState(db, userId, fromState);
-	const targetTaskIds = loadTaskIdsByState(db, userId, toState);
-
-	const nextSourceTaskIds = sourceTaskIds.filter((id) => id !== taskId);
-	const nextTargetTaskIds = moveTaskIdToIndex(targetTaskIds, taskId, toIndex);
-
-	const completedAt = getCompletedAtForTaskStateChange(fromState, toState, timestamp);
-	const stateUpdate: {
-		state: TaskState;
-		updatedAt: Date;
-		completedAt?: Date | null;
-	} = {
-		state: toState,
-		updatedAt: timestamp
-	};
-
-	if (completedAt !== undefined) {
-		stateUpdate.completedAt = completedAt;
-	}
-
-	db.update(tasks)
-		.set(stateUpdate)
-		.where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
-		.run();
-
-	applyTaskSortOrder(db, userId, nextSourceTaskIds, timestamp);
-	applyTaskSortOrder(db, userId, nextTargetTaskIds, timestamp);
-
-	return { fromState, toState };
-}
-
-async function loadTaskBoardData(
-	userId: string,
-	filters: {
-		keyword?: string;
-		priority: number[];
-		tag: string[];
-		state?: TaskState;
-		dueDate: ('overdue' | 'today' | 'upcoming')[];
-	}
-) {
-	const conditions = [eq(tasks.userId, userId)];
-
-	if (filters.state) {
-		conditions.push(eq(tasks.state, filters.state));
-	}
-
-	if (filters.priority.length > 0) {
-		const priorityCondition = or(...filters.priority.map((value) => eq(tasks.priority, value)));
-		if (priorityCondition) {
-			conditions.push(priorityCondition);
-		}
-	}
-
-	if (filters.keyword) {
-		const keywordPattern = `%${filters.keyword}%`;
-		const keywordCondition = or(
-			like(tasks.title, keywordPattern),
-			like(tasks.description, keywordPattern)
-		);
-		if (keywordCondition) {
-			conditions.push(keywordCondition);
-		}
-	}
-
-	if (filters.tag.length > 0) {
-		const tagCondition = or(...filters.tag.map((value) => like(tasks.tags, `%"${value}"%`)));
-		if (tagCondition) {
-			conditions.push(tagCondition);
-		}
-	}
-
-	let taskRows = await getDb().query.tasks.findMany({
-		where: and(...conditions),
-		orderBy: [tasks.state, tasks.sortOrder, tasks.priority, tasks.dueDate, tasks.taskNumber]
-	});
-
-	// Apply due date filtering after database query since we need to calculate urgency status
-	if (filters.dueDate.length > 0) {
-		const today = getTodayString();
-		taskRows = taskRows.filter((task) => {
-			const urgencyStatus = getDateUrgencyStatus(task.dueDate, today);
-			return urgencyStatus && filters.dueDate.includes(urgencyStatus);
-		});
-	}
-
-	return taskRows.map((task) => ({
-		...task,
-		taskNumber: task.taskNumber,
-		state: task.state as TaskState,
-		tags: parseTaskTags(task.tags)
-	}));
-}
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const userId = getUser(locals).id;
@@ -443,36 +95,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const rangeLabel =
 		activeTab === 'mood' ? `${formatDateShort(moodRangeStart)} – ${formatDateShort(today)}` : '';
 
-	const emptyMood = {
-		selectedPeriod,
-		rangeLabel,
-		trendPoints: [] as {
-			date: string;
-			score: number;
-			resolvedMood: string;
-			mood: string;
-			isCustom: boolean;
-			fill: string;
-		}[],
-		rollingAvgPoints: [] as { date: string; rollingAvg: number }[],
-		distribution: [] as { mood: string; count: number; fill: string; percentage: number }[],
-		weekdayAvg: buildWeekdayAvg([]),
-		calendarLogs: [] as { date: string; score: number; resolvedMood: string; fill: string }[],
-		todayLog: null as {
-			date: string;
-			mood: string;
-			resolvedMood: string;
-			notes: string | null;
-		} | null,
-		summary: {
-			loggedDays: 0,
-			totalDays: moodRangeDates.length,
-			coveragePercentage: 0,
-			currentStreak: 0,
-			mostFrequentMood: null as string | null,
-			averageScore: null as number | null
-		}
-	};
+	const emptyMood = buildEmptyMood(selectedPeriod, rangeLabel, moodRangeDates.length);
 
 	if (!filters.success) {
 		logger.error('Invalid task filter parameters', filters.error, { userId });
@@ -531,78 +154,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 		const todayLog = moodEntries.find((e) => e.date === today) ?? null;
 		const moodForm = await buildMoodForm(todayLog);
-
-		const trendPoints = moodEntries.map((entry) => ({
-			date: entry.date,
-			score: getMoodScore(entry.mood),
-			resolvedMood: resolveMoodLabel(entry.mood, entry.customMood),
-			mood: entry.mood,
-			isCustom: entry.mood === 'custom',
-			fill: getMoodChartColor(entry.mood)
-		}));
-
-		// Rolling 7-day average: average over available logged points only (no interpolation)
-		const rollingAvgPoints: { date: string; rollingAvg: number }[] = [];
-		let windowStartIndex = 0;
-		let windowScoreSum = 0;
-
-		for (let pointIndex = 0; pointIndex < trendPoints.length; pointIndex += 1) {
-			const point = trendPoints[pointIndex];
-			const windowStart = addDaysToDateString(point.date, -6);
-
-			while (trendPoints[windowStartIndex] && trendPoints[windowStartIndex].date < windowStart) {
-				windowScoreSum -= trendPoints[windowStartIndex].score;
-				windowStartIndex += 1;
-			}
-
-			windowScoreSum += point.score;
-			const windowLength = pointIndex - windowStartIndex + 1;
-			const avg = windowScoreSum / windowLength;
-
-			rollingAvgPoints.push({ date: point.date, rollingAvg: Number(avg.toFixed(1)) });
-		}
-
-		const distributionMap = new Map<string, { count: number; fill: string }>();
-		for (const entry of moodEntries) {
-			const resolvedMood = resolveMoodLabel(entry.mood, entry.customMood);
-			const existing = distributionMap.get(resolvedMood);
-			if (existing) {
-				existing.count += 1;
-			} else {
-				distributionMap.set(resolvedMood, { count: 1, fill: getMoodChartColor(entry.mood) });
-			}
-		}
-
-		const distribution = Array.from(distributionMap.entries())
-			.map(([mood, value]) => ({
-				mood,
-				count: value.count,
-				fill: value.fill,
-				percentage:
-					moodEntries.length > 0 ? Math.round((value.count / moodEntries.length) * 100) : 0
-			}))
-			.sort((a, b) => b.count - a.count);
-
-		const weekdayAvg = buildWeekdayAvg(moodEntries);
-
-		const calendarLogs = calendarEntries.map((entry) => ({
-			date: entry.date,
-			score: getMoodScore(entry.mood),
-			resolvedMood: resolveMoodLabel(entry.mood, entry.customMood),
-			fill: getMoodChartColor(entry.mood)
-		}));
-
-		const moodDates = new Set(moodEntries.map((e) => e.date));
-		let currentStreak = 0;
-		for (let i = moodRangeDates.length - 1; i >= 0; i -= 1) {
-			if (!moodDates.has(moodRangeDates[i])) break;
-			currentStreak += 1;
-		}
-
-		const totalScore = trendPoints.reduce((sum, p) => sum + p.score, 0);
-		const averageScore =
-			trendPoints.length > 0 ? Number((totalScore / trendPoints.length).toFixed(1)) : null;
-
 		return {
 			activeTab,
 			agenda,
@@ -610,34 +161,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			allTags,
 			moodForm,
 			loadError: agendaLoadError,
-			mood: {
+			mood: summarizeMood({
 				selectedPeriod,
 				rangeLabel,
-				trendPoints,
-				rollingAvgPoints,
-				distribution,
-				weekdayAvg,
-				calendarLogs,
-				todayLog: todayLog
-					? {
-							date: todayLog.date,
-							mood: todayLog.mood,
-							resolvedMood: resolveMoodLabel(todayLog.mood, todayLog.customMood),
-							notes: todayLog.notes
-						}
-					: null,
-				summary: {
-					loggedDays: moodEntries.length,
-					totalDays: moodRangeDates.length,
-					coveragePercentage:
-						moodRangeDates.length > 0
-							? Math.round((moodEntries.length / moodRangeDates.length) * 100)
-							: 0,
-					currentStreak,
-					mostFrequentMood: distribution[0]?.mood ?? null,
-					averageScore
-				}
-			}
+				moodEntries,
+				calendarEntries,
+				moodRangeDates,
+				todayLog
+			})
 		};
 	} catch (error) {
 		logger.error('Failed to load tasks', error, { userId });
@@ -729,33 +260,13 @@ export const actions = {
 		}
 	}),
 
-	delete: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(deleteTaskSchema));
-		if (!form.valid) return invalidForm(form);
-
-		try {
-			const existing = await getDb().query.tasks.findFirst({
-				where: and(eq(tasks.id, form.data.id), eq(tasks.userId, user.id))
-			});
-
-			if (!existing) {
-				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
-			}
-			await getDb()
-				.delete(tasks)
-				.where(and(eq(tasks.id, form.data.id), eq(tasks.userId, user.id)));
-
-			logger.info('Task deleted from board', {
-				taskId: form.data.id,
-				taskNumber: existing.taskNumber,
-				userId: user.id
-			});
-		} catch (error) {
-			logger.error('Failed to delete task from board', error, { form });
-			return message(form, { type: 'error', text: 'Failed to delete task' }, { status: 500 });
+	delete: deleteAction({
+		schema: deleteTaskSchema,
+		table: tasks,
+		entityName: 'Task',
+		onSuccess: () => {
+			throw redirect(303, '/tasks');
 		}
-
-		throw redirect(303, '/tasks');
 	}),
 
 	createAgendaTemplate: requireAuth(async ({ request }, user) => {
