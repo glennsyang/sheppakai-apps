@@ -6,6 +6,7 @@ import { getDb } from '$lib/server/db';
 import { tasks } from '$lib/server/db/schema';
 import { createTask } from '$lib/server/db/writes/tasks';
 import { logger } from '$lib/server/logger';
+import { parseJsonBody } from '@sheppakai/shared/api-write';
 import { and, desc, eq } from 'drizzle-orm';
 
 import type { RequestHandler } from './$types';
@@ -43,17 +44,8 @@ export const POST: RequestHandler = async ({ request, url }) => {
 	const auth = await requireApiKey(request, 'tasks:write');
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
-	let body: unknown;
-	try {
-		body = await request.json();
-	} catch {
-		return apiError('invalid_json', 'Request body must be valid JSON.', 400);
-	}
-
-	const parsed = apiCreateTaskSchema.safeParse(body);
-	if (!parsed.success) {
-		return apiError('validation_failed', parsed.error.issues.map((i) => i.message).join('; '), 400);
-	}
+	const parsed = await parseJsonBody(request, apiCreateTaskSchema);
+	if (!parsed.ok) return parsed.response;
 
 	return handleApiWrite(
 		{

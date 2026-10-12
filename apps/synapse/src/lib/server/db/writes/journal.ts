@@ -1,9 +1,9 @@
 import { buildWeatherJson } from '$lib/schemas/journal';
-import { ApiWriteError } from '$lib/server/api/errors';
 import type { ApiCreateJournalInput, ApiUpdateJournalInput } from '$lib/server/api/schemas/journal';
 import { getDb } from '$lib/server/db';
 import { journalEntries } from '$lib/server/db/schema';
 import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
+import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { and, eq } from 'drizzle-orm';
 
 /**

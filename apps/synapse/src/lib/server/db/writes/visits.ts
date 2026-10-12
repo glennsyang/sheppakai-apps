@@ -1,8 +1,8 @@
-import { ApiWriteError } from '$lib/server/api/errors';
 import type { ApiCreateVisitInput, ApiUpdateVisitInput } from '$lib/server/api/schemas/visits';
 import { getDb } from '$lib/server/db';
 import { people, visits } from '$lib/server/db/schema';
 import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
+import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { and, eq } from 'drizzle-orm';
 
 function companionsToJson(companions: string[] | undefined | null): string | null {

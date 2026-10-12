@@ -1,10 +1,11 @@
-import { ApiWriteError } from '$lib/server/api/errors';
 import { handleApiWrite } from '$lib/server/api/handle-write';
 import { requireApiKey } from '$lib/server/api/require-api-key';
 import { apiError, apiSuccess } from '$lib/server/api/response';
 import { apiUpdateWorkoutSchema } from '$lib/server/api/schemas/workouts';
 import { getWorkoutWithExercises, updateWorkout } from '$lib/server/db/writes/workouts';
 import { logger } from '$lib/server/logger';
+import { ApiWriteError } from '@sheppakai/shared/api-write';
+import { parseJsonBody } from '@sheppakai/shared/api-write';
 
 import type { RequestHandler } from './$types';
 
@@ -28,17 +29,8 @@ export const PATCH: RequestHandler = async ({ request, params, url }) => {
 	const auth = await requireApiKey(request, 'workouts:write');
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
-	let body: unknown;
-	try {
-		body = await request.json();
-	} catch {
-		return apiError('invalid_json', 'Request body must be valid JSON.', 400);
-	}
-
-	const parsed = apiUpdateWorkoutSchema.safeParse(body);
-	if (!parsed.success) {
-		return apiError('validation_failed', parsed.error.issues.map((i) => i.message).join('; '), 400);
-	}
+	const parsed = await parseJsonBody(request, apiUpdateWorkoutSchema);
+	if (!parsed.ok) return parsed.response;
 
 	return handleApiWrite(
 		{

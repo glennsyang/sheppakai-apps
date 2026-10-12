@@ -1,4 +1,4 @@
-import { recordApiWrite } from '$lib/server/api/audit-log';
+import { handleApiWrite } from '$lib/server/api/handle-write';
 import { requireApiKey } from '$lib/server/api/require-api-key';
 import { apiError, apiSuccess } from '$lib/server/api/response';
 import {
@@ -8,6 +8,7 @@ import {
 import { windowCleaningJobQueries } from '$lib/server/db/queries';
 import { createWindowCleaningJob } from '$lib/server/db/writes/window-cleaning-jobs';
 import { logger } from '$lib/server/logger';
+import { parseJsonBody } from '@sheppakai/shared/api-write';
 
 import type { RequestHandler } from './$types';
 
@@ -44,39 +45,18 @@ export const POST: RequestHandler = async ({ request, url }) => {
 	const auth = await requireApiKey(request, 'windowCleaningJobs:write');
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
-	let body: unknown;
-	try {
-		body = await request.json();
-	} catch {
-		return apiError('invalid_json', 'Request body must be valid JSON.', 400);
-	}
+	const parsed = await parseJsonBody(request, apiCreateWindowCleaningJobSchema);
+	if (!parsed.ok) return parsed.response;
 
-	const parsed = apiCreateWindowCleaningJobSchema.safeParse(body);
-	if (!parsed.success) {
-		return apiError('validation_failed', parsed.error.issues.map((i) => i.message).join('; '), 400);
-	}
-
-	try {
-		const created = await createWindowCleaningJob(parsed.data, auth.userId);
-		await recordApiWrite({
+	return handleApiWrite(
+		{
 			apiKeyId: auth.apiKeyId,
 			userId: auth.userId,
 			method: 'POST',
 			path: url.pathname,
-			action: 'windowCleaningJobs:write',
-			statusCode: 201
-		});
-		return apiSuccess(created, 201);
-	} catch (error) {
-		logger.error('API: failed to create window cleaning job', error);
-		await recordApiWrite({
-			apiKeyId: auth.apiKeyId,
-			userId: auth.userId,
-			method: 'POST',
-			path: url.pathname,
-			action: 'windowCleaningJobs:write',
-			statusCode: 500
-		});
-		return apiError('internal_error', 'Failed to create window cleaning job.', 500);
-	}
+			action: 'windowCleaningJobs:write'
+		},
+		() => createWindowCleaningJob(parsed.data, auth.userId),
+		{ successStatus: 201, failureMessage: 'Failed to create window cleaning job' }
+	);
 };

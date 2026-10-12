@@ -6,6 +6,7 @@ import { getDb } from '$lib/server/db';
 import { visits } from '$lib/server/db/schema';
 import { updateVisit } from '$lib/server/db/writes/visits';
 import { logger } from '$lib/server/logger';
+import { parseJsonBody } from '@sheppakai/shared/api-write';
 import { and, eq } from 'drizzle-orm';
 
 import type { RequestHandler } from './$types';
@@ -34,17 +35,8 @@ export const PATCH: RequestHandler = async ({ request, params, url }) => {
 	const auth = await requireApiKey(request, 'visits:write');
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
-	let body: unknown;
-	try {
-		body = await request.json();
-	} catch {
-		return apiError('invalid_json', 'Request body must be valid JSON.', 400);
-	}
-
-	const parsed = apiUpdateVisitSchema.safeParse(body);
-	if (!parsed.success) {
-		return apiError('validation_failed', parsed.error.issues.map((i) => i.message).join('; '), 400);
-	}
+	const parsed = await parseJsonBody(request, apiUpdateVisitSchema);
+	if (!parsed.ok) return parsed.response;
 
 	return handleApiWrite(
 		{

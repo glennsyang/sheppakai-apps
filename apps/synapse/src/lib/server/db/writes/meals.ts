@@ -1,8 +1,8 @@
-import { ApiWriteError } from '$lib/server/api/errors';
 import type { ApiCreateMealInput, ApiUpdateMealInput } from '$lib/server/api/schemas/meals';
 import { getDb } from '$lib/server/db';
 import { mealLogs } from '$lib/server/db/schema';
 import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
+import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { and, eq } from 'drizzle-orm';
 
 /**
