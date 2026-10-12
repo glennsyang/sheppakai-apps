@@ -10,7 +10,13 @@ vi.mock('@getbrevo/brevo', () => ({
 	}
 }));
 
-import { createMailer, escapeHtml, renderEmailLayout } from './email';
+import {
+	createAuthEmails,
+	createMailer,
+	escapeHtml,
+	renderEmailLayout,
+	type SendEmailOptions
+} from './email';
 
 describe('escapeHtml', () => {
 	it('escapes all five HTML-significant characters', () => {
@@ -141,5 +147,85 @@ describe('createMailer', () => {
 		expect(error).toBeInstanceOf(Error);
 		expect((error as Error).message).toBe('Brevo request failed');
 		expect((error as Error).cause).toBe('boom');
+	});
+});
+
+describe('createAuthEmails', () => {
+	const mailer = { send: vi.fn<(options: SendEmailOptions) => Promise<void>>() };
+	const emails = createAuthEmails({ mailer, appName: 'Test App', footer: 'Test App - Footer' });
+	const sent = () => mailer.send.mock.calls[0][0];
+
+	beforeEach(() => {
+		mailer.send.mockReset();
+		mailer.send.mockResolvedValue(undefined);
+	});
+
+	it('sends the verification email with the link and the 1-hour expiry', async () => {
+		await emails.sendVerificationEmail(
+			'user@example.com',
+			'User',
+			'https://app/verify?token=a&b=1'
+		);
+
+		expect(sent().subject).toBe('[Test App] Verify your email address');
+		expect(sent().label).toBe('verification email');
+		expect(sent().html).toContain('href="https://app/verify?token=a&amp;b=1"');
+		expect(sent().html).toContain('expire in 1 hour');
+		expect(sent().html).toContain('Test App - Footer');
+	});
+
+	it('sends the reset email with the link and the 10-minute expiry', async () => {
+		await emails.sendPasswordResetEmail('user@example.com', 'User', 'https://app/reset?token=xyz');
+
+		expect(sent().subject).toBe('[Test App] Reset your password');
+		expect(sent().html).toContain('href="https://app/reset?token=xyz"');
+		expect(sent().html).toContain('expire in 10 minutes');
+	});
+
+	it('escapes user-controlled values in the password-changed email', async () => {
+		await emails.sendPasswordChangedEmail({
+			to: 'user@example.com',
+			name: '<script>x</script>',
+			changedAt: new Date('2026-01-01T00:00:00Z'),
+			userAgent: '<img src=x onerror=alert(1)>',
+			ipAddress: '"1.2.3.4"'
+		});
+
+		expect(sent().html).not.toContain('<script>');
+		expect(sent().html).not.toContain('<img');
+		expect(sent().html).toContain('&lt;script&gt;');
+		expect(sent().html).toContain('&quot;1.2.3.4&quot;');
+	});
+
+	it('falls back to "Unavailable" and "Account settings" for omitted details', async () => {
+		await emails.sendPasswordChangedEmail({
+			to: 'user@example.com',
+			name: 'User',
+			changedAt: new Date()
+		});
+
+		expect(sent().html).toContain('<strong>IP:</strong> Unavailable');
+		expect(sent().html).toContain('<strong>Source:</strong> Account settings');
+	});
+
+	it('greets the new user by email when they have no name, escaped', async () => {
+		await emails.sendNewUserEmail('<b>@example.com', '');
+
+		expect(sent().subject).toBe('[Test App] Welcome to Test App!');
+		expect(sent().html).toContain('Hi &lt;b&gt;@example.com,');
+	});
+
+	it('defaults the footer to the app name', async () => {
+		await createAuthEmails({ mailer, appName: 'Solo' }).sendNewUserEmail('a@b.c', 'A');
+
+		expect(sent().html).toContain('<p>Solo</p>');
+	});
+
+	it('rethrows a mailer failure', async () => {
+		mailer.send.mockRejectedValueOnce(new Error('network down'));
+
+		await expect(
+			emails.sendPasswordResetEmail('user@example.com', 'User', 'https://app/reset')
+		).rejects.toThrow('network down');
 	});
 });

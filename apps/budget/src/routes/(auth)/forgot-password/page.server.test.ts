@@ -25,7 +25,7 @@ vi.mock('$lib/server/rate-limiter', async (importOriginal) => {
 	};
 });
 
-import { FORGOT_PASSWORD_RESPONSE } from '$lib/server/auth/forgot-password-response';
+import { FORGOT_PASSWORD_RESPONSE } from '@sheppakai/shared/forgot-password-response';
 
 import { actions } from './+page.server';
 

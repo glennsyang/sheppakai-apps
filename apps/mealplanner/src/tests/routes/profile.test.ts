@@ -92,9 +92,9 @@ describe('updateName action', () => {
 		expect(apiMock.updateUser).not.toHaveBeenCalled();
 	});
 
-	it('rejects a name that is too short without calling the API', async () => {
+	it('rejects an empty name without calling the API', async () => {
 		const result = await actions.updateName(
-			ctx({ user: USER as App.Locals['user'] }, { name: 'A' })
+			ctx({ user: USER as App.Locals['user'] }, { name: '' })
 		);
 		expect(result).toMatchObject({ status: 400 });
 		expect(apiMock.updateUser).not.toHaveBeenCalled();

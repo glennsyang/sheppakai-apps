@@ -6,7 +6,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { loginSchema } from '$lib/schemas/auth';
+	import { signInSchema } from '$lib/schemas/auth';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 
@@ -16,7 +16,7 @@
 
 	// svelte-ignore state_referenced_locally — superForm is intentionally initialized once from props
 	const { form, errors, constraints, enhance, message, submitting } = superForm(data.form, {
-		validators: zod4Client(loginSchema)
+		validators: zod4Client(signInSchema)
 	});
 </script>
 

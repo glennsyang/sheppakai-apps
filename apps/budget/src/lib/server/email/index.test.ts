@@ -25,12 +25,7 @@ vi.mock('@getbrevo/brevo', () => ({
 	}
 }));
 
-import {
-	sendNewUserEmail,
-	sendPasswordChangedEmail,
-	sendWeeklySummaryEmail,
-	sendWelcomeEmail
-} from './index';
+import { sendWeeklySummaryEmail, sendWelcomeEmail } from './index';
 
 function sentHtml(): string {
 	const [{ htmlContent }] = mockState.send.mock.calls[0];
@@ -76,66 +71,6 @@ describe('sendWeeklySummaryEmail', () => {
 			overBudgetCategories: [],
 			nearLimitCategories: []
 		});
-
-		const html = sentHtml();
-		expect(html).not.toContain('<script>alert(1)</script>');
-		expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
-	});
-});
-
-describe('sendPasswordChangedEmail', () => {
-	beforeEach(() => {
-		mockState.send.mockReset();
-		mockState.send.mockResolvedValue({ messageId: 'email-id' });
-	});
-
-	it('escapes HTML in userAgent and ipAddress headers', async () => {
-		await sendPasswordChangedEmail({
-			to: 'user@example.com',
-			name: 'Glenn',
-			changedAt: new Date('2026-08-27T00:00:00Z'),
-			userAgent: '<a href="https://evil.example">click me</a>',
-			ipAddress: '<b>1.2.3.4</b>'
-		});
-
-		const html = sentHtml();
-		expect(html).not.toContain('<a href="https://evil.example">');
-		expect(html).not.toContain('<b>1.2.3.4</b>');
-		expect(html).toContain('&lt;a href=&quot;https://evil.example&quot;&gt;click me&lt;/a&gt;');
-		expect(html).toContain('&lt;b&gt;1.2.3.4&lt;/b&gt;');
-	});
-
-	it('renders the literal fallback text when userAgent/ipAddress are omitted', async () => {
-		await sendPasswordChangedEmail({
-			to: 'user@example.com',
-			name: 'Glenn',
-			changedAt: new Date('2026-08-27T00:00:00Z')
-		});
-
-		const html = sentHtml();
-		expect(html).toContain('Unavailable');
-	});
-
-	it('rethrows a Brevo failure so callers can log it', async () => {
-		mockState.send.mockRejectedValue(new Error('brevo down'));
-		await expect(
-			sendPasswordChangedEmail({
-				to: 'user@example.com',
-				name: 'Glenn',
-				changedAt: new Date('2026-08-27T00:00:00Z')
-			})
-		).rejects.toThrow('brevo down');
-	});
-});
-
-describe('sendNewUserEmail', () => {
-	beforeEach(() => {
-		mockState.send.mockReset();
-		mockState.send.mockResolvedValue({ messageId: 'email-id' });
-	});
-
-	it('escapes HTML in a malicious display name', async () => {
-		await sendNewUserEmail('user@example.com', '<script>alert(1)</script>');
 
 		const html = sentHtml();
 		expect(html).not.toContain('<script>alert(1)</script>');

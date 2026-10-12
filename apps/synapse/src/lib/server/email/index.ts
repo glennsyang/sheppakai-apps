@@ -8,7 +8,9 @@ import {
 import { logger } from '$lib/server/logger';
 import { getWorkoutEmoji } from '$lib/utils/workout';
 import {
+	createAuthEmails,
 	createMailer,
+	EMAIL_BUTTON_STYLE,
 	escapeHtml,
 	renderEmailLayout,
 	type EmailLayoutOptions
@@ -23,8 +25,12 @@ const mailer = createMailer({
 
 const SYNAPSE_EMAIL_FOOTER = 'Synapse - Your Personal Second Brain';
 
-const BUTTON_STYLE =
-	'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;';
+export const {
+	sendVerificationEmail,
+	sendPasswordResetEmail,
+	sendPasswordChangedEmail,
+	sendNewUserEmail
+} = createAuthEmails({ mailer, appName: 'Synapse', footer: SYNAPSE_EMAIL_FOOTER });
 
 const FLOCK_QUOTE = `
 		<div style="background: #e5e7eb; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -40,100 +46,6 @@ function layout(
 	options: Pick<EmailLayoutOptions, 'accent' | 'headingColor'> = {}
 ): string {
 	return renderEmailLayout({ title, heading, body, footer: SYNAPSE_EMAIL_FOOTER, ...options });
-}
-
-export async function sendVerificationEmail(to: string, name: string, verificationUrl: string) {
-	await mailer.send({
-		to,
-		name,
-		subject: '[Synapse] Verify your email address',
-		label: 'verification email',
-		html: layout(
-			'Verify your email',
-			'Welcome to Synapse',
-			`
-		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
-		<p style="font-size: 16px; margin-bottom: 20px;">
-			Thanks for signing up! Please verify your email address to get started with your second brain.
-		</p>
-		<div style="text-align: center; margin: 30px 0;">
-			<a href="${escapeHtml(verificationUrl)}" style="${BUTTON_STYLE}">Verify Email Address</a>
-		</div>
-		<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-			If you didn't create an account, you can safely ignore this email.
-		</p>
-		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
-			This link will expire in 1 hour.
-		</p>`
-		)
-	});
-}
-
-export async function sendPasswordResetEmail(to: string, name: string, resetUrl: string) {
-	await mailer.send({
-		to,
-		name,
-		subject: '[Synapse] Reset your password',
-		label: 'password reset email',
-		html: layout(
-			'Reset your password',
-			'Password Reset',
-			`
-		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
-		<p style="font-size: 16px; margin-bottom: 20px;">
-			We received a request to reset your password. Click the button below to create a new password.
-		</p>
-		<div style="text-align: center; margin: 30px 0;">
-			<a href="${escapeHtml(resetUrl)}" style="${BUTTON_STYLE}">Reset Password</a>
-		</div>
-		<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-			If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
-		</p>
-		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
-			This link will expire in 10 minutes for security reasons.
-		</p>`
-		)
-	});
-}
-
-type PasswordChangedEmailPayload = {
-	to: string;
-	name: string;
-	changedAt: Date;
-	ipAddress?: string;
-	userAgent?: string;
-	source?: string;
-};
-
-/** Security notice sent after a password change or reset, so an unexpected change gets noticed. */
-export async function sendPasswordChangedEmail(payload: PasswordChangedEmailPayload) {
-	const changedAtText = escapeHtml(payload.changedAt.toLocaleString());
-	const ipAddress = escapeHtml(payload.ipAddress || 'Unavailable');
-	const userAgent = escapeHtml(payload.userAgent || 'Unavailable');
-	const source = escapeHtml(payload.source || 'Account settings');
-
-	await mailer.send({
-		to: payload.to,
-		name: payload.name,
-		subject: '[Synapse] Your password was changed',
-		label: 'password changed email',
-		html: layout(
-			'Password changed',
-			'Password Updated',
-			`
-		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(payload.name)},</p>
-		<p style="font-size: 16px; margin-bottom: 20px;">
-			Your Synapse password was successfully changed.
-		</p>
-		<p style="font-size: 14px; margin-bottom: 8px;"><strong>When:</strong> ${changedAtText}</p>
-		<p style="font-size: 14px; margin-bottom: 8px;"><strong>Source:</strong> ${source}</p>
-		<p style="font-size: 14px; margin-bottom: 8px;"><strong>IP:</strong> ${ipAddress}</p>
-		<p style="font-size: 14px; margin-bottom: 20px;"><strong>Device:</strong> ${userAgent}</p>
-		<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
-			If this wasn't you, reset your password immediately.
-		</p>`
-		)
-	});
 }
 
 /**
@@ -167,7 +79,7 @@ export async function sendWelcomeEmail(to: string, name: string, appUrl: string)
 			<li>Sign in. The first time, we'll send you a verification email &mdash; click the link in it to finish setting up your account.</li>
 		</ol>
 		<div style="text-align: center; margin: 30px 0;">
-			<a href="${forgotPasswordUrl}" style="${BUTTON_STYLE}">Set your password</a>
+			<a href="${forgotPasswordUrl}" style="${EMAIL_BUTTON_STYLE}">Set your password</a>
 		</div>
 		<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
 			You can change your password any time from your <a href="${profileUrl}" style="color: #667eea;">profile page</a>.
@@ -176,16 +88,6 @@ export async function sendWelcomeEmail(to: string, name: string, appUrl: string)
 			If you weren't expecting this, you can safely ignore this email.
 		</p>`
 		)
-	});
-}
-
-export async function sendNewUserEmail(to: string, name: string) {
-	await mailer.send({
-		to,
-		name,
-		subject: '[Synapse] New User was registered!',
-		label: 'new user email',
-		html: `Hi ${escapeHtml(name || to)}!<br><br>Welcome to Synapse! We're excited to have you on board.<br><br>Thank you,<br>Synapse Team`
 	});
 }
 
