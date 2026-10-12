@@ -1,12 +1,8 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-export function cn(...inputs: ClassValue[]) {
-	return twMerge(clsx(inputs));
-}
-
-// Prop helpers used by the shadcn-svelte components in $lib/components/ui
-export type WithoutChild<T> = T extends { child?: unknown } ? Omit<T, 'child'> : T;
-export type WithoutChildren<T> = T extends { children?: unknown } ? Omit<T, 'children'> : T;
-export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;
-export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & { ref?: U | null };
+// shadcn-svelte's generated components import `cn` and its prop types from `$lib/utils`.
+export {
+	cn,
+	type WithElementRef,
+	type WithoutChild,
+	type WithoutChildren,
+	type WithoutChildrenOrChild
+} from '@sheppakai/shared/cn';

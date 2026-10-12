@@ -1,16 +1,11 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-export function cn(...inputs: ClassValue[]) {
-	return twMerge(clsx(inputs));
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type WithoutChild<T> = T extends { child?: any } ? Omit<T, 'child'> : T;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type WithoutChildren<T> = T extends { children?: any } ? Omit<T, 'children'> : T;
-export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;
-export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & { ref?: U | null };
+// shadcn-svelte's generated components import `cn` and its prop types from `$lib/utils`.
+export {
+	cn,
+	type WithElementRef,
+	type WithoutChild,
+	type WithoutChildren,
+	type WithoutChildrenOrChild
+} from '@sheppakai/shared/cn';
 
 // Month selection
 export const months = [

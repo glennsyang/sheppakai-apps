@@ -38,7 +38,7 @@
 	"ignoreExports": [
 		{
 			"file": "src/lib/utils.ts",
-			"exports": ["WithoutChildrenOrChild", "WithElementRef"]
+			"exports": ["WithoutChild", "WithoutChildren", "WithoutChildrenOrChild", "WithElementRef"]
 		}
 	],
 	"duplicates": {
