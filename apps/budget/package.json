@@ -46,7 +46,6 @@
 		"@sveltejs/adapter-node": "catalog:",
 		"@sveltejs/kit": "catalog:",
 		"@sveltejs/vite-plugin-svelte": "catalog:",
-		"@tailwindcss/typography": "catalog:",
 		"@tailwindcss/vite": "catalog:",
 		"@tanstack/svelte-table": "catalog:",
 		"@tanstack/table-core": "catalog:",
