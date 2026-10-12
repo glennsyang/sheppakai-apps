@@ -2,9 +2,9 @@ import { randomBytes } from 'node:crypto';
 
 import { ALLOWED_EMAILS, BETTER_AUTH_BASE_URL } from '$app/env/private';
 import { RESET_PASSWORD_ROUTE, SIGN_IN_ROUTE } from '$lib/auth-routes';
+import { buildAllowlistCommand, parseAllowedEmails } from '@sheppakai/shared/auth-allowlist';
 
 import { auth } from '../auth';
-import { buildAllowlistCommand, parseAllowedEmails } from '../auth-allowlist-hook';
 import { sendWelcomeEmail } from '../email';
 
 const FLY_APP = 'sheppakai-budget';
