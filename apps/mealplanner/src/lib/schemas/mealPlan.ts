@@ -1,5 +1,6 @@
-import { parseIsoDate } from '$lib/dates';
 import { z } from 'zod';
+
+import { parseIsoDate } from '#lib/dates.js';
 
 /** A meal plan key: a real `YYYY-MM-DD` calendar date that falls on a Monday. */
 export const weekStartDateSchema = z

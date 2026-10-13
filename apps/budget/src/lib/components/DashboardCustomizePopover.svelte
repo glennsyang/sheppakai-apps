@@ -1,15 +1,16 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
-	import type { DashboardSectionDefinition } from '$lib/dashboardSections';
-	import type { dashboardVisibilitySchema } from '$lib/formSchemas';
-	import { cn } from '$lib/utils.js';
 	import { SlidersHorizontalIcon } from '@lucide/svelte/icons';
 	import { toast } from 'svelte-sonner';
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import { superForm } from 'sveltekit-superforms';
 	import type { z } from 'zod';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
+	import * as Popover from '#lib/components/ui/popover/index.js';
+	import type { DashboardSectionDefinition } from '#lib/dashboardSections.js';
+	import type { dashboardVisibilitySchema } from '#lib/formSchemas/index.js';
+	import { cn } from '#lib/utils.js';
 
 	interface Props {
 		sections: DashboardSectionDefinition[];

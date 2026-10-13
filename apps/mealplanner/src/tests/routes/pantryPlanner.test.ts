@@ -22,10 +22,10 @@ const { pantryMock, mealPlanMock, recipesMock, loggerMock } = vi.hoisted(() => (
 	}
 }));
 
-vi.mock('$lib/server/services/pantry', () => pantryMock);
-vi.mock('$lib/server/services/mealPlan', () => mealPlanMock);
-vi.mock('$lib/server/services/recipes', () => recipesMock);
-vi.mock('$lib/server/logger', () => ({ logger: loggerMock }));
+vi.mock('#lib/server/services/pantry.js', () => pantryMock);
+vi.mock('#lib/server/services/mealPlan.js', () => mealPlanMock);
+vi.mock('#lib/server/services/recipes.js', () => recipesMock);
+vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 
 import { actions as pantryActions } from '../../routes/(app)/pantry/+page.server';
 import {

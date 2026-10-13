@@ -1,16 +1,17 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
+import { parseJsonBody } from '@sheppakai/shared/api-write';
+import { and, desc, eq, gte, lte } from 'drizzle-orm';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import {
 	apiCreateWorkoutSchema,
 	apiWorkoutListQuerySchema
-} from '$lib/server/api/schemas/workouts';
-import { getDb } from '$lib/server/db';
-import { workoutLogs } from '$lib/server/db/schema';
-import { createWorkout } from '$lib/server/db/writes/workouts';
-import { logger } from '$lib/server/logger';
-import { parseJsonBody } from '@sheppakai/shared/api-write';
-import { and, desc, eq, gte, lte } from 'drizzle-orm';
+} from '#lib/server/api/schemas/workouts.js';
+import { getDb } from '#lib/server/db/index.js';
+import { workoutLogs } from '#lib/server/db/schema/index.js';
+import { createWorkout } from '#lib/server/db/writes/workouts.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

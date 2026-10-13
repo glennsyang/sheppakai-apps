@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Transaction } from '$lib';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
-	import TransactionModal from '$lib/components/TransactionModal.svelte';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { getCategoriesContext, transactionFormContext } from '$lib/contexts';
-	import { toDuplicateTransactionFormData, toTransactionFormData } from '$lib/formSchemas';
+	import type { Transaction } from '#lib';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import TransactionModal from '#lib/components/TransactionModal.svelte';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { getCategoriesContext, transactionFormContext } from '#lib/contexts/index.js';
+	import { toDuplicateTransactionFormData, toTransactionFormData } from '#lib/formSchemas/index.js';
 
 	let {
 		id,

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import type { SidebarNav } from '$lib/types';
+
+	import type { SidebarNav } from '#lib/types.js';
 
 	let { items }: { items: SidebarNav['navMain'] } = $props();
 

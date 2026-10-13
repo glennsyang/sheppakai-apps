@@ -1,13 +1,14 @@
-import { idSchema } from '$lib/formSchemas';
-import { getDb } from '$lib/server/db';
-import { withUpdatedAt } from '$lib/server/db/utils';
-import { logger } from '$lib/server/logger';
 import type { RequestEvent } from '@sveltejs/kit';
 import { eq, getTableColumns } from 'drizzle-orm';
 import type { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
 import { message, type SuperValidated, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import type { z, ZodType } from 'zod';
+
+import { idSchema } from '#lib/formSchemas/index.js';
+import { getDb } from '#lib/server/db/index.js';
+import { withUpdatedAt } from '#lib/server/db/utils.js';
+import { logger } from '#lib/server/logger.js';
 
 import { requireAuth } from './auth-guard';
 import { invalidForm } from './form-responses';
@@ -324,10 +325,10 @@ function createDeleteAction<TTable extends AnySQLiteTable>(
  *
  * @example
  * ```typescript
- * import { createCrudActions } from '$lib/server/actions/crud-helpers';
- * import { transactionSchema } from '$lib/formSchemas';
- * import { transaction } from '$lib/server/db/schema';
- * import { formatDateForStorage } from '$lib/utils/dates';
+ * import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
+ * import { transactionSchema } from '#lib/formSchemas/index.js';
+ * import { transaction } from '#lib/server/db/schema/index.js';
+ * import { formatDateForStorage } from '#lib/utils/dates.js';
  *
  * export const actions = createCrudActions({
  *   schema: transactionSchema,

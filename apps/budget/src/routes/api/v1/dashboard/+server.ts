@@ -1,8 +1,8 @@
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
-import { apiDashboardQuerySchema } from '$lib/server/api/schemas/dashboard';
-import { getDashboardSummary } from '$lib/server/dashboard/summary';
-import { logger } from '$lib/server/logger';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
+import { apiDashboardQuerySchema } from '#lib/server/api/schemas/dashboard.js';
+import { getDashboardSummary } from '#lib/server/dashboard/summary.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

@@ -5,12 +5,12 @@ const { resetPasswordMock, rateLimitCheckMock } = vi.hoisted(() => ({
 	rateLimitCheckMock: vi.fn<() => Promise<{ limited: boolean; retryAfter: number }>>()
 }));
 
-vi.mock('$lib/server/auth', () => ({
+vi.mock('#lib/server/auth.js', () => ({
 	auth: { api: { resetPassword: resetPasswordMock } }
 }));
 
-vi.mock('$lib/server/rate-limiter', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('$lib/server/rate-limiter')>();
+vi.mock('#lib/server/rate-limiter.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('#lib/server/rate-limiter.js')>();
 	return {
 		...actual,
 		createAuthRateLimiter: () => ({ check: rateLimitCheckMock })

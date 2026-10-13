@@ -1,17 +1,18 @@
-import { incomeSchema } from '$lib/formSchemas';
-import { createCrudActions } from '$lib/server/actions/crud-helpers';
-import { incomeQueries } from '$lib/server/db/queries';
-import { income } from '$lib/server/db/schema';
-import { toIncomeRow } from '$lib/server/db/writes/income';
-import { logger } from '$lib/server/logger';
+import { superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { incomeSchema } from '#lib/formSchemas/index.js';
+import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
+import { incomeQueries } from '#lib/server/db/queries/index.js';
+import { income } from '#lib/server/db/schema/index.js';
+import { toIncomeRow } from '#lib/server/db/writes/income.js';
+import { logger } from '#lib/server/logger.js';
 import {
 	calculateMonthsSinceJanuary,
 	filterByDateRange,
 	getMonthRangeFromUrl,
 	getYearDateRange
-} from '$lib/utils/dates';
-import { superValidate } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
+} from '#lib/utils/dates.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

@@ -1,12 +1,4 @@
 import { BREVO_API_KEY, BREVO_FROM_ADDRESS } from '$app/env/private';
-import { FORGOT_PASSWORD_ROUTE } from '$lib/auth-routes';
-import {
-	buildTasksDueTodayDigestTitle,
-	buildTasksDueTodayEmailHtml,
-	type TasksDueTodayTaskSummary
-} from '$lib/server/email/tasks-due-today-digest';
-import { logger } from '$lib/server/logger';
-import { getWorkoutEmoji } from '$lib/utils/workout';
 import {
 	createAuthEmails,
 	createMailer,
@@ -15,6 +7,15 @@ import {
 	renderEmailLayout,
 	type EmailLayoutOptions
 } from '@sheppakai/shared/email';
+
+import { FORGOT_PASSWORD_ROUTE } from '#lib/auth-routes.js';
+import {
+	buildTasksDueTodayDigestTitle,
+	buildTasksDueTodayEmailHtml,
+	type TasksDueTodayTaskSummary
+} from '#lib/server/email/tasks-due-today-digest.js';
+import { logger } from '#lib/server/logger.js';
+import { getWorkoutEmoji } from '#lib/utils/workout.js';
 
 const mailer = createMailer({
 	apiKey: BREVO_API_KEY,

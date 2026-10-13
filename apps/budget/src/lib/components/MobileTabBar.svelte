@@ -2,10 +2,6 @@
 	import { enhance } from '$app/forms';
 	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/state';
-	import type { SidebarData, User } from '$lib';
-	import { SIGN_OUT_ROUTE } from '$lib/auth-routes';
-	import * as Sheet from '$lib/components/ui/sheet/index.js';
-	import { matchNavUrl } from '$lib/utils/navigation';
 	import BrushCleaningIcon from '@lucide/svelte/icons/brush-cleaning';
 	import CircleUserIcon from '@lucide/svelte/icons/circle-user';
 	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
@@ -18,6 +14,11 @@
 	import { toggleMode } from 'mode-watcher';
 	import type { Component } from 'svelte';
 
+	import type { SidebarData, User } from '#lib';
+	import { SIGN_OUT_ROUTE } from '#lib/auth-routes.js';
+	import * as Sheet from '#lib/components/ui/sheet/index.js';
+	import { matchNavUrl } from '#lib/utils/navigation.js';
+
 	interface Props {
 		sidebarData: SidebarData;
 		user: User;
@@ -29,9 +30,27 @@
 	// Four destinations used most on a phone, then More. Labels stay one short word so
 	// five tabs fit a 320px screen.
 	const tabs: { label: string; url: string; icon: Component; owns: string[] }[] = [
-		{ label: 'Home', url: '/dashboard', icon: HouseIcon, owns: ['/dashboard'] },
-		{ label: 'Spending', url: '/transactions', icon: ReceiptIcon, owns: ['/transactions'] },
-		{ label: 'Budget', url: '/budget', icon: PiggyBankIcon, owns: ['/budget'] },
+		{
+			label: 'Home',
+			url: '/dashboard',
+			icon: HouseIcon,
+			owns: ['/dashboard']
+		},
+
+		{
+			label: 'Spending',
+			url: '/transactions',
+			icon: ReceiptIcon,
+			owns: ['/transactions']
+		},
+
+		{
+			label: 'Budget',
+			url: '/budget',
+			icon: PiggyBankIcon,
+			owns: ['/budget']
+		},
+
 		{
 			label: 'Cleaning',
 			url: '/window-cleaning',
@@ -73,13 +92,18 @@
 			.map((item) => item.url)
 			.concat('/profile')
 	);
+
 	let activeUrl = $derived(matchNavUrl(page.url.pathname, allUrls));
 	let activeTab = $derived(
 		tabs.find((tab) => tab.owns.some((url) => activeUrl === url))?.url ?? 'more'
 	);
-
 	let moreOpen = $state(false);
-	afterNavigate(() => (moreOpen = false));
+
+	afterNavigate(({ shallow, type }) => {
+		if (shallow && type === 'goto') return;
+
+		return (moreOpen = false);
+	});
 </script>
 
 <nav

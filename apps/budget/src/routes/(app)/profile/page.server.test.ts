@@ -11,17 +11,17 @@ const { changePasswordMock, sendPasswordChangedEmailMock, loggerMock } = vi.hois
 	}
 }));
 
-vi.mock('$lib/server/auth', () => ({
+vi.mock('#lib/server/auth.js', () => ({
 	auth: { api: { changePassword: changePasswordMock } }
 }));
 
-vi.mock('$lib/server/email', () => ({
+vi.mock('#lib/server/email/index.js', () => ({
 	sendPasswordChangedEmail: sendPasswordChangedEmailMock
 }));
 
-vi.mock('$lib/server/logger', () => ({ logger: loggerMock }));
+vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 
-vi.mock('$lib/server/db', () => ({ getDb: vi.fn<() => void>() }));
+vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => void>() }));
 
 import { actions } from './+page.server';
 

@@ -60,7 +60,7 @@ type RoleFields = { id: string; role?: string | null };
  * Admin checks bound to an app's `ADMIN_USER_IDS`. An admin is anyone listed there or
  * carrying `role === 'admin'` — the same rule the better-auth `admin` plugin applies
  * (`adminUserIds` + `adminRoles`), so an admin bootstrapped by id is never 403'd by the
- * app's own guards. Each app builds these once in `$lib/server/actions/auth-guard`.
+ * app's own guards. Each app builds these once in `#lib/server/actions/auth-guard`.
  *
  * @param getAdminUserIds - returns the comma-separated `ADMIN_USER_IDS` env value. Read
  *   lazily, so importing the guards never touches the env (route tests that mock

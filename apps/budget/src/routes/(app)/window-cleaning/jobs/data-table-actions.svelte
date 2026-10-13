@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { WindowCleaningJob } from '$lib';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
-	import WindowCleaningJobModal from '$lib/components/WindowCleaningJobModal.svelte';
-	import { jobFormContext } from '$lib/contexts';
+	import type { WindowCleaningJob } from '#lib';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import WindowCleaningJobModal from '#lib/components/WindowCleaningJobModal.svelte';
+	import { jobFormContext } from '#lib/contexts/index.js';
 
 	let { jobData }: { jobData: WindowCleaningJob } = $props();
 

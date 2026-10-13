@@ -1,4 +1,4 @@
-import type { ActionResult } from '@sveltejs/kit';
+import type { ActionResult } from '$app/forms';
 import { describe, expect, it } from 'vitest';
 
 import { actionMessage } from './action-message';
@@ -10,6 +10,7 @@ describe('actionMessage', () => {
 		const result: ActionResult = {
 			type: 'success',
 			status: 200,
+			location: '/',
 			data: { form: { message: { type: 'success', text: 'Budget saved successfully' } } }
 		};
 
@@ -23,6 +24,7 @@ describe('actionMessage', () => {
 		const result: ActionResult = {
 			type: 'failure',
 			status: 500,
+			location: '/',
 			data: { form: { message: { type: 'error', text: 'Failed to set user role' } } }
 		};
 
@@ -36,6 +38,7 @@ describe('actionMessage', () => {
 		const result: ActionResult = {
 			type: 'failure',
 			status: 400,
+			location: '/',
 			data: { error: 'Cannot delete goal. Please delete all 2 contribution(s) first.' }
 		};
 
@@ -46,7 +49,12 @@ describe('actionMessage', () => {
 	});
 
 	it('uses the error fallback when a failure carries nothing usable', () => {
-		const result: ActionResult = { type: 'failure', status: 400, data: { hasId: false } };
+		const result: ActionResult = {
+			type: 'failure',
+			status: 400,
+			location: '/',
+			data: { hasId: false }
+		};
 
 		expect(actionMessage(result, fallbacks)).toEqual({ type: 'error', text: 'Fallback error' });
 	});
@@ -55,20 +63,19 @@ describe('actionMessage', () => {
 		const result: ActionResult = {
 			type: 'failure',
 			status: 500,
+			location: '/',
 			data: { form: { message: 'just a string' } }
 		};
 
 		expect(actionMessage(result, fallbacks)).toEqual({ type: 'error', text: 'Fallback error' });
 	});
 
-	it('reads the message off an error result', () => {
-		const result: ActionResult = { type: 'error', status: 500, error: new Error('Boom') };
-
-		expect(actionMessage(result, fallbacks)).toEqual({ type: 'error', text: 'Boom' });
-	});
-
-	it('uses the error fallback when an error result carries a non-Error', () => {
-		const result: ActionResult = { type: 'error', status: 500, error: 'plain string' };
+	it('uses the error fallback for an error result', () => {
+		const result: ActionResult = {
+			type: 'error',
+			status: 500,
+			error: { status: 500, message: 'An unexpected error occurred' }
+		};
 
 		expect(actionMessage(result, fallbacks)).toEqual({ type: 'error', text: 'Fallback error' });
 	});
@@ -80,7 +87,7 @@ describe('actionMessage', () => {
 	});
 
 	it('uses the success fallback when a success carries no message', () => {
-		const result: ActionResult = { type: 'success', status: 200 };
+		const result: ActionResult = { type: 'success', status: 200, location: '/' };
 
 		expect(actionMessage(result, fallbacks)).toEqual({ type: 'success', text: 'Fallback success' });
 	});

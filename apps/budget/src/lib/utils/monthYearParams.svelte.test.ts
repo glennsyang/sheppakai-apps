@@ -14,7 +14,7 @@ vi.mock('./dates', async (importOriginal) => ({
 
 import { useMonthYearParams } from './monthYearParams.svelte';
 
-const NAV_OPTIONS = { keepFocus: true, replaceState: true };
+const NAV_OPTIONS = { replace: true, reset: false };
 
 describe('useMonthYearParams', () => {
 	beforeEach(() => {

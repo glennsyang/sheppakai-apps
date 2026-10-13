@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import type { Recurring } from '$lib';
+	import { refreshAll } from '$app/navigation';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
+
+	import type { Recurring } from '#lib';
 
 	let { recurring }: { recurring: Recurring } = $props();
 
@@ -23,7 +24,7 @@
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
 				// Silent on success — a toast on every tick would be noise.
-				await invalidateAll();
+				await refreshAll();
 			} else {
 				const { text } = actionMessage(result, {
 					success: 'Paid status updated',

@@ -1,6 +1,6 @@
-import { windowCleaningJobSchema } from '$lib/formSchemas';
-import { windowCleaningJob } from '$lib/server/db/schema';
-import { toWindowCleaningJobRow } from '$lib/server/db/writes/window-cleaning-jobs';
+import { windowCleaningJobSchema } from '#lib/formSchemas/index.js';
+import { windowCleaningJob } from '#lib/server/db/schema/index.js';
+import { toWindowCleaningJobRow } from '#lib/server/db/writes/window-cleaning-jobs.js';
 
 import { deleteAction, updateAction } from './crud-helpers';
 

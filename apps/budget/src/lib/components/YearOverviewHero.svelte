@@ -1,10 +1,10 @@
 <script lang="ts">
-	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
-	import MonthlyNetflowChart from '$lib/components/MonthlyNetflowChart.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import type { MonthlyNetflowData } from '$lib/types';
-	import { formatCurrency } from '$lib/utils';
-	import { getYearProgress } from '$lib/utils/dates';
+	import InfoTooltip from '#lib/components/InfoTooltip.svelte';
+	import MonthlyNetflowChart from '#lib/components/MonthlyNetflowChart.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import type { MonthlyNetflowData } from '#lib/types.js';
+	import { formatCurrency } from '#lib/utils.js';
+	import { getYearProgress } from '#lib/utils/dates.js';
 
 	interface Props {
 		year: number;

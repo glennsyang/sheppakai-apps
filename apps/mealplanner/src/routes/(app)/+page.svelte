@@ -1,14 +1,15 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
-	import Icon from '$lib/components/Icon.svelte';
-	import RecipeDrawer from '$lib/components/RecipeDrawer.svelte';
-	import { Alert } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import WeeklyPlanner from '$lib/components/WeeklyPlanner.svelte';
-	import { recipeAsSuggestion } from '$lib/recipes';
-	import { trackToday } from '$lib/today.svelte';
-	import { DAY_LABELS } from '$lib/types';
-	import type { MealPlanEntryWithRecipe } from '$lib/types';
+	import { refreshAll } from '$app/navigation';
+
+	import Icon from '#lib/components/Icon.svelte';
+	import RecipeDrawer from '#lib/components/RecipeDrawer.svelte';
+	import { Alert } from '#lib/components/ui/alert/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import WeeklyPlanner from '#lib/components/WeeklyPlanner.svelte';
+	import { recipeAsSuggestion } from '#lib/recipes.js';
+	import { trackToday } from '#lib/today.svelte.js';
+	import { DAY_LABELS } from '#lib/types.js';
+	import type { MealPlanEntryWithRecipe } from '#lib/types.js';
 
 	import type { PageData } from './$types';
 
@@ -57,7 +58,7 @@
 	suggestion={drawerSuggestion}
 	onClose={() => (openEntryId = null)}
 	recipeId={openEntry?.recipe.id}
-	onSaved={invalidateAll}
+	onSaved={refreshAll}
 />
 
 {#if data.loadError}

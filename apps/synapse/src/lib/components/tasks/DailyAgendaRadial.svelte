@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cn } from '$lib';
+	import { cn } from '#lib';
 
 	interface Props {
 		completionPercentage: number;

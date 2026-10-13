@@ -1,14 +1,15 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
+import { parseJsonBody } from '@sheppakai/shared/api-write';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import {
 	apiCreateTransactionSchema,
 	apiTransactionListQuerySchema
-} from '$lib/server/api/schemas/transactions';
-import { transactionQueries } from '$lib/server/db/queries';
-import { createTransaction } from '$lib/server/db/writes/transactions';
-import { logger } from '$lib/server/logger';
-import { parseJsonBody } from '@sheppakai/shared/api-write';
+} from '#lib/server/api/schemas/transactions.js';
+import { transactionQueries } from '#lib/server/db/queries/index.js';
+import { createTransaction } from '#lib/server/db/writes/transactions.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

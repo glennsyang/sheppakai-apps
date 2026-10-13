@@ -1,8 +1,8 @@
 <script lang="ts" generics="TData extends RowData, TValue">
-	import { features, FlexRender, type Features } from '$lib/components/ui/data-table';
-	import { Input } from '$lib/components/ui/input';
-	import { NativeSelect } from '$lib/components/ui/native-select';
-	import * as Table from '$lib/components/ui/table';
+	import { features, FlexRender, type Features } from '#lib/components/ui/data-table/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { NativeSelect } from '#lib/components/ui/native-select/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
 	import {
 		createTable,
 		type ColumnDef,

@@ -1,7 +1,8 @@
-import { getUser, requireAdmin, requireAuth } from '$lib/server/actions/auth-guard';
 import type { RequestEvent } from '@sveltejs/kit';
 import { isRedirect } from '@sveltejs/kit';
 import { describe, expect, it, vi } from 'vitest';
+
+import { getUser, requireAdmin, requireAuth } from '#lib/server/actions/auth-guard.js';
 
 vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: 'env_admin' }));
 

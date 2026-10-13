@@ -1,11 +1,12 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
-import { apiCreateWindowCleaningCustomerSchema } from '$lib/server/api/schemas/window-cleaning-customers';
-import { windowCleaningCustomerQueries } from '$lib/server/db/queries';
-import { createWindowCleaningCustomer } from '$lib/server/db/writes/window-cleaning-customers';
-import { logger } from '$lib/server/logger';
 import { parseJsonBody } from '@sheppakai/shared/api-write';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
+import { apiCreateWindowCleaningCustomerSchema } from '#lib/server/api/schemas/window-cleaning-customers.js';
+import { windowCleaningCustomerQueries } from '#lib/server/db/queries/index.js';
+import { createWindowCleaningCustomer } from '#lib/server/db/writes/window-cleaning-customers.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

@@ -1,11 +1,15 @@
 <script lang="ts">
-	import type { WindowCleaningCustomer, WindowCleaningCustomerWithStats } from '$lib';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import WindowCleaningCustomerModal from '$lib/components/WindowCleaningCustomerModal.svelte';
-	import WindowCleaningJobModal from '$lib/components/WindowCleaningJobModal.svelte';
-	import { customerFormContext, jobFormContext, openCustomerSheetContext } from '$lib/contexts';
+	import type { WindowCleaningCustomer, WindowCleaningCustomerWithStats } from '#lib';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import WindowCleaningCustomerModal from '#lib/components/WindowCleaningCustomerModal.svelte';
+	import WindowCleaningJobModal from '#lib/components/WindowCleaningJobModal.svelte';
+	import {
+		customerFormContext,
+		jobFormContext,
+		openCustomerSheetContext
+	} from '#lib/contexts/index.js';
 
 	let { customerData }: { customerData: WindowCleaningCustomerWithStats } = $props();
 

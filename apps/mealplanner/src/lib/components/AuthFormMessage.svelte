@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Alert } from '$lib/components/ui/alert';
+	import { Alert } from '#lib/components/ui/alert/index.js';
 
 	// Renders a sveltekit-superforms banner from the shared `{ type, text }` payload
 	// (App.Superforms.Message). Styling is driven by `type`, never by sniffing the

@@ -19,8 +19,8 @@ export function useMonthYearParams(basePath: string) {
 
 	function navigate(nextMonth: number | string, nextYear: number) {
 		void goto(`${basePath}?month=${nextMonth}&year=${nextYear}`, {
-			keepFocus: true,
-			replaceState: true
+			replace: true,
+			reset: false
 		});
 	}
 

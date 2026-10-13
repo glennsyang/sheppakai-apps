@@ -1,9 +1,10 @@
-// Response shapes for the daily-agenda actions on /tasks. These answer with an `agendaAction`
-// payload rather than a superforms message, because the agenda editor isn't a superform.
-import { DailyAgendaMutationError } from '$lib/server/daily-agenda';
-import { logger } from '$lib/server/logger';
 import { fail } from '@sveltejs/kit';
 import type { superValidate } from 'sveltekit-superforms';
+
+// Response shapes for the daily-agenda actions on /tasks. These answer with an `agendaAction`
+// payload rather than a superforms message, because the agenda editor isn't a superform.
+import { DailyAgendaMutationError } from '#lib/server/daily-agenda.js';
+import { logger } from '#lib/server/logger.js';
 
 type AgendaActionScope =
 	| 'create-template'

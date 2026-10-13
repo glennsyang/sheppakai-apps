@@ -1,4 +1,4 @@
-import type { MealSuggestion, Recipe } from '$lib/types';
+import type { MealSuggestion, Recipe } from '#lib/types.js';
 
 /** A saved recipe in the shape the recipe drawer reads. */
 export function recipeAsSuggestion(recipe: Recipe): MealSuggestion {

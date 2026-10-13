@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
-	import { SIGN_OUT_ROUTE } from '$lib/auth-routes';
-	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { mode, toggleMode } from 'mode-watcher';
 	import type { Snippet } from 'svelte';
+
+	import { SIGN_OUT_ROUTE } from '#lib/auth-routes.js';
+	import Icon, { type IconName } from '#lib/components/Icon.svelte';
 
 	import type { LayoutData } from './$types';
 

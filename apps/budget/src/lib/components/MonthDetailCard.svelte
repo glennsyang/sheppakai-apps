@@ -1,10 +1,10 @@
 <script lang="ts">
-	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import type { ExcludedSpendCategory } from '$lib/types';
-	import { formatCurrency } from '$lib/utils';
-	import { computeCashFlowProjection } from '$lib/utils/cashFlowProjection';
-	import { getMonthProgress } from '$lib/utils/dates';
+	import InfoTooltip from '#lib/components/InfoTooltip.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import type { ExcludedSpendCategory } from '#lib/types.js';
+	import { formatCurrency } from '#lib/utils.js';
+	import { computeCashFlowProjection } from '#lib/utils/cashFlowProjection.js';
+	import { getMonthProgress } from '#lib/utils/dates.js';
 
 	interface Props {
 		/** Total spent including recurring. */

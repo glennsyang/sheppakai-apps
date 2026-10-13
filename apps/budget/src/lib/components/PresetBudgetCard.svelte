@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { enhance as enhanceAction } from '$app/forms';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { formatCurrency } from '$lib/utils';
-	import { padMonth } from '$lib/utils/dates';
+	import { enhance as enhanceAction, type SubmitFunction } from '$app/forms';
 	import { actionMessage } from '@sheppakai/shared/action-message';
-	import type { SubmitFunction } from '@sveltejs/kit';
 	import { toast } from 'svelte-sonner';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { formatCurrency } from '#lib/utils.js';
+	import { padMonth } from '#lib/utils/dates.js';
 
 	interface Props {
 		title: string;

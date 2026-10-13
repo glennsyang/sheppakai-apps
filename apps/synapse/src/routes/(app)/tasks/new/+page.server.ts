@@ -1,14 +1,15 @@
-import { createTaskSchema, type TaskState, TaskStateEnum } from '$lib/schemas/task';
-import { requireAuth } from '$lib/server/actions/auth-guard';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { toCommaSeparatedJson } from '$lib/server/actions/string-parsers';
-import { getDb } from '$lib/server/db';
-import { tasks } from '$lib/server/db/schema';
-import { logger } from '$lib/server/logger';
 import { redirect } from '@sveltejs/kit';
 import { and, eq, sql } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { createTaskSchema, type TaskState, TaskStateEnum } from '#lib/schemas/task.js';
+import { requireAuth } from '#lib/server/actions/auth-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { toCommaSeparatedJson } from '#lib/server/actions/string-parsers.js';
+import { getDb } from '#lib/server/db/index.js';
+import { tasks } from '#lib/server/db/schema/index.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

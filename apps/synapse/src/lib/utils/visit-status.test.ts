@@ -1,5 +1,6 @@
-import { getTodayString } from '$lib/utils/date';
 import { describe, expect, it } from 'vitest';
+
+import { getTodayString } from '#lib/utils/date.js';
 
 import {
 	calculatePersonVisitStatus,

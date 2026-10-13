@@ -1,6 +1,7 @@
-import type { Recurring, Transaction } from '$lib/types';
-import { getTodayDate } from '$lib/utils/dates';
 import { z } from 'zod';
+
+import type { Recurring, Transaction } from '#lib/types.js';
+import { getTodayDate } from '#lib/utils/dates.js';
 
 export const transactionSchema = z.object({
 	id: z.string().optional(),

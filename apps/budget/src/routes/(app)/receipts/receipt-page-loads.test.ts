@@ -7,14 +7,14 @@ const mockState = vi.hoisted(() => ({
 	loggerError: vi.fn<() => void>()
 }));
 
-vi.mock('$lib/server/db/queries', () => ({
+vi.mock('#lib/server/db/queries/index.js', () => ({
 	transactionQueries: {
 		findByCategory: mockState.findByCategory,
 		findByDateRangeExcludingCategory: mockState.findByDateRangeExcludingCategory
 	}
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<() => void>(),
 		info: vi.fn<() => void>(),

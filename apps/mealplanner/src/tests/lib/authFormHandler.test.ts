@@ -1,11 +1,12 @@
-import { handleAuthFormAction, invalidAuthForm } from '$lib/server/actions/auth-form-handler';
 import { redirect } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-vi.mock('$lib/server/logger', () => ({ logger: { error: vi.fn<() => void>() } }));
+import { handleAuthFormAction, invalidAuthForm } from '#lib/server/actions/auth-form-handler.js';
+
+vi.mock('#lib/server/logger.js', () => ({ logger: { error: vi.fn<() => void>() } }));
 
 const testSchema = z.object({ email: z.string().email() });
 const makeForm = () => superValidate(zod4(testSchema));

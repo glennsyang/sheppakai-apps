@@ -1,10 +1,11 @@
-import type { Transaction } from '$lib';
-import DataTableSortButton from '$lib/components/DataTableSortButton.svelte';
-import { badgeCell, categoryCell, moneyCell } from '$lib/components/table/cells';
-import { type Features, renderComponent } from '$lib/components/ui/data-table/index.js';
-import { FALLBACK_CATEGORY_COLOR } from '$lib/utils/categoryColors';
-import { formatLocalTimestamp } from '$lib/utils/dates';
 import type { ColumnDef } from '@tanstack/table-core';
+
+import type { Transaction } from '#lib';
+import DataTableSortButton from '#lib/components/DataTableSortButton.svelte';
+import { badgeCell, categoryCell, moneyCell } from '#lib/components/table/cells.js';
+import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
+import { FALLBACK_CATEGORY_COLOR } from '#lib/utils/categoryColors.js';
+import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
 import DataTableActions from './data-table-actions.svelte';
 

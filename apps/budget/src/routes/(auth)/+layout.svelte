@@ -1,6 +1,6 @@
 <script lang="ts">
-	import BrandMark from '$lib/components/BrandMark.svelte';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import BrandMark from '#lib/components/BrandMark.svelte';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 
 	let { children } = $props();
 </script>

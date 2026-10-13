@@ -1,11 +1,12 @@
-import { getDb } from '$lib/server/db';
-import { visitStatusSettings } from '$lib/server/db/schema';
+import { eq, inArray } from 'drizzle-orm';
+
+import { getDb } from '#lib/server/db/index.js';
+import { visitStatusSettings } from '#lib/server/db/schema/index.js';
 import {
 	DEFAULT_VISIT_STATUS_THRESHOLDS,
 	normalizeVisitStatusThresholds,
 	type VisitStatusThresholds
-} from '$lib/utils/visit-status';
-import { eq, inArray } from 'drizzle-orm';
+} from '#lib/utils/visit-status.js';
 
 function toThresholds(
 	row:

@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
-	import * as Separator from '$lib/components/ui/separator/index.js';
-	import type { Recurring } from '$lib/types';
-	import { formatCurrency } from '$lib/utils';
 	import { ChevronDownIcon } from '@lucide/svelte/icons';
+
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
+	import * as Separator from '#lib/components/ui/separator/index.js';
+	import type { Recurring } from '#lib/types.js';
+	import { formatCurrency } from '#lib/utils.js';
 
 	interface Props {
 		recurring: Recurring[];

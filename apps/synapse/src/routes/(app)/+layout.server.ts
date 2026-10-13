@@ -1,6 +1,7 @@
-import { SIGN_IN_ROUTE } from '$lib/auth-routes';
-import { isAdminUser } from '$lib/server/actions/auth-guard';
 import { redirect } from '@sveltejs/kit';
+
+import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
+import { isAdminUser } from '#lib/server/actions/auth-guard.js';
 
 import type { LayoutServerLoad } from './$types';
 

@@ -1,13 +1,14 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
-	import { Button } from '$lib/components/ui/button';
-	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
-	import type { TaskState } from '$lib/schemas/task';
+	import { refreshAll } from '$app/navigation';
 	import { ChevronLeft, ChevronRight, Plus } from '@lucide/svelte/icons';
 	import type { DndEvent } from 'svelte-dnd-action';
 	import { dndzone } from 'svelte-dnd-action';
 	import { toast } from 'svelte-sonner';
 	import { flip } from 'svelte/animate';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { IsMobile } from '#lib/hooks/is-mobile.svelte.js';
+	import type { TaskState } from '#lib/schemas/task.js';
 
 	import Confetti from '../shared/Confetti.svelte';
 	import { type TaskSummary, taskStateOptions } from './task-ui';
@@ -267,7 +268,7 @@
 				makeConfettiBurst();
 			}
 
-			await invalidateAll();
+			await refreshAll();
 		} catch {
 			toast.error('Could not update the task state. Please try again.');
 		} finally {

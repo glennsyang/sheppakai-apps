@@ -1,10 +1,11 @@
-import { journalFilterSchema } from '$lib/schemas/journal';
-import { getUser } from '$lib/server/actions/auth-guard';
-import { getDb } from '$lib/server/db';
-import { journalEntries } from '$lib/server/db/schema';
-import { logger } from '$lib/server/logger';
-import { safeParse } from '$lib/utils/json';
 import { and, desc, eq, like } from 'drizzle-orm';
+
+import { journalFilterSchema } from '#lib/schemas/journal.js';
+import { getUser } from '#lib/server/actions/auth-guard.js';
+import { getDb } from '#lib/server/db/index.js';
+import { journalEntries } from '#lib/server/db/schema/index.js';
+import { logger } from '#lib/server/logger.js';
+import { safeParse } from '#lib/utils/json.js';
 
 import type { PageServerLoad } from './$types';
 

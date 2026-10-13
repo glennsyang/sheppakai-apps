@@ -1,5 +1,6 @@
-import type { mealSuggestionSchema } from '$lib/schemas/mealPlan';
 import type { z } from 'zod';
+
+import type { mealSuggestionSchema } from '#lib/schemas/mealPlan.js';
 
 export interface PantryItem {
 	id: string;

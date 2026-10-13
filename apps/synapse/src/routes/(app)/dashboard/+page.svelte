@@ -1,16 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import { navigating } from '$app/state';
-	import AgendaCompletionChart from '$lib/components/dashboard/AgendaCompletionChart.svelte';
-	import AgendaItemScorecard from '$lib/components/dashboard/AgendaItemScorecard.svelte';
-	import VisitHealthPanel from '$lib/components/dashboard/VisitHealthPanel.svelte';
-	import WorkoutTypeChart from '$lib/components/dashboard/WorkoutTypeChart.svelte';
-	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
-	import PenCheck from '$lib/components/shared/PenCheck.svelte';
-	import DashboardSkeleton from '$lib/components/skeletons/DashboardSkeleton.svelte';
-	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
-	import { addDaysToDateString, formatMonthDay } from '$lib/utils/date';
 	import {
 		ArrowRight,
 		Book,
@@ -22,6 +13,16 @@
 	} from '@lucide/svelte/icons';
 	import { toast } from 'svelte-sonner';
 	import { fade } from 'svelte/transition';
+
+	import AgendaCompletionChart from '#lib/components/dashboard/AgendaCompletionChart.svelte';
+	import AgendaItemScorecard from '#lib/components/dashboard/AgendaItemScorecard.svelte';
+	import VisitHealthPanel from '#lib/components/dashboard/VisitHealthPanel.svelte';
+	import WorkoutTypeChart from '#lib/components/dashboard/WorkoutTypeChart.svelte';
+	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
+	import PenCheck from '#lib/components/shared/PenCheck.svelte';
+	import DashboardSkeleton from '#lib/components/skeletons/DashboardSkeleton.svelte';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import { addDaysToDateString, formatMonthDay } from '#lib/utils/date.js';
 
 	let { data } = $props();
 
@@ -270,7 +271,7 @@
 											if (result.type !== 'success') {
 												toast.error('Unable to update agenda item.');
 											}
-											await invalidateAll();
+											await refreshAll();
 											delete pending[item.id];
 										};
 									}}

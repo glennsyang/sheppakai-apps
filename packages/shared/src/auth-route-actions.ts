@@ -1,6 +1,6 @@
 // The `load`/`actions` pairs behind every app's `(auth)` pages. Each app binds its
 // Better Auth instance, logger and wrappers via `createAuthRouteActions` in its own
-// `$lib/server/auth-route-actions`, and each `+page.server.ts` just re-exports one entry.
+// `#lib/server/auth-route-actions`, and each `+page.server.ts` just re-exports one entry.
 
 import { redirect, type RequestEvent } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';

@@ -1,4 +1,3 @@
-import type { SidebarData } from '$lib/types';
 import BriefcaseBusinessIcon from '@lucide/svelte/icons/briefcase-business';
 import ClipboardCheckIcon from '@lucide/svelte/icons/clipboard-check';
 import DollarSignIcon from '@lucide/svelte/icons/dollar-sign';
@@ -12,6 +11,8 @@ import ShieldIcon from '@lucide/svelte/icons/shield';
 import TargetIcon from '@lucide/svelte/icons/target';
 import UsersRoundIcon from '@lucide/svelte/icons/users-round';
 import WalletIcon from '@lucide/svelte/icons/wallet';
+
+import type { SidebarData } from '#lib/types.js';
 
 export const sidebarData: SidebarData = {
 	navMain: [

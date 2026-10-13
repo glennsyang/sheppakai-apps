@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import type { MealSuggestion } from '$lib/types';
+	import Icon from '#lib/components/Icon.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import type { MealSuggestion } from '#lib/types.js';
 
 	interface Props {
 		suggestion: MealSuggestion;

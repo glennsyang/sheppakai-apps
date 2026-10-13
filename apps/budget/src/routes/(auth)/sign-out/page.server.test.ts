@@ -11,13 +11,13 @@ const { signOutMock, loggerMock } = vi.hoisted(() => ({
 	}
 }));
 
-vi.mock('$lib/server/auth', () => ({
+vi.mock('#lib/server/auth.js', () => ({
 	auth: { api: { signOut: signOutMock } }
 }));
 
-vi.mock('$lib/server/logger', () => ({ logger: loggerMock }));
+vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 
-import { SIGN_IN_ROUTE } from '$lib/auth-routes';
+import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
 
 import { actions } from './+page.server';
 

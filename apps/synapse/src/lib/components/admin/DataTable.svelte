@@ -1,10 +1,4 @@
 <script lang="ts" generics="TData extends RowData, TValue">
-	import { Button } from '$lib/components/ui/button';
-	import { features, FlexRender, type Features } from '$lib/components/ui/data-table';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label/index.js';
-	import * as Select from '$lib/components/ui/select/index.js';
-	import * as Table from '$lib/components/ui/table';
 	import {
 		ChevronLeftIcon,
 		ChevronRightIcon,
@@ -19,6 +13,13 @@
 		type RowData,
 		type SortingState
 	} from '@tanstack/svelte-table';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { features, FlexRender, type Features } from '#lib/components/ui/data-table/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
 
 	let {
 		columns,

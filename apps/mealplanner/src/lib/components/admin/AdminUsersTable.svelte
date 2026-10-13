@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DataTable from '$lib/components/ui/data-table/DataTable.svelte';
+	import DataTable from '#lib/components/ui/data-table/DataTable.svelte';
 
 	import type { AdminUser } from './types';
 	import { makeColumns } from './users-columns';

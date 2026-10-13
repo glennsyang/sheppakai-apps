@@ -1,14 +1,15 @@
-import { buildWeatherJson, journalEntrySchema } from '$lib/schemas/journal';
-import { requireAuth } from '$lib/server/actions/auth-guard';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { getDb } from '$lib/server/db';
-import { journalEntries } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate } from '$lib/server/db/utils';
-import { logger } from '$lib/server/logger';
-import { getTodayString } from '$lib/utils/date';
 import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { buildWeatherJson, journalEntrySchema } from '#lib/schemas/journal.js';
+import { requireAuth } from '#lib/server/actions/auth-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { getDb } from '#lib/server/db/index.js';
+import { journalEntries } from '#lib/server/db/schema/index.js';
+import { generateId, withTimestampsForCreate } from '#lib/server/db/utils.js';
+import { logger } from '#lib/server/logger.js';
+import { getTodayString } from '#lib/utils/date.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

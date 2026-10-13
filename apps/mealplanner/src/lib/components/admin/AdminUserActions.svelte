@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Button } from '$lib/components/ui/button';
-	import { NativeSelect } from '$lib/components/ui/native-select';
-	import { USER_ROLES } from '$lib/schemas/admin';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { NativeSelect } from '#lib/components/ui/native-select/index.js';
+	import { USER_ROLES } from '#lib/schemas/admin.js';
 
 	import type { AdminUser } from './types';
 

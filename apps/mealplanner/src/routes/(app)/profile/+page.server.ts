@@ -1,13 +1,14 @@
-import { changePasswordSchema, updateNameSchema } from '$lib/schemas/auth';
-import { handleAuthFormAction, invalidAuthForm } from '$lib/server/actions/auth-form-handler';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
-import { auth } from '$lib/server/auth';
-import { sendPasswordChangedEmail } from '$lib/server/email';
-import { logger } from '$lib/server/logger';
-import { createUserRateLimiter, rateLimitedMessage } from '$lib/server/rate-limiter';
 import type { RequestEvent } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { changePasswordSchema, updateNameSchema } from '#lib/schemas/auth.js';
+import { handleAuthFormAction, invalidAuthForm } from '#lib/server/actions/auth-form-handler.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { auth } from '#lib/server/auth/index.js';
+import { sendPasswordChangedEmail } from '#lib/server/email/index.js';
+import { logger } from '#lib/server/logger.js';
+import { createUserRateLimiter, rateLimitedMessage } from '#lib/server/rate-limiter.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

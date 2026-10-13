@@ -1,7 +1,8 @@
 <script lang="ts">
-	import * as Chart from '$lib/components/ui/chart/index.js';
 	import { scalePoint } from 'd3-scale';
 	import { Area, AreaChart, Labels } from 'layerchart';
+
+	import * as Chart from '#lib/components/ui/chart/index.js';
 
 	interface TrendPoint {
 		weekLabel: string;

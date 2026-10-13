@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { Category, Transaction } from '$lib';
-	import * as Sheet from '$lib/components/ui/sheet/index.js';
-	import * as Table from '$lib/components/ui/table/index.js';
-	import { months } from '$lib/utils';
-	import { formatLocalTimestamp } from '$lib/utils/dates';
+	import type { Category, Transaction } from '#lib';
+	import * as Sheet from '#lib/components/ui/sheet/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import { months } from '#lib/utils.js';
+	import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
 	interface Props {
 		openSheet: boolean;

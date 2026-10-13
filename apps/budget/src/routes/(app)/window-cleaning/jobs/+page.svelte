@@ -1,16 +1,21 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import CardGridSkeleton from '$lib/components/CardGridSkeleton.svelte';
-	import DashboardStatStrip, { type Stat } from '$lib/components/DashboardStatStrip.svelte';
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import PageShell from '$lib/components/PageShell.svelte';
-	import PeriodPicker from '$lib/components/PeriodPicker.svelte';
-	import TableSkeleton from '$lib/components/TableSkeleton.svelte';
-	import DataTable from '$lib/components/ui/data-table/data-table.svelte';
-	import { jobFormContext } from '$lib/contexts';
-	import { formatDayHeading, getCurrentPacificMonthYear, parseYearParam } from '$lib/utils/dates';
-	import { usePendingReload } from '$lib/utils/pendingNavigation.svelte';
+
+	import CardGridSkeleton from '#lib/components/CardGridSkeleton.svelte';
+	import DashboardStatStrip, { type Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import PageShell from '#lib/components/PageShell.svelte';
+	import PeriodPicker from '#lib/components/PeriodPicker.svelte';
+	import TableSkeleton from '#lib/components/TableSkeleton.svelte';
+	import DataTable from '#lib/components/ui/data-table/data-table.svelte';
+	import { jobFormContext } from '#lib/contexts/index.js';
+	import {
+		formatDayHeading,
+		getCurrentPacificMonthYear,
+		parseYearParam
+	} from '#lib/utils/dates.js';
+	import { usePendingReload } from '#lib/utils/pendingNavigation.svelte.js';
 
 	import type { PageProps } from './$types';
 	import { columns } from './columns';
@@ -26,8 +31,8 @@
 
 	function onYearChange(year: number) {
 		goto(`/window-cleaning/jobs?year=${year}`, {
-			keepFocus: true,
-			replaceState: true
+			replace: true,
+			reset: false
 		});
 	}
 

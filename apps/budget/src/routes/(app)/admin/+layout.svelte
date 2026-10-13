@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import PageShell from '$lib/components/PageShell.svelte';
+
+	import PageShell from '#lib/components/PageShell.svelte';
 
 	let { children } = $props();
 

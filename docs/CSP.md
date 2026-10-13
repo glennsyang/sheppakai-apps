@@ -4,18 +4,18 @@ Single source of truth for how CSP is configured across the three apps
 (`apps/synapse`, `apps/budget`, `apps/mealplanner`). Originally tracked by
 glennsyang/sheppakai-budget#440, before the apps moved into this monorepo.
 
-## Strategy — SvelteKit `kit.csp` nonce mode
+## Strategy — SvelteKit `csp` nonce mode
 
-All three apps configure CSP **only** through `kit.csp` with `mode: 'nonce'` in
-each app's `svelte.config.js`:
+All three apps configure CSP **only** through the `csp` option with `mode: 'nonce'` in
+each app's `sveltekit({ ... })` call in `vite.config.ts`:
 
 ```js
-kit: {
+sveltekit({
 	csp: {
 		mode: 'nonce',
 		directives: { /* see table below */ }
 	}
-}
+})
 ```
 
 SvelteKit generates a per-request nonce, injects it into every inline `<script>` /
@@ -30,7 +30,7 @@ overrides the nonce-bearing header SvelteKit emits. The other security headers
 
 > Historical note: `synapse` previously hand-built CSP in `hooks.server.ts` — a
 > per-request nonce plus a `transformPageChunk` pass that rewrote every `<script>` tag,
-> and a manually assembled header. That approach was replaced with `kit.csp` nonce mode
+> and a manually assembled header. That approach was replaced with SvelteKit's `csp` nonce mode
 > for #440. Do not reintroduce it.
 
 ## `script-src` — `'self'` only
@@ -107,7 +107,7 @@ Passing `nonce` to `<ModeWatcher>` doesn't work: components can't read the reque
 
 ## Changing CSP
 
-1. Update `apps/<app>/svelte.config.js` for the affected app(s).
+1. Update the `csp` option in `apps/<app>/vite.config.ts` for the affected app(s).
 2. Update the table above so this file stays the single source of truth.
 3. Verify with `pnpm --filter <app> build && pnpm --filter <app> preview`: load an authenticated page (a
    chart page where the app has charts), confirm the `Content-Security-Policy` response

@@ -1,9 +1,10 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError } from '$lib/server/api/response';
-import { apiMarkRecurringPaidSchema } from '$lib/server/api/schemas/recurring';
-import { markRecurringPaid } from '$lib/server/db/writes/recurring';
 import { ApiWriteError, parseJsonBody } from '@sheppakai/shared/api-write';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError } from '#lib/server/api/response.js';
+import { apiMarkRecurringPaidSchema } from '#lib/server/api/schemas/recurring.js';
+import { markRecurringPaid } from '#lib/server/db/writes/recurring.js';
 
 import type { RequestHandler } from './$types';
 

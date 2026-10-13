@@ -1,5 +1,6 @@
-import type { WindowCleaningJob } from '$lib/types';
 import { and, desc, eq, max, sql } from 'drizzle-orm';
+
+import type { WindowCleaningJob } from '#lib/types.js';
 
 import { getDb } from '../index';
 import { windowCleaningJob } from '../schema';

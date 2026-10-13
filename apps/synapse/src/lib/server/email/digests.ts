@@ -1,5 +1,6 @@
-import { logger } from '$lib/server/logger';
 import { and, eq, sql } from 'drizzle-orm';
+
+import { logger } from '#lib/server/logger.js';
 
 import { loadDailyAgendaEntriesForDate } from '../daily-agenda';
 import { getDb } from '../db';

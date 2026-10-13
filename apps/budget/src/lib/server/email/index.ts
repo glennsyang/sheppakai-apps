@@ -1,5 +1,4 @@
 import { BREVO_API_KEY, BREVO_FROM_ADDRESS } from '$app/env/private';
-import { formatCurrency } from '$lib/utils';
 import {
 	createAuthEmails,
 	createMailer,
@@ -7,6 +6,8 @@ import {
 	escapeHtml,
 	renderEmailLayout
 } from '@sheppakai/shared/email';
+
+import { formatCurrency } from '#lib/utils.js';
 
 import { logger } from '../logger';
 

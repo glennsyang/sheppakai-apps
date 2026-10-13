@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatCurrencyRounded } from '$lib/utils';
+	import { formatCurrencyRounded } from '#lib/utils.js';
 
 	interface Props {
 		categoryName: string;

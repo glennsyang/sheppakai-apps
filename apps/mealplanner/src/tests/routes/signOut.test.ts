@@ -5,11 +5,12 @@ const { signOutMock, loggerMock } = vi.hoisted(() => ({
 	loggerMock: { error: vi.fn<() => void>() }
 }));
 
-vi.mock('$lib/server/auth', () => ({ auth: { api: { signOut: signOutMock } } }));
-vi.mock('$lib/server/logger', () => ({ logger: loggerMock }));
+vi.mock('#lib/server/auth/index.js', () => ({ auth: { api: { signOut: signOutMock } } }));
+vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 
-import { SIGN_IN_ROUTE } from '$lib/auth-routes';
 import { isRedirect } from '@sveltejs/kit';
+
+import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
 
 import { actions } from '../../routes/(auth)/sign-out/+page.server';
 

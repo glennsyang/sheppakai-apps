@@ -1,13 +1,14 @@
 <script lang="ts">
-	import { FORGOT_PASSWORD_ROUTE, SIGN_IN_ROUTE } from '$lib/auth-routes';
-	import AuthFormMessage from '$lib/components/AuthFormMessage.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
-	import { Input } from '$lib/components/ui/input';
-	import { Spinner } from '$lib/components/ui/spinner';
 	import { CircleXIcon } from '@lucide/svelte/icons';
 	import { superForm } from 'sveltekit-superforms';
+
+	import { FORGOT_PASSWORD_ROUTE, SIGN_IN_ROUTE } from '#lib/auth-routes.js';
+	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Field, FieldGroup, FieldLabel } from '#lib/components/ui/field/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 
 	import type { PageData } from './$types';
 

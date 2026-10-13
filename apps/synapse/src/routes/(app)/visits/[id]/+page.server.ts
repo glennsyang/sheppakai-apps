@@ -1,30 +1,35 @@
-import { noFieldsSchema } from '$lib/schemas/common';
+import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
+import { and, desc, eq } from 'drizzle-orm';
+import { message, superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { noFieldsSchema } from '#lib/schemas/common.js';
 import {
 	deleteVisitSchema,
 	personSchema,
 	scheduleVisitSchema,
 	visitSchema
-} from '$lib/schemas/visits';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
-import { deleteAction } from '$lib/server/actions/crud-helpers';
+} from '#lib/schemas/visits.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { deleteAction } from '#lib/server/actions/crud-helpers.js';
 import {
 	getOwnedEntityOrNull,
 	getOwnedEntityOrThrow
-} from '$lib/server/actions/edit-route-helpers';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { toCommaSeparatedJson } from '$lib/server/actions/string-parsers';
-import { getDb } from '$lib/server/db';
-import { people, visits } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
-import { logger } from '$lib/server/logger';
-import { getVisitStatusThresholdsForUser } from '$lib/server/visit-status-settings';
-import { getTodayString } from '$lib/utils/date';
-import { safeParse } from '$lib/utils/json';
-import { calculatePersonVisitStatus, getEffectiveFollowUpDate } from '$lib/utils/visit-status';
-import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
-import { and, desc, eq } from 'drizzle-orm';
-import { message, superValidate } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
+} from '#lib/server/actions/edit-route-helpers.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { toCommaSeparatedJson } from '#lib/server/actions/string-parsers.js';
+import { getDb } from '#lib/server/db/index.js';
+import { people, visits } from '#lib/server/db/schema/index.js';
+import {
+	generateId,
+	withTimestampsForCreate,
+	withTimestampsForUpdate
+} from '#lib/server/db/utils.js';
+import { logger } from '#lib/server/logger.js';
+import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
+import { getTodayString } from '#lib/utils/date.js';
+import { safeParse } from '#lib/utils/json.js';
+import { calculatePersonVisitStatus, getEffectiveFollowUpDate } from '#lib/utils/visit-status.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

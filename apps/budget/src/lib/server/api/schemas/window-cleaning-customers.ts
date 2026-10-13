@@ -1,4 +1,4 @@
-import { windowCleaningCustomerSchema } from '$lib/formSchemas';
+import { windowCleaningCustomerSchema } from '#lib/formSchemas/index.js';
 
 // Reuses the field rules the customer form action already validates against. `id` is
 // server-generated (create) or taken from the URL path param (update), never accepted

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ReceiptsPage from '$lib/components/ReceiptsPage.svelte';
+	import ReceiptsPage from '#lib/components/ReceiptsPage.svelte';
 
 	import type { PageProps } from './$types';
 	import { columns } from './columns';

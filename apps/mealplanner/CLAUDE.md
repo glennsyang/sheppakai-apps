@@ -51,15 +51,15 @@ Always use **Node.js 22.23.3** for all development, testing, and tooling. Do not
 
 ### Logging
 
-- **Never use `console.log`** anywhere. Always import and use `$lib/server/logger`.
+- **Never use `console.log`** anywhere. Always import and use `#lib/server/logger.js`.
 - Logger levels: `debug | info | warn | error`.
 
 ### Database
 
 - **snake_case** for all DB column names.
 - Every table has `created_at` and `updated_at` audit columns.
-- IDs are `crypto.randomUUID()` text strings — use `generateId()` from `$lib/server/db/utils.ts`.
-- Set timestamps with `withTimestampsForCreate(now?)` / `withTimestampsForUpdate(now?)` from `$lib/server/db/utils.ts` (re-exported from `@sheppakai/shared/timestamps`; they return `Date`s for the `integer(..., { mode: 'timestamp' })` columns). When one write touches several rows (e.g. a meal plan and its entry), create one `const now = new Date()` and pass it to every call.
+- IDs are `crypto.randomUUID()` text strings — use `generateId()` from `#lib/server/db/utils.ts`.
+- Set timestamps with `withTimestampsForCreate(now?)` / `withTimestampsForUpdate(now?)` from `#lib/server/db/utils.ts` (re-exported from `@sheppakai/shared/timestamps`; they return `Date`s for the `integer(..., { mode: 'timestamp' })` columns). When one write touches several rows (e.g. a meal plan and its entry), create one `const now = new Date()` and pass it to every call.
 
 ### Forms
 
@@ -210,7 +210,7 @@ export type MySchema = typeof mySchema;
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { isRedirect, redirect } from '@sveltejs/kit';
-import { invalidForm } from '$lib/server/actions/form-responses';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
 
 // load
 const form = await superValidate(zod4(mySchema));

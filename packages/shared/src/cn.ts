@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-// Prop helpers used by the shadcn-svelte components in each app's $lib/components/ui
+// Prop helpers used by the shadcn-svelte components in each app's #lib/components/ui
 export type WithoutChild<T> = T extends { child?: unknown } ? Omit<T, 'child'> : T;
 export type WithoutChildren<T> = T extends { children?: unknown } ? Omit<T, 'children'> : T;
 export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;

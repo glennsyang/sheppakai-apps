@@ -1,10 +1,11 @@
-import type { TaskState } from '$lib/schemas/task';
-import type { ApiCreateTaskInput, ApiUpdateTaskInput } from '$lib/server/api/schemas/tasks';
-import { getDb } from '$lib/server/db';
-import { tasks } from '$lib/server/db/schema';
-import { withTimestampsForUpdate } from '$lib/server/db/utils';
 import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { and, eq, ne, sql } from 'drizzle-orm';
+
+import type { TaskState } from '#lib/schemas/task.js';
+import type { ApiCreateTaskInput, ApiUpdateTaskInput } from '#lib/server/api/schemas/tasks.js';
+import { getDb } from '#lib/server/db/index.js';
+import { tasks } from '#lib/server/db/schema/index.js';
+import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
 
 const MAX_TASK_NUMBER_ATTEMPTS = 3;
 const TASK_NUMBER_CONSTRAINT_TEXT = 'UNIQUE constraint failed: tasks.task_number';

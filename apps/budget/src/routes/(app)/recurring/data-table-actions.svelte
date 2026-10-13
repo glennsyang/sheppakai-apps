@@ -1,16 +1,17 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import type { Recurring } from '$lib';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import RecurringModal from '$lib/components/RecurringModal.svelte';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
-	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { recurringFormContext } from '$lib/contexts';
-	import { toRecurringFormData } from '$lib/formSchemas';
+	import { refreshAll } from '$app/navigation';
 	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
+
+	import type { Recurring } from '#lib';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import RecurringModal from '#lib/components/RecurringModal.svelte';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import { Button, buttonVariants } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { recurringFormContext } from '#lib/contexts/index.js';
+	import { toRecurringFormData } from '#lib/formSchemas/index.js';
 
 	let { id, recurringData }: { id: string; recurringData: Recurring } = $props();
 
@@ -32,7 +33,7 @@
 				return async ({ result, update }) => {
 					if (result.type === 'success') {
 						// Silent on success — a toast on every checkbox tick would be noise.
-						await invalidateAll();
+						await refreshAll();
 					} else {
 						const { text } = actionMessage(result, {
 							success: 'Paid status updated',

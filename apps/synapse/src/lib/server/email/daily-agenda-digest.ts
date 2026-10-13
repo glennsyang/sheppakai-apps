@@ -1,5 +1,5 @@
-import type { DailyAgendaEntry } from '$lib/types';
-import { formatDateMedium } from '$lib/utils/date';
+import type { DailyAgendaEntry } from '#lib/types.js';
+import { formatDateMedium } from '#lib/utils/date.js';
 
 export const DAILY_AGENDA_DIGEST_TIME = '06:00';
 // Allow delivery any time after 6:00 AM PT through the end of the same day.

@@ -1,6 +1,7 @@
-import { badgeCell, stackCell, tagListCell } from '$lib/components/table/cells';
-import { type Features, renderComponent } from '$lib/components/ui/data-table/index.js';
 import type { ColumnDef } from '@tanstack/table-core';
+
+import { badgeCell, stackCell, tagListCell } from '#lib/components/table/cells.js';
+import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
 
 import DataTableActions from './data-table-actions.svelte';
 

@@ -1,6 +1,7 @@
-import { type Features, renderComponent } from '$lib/components/ui/data-table';
-import type { User } from '$lib/types';
 import type { ColumnDef } from '@tanstack/table-core';
+
+import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
+import type { User } from '#lib/types.js';
 
 import DataTableSortButton from './DataTableSortButton.svelte';
 import RoleBadge from './RoleBadge.svelte';

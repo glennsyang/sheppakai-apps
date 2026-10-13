@@ -30,11 +30,13 @@ const mockFindById = vi.hoisted(() =>
 	vi.fn<(id: string) => Promise<FoundCustomer>>(async (id) => ({ id, name: 'Jane Doe' }))
 );
 
-vi.mock('$lib/server/db', () => ({ getDb: () => ({ insert: mockInsert, update: mockUpdate }) }));
-vi.mock('$lib/server/db/queries', () => ({
+vi.mock('#lib/server/db/index.js', () => ({
+	getDb: () => ({ insert: mockInsert, update: mockUpdate })
+}));
+vi.mock('#lib/server/db/queries/index.js', () => ({
 	windowCleaningCustomerQueries: { findById: mockFindById }
 }));
-vi.mock('$lib/server/db/schema', () => ({ windowCleaningCustomer: { id: 'wcc.id' } }));
+vi.mock('#lib/server/db/schema', () => ({ windowCleaningCustomer: { id: 'wcc.id' } }));
 vi.mock('drizzle-orm', () => ({ eq: (field: unknown, value: unknown) => ({ field, value }) }));
 
 import {

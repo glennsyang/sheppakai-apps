@@ -1,5 +1,8 @@
-import { moodLogSchema, moodPeriodSchema } from '$lib/schemas/mood';
-import type { moodLogs } from '$lib/server/db/schema';
+import { superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { moodLogSchema, moodPeriodSchema } from '#lib/schemas/mood.js';
+import type { moodLogs } from '#lib/server/db/schema/index.js';
 import {
 	addDaysToDateString,
 	getISODayOfWeek,
@@ -7,10 +10,8 @@ import {
 	getStartOfQuarter,
 	getStartOfWeek,
 	getTodayString
-} from '$lib/utils/date';
-import { getMoodChartColor, getMoodScore, resolveMoodLabel } from '$lib/utils/mood';
-import { superValidate } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
+} from '#lib/utils/date.js';
+import { getMoodChartColor, getMoodScore, resolveMoodLabel } from '#lib/utils/mood.js';
 
 type MoodPeriod = 'week' | 'month' | 'quarter';
 

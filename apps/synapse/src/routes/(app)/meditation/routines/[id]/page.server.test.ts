@@ -10,7 +10,7 @@ const mockUpdateWhere = vi.hoisted(() =>
 	vi.fn<(args: unknown) => Promise<unknown>>(async () => undefined)
 );
 
-vi.mock('$lib/server/db', () => ({
+vi.mock('#lib/server/db/index.js', () => ({
 	getDb: () => ({
 		query: {
 			meditationRoutines: { findFirst: mockRoutineFindFirst },
@@ -25,7 +25,7 @@ vi.mock('$lib/server/db', () => ({
 	})
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<(...args: unknown[]) => void>(),
 		info: vi.fn<(...args: unknown[]) => void>(),

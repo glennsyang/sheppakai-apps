@@ -1,5 +1,6 @@
-import { renderComponent } from '$lib/components/ui/data-table/index.js';
 import type { ComponentProps } from 'svelte';
+
+import { renderComponent } from '#lib/components/ui/data-table/index.js';
 
 import CategoryCell from './CategoryCell.svelte';
 import MoneyCell from './MoneyCell.svelte';

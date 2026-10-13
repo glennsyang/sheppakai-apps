@@ -1,4 +1,4 @@
-import type { Handle, HandleServerError } from '@sveltejs/kit';
+import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 
 import { isUserAccessAllowed } from './auth-allowlist';
@@ -119,7 +119,7 @@ export function createServerHandle(options: ServerHandleOptions): Handle {
 			);
 		}
 
-		// Content-Security-Policy is managed via kit.csp in each app's svelte.config.js
+		// Content-Security-Policy is managed via the `csp` option of `sveltekit()` in each app's vite.config.ts
 		// (nonce mode). SvelteKit generates a per-request nonce, injects it into the inline
 		// scripts/styles it produces, and sets the CSP header automatically. Do NOT set
 		// Content-Security-Policy here — it would override the nonce-bearing header SvelteKit
@@ -132,6 +132,10 @@ export function createServerHandle(options: ServerHandleOptions): Handle {
 /**
  * Global error handler with structured logging.
  *
+ * SvelteKit 3 routes every error through here, tagged by `kind`. Only `'unknown'` errors
+ * (thrown by our code or its dependencies) are logged; `'app'` errors from `error(...)` and
+ * `'framework'` errors such as 404s are expected and keep their status and safe message.
+ *
  * Note: logger.error() already forwards to Sentry (captureException) internally in
  * production, so this is intentionally NOT wrapped in Sentry.handleErrorWithSentry() —
  * doing so would double-report every unhandled error.
@@ -142,22 +146,24 @@ export function createHandleError(options: {
 }): HandleServerError {
 	const { logger, dev } = options;
 
-	return ({ error, event, status, message }) => {
+	return ({ kind, error, event }) => {
 		const requestId = event.locals.requestId ?? 'unknown';
-		const userId = event.locals.user?.id ?? 'anonymous';
+
+		if (kind !== 'unknown') {
+			return { ...error, requestId };
+		}
 
 		logger.error('Unhandled server error', error, {
 			requestId,
-			userId,
+			userId: event.locals.user?.id ?? 'anonymous',
 			url: event.url.pathname,
 			method: event.request.method,
-			status,
-			message,
+			status: 500,
 			userAgent: event.request.headers.get('user-agent')
 		});
 
 		return {
-			message: dev ? message : 'An unexpected error occurred',
+			message: dev ? 'Internal Error' : 'An unexpected error occurred',
 			requestId
 		};
 	};

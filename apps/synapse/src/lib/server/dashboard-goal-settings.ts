@@ -1,11 +1,12 @@
-import { getDb } from '$lib/server/db';
-import { dashboardGoalSettings } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
+
+import { getDb } from '#lib/server/db/index.js';
+import { dashboardGoalSettings } from '#lib/server/db/schema/index.js';
 import {
 	DEFAULT_DASHBOARD_GOALS,
 	normalizeDashboardGoals,
 	type DashboardGoals
-} from '$lib/utils/dashboard-goals';
-import { eq } from 'drizzle-orm';
+} from '#lib/utils/dashboard-goals.js';
 
 function toGoals(
 	row:

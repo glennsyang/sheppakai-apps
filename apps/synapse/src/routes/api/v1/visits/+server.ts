@@ -1,13 +1,14 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
-import { apiCreateVisitSchema, apiVisitListQuerySchema } from '$lib/server/api/schemas/visits';
-import { getDb } from '$lib/server/db';
-import { visits } from '$lib/server/db/schema';
-import { createVisit } from '$lib/server/db/writes/visits';
-import { logger } from '$lib/server/logger';
 import { parseJsonBody } from '@sheppakai/shared/api-write';
 import { and, desc, eq } from 'drizzle-orm';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
+import { apiCreateVisitSchema, apiVisitListQuerySchema } from '#lib/server/api/schemas/visits.js';
+import { getDb } from '#lib/server/db/index.js';
+import { visits } from '#lib/server/db/schema/index.js';
+import { createVisit } from '#lib/server/db/writes/visits.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

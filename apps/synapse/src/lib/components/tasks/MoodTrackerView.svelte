@@ -1,15 +1,16 @@
 <script lang="ts">
-	import MoodByDayOfWeekChart from '$lib/components/mood/MoodByDayOfWeekChart.svelte';
-	import MoodCalendarHeatmap from '$lib/components/mood/MoodCalendarHeatmap.svelte';
-	import MoodDistributionChart from '$lib/components/mood/MoodDistributionChart.svelte';
-	import MoodLogForm from '$lib/components/mood/MoodLogForm.svelte';
-	import MoodTrendChart from '$lib/components/mood/MoodTrendChart.svelte';
-	import * as Select from '$lib/components/ui/select';
-	import type { MoodLogFormValues } from '$lib/schemas/mood';
-	import { getTodayString } from '$lib/utils/date';
-	import { type MoodPeriod, moodPeriods } from '$lib/utils/mood';
 	import { ChartArea, Flame, TrendingUp } from '@lucide/svelte';
 	import type { SuperValidated } from 'sveltekit-superforms';
+
+	import MoodByDayOfWeekChart from '#lib/components/mood/MoodByDayOfWeekChart.svelte';
+	import MoodCalendarHeatmap from '#lib/components/mood/MoodCalendarHeatmap.svelte';
+	import MoodDistributionChart from '#lib/components/mood/MoodDistributionChart.svelte';
+	import MoodLogForm from '#lib/components/mood/MoodLogForm.svelte';
+	import MoodTrendChart from '#lib/components/mood/MoodTrendChart.svelte';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import type { MoodLogFormValues } from '#lib/schemas/mood.js';
+	import { getTodayString } from '#lib/utils/date.js';
+	import { type MoodPeriod, moodPeriods } from '#lib/utils/mood.js';
 
 	type MoodTrendPoint = {
 		date: string;

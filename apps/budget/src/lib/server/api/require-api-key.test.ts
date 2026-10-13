@@ -12,11 +12,11 @@ vi.mock('../auth', () => ({
 
 vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: 'env-admin' }));
 
-vi.mock('$lib/server/db/queries', () => ({
+vi.mock('#lib/server/db/queries/index.js', () => ({
 	userQueries: { findById: mockFindUserById }
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		warn: vi.fn<(...args: unknown[]) => void>(),
 		error: vi.fn<(...args: unknown[]) => void>(),

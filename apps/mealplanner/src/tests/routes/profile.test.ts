@@ -16,11 +16,11 @@ const { apiMock, loggerMock, emailMock, rateLimitCheckMock } = vi.hoisted(() => 
 	rateLimitCheckMock: vi.fn<() => Promise<{ limited: boolean; retryAfter: number }>>()
 }));
 
-vi.mock('$lib/server/auth', () => ({ auth: { api: apiMock } }));
-vi.mock('$lib/server/logger', () => ({ logger: loggerMock }));
-vi.mock('$lib/server/email', () => emailMock);
-vi.mock('$lib/server/rate-limiter', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('$lib/server/rate-limiter')>();
+vi.mock('#lib/server/auth/index.js', () => ({ auth: { api: apiMock } }));
+vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
+vi.mock('#lib/server/email/index.js', () => emailMock);
+vi.mock('#lib/server/rate-limiter.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('#lib/server/rate-limiter.js')>();
 	return {
 		...actual,
 		createUserRateLimiter: () => ({ check: rateLimitCheckMock })

@@ -1,4 +1,4 @@
-import type { ActionResult } from '@sveltejs/kit';
+import type { ActionResult } from '$app/forms';
 
 /**
  * The user-facing text from a failed planner/pantry action. Those actions all fail with

@@ -1,6 +1,7 @@
-import type { Recurring, Transaction } from '$lib/types';
-import { getTodayDate } from '$lib/utils/dates';
 import { describe, expect, it } from 'vitest';
+
+import type { Recurring, Transaction } from '#lib/types.js';
+import { getTodayDate } from '#lib/utils/dates.js';
 
 import {
 	recurringSchema,

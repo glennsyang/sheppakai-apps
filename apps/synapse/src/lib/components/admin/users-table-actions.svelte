@@ -1,12 +1,5 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Button } from '$lib/components/ui/button';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import { Label } from '$lib/components/ui/label';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import type { User } from '$lib/types';
 	import BanIcon from '@lucide/svelte/icons/ban';
 	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
 	import MailIcon from '@lucide/svelte/icons/mail';
@@ -15,6 +8,14 @@
 	import UserCheckIcon from '@lucide/svelte/icons/user-check';
 	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import type { User } from '#lib/types.js';
 
 	let { user, currentUserId }: { user: User; currentUserId: string } = $props();
 

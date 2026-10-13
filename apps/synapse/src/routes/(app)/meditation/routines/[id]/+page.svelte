@@ -1,20 +1,4 @@
 <script lang="ts">
-	import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import * as Select from '$lib/components/ui/select';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import {
-		daysOfWeek,
-		formatTime12Hour,
-		formatTimestampLong,
-		toAppDatetimeLocal
-	} from '$lib/utils/date';
 	import {
 		ArrowLeft,
 		Calendar,
@@ -28,6 +12,23 @@
 	} from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
+
+	import ConfirmDialog from '#lib/components/shared/ConfirmDialog.svelte';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import {
+		daysOfWeek,
+		formatTime12Hour,
+		formatTimestampLong,
+		toAppDatetimeLocal
+	} from '#lib/utils/date.js';
 
 	import type { PageData } from './$types';
 

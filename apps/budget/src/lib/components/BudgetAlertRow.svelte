@@ -1,7 +1,8 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { formatCurrency } from '$lib/utils';
 	import { AlertTriangleIcon } from '@lucide/svelte/icons';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { formatCurrency } from '#lib/utils.js';
 
 	interface OverBudgetCategory {
 		id: string;

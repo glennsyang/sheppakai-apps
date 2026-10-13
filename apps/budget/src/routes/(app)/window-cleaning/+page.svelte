@@ -1,22 +1,27 @@
 <script lang="ts">
-	import type { WindowCleaningCustomerWithStats, WindowCleaningJob } from '$lib';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import DashboardStatStrip, { type Stat } from '$lib/components/DashboardStatStrip.svelte';
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import PageShell from '$lib/components/PageShell.svelte';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import DataTable from '$lib/components/ui/data-table/data-table.svelte';
-	import * as Sheet from '$lib/components/ui/sheet/index.js';
-	import WindowCleaningCustomerModal from '$lib/components/WindowCleaningCustomerModal.svelte';
-	import WindowCleaningJobModal from '$lib/components/WindowCleaningJobModal.svelte';
-	import { customerFormContext, jobFormContext, openCustomerSheetContext } from '$lib/contexts';
-	import { formatLocalTimestamp, formatTime12h } from '$lib/utils/dates';
-	import { buildGoogleMapsUrl } from '$lib/utils/maps';
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import MapPinIcon from '@lucide/svelte/icons/map-pin';
 	import PhoneIcon from '@lucide/svelte/icons/phone';
 	import PlusIcon from '@lucide/svelte/icons/plus';
+
+	import type { WindowCleaningCustomerWithStats, WindowCleaningJob } from '#lib';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import DashboardStatStrip, { type Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import PageShell from '#lib/components/PageShell.svelte';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import DataTable from '#lib/components/ui/data-table/data-table.svelte';
+	import * as Sheet from '#lib/components/ui/sheet/index.js';
+	import WindowCleaningCustomerModal from '#lib/components/WindowCleaningCustomerModal.svelte';
+	import WindowCleaningJobModal from '#lib/components/WindowCleaningJobModal.svelte';
+	import {
+		customerFormContext,
+		jobFormContext,
+		openCustomerSheetContext
+	} from '#lib/contexts/index.js';
+	import { formatLocalTimestamp, formatTime12h } from '#lib/utils/dates.js';
+	import { buildGoogleMapsUrl } from '#lib/utils/maps.js';
 
 	import type { PageProps } from './$types';
 	import { columns } from './columns';

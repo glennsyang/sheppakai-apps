@@ -1,11 +1,12 @@
 <script lang="ts">
-	import CategoryModal from '$lib/components/CategoryModal.svelte';
-	import PageShell from '$lib/components/PageShell.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { DataTable } from '$lib/components/ui/data-table';
-	import { categoryFormContext } from '$lib/contexts';
-	import { categoryColorMap } from '$lib/utils/categoryColors';
 	import PlusIcon from '@lucide/svelte/icons/plus';
+
+	import CategoryModal from '#lib/components/CategoryModal.svelte';
+	import PageShell from '#lib/components/PageShell.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { DataTable } from '#lib/components/ui/data-table/index.js';
+	import { categoryFormContext } from '#lib/contexts/index.js';
+	import { categoryColorMap } from '#lib/utils/categoryColors.js';
 
 	import type { PageProps } from './$types';
 	import { createColumns } from './columns';

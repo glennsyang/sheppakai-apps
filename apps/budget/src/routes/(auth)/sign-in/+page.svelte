@@ -1,12 +1,13 @@
 <script lang="ts">
-	import AuthFormMessage from '$lib/components/AuthFormMessage.svelte';
-	import FormMessage from '$lib/components/FormMessage.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
-	import { Input } from '$lib/components/ui/input';
-	import { Spinner } from '$lib/components/ui/spinner';
 	import { superForm } from 'sveltekit-superforms';
+
+	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
+	import FormMessage from '#lib/components/FormMessage.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Field, FieldGroup, FieldLabel } from '#lib/components/ui/field/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 
 	import type { PageData } from './$types';
 

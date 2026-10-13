@@ -1,4 +1,4 @@
-import type { Budget, CategoryAnomaly, Transaction } from '$lib/types';
+import type { Budget, CategoryAnomaly, Transaction } from '#lib/types.js';
 
 // Require at least this many prior months of history before flagging anything, so a
 // category with only 1-2 months on record doesn't produce a noisy "anomaly" on day one.

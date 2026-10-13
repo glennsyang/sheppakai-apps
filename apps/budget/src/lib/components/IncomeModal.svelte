@@ -1,15 +1,16 @@
 <script lang="ts">
-	import type { BaseModalProps } from '$lib';
-	import { Button } from '$lib/components/ui/button';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Input } from '$lib/components/ui/input';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import type { incomeSchema } from '$lib/formSchemas';
-	import { extractDateFromTimestamp } from '$lib/utils/dates';
 	import { toast } from 'svelte-sonner';
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import { superForm } from 'sveltekit-superforms';
 	import type { z } from 'zod';
+
+	import type { BaseModalProps } from '#lib';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import type { incomeSchema } from '#lib/formSchemas/index.js';
+	import { extractDateFromTimestamp } from '#lib/utils/dates.js';
 
 	interface Props extends BaseModalProps<z.infer<typeof incomeSchema>> {
 		incomeForm: SuperValidated<z.infer<typeof incomeSchema>>;

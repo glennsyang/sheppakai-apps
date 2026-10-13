@@ -1,8 +1,9 @@
-import type { Savings } from '$lib';
-import DataTableSortButton from '$lib/components/DataTableSortButton.svelte';
-import { moneyCell } from '$lib/components/table/cells';
-import { type Features, renderComponent } from '$lib/components/ui/data-table/index.js';
 import type { ColumnDef } from '@tanstack/table-core';
+
+import type { Savings } from '#lib';
+import DataTableSortButton from '#lib/components/DataTableSortButton.svelte';
+import { moneyCell } from '#lib/components/table/cells.js';
+import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
 
 import DataTableActions from './data-table-actions.svelte';
 

@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import type { SidebarData, User } from '$lib';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import { matchNavUrl } from '$lib/utils/navigation';
 	import CircleDollarSignIcon from '@lucide/svelte/icons/circle-dollar-sign';
+
+	import type { SidebarData, User } from '#lib';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	import { matchNavUrl } from '#lib/utils/navigation.js';
 
 	import NavMain from './NavMain.svelte';
 	import NavSecondary from './NavSecondary.svelte';

@@ -1,10 +1,4 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import * as Tabs from '$lib/components/ui/tabs';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { renderMarkdownToSafeHtml } from '$lib/utils/markdown';
 	import {
 		Bold,
 		Heading,
@@ -16,6 +10,13 @@
 		Quote,
 		Underline
 	} from '@lucide/svelte/icons';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import { renderMarkdownToSafeHtml } from '#lib/utils/markdown.js';
 
 	interface Props {
 		markdown?: string;

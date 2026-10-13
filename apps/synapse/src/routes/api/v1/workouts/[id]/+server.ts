@@ -1,11 +1,12 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
-import { apiUpdateWorkoutSchema } from '$lib/server/api/schemas/workouts';
-import { getWorkoutWithExercises, updateWorkout } from '$lib/server/db/writes/workouts';
-import { logger } from '$lib/server/logger';
 import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { parseJsonBody } from '@sheppakai/shared/api-write';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
+import { apiUpdateWorkoutSchema } from '#lib/server/api/schemas/workouts.js';
+import { getWorkoutWithExercises, updateWorkout } from '#lib/server/db/writes/workouts.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

@@ -11,8 +11,8 @@
  * Logs all sent emails in email_notifications table to prevent duplicates.
  */
 
-import { logger } from '$lib/server/logger';
-import { APP_TIME_ZONE, getTodayString } from '$lib/utils/date';
+import { logger } from '#lib/server/logger.js';
+import { APP_TIME_ZONE, getTodayString } from '#lib/utils/date.js';
 
 import { processDailyAgendaDigests, processTasksDueTodayDigests } from './digests';
 import { processMeditationReminders } from './meditation-reminders';

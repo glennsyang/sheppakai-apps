@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-vi.mock('$lib/server/auth', () => ({
+vi.mock('#lib/server/auth.js', () => ({
 	assertAdmin: (locals: App.Locals) => {
 		if (!locals.user) throw new Error('Unauthorized');
 		if (locals.user.role !== 'admin') throw new Error('Forbidden');
 	}
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		error: vi.fn<() => void>(),
 		warn: vi.fn<() => void>(),

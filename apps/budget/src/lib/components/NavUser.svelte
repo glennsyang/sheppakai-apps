@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import { SIGN_OUT_ROUTE } from '$lib/auth-routes';
-	import * as Avatar from '$lib/components/ui/avatar/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import type { User } from '$lib/types';
 	import { EllipsisVerticalIcon } from '@lucide/svelte';
 	import { CircleUserIcon } from '@lucide/svelte';
 	import { LogOutIcon } from '@lucide/svelte';
+
+	import { SIGN_OUT_ROUTE } from '#lib/auth-routes.js';
+	import * as Avatar from '#lib/components/ui/avatar/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	import type { User } from '#lib/types.js';
 
 	interface Props {
 		user: User;

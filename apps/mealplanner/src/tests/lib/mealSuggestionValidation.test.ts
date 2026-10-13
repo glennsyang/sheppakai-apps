@@ -12,7 +12,7 @@ const { anthropicCreate, geminiGenerate, loggerMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('$app/env/private', () => ({ ANTHROPIC_API_KEY: 'test', GEMINI_API_KEY: 'test' }));
-vi.mock('$lib/server/logger', () => ({ logger: loggerMock }));
+vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 vi.mock('@anthropic-ai/sdk', () => ({
 	default: class {
 		messages = { create: anthropicCreate };

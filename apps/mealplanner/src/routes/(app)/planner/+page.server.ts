@@ -1,4 +1,8 @@
-import { getMondayOf, parseIsoDate } from '$lib/dates';
+import { redirect } from '@sveltejs/kit';
+import { superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { getMondayOf, parseIsoDate } from '#lib/dates.js';
 import {
 	removeMealPlanEntrySchema,
 	saveAndAddSchema,
@@ -7,21 +11,18 @@ import {
 	instructionsJsonSchema,
 	updateRecipeSchema,
 	weekStartDateSchema
-} from '$lib/schemas/mealPlan';
-import { requireAuth } from '$lib/server/actions/auth-guard';
-import { handleDomainAction } from '$lib/server/actions/domain-action';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { logger } from '$lib/server/logger';
+} from '#lib/schemas/mealPlan.js';
+import { requireAuth } from '#lib/server/actions/auth-guard.js';
+import { handleDomainAction } from '#lib/server/actions/domain-action.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { logger } from '#lib/server/logger.js';
 import {
 	getMealPlanWithEntries,
 	addMealPlanEntry,
 	removeMealPlanEntry,
 	getMondayOfCurrentWeek
-} from '$lib/server/services/mealPlan';
-import { saveRecipe, updateRecipe } from '$lib/server/services/recipes';
-import { redirect } from '@sveltejs/kit';
-import { superValidate } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
+} from '#lib/server/services/mealPlan.js';
+import { saveRecipe, updateRecipe } from '#lib/server/services/recipes.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

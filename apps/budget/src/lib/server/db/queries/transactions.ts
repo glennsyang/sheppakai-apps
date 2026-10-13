@@ -1,5 +1,6 @@
-import type { Transaction } from '$lib/types';
 import { and, desc, eq, isNotNull, ne, or, sql } from 'drizzle-orm';
+
+import type { Transaction } from '#lib/types.js';
 
 import { getDb } from '../index';
 import { transaction } from '../schema';

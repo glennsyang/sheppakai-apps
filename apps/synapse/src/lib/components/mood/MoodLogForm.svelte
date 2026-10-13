@@ -1,14 +1,15 @@
 <script lang="ts">
-	import * as Alert from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import type { MoodLogFormValues } from '$lib/schemas/mood';
-	import { moodOptions } from '$lib/utils/mood';
 	import { CircleAlert } from '@lucide/svelte/icons';
 	import { toast } from 'svelte-sonner';
 	import { type SuperValidated, superForm } from 'sveltekit-superforms';
+
+	import * as Alert from '#lib/components/ui/alert/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import type { MoodLogFormValues } from '#lib/schemas/mood.js';
+	import { moodOptions } from '#lib/utils/mood.js';
 
 	import Confetti from '../shared/Confetti.svelte';
 

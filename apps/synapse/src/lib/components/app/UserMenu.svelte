@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import { SIGN_OUT_ROUTE } from '$lib/auth-routes';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import type { User } from '$lib/types';
 	import { CircleUserIcon, LogOutIcon, Shield } from '@lucide/svelte';
+
+	import { SIGN_OUT_ROUTE } from '#lib/auth-routes.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import type { User } from '#lib/types.js';
 
 	interface Props {
 		user: User;

@@ -1,12 +1,10 @@
-/// <reference types="@sveltejs/kit" />
-/// <reference lib="webworker" />
-
-import { build, files, version } from '$service-worker';
-
-declare let self: ServiceWorkerGlobalScope;
+import { version } from '$app/env';
+import { assets, immutable } from '$app/manifest';
+import { self } from '$app/service-worker';
 
 const CACHE = `cache-${version}`;
-const ASSETS = [...build, ...files];
+// Manifest paths are relative to the base path (unset here), so prefix `/` to match `url.pathname`.
+const ASSETS = [...immutable, ...assets].map(({ path }) => `/${path}`);
 
 self.addEventListener('install', (event) => {
 	event.waitUntil(

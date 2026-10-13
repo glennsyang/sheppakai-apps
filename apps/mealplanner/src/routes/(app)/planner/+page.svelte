@@ -1,31 +1,31 @@
 <script lang="ts">
-	import { deserialize, enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import { actionFailureText } from '$lib/action-result';
-	import AuthFormMessage from '$lib/components/AuthFormMessage.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import RecipeDrawer from '$lib/components/RecipeDrawer.svelte';
-	import { Alert } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import VariationsPanel from '$lib/components/VariationsPanel.svelte';
-	import WeeklyPlanner from '$lib/components/WeeklyPlanner.svelte';
-	import { addWeeks, getMondayOf } from '$lib/dates';
-	import { recipeAsSuggestion } from '$lib/recipes';
+	import { deserialize, enhance, type ActionResult } from '$app/forms';
+	import { refreshAll } from '$app/navigation';
+	import { superForm } from 'sveltekit-superforms';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
+
+	import { actionFailureText } from '#lib/action-result.js';
+	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import RecipeDrawer from '#lib/components/RecipeDrawer.svelte';
+	import { Alert } from '#lib/components/ui/alert/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import VariationsPanel from '#lib/components/VariationsPanel.svelte';
+	import WeeklyPlanner from '#lib/components/WeeklyPlanner.svelte';
+	import { addWeeks, getMondayOf } from '#lib/dates.js';
+	import { recipeAsSuggestion } from '#lib/recipes.js';
 	import {
 		addCustomMealSchema,
 		mealSuggestionListSchema,
 		mealSuggestionSchema
-	} from '$lib/schemas/mealPlan';
-	import { trackToday } from '$lib/today.svelte';
-	import { DAY_LABELS } from '$lib/types';
-	import type { MealPlanEntryWithRecipe, MealSuggestion } from '$lib/types';
-	import type { ActionResult } from '@sveltejs/kit';
-	import { superForm } from 'sveltekit-superforms';
-	import { zod4Client } from 'sveltekit-superforms/adapters';
+	} from '#lib/schemas/mealPlan.js';
+	import { trackToday } from '#lib/today.svelte.js';
+	import { DAY_LABELS } from '#lib/types.js';
+	import type { MealPlanEntryWithRecipe, MealSuggestion } from '#lib/types.js';
 
 	import type { PageData } from './$types';
 
@@ -92,7 +92,7 @@
 			if (result.type === 'success') {
 				stuckDay = customModalDay;
 				showCustomModal = false;
-				invalidateAll();
+				refreshAll();
 			}
 		}
 	});
@@ -162,7 +162,7 @@
 			});
 			result = deserialize(await res.text());
 		} catch {
-			result = { type: 'error', error: undefined };
+			result = { type: 'error', error: { status: 500, message: 'Network error' } };
 		}
 		if (result.type !== 'success') {
 			actionError = actionFailureText(
@@ -176,7 +176,7 @@
 		variationsList = null;
 		variationsDay = null;
 		drawerSuggestion = null;
-		await invalidateAll();
+		await refreshAll();
 	}
 
 	function getWeekLabel(weekStartDate: string): string {
@@ -234,8 +234,11 @@
 			class="space-y-5"
 		>
 			<input type="hidden" name="weekStartDate" value={data.weekStartDate} />
+
 			<input type="hidden" name="name" value={pendingSuggestion.name} />
+
 			<input type="hidden" name="description" value={pendingSuggestion.description} />
+
 			<input
 				type="hidden"
 				name="ingredientsJson"
@@ -272,6 +275,7 @@
 				<Button type="submit" disabled={isSubmitting} class="flex-1 py-2.5">
 					{isSubmitting ? 'Sticking it on…' : `Put on ${DAY_LABELS[selectedDay]}`}
 				</Button>
+
 				<Button type="button" onclick={closeDayPicker} variant="outline" class="py-2.5"
 					>Cancel</Button
 				>
@@ -281,6 +285,7 @@
 </Modal>
 
 <!-- Write in a meal by hand -->
+
 <Modal open={showCustomModal} onClose={() => (showCustomModal = false)} ariaLabel="Write in a meal">
 	<div class="card-head -mx-6 px-6 pb-3">
 		<h2 class="text-xl leading-snug font-bold">
@@ -290,6 +295,7 @@
 
 	<form method="POST" action="?/addCustom" use:customEnhance class="space-y-4">
 		<input type="hidden" name="weekStartDate" value={data.weekStartDate} />
+
 		<input type="hidden" name="dayOfWeek" value={customModalDay} />
 
 		<AuthFormMessage message={$customMessage} />
@@ -319,9 +325,10 @@
 		</Label>
 
 		<div class="flex gap-2">
-			<Button type="submit" disabled={$customSubmitting} class="flex-1 py-2.5">
-				{$customSubmitting ? 'Writing it in…' : 'Write it in'}
-			</Button>
+			<Button type="submit" disabled={$customSubmitting} class="flex-1 py-2.5"
+				>{$customSubmitting ? 'Writing it in…' : 'Write it in'}</Button
+			>
+
 			<Button
 				type="button"
 				onclick={() => (showCustomModal = false)}
@@ -359,7 +366,7 @@
 	suggestion={plannedRecipe}
 	onClose={() => (plannedEntryId = null)}
 	recipeId={plannedEntry?.recipe.id}
-	onSaved={invalidateAll}
+	onSaved={refreshAll}
 />
 
 <div class="px-5 pt-8 pb-4 sm:px-10 sm:pt-12">

@@ -19,8 +19,8 @@ const notes = sqliteTable('notes', {
 
 const state = vi.hoisted(() => ({ db: null as unknown }));
 
-vi.mock('$lib/server/db', () => ({ getDb: () => state.db }));
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/db/index.js', () => ({ getDb: () => state.db }));
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn<() => void>(), error: vi.fn<() => void>(), warn: vi.fn<() => void>() }
 }));
 

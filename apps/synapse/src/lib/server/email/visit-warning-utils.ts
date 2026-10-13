@@ -1,5 +1,5 @@
-import { getTodayString } from '$lib/utils/date';
-import { calculatePersonVisitStatus, type VisitStatusThresholds } from '$lib/utils/visit-status';
+import { getTodayString } from '#lib/utils/date.js';
+import { calculatePersonVisitStatus, type VisitStatusThresholds } from '#lib/utils/visit-status.js';
 
 type VisitWarningStatus = 'yellow' | 'critical';
 

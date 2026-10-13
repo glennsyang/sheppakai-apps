@@ -1,6 +1,7 @@
-import { logger } from '$lib/server/logger';
-import { getWorkoutNotificationTag } from '$lib/utils/workout';
 import { eq } from 'drizzle-orm';
+
+import { logger } from '#lib/server/logger.js';
+import { getWorkoutNotificationTag } from '#lib/utils/workout.js';
 
 import { getDb } from '../db';
 import { user, workoutReminders } from '../db/schema';

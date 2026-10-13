@@ -1,4 +1,4 @@
-import type { WorkoutType } from '$lib/schemas/fitness';
+import type { WorkoutType } from '#lib/schemas/fitness.js';
 
 export const workoutTypeOptions = [
 	{

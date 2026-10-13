@@ -1,12 +1,17 @@
+import { ApiWriteError } from '@sheppakai/shared/api-write';
+import { and, eq } from 'drizzle-orm';
+
 import type {
 	ApiCreateWorkoutInput,
 	ApiUpdateWorkoutInput
-} from '$lib/server/api/schemas/workouts';
-import { getDb } from '$lib/server/db';
-import { workoutExercises, workoutLogs } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
-import { ApiWriteError } from '@sheppakai/shared/api-write';
-import { and, eq } from 'drizzle-orm';
+} from '#lib/server/api/schemas/workouts.js';
+import { getDb } from '#lib/server/db/index.js';
+import { workoutExercises, workoutLogs } from '#lib/server/db/schema/index.js';
+import {
+	generateId,
+	withTimestampsForCreate,
+	withTimestampsForUpdate
+} from '#lib/server/db/utils.js';
 
 /**
  * Insert path for API-key-driven workout logging, including strength-workout exercises.

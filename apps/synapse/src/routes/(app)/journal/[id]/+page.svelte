@@ -1,5 +1,5 @@
 <script lang="ts">
-	import JournalEntryForm from '$lib/components/journal/JournalEntryForm.svelte';
+	import JournalEntryForm from '#lib/components/journal/JournalEntryForm.svelte';
 
 	import type { PageData } from './$types';
 

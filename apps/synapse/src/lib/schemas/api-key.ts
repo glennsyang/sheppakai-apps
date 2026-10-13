@@ -1,5 +1,6 @@
-import { API_SCOPES } from '$lib/api-scopes';
 import { z } from 'zod';
+
+import { API_SCOPES } from '#lib/api-scopes.js';
 
 /**
  * Schema for creating a new external API key from Admin → API Keys.

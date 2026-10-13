@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { Income } from '$lib';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import IncomeModal from '$lib/components/IncomeModal.svelte';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
-	import { incomeFormContext } from '$lib/contexts';
+	import type { Income } from '#lib';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import IncomeModal from '#lib/components/IncomeModal.svelte';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import { incomeFormContext } from '#lib/contexts/index.js';
 
 	let { id, incomeData }: { id: string; incomeData: Income } = $props();
 

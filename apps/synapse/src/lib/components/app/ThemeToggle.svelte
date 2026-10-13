@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { cn } from '$lib';
 	import { Moon, Sun } from '@lucide/svelte/icons';
 	import { toggleMode } from 'mode-watcher';
+
+	import { cn } from '#lib';
 
 	let { class: className = '' }: { class?: string } = $props();
 </script>

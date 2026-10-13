@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { Category } from '$lib';
-	import CategoryModal from '$lib/components/CategoryModal.svelte';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
-	import { categoryFormContext } from '$lib/contexts';
+	import type { Category } from '#lib';
+	import CategoryModal from '#lib/components/CategoryModal.svelte';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import { categoryFormContext } from '#lib/contexts/index.js';
 
 	let { id, categoryData }: { id: string; categoryData: Category } = $props();
 

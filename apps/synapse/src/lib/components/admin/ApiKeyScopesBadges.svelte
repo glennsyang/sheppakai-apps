@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge } from '$lib/components/ui/badge';
+	import { Badge } from '#lib/components/ui/badge/index.js';
 
 	let { permissions }: { permissions: Record<string, string[]> | null } = $props();
 

@@ -1,3 +1,6 @@
+import type { SuperValidated } from 'sveltekit-superforms';
+import type { z } from 'zod';
+
 import type {
 	banUserSchema,
 	categorySchema,
@@ -13,9 +16,7 @@ import type {
 	unArchiveSchema,
 	windowCleaningCustomerSchema,
 	windowCleaningJobSchema
-} from '$lib/formSchemas';
-import type { SuperValidated } from 'sveltekit-superforms';
-import type { z } from 'zod';
+} from '#lib/formSchemas/index.js';
 
 import { createContext } from './values';
 

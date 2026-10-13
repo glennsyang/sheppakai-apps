@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { cn } from '$lib';
 	import type { Snippet } from 'svelte';
+
+	import { cn } from '#lib';
 
 	interface Props {
 		children?: Snippet;

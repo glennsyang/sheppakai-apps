@@ -1,7 +1,8 @@
-import { logger } from '$lib/server/logger';
 import { isRedirect } from '@sveltejs/kit';
 import { message } from 'sveltekit-superforms';
 import type { SuperValidated } from 'sveltekit-superforms';
+
+import { logger } from '#lib/server/logger.js';
 
 interface DomainActionOptions {
 	/** Logged at `error` alongside the thrown value. */

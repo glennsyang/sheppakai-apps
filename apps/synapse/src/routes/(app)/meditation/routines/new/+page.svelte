@@ -1,14 +1,15 @@
 <script lang="ts">
-	import PageFormShell from '$lib/components/shared/PageFormShell.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import { MOOD_TAGS } from '$lib/schemas/meditation';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
+
+	import PageFormShell from '#lib/components/shared/PageFormShell.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import { MOOD_TAGS } from '#lib/schemas/meditation.js';
 
 	import type { PageData } from './$types';
 

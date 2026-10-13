@@ -1,15 +1,16 @@
 <script lang="ts">
-	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Chart from '$lib/components/ui/chart/index.js';
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import type { ChartData } from '$lib/types';
-	import { formatCurrency, formatCurrencyRounded } from '$lib/utils';
 	import TrendingDownIcon from '@lucide/svelte/icons/trending-down';
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import { scaleUtc } from 'd3-scale';
 	import { curveMonotoneX } from 'd3-shape';
 	import { LineChart, Spline } from 'layerchart';
+
+	import InfoTooltip from '#lib/components/InfoTooltip.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import type { ChartData } from '#lib/types.js';
+	import { formatCurrency, formatCurrencyRounded } from '#lib/utils.js';
 
 	interface Props {
 		categoryName: string;

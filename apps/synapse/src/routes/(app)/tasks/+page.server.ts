@@ -1,3 +1,8 @@
+import { redirect } from '@sveltejs/kit';
+import { and, asc, eq, gte, lte } from 'drizzle-orm';
+import { message, setError, superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
 import {
 	createDailyAgendaEntrySchema,
 	createDailyAgendaTemplateSchema,
@@ -7,17 +12,17 @@ import {
 	toggleDailyAgendaEntrySchema,
 	updateDailyAgendaEntrySchema,
 	updateDailyAgendaTemplateSchema
-} from '$lib/schemas/daily-agenda';
-import { moodLogSchema } from '$lib/schemas/mood';
+} from '#lib/schemas/daily-agenda.js';
+import { moodLogSchema } from '#lib/schemas/mood.js';
 import {
 	deleteTaskSchema,
 	moveTaskBoardSchema,
 	taskFilterSchema,
 	updateTaskStateSchema
-} from '$lib/schemas/task';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
-import { deleteAction } from '$lib/server/actions/crud-helpers';
-import { invalidForm } from '$lib/server/actions/form-responses';
+} from '#lib/schemas/task.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { deleteAction } from '#lib/server/actions/crud-helpers.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
 import {
 	createDailyAgendaCustomEntry,
 	createDailyAgendaTemplate,
@@ -27,36 +32,36 @@ import {
 	toggleDailyAgendaEntry,
 	updateDailyAgendaCustomEntry,
 	updateDailyAgendaTemplate
-} from '$lib/server/daily-agenda';
-import { getDb } from '$lib/server/db';
-import { moodLogs, tasks } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
-import { logger } from '$lib/server/logger';
+} from '#lib/server/daily-agenda.js';
+import { getDb } from '#lib/server/db/index.js';
+import { moodLogs, tasks } from '#lib/server/db/schema/index.js';
+import {
+	generateId,
+	withTimestampsForCreate,
+	withTimestampsForUpdate
+} from '#lib/server/db/utils.js';
+import { logger } from '#lib/server/logger.js';
 import {
 	buildAgendaActionPayload,
 	failAgendaMutation,
 	failAgendaValidation
-} from '$lib/server/tasks/agenda-responses';
-import { getAllTags, loadTaskBoardData, moveTaskWithinBoard } from '$lib/server/tasks/board';
+} from '#lib/server/tasks/agenda-responses.js';
+import { getAllTags, loadTaskBoardData, moveTaskWithinBoard } from '#lib/server/tasks/board.js';
 import {
 	buildEmptyMood,
 	buildMoodForm,
 	getMoodRangeStart,
 	getSelectedPeriod,
 	summarizeMood
-} from '$lib/server/tasks/mood';
+} from '#lib/server/tasks/mood.js';
 import {
 	formatDateShort,
 	getDateRange,
 	getStartOfMonth,
 	getStartOfWeek,
 	getTodayString
-} from '$lib/utils/date';
-import { normalizeOptionalMoodText } from '$lib/utils/mood';
-import { redirect } from '@sveltejs/kit';
-import { and, asc, eq, gte, lte } from 'drizzle-orm';
-import { message, setError, superValidate } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
+} from '#lib/utils/date.js';
+import { normalizeOptionalMoodText } from '#lib/utils/mood.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

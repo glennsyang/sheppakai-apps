@@ -1,8 +1,9 @@
-import { suggestVariationsSchema } from '$lib/schemas/mealPlan';
-import { suggestVariations } from '$lib/server/ai/claude';
-import { logger } from '$lib/server/logger';
-import { createUserRateLimiter } from '$lib/server/rate-limiter';
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
+
+import { suggestVariationsSchema } from '#lib/schemas/mealPlan.js';
+import { suggestVariations } from '#lib/server/ai/claude.js';
+import { logger } from '#lib/server/logger.js';
+import { createUserRateLimiter } from '#lib/server/rate-limiter.js';
 
 import type { RequestHandler } from './$types';
 
@@ -26,7 +27,7 @@ export const POST: RequestHandler = async (event) => {
 
 	try {
 		const variations = await suggestVariations(parsed.data.meal);
-		return json(variations);
+		return Response.json(variations);
 	} catch (err) {
 		logger.error('Variations API error', err);
 		error(500, 'Failed to generate variations');

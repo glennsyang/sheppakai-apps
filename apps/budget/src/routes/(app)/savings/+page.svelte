@@ -1,13 +1,14 @@
 <script lang="ts">
-	import DashboardStatStrip, { type Stat } from '$lib/components/DashboardStatStrip.svelte';
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import PageShell from '$lib/components/PageShell.svelte';
-	import SavingsModal from '$lib/components/SavingsModal.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { DataTable } from '$lib/components/ui/data-table';
-	import { savingsFormContext } from '$lib/contexts';
-	import { formatCurrency } from '$lib/utils';
 	import PlusIcon from '@lucide/svelte/icons/plus';
+
+	import DashboardStatStrip, { type Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import PageShell from '#lib/components/PageShell.svelte';
+	import SavingsModal from '#lib/components/SavingsModal.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { DataTable } from '#lib/components/ui/data-table/index.js';
+	import { savingsFormContext } from '#lib/contexts/index.js';
+	import { formatCurrency } from '#lib/utils.js';
 
 	import type { PageProps } from './$types';
 	import { columns } from './columns';

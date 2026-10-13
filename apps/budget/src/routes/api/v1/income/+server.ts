@@ -1,11 +1,12 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
-import { apiCreateIncomeSchema, apiIncomeListQuerySchema } from '$lib/server/api/schemas/income';
-import { incomeQueries } from '$lib/server/db/queries';
-import { createIncome } from '$lib/server/db/writes/income';
-import { logger } from '$lib/server/logger';
 import { parseJsonBody } from '@sheppakai/shared/api-write';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
+import { apiCreateIncomeSchema, apiIncomeListQuerySchema } from '#lib/server/api/schemas/income.js';
+import { incomeQueries } from '#lib/server/db/queries/index.js';
+import { createIncome } from '#lib/server/db/writes/income.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

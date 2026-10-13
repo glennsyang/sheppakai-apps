@@ -1,22 +1,4 @@
 <script lang="ts">
-	import { cn } from '$lib';
-	import CreateReminderDialog from '$lib/components/fitness/dialogs/CreateReminderDialog.svelte';
-	import LogMealDialog from '$lib/components/fitness/dialogs/LogMealDialog.svelte';
-	import LogWeightDialog from '$lib/components/fitness/dialogs/LogWeightDialog.svelte';
-	import LogWorkoutDialog from '$lib/components/fitness/dialogs/LogWorkoutDialog.svelte';
-	import SetCalorieTargetDialog from '$lib/components/fitness/dialogs/SetCalorieTargetDialog.svelte';
-	import SetGoalWeightDialog from '$lib/components/fitness/dialogs/SetGoalWeightDialog.svelte';
-	import { buttonVariants } from '$lib/components/ui/button';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import type {
-		logMealSchema,
-		logWeightSchema,
-		logWorkoutSchema,
-		setCalorieTargetSchema,
-		setGoalWeightSchema,
-		workoutReminderSchema
-	} from '$lib/schemas/fitness';
 	import {
 		BellPlus,
 		Dumbbell,
@@ -27,6 +9,25 @@
 		UtensilsCrossed
 	} from '@lucide/svelte/icons';
 	import type { Infer, SuperValidated } from 'sveltekit-superforms';
+
+	import { cn } from '#lib';
+	import CreateReminderDialog from '#lib/components/fitness/dialogs/CreateReminderDialog.svelte';
+	import LogMealDialog from '#lib/components/fitness/dialogs/LogMealDialog.svelte';
+	import LogWeightDialog from '#lib/components/fitness/dialogs/LogWeightDialog.svelte';
+	import LogWorkoutDialog from '#lib/components/fitness/dialogs/LogWorkoutDialog.svelte';
+	import SetCalorieTargetDialog from '#lib/components/fitness/dialogs/SetCalorieTargetDialog.svelte';
+	import SetGoalWeightDialog from '#lib/components/fitness/dialogs/SetGoalWeightDialog.svelte';
+	import { buttonVariants } from '#lib/components/ui/button/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import type {
+		logMealSchema,
+		logWeightSchema,
+		logWorkoutSchema,
+		setCalorieTargetSchema,
+		setGoalWeightSchema,
+		workoutReminderSchema
+	} from '#lib/schemas/fitness.js';
 
 	interface Props {
 		workoutForm: SuperValidated<Infer<typeof logWorkoutSchema>>;

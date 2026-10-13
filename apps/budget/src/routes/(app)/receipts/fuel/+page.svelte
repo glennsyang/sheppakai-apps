@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ReceiptsPage from '$lib/components/ReceiptsPage.svelte';
-	import { formatCurrency } from '$lib/utils';
+	import ReceiptsPage from '#lib/components/ReceiptsPage.svelte';
+	import { formatCurrency } from '#lib/utils.js';
 
 	import type { PageProps } from './$types';
 	import { columns } from './columns';

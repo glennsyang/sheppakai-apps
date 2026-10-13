@@ -1,18 +1,19 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte';
+	import { Calendar, CircleCheck, EllipsisVertical, Pencil, Trash2 } from '@lucide/svelte/icons';
+
+	import ConfirmDialog from '#lib/components/shared/ConfirmDialog.svelte';
 	import {
 		formatTaskDisplayId,
 		type TaskPriority,
 		type TaskSummary,
 		taskPriorityMeta
-	} from '$lib/components/tasks/task-ui';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import type { TaskState } from '$lib/schemas/task';
-	import { formatDateHeuristic, getDateUrgencyStatus } from '$lib/utils/date';
-	import { Calendar, CircleCheck, EllipsisVertical, Pencil, Trash2 } from '@lucide/svelte/icons';
+	} from '#lib/components/tasks/task-ui.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import type { TaskState } from '#lib/schemas/task.js';
+	import { formatDateHeuristic, getDateUrgencyStatus } from '#lib/utils/date.js';
 
 	interface Props {
 		task: TaskSummary;

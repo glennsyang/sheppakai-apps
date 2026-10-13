@@ -1,24 +1,25 @@
 <script lang="ts">
-	import type { SavingsGoalWithProgress } from '$lib';
-	import Confetti from '$lib/components/Confetti.svelte';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import ContributionModal from '$lib/components/ContributionModal.svelte';
-	import DashboardStatStrip, { type Stat } from '$lib/components/DashboardStatStrip.svelte';
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import PageShell from '$lib/components/PageShell.svelte';
-	import SavingsGoalModal from '$lib/components/SavingsGoalModal.svelte';
-	import SavingsGoalRow from '$lib/components/SavingsGoalRow.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Sheet from '$lib/components/ui/sheet/index.js';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+
+	import type { SavingsGoalWithProgress } from '#lib';
+	import Confetti from '#lib/components/Confetti.svelte';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import ContributionModal from '#lib/components/ContributionModal.svelte';
+	import DashboardStatStrip, { type Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import PageShell from '#lib/components/PageShell.svelte';
+	import SavingsGoalModal from '#lib/components/SavingsGoalModal.svelte';
+	import SavingsGoalRow from '#lib/components/SavingsGoalRow.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Sheet from '#lib/components/ui/sheet/index.js';
 	import {
 		contributionFormContext,
 		contributionSuccessContext,
 		savingsGoalsContext,
 		type ContributionSuccessPayload
-	} from '$lib/contexts';
-	import { formatCurrency } from '$lib/utils';
-	import { formatLocalTimestamp } from '$lib/utils/dates';
-	import PlusIcon from '@lucide/svelte/icons/plus';
+	} from '#lib/contexts/index.js';
+	import { formatCurrency } from '#lib/utils.js';
+	import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
 	import type { PageProps } from './$types';
 	import DataTableActions from './data-table-actions.svelte';

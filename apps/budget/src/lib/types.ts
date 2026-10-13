@@ -1,8 +1,9 @@
-import type { auth } from '$lib/server/auth';
-import type { sessionQueries } from '$lib/server/db/queries';
-import type { QueryRow } from '$lib/server/db/queries/factory';
 import type { UserWithRole } from 'better-auth/plugins';
 import type { Component } from 'svelte';
+
+import type { auth } from '#lib/server/auth.js';
+import type { QueryRow } from '#lib/server/db/queries/factory.js';
+import type { sessionQueries } from '#lib/server/db/queries/index.js';
 
 /**
  * Base props for all modal/dialog components in the application.
@@ -22,7 +23,7 @@ export interface BaseModalProps<T> {
 }
 
 // Entity types are derived from the Drizzle schema plus the relations each query object
-// loads by default (`defaultRelations` in `$lib/server/db/queries`), so schema drift is a
+// loads by default (`defaultRelations` in `#lib/server/db/queries/index.js`), so schema drift is a
 // type error rather than a silent mismatch.
 
 /** The signed-in user as better-auth returns it on `locals.user`. */

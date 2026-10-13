@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: 'admin-by-id' }));
-vi.mock('$lib/server/db/queries', () => ({
+vi.mock('#lib/server/db/queries/index.js', () => ({
 	categoryQueries: { findAll: vi.fn<() => Promise<unknown[]>>(async () => []) }
 }));
-vi.mock('$lib/server/logger', () => ({ logger: { error: vi.fn<() => void>() } }));
+vi.mock('#lib/server/logger.js', () => ({ logger: { error: vi.fn<() => void>() } }));
 
 const { load } = await import('./+layout.server');
 

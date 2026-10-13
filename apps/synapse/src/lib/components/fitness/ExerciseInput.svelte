@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import type { Exercise } from '$lib/types';
 	import { Plus, Trash2 } from '@lucide/svelte';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import type { Exercise } from '#lib/types.js';
 
 	let { exercises = $bindable([]) }: { exercises: Exercise[] } = $props();
 

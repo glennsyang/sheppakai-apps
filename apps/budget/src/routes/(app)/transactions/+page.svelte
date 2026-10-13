@@ -1,23 +1,24 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { Budget, Transaction } from '$lib';
-	import CategoryBudgetProgress from '$lib/components/CategoryBudgetProgress.svelte';
-	import type { Stat } from '$lib/components/DashboardStatStrip.svelte';
-	import MonthlyTablePageShell from '$lib/components/MonthlyTablePageShell.svelte';
-	import TransactionModal from '$lib/components/TransactionModal.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { DataTable } from '$lib/components/ui/data-table';
-	import { Input } from '$lib/components/ui/input';
-	import { getCategoriesContext, transactionFormContext } from '$lib/contexts';
-	import type { transactionSchema } from '$lib/formSchemas';
-	import { formatCurrency, monthNames } from '$lib/utils';
-	import { categoryColorMap } from '$lib/utils/categoryColors';
-	import { formatDayHeading } from '$lib/utils/dates';
-	import { useMonthYearParams } from '$lib/utils/monthYearParams.svelte';
-	import { calculateTransactionSummary } from '$lib/utils/transaction-summary';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import XIcon from '@lucide/svelte/icons/x';
+
+	import type { Budget, Transaction } from '#lib';
+	import CategoryBudgetProgress from '#lib/components/CategoryBudgetProgress.svelte';
+	import type { Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import MonthlyTablePageShell from '#lib/components/MonthlyTablePageShell.svelte';
+	import TransactionModal from '#lib/components/TransactionModal.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { DataTable } from '#lib/components/ui/data-table/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { getCategoriesContext, transactionFormContext } from '#lib/contexts/index.js';
+	import type { transactionSchema } from '#lib/formSchemas/index.js';
+	import { formatCurrency, monthNames } from '#lib/utils.js';
+	import { categoryColorMap } from '#lib/utils/categoryColors.js';
+	import { formatDayHeading } from '#lib/utils/dates.js';
+	import { useMonthYearParams } from '#lib/utils/monthYearParams.svelte.js';
+	import { calculateTransactionSummary } from '#lib/utils/transaction-summary.js';
 
 	import type { PageProps } from './$types';
 	import { createColumns } from './columns';
@@ -59,14 +60,14 @@
 			const url = trimmed
 				? `/transactions?search=${encodeURIComponent(trimmed)}`
 				: `/transactions?month=${monthYear.month}&year=${monthYear.year}`;
-			goto(url, { keepFocus: true, replaceState: true });
+			goto(url, { replace: true, reset: false });
 		}, 500);
 	}
 
 	function clearSearch() {
 		goto(`/transactions?month=${monthYear.month}&year=${monthYear.year}`, {
-			keepFocus: true,
-			replaceState: true
+			replace: true,
+			reset: false
 		});
 	}
 

@@ -51,10 +51,12 @@ const mockEvaluateBudgetAlert = vi.hoisted(() =>
 	vi.fn<(row: InsertedRow) => Promise<void>>(async () => undefined)
 );
 
-vi.mock('$lib/server/db', () => ({ getDb: () => ({ insert: mockInsert }) }));
-vi.mock('$lib/server/db/queries', () => ({ transactionQueries: { findById: mockFindById } }));
-vi.mock('$lib/server/db/schema', () => ({ transaction: {} }));
-vi.mock('$lib/server/notifications/budget-threshold-alerts', () => ({
+vi.mock('#lib/server/db/index.js', () => ({ getDb: () => ({ insert: mockInsert }) }));
+vi.mock('#lib/server/db/queries/index.js', () => ({
+	transactionQueries: { findById: mockFindById }
+}));
+vi.mock('#lib/server/db/schema/index.js', () => ({ transaction: {} }));
+vi.mock('#lib/server/notifications/budget-threshold-alerts.js', () => ({
 	evaluateCreatedTransactionBudgetAlert: mockEvaluateBudgetAlert
 }));
 

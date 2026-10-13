@@ -1,8 +1,9 @@
-import { assertAdmin } from '$lib/server/auth';
-import { getDb } from '$lib/server/db';
-import { apiKey } from '$lib/server/db/schema';
-import { logger } from '$lib/server/logger';
 import { inArray } from 'drizzle-orm';
+
+import { assertAdmin } from '#lib/server/auth.js';
+import { getDb } from '#lib/server/db/index.js';
+import { apiKey } from '#lib/server/db/schema/index.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { PageServerLoad } from './$types';
 import type { AdminApiLogEntry } from './columns';

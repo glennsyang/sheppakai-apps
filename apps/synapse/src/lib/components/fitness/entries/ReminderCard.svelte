@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { daysOfWeek, formatTime12Hour } from '$lib/utils/date';
-	import { getWorkoutBadgeClass, getWorkoutLabel } from '$lib/utils/workout';
 	import { Bell, BellOff, Trash2 } from '@lucide/svelte/icons';
+
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import { daysOfWeek, formatTime12Hour } from '#lib/utils/date.js';
+	import { getWorkoutBadgeClass, getWorkoutLabel } from '#lib/utils/workout.js';
 
 	interface Reminder {
 		id: string;

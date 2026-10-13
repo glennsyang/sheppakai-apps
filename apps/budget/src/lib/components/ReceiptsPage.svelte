@@ -1,19 +1,20 @@
 <script lang="ts">
-	import type { Transaction } from '$lib';
-	import type { Stat } from '$lib/components/DashboardStatStrip.svelte';
-	import MonthlyTablePageShell from '$lib/components/MonthlyTablePageShell.svelte';
-	import TransactionModal from '$lib/components/TransactionModal.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { DataTable } from '$lib/components/ui/data-table';
-	import { getCategoriesContext, transactionFormContext } from '$lib/contexts';
-	import type { transactionSchema } from '$lib/formSchemas';
-	import { formatCurrency, monthNames } from '$lib/utils';
-	import { formatDayHeading } from '$lib/utils/dates';
-	import { useMonthYearParams } from '$lib/utils/monthYearParams.svelte';
-	import type { createReceiptColumns } from '$lib/utils/receipt-columns';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import type { z } from 'zod';
+
+	import type { Transaction } from '#lib';
+	import type { Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import MonthlyTablePageShell from '#lib/components/MonthlyTablePageShell.svelte';
+	import TransactionModal from '#lib/components/TransactionModal.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { DataTable } from '#lib/components/ui/data-table/index.js';
+	import { getCategoriesContext, transactionFormContext } from '#lib/contexts/index.js';
+	import type { transactionSchema } from '#lib/formSchemas/index.js';
+	import { formatCurrency, monthNames } from '#lib/utils.js';
+	import { formatDayHeading } from '#lib/utils/dates.js';
+	import { useMonthYearParams } from '#lib/utils/monthYearParams.svelte.js';
+	import type { createReceiptColumns } from '#lib/utils/receipt-columns.js';
 
 	interface Props {
 		title: string;

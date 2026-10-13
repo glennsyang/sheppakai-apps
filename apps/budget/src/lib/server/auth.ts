@@ -6,11 +6,12 @@ import {
 	NODE_ENV
 } from '$app/env/private';
 import { getRequestEvent } from '$app/server';
-import { logger } from '$lib/server/logger';
 import { apiKey } from '@better-auth/api-key';
 import { parseAllowedEmails } from '@sheppakai/shared/auth-allowlist';
 import { createAppAuth } from '@sheppakai/shared/auth-config';
 import { eq } from 'drizzle-orm';
+
+import { logger } from '#lib/server/logger.js';
 
 import { getDb } from './db';
 import * as schema from './db/schema';
@@ -81,5 +82,5 @@ export const auth = createAppAuth({
 	]
 });
 
-// Kept here for existing `$lib/server/auth` importers; the guard itself is shared.
+// Kept here for existing `#lib/server/auth.js` importers; the guard itself is shared.
 export { assertAdmin } from './actions/auth-guard';

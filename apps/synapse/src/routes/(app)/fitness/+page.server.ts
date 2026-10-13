@@ -1,3 +1,9 @@
+import { redirect } from '@sveltejs/kit';
+import { and, desc, eq } from 'drizzle-orm';
+import { message, setError, superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+import type { z } from 'zod';
+
 import {
 	deleteEntrySchema,
 	logMealSchema,
@@ -13,11 +19,11 @@ import {
 	updateWorkoutSchema,
 	type WorkoutExerciseInput,
 	workoutReminderSchema
-} from '$lib/schemas/fitness';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
-import { createAction, deleteAction, updateAction } from '$lib/server/actions/crud-helpers';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { getDb } from '$lib/server/db';
+} from '#lib/schemas/fitness.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { createAction, deleteAction, updateAction } from '#lib/server/actions/crud-helpers.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { getDb } from '#lib/server/db/index.js';
 import {
 	dailyCalorieTargets,
 	goalWeights,
@@ -26,15 +32,14 @@ import {
 	workoutExercises,
 	workoutLogs,
 	workoutReminders
-} from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
-import { logger } from '$lib/server/logger';
-import { getTodayString } from '$lib/utils/date';
-import { redirect } from '@sveltejs/kit';
-import { and, desc, eq } from 'drizzle-orm';
-import { message, setError, superValidate } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
-import type { z } from 'zod';
+} from '#lib/server/db/schema/index.js';
+import {
+	generateId,
+	withTimestampsForCreate,
+	withTimestampsForUpdate
+} from '#lib/server/db/utils.js';
+import { logger } from '#lib/server/logger.js';
+import { getTodayString } from '#lib/utils/date.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

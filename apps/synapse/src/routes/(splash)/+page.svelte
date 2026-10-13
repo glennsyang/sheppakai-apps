@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { SIGN_IN_ROUTE } from '$lib/auth-routes';
-	import ThemeToggle from '$lib/components/app/ThemeToggle.svelte';
-	import { Button } from '$lib/components/ui/button';
+
+	import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
+	import ThemeToggle from '#lib/components/app/ThemeToggle.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
 
 	const handleSignIn = () => goto(SIGN_IN_ROUTE);
 

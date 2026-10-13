@@ -1,6 +1,7 @@
-import { logger } from '$lib/server/logger';
-import { getTodayString } from '$lib/utils/date';
 import { and, eq, sql } from 'drizzle-orm';
+
+import { logger } from '#lib/server/logger.js';
+import { getTodayString } from '#lib/utils/date.js';
 
 import { getDb } from '../db';
 import { emailNotifications } from '../db/schema';

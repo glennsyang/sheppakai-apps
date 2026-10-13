@@ -1,7 +1,8 @@
-import { getMondayOf } from '$lib/dates';
-import { logger } from '$lib/server/logger';
-import type { MealPlan, MealPlanEntry, MealPlanEntryWithRecipe } from '$lib/types';
 import { eq } from 'drizzle-orm';
+
+import { getMondayOf } from '#lib/dates.js';
+import { logger } from '#lib/server/logger.js';
+import type { MealPlan, MealPlanEntry, MealPlanEntryWithRecipe } from '#lib/types.js';
 
 import { getDb } from '../db';
 import { mealPlans, mealPlanEntries, recipes } from '../db/schema';

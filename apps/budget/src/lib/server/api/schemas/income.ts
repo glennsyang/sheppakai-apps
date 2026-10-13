@@ -1,5 +1,6 @@
-import { incomeSchema } from '$lib/formSchemas';
 import { z } from 'zod';
+
+import { incomeSchema } from '#lib/formSchemas/index.js';
 
 // Reuses the field rules the `income` form action already validates against, so the API
 // and the UI can't drift on what counts as valid income. `id` is server-generated, never

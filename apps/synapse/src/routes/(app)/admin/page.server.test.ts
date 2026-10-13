@@ -14,7 +14,7 @@ function selectChain(): unknown {
 	return chain;
 }
 
-vi.mock('$lib/server/db', () => ({ getDb: mockGetDb }));
+vi.mock('#lib/server/db/index.js', () => ({ getDb: mockGetDb }));
 
 const mockCreateUser = vi.hoisted(() =>
 	vi.fn<(args: { body: Record<string, string> }) => Promise<{ user: { id: string } }>>()
@@ -38,14 +38,14 @@ const mockAdminApi = vi.hoisted(() => ({
 	removeUser: vi.fn<(args: unknown) => Promise<unknown>>()
 }));
 
-vi.mock('$lib/server/auth', () => ({
+vi.mock('#lib/server/auth.js', () => ({
 	auth: { api: { createUser: mockCreateUser, ...mockAdminApi } },
 	allowedEmails: new Set(['admin@example.com', 'allowed@example.com'])
 }));
 
-vi.mock('$lib/server/email', () => ({ sendWelcomeEmail: mockSendWelcomeEmail }));
+vi.mock('#lib/server/email/index.js', () => ({ sendWelcomeEmail: mockSendWelcomeEmail }));
 
-vi.mock('$lib/server/notifications', () => ({ sendAuthAlerts: mockSendAuthAlerts }));
+vi.mock('#lib/server/notifications/index.js', () => ({ sendAuthAlerts: mockSendAuthAlerts }));
 
 const mockLogger = vi.hoisted(() => ({
 	debug: vi.fn<(...args: unknown[]) => void>(),
@@ -54,7 +54,7 @@ const mockLogger = vi.hoisted(() => ({
 	error: vi.fn<(...args: unknown[]) => void>()
 }));
 
-vi.mock('$lib/server/logger', () => ({ logger: mockLogger }));
+vi.mock('#lib/server/logger.js', () => ({ logger: mockLogger }));
 
 const { load, actions } = await import('./+page.server');
 

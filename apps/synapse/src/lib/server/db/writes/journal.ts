@@ -1,10 +1,18 @@
-import { buildWeatherJson } from '$lib/schemas/journal';
-import type { ApiCreateJournalInput, ApiUpdateJournalInput } from '$lib/server/api/schemas/journal';
-import { getDb } from '$lib/server/db';
-import { journalEntries } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { and, eq } from 'drizzle-orm';
+
+import { buildWeatherJson } from '#lib/schemas/journal.js';
+import type {
+	ApiCreateJournalInput,
+	ApiUpdateJournalInput
+} from '#lib/server/api/schemas/journal.js';
+import { getDb } from '#lib/server/db/index.js';
+import { journalEntries } from '#lib/server/db/schema/index.js';
+import {
+	generateId,
+	withTimestampsForCreate,
+	withTimestampsForUpdate
+} from '#lib/server/db/utils.js';
 
 /**
  * Recomputes the `weather` JSON column for a partial update. Since temp/condition are

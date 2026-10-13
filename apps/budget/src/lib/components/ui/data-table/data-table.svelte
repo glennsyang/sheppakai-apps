@@ -15,10 +15,10 @@
 	} from '@tanstack/svelte-table';
 	import type { Snippet } from 'svelte';
 
-	import { features, FlexRender, type Features } from '$lib/components/ui/data-table/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import * as Select from '$lib/components/ui/select/index.js';
+	import { features, FlexRender, type Features } from '#lib/components/ui/data-table/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
 
 	import { Button } from '../button';
 

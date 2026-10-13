@@ -1,9 +1,10 @@
-import type { TaskState } from '$lib/schemas/task';
-import { parseTaskTags } from '$lib/server/actions/string-parsers';
-import { getDb } from '$lib/server/db';
-import { tasks } from '$lib/server/db/schema';
-import { getDateUrgencyStatus, getTodayString } from '$lib/utils/date';
 import { and, asc, eq, like, or } from 'drizzle-orm';
+
+import type { TaskState } from '#lib/schemas/task.js';
+import { parseTaskTags } from '#lib/server/actions/string-parsers.js';
+import { getDb } from '#lib/server/db/index.js';
+import { tasks } from '#lib/server/db/schema/index.js';
+import { getDateUrgencyStatus, getTodayString } from '#lib/utils/date.js';
 
 /**
  * Get all unique tags across the user's tasks

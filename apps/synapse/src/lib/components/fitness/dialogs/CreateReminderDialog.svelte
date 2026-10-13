@@ -1,16 +1,17 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import * as Select from '$lib/components/ui/select';
-	import type { workoutReminderSchema } from '$lib/schemas/fitness';
-	import { daysOfWeek } from '$lib/utils/date';
-	import { workoutTypeOptions } from '$lib/utils/workout';
 	import BellPlusIcon from '@lucide/svelte/icons/bell-plus';
 	import { toast } from 'svelte-sonner';
 	import type { Infer, SuperValidated } from 'sveltekit-superforms';
 	import { superForm } from 'sveltekit-superforms';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import type { workoutReminderSchema } from '#lib/schemas/fitness.js';
+	import { daysOfWeek } from '#lib/utils/date.js';
+	import { workoutTypeOptions } from '#lib/utils/workout.js';
 
 	type WorkoutReminderData = Infer<typeof workoutReminderSchema>;
 

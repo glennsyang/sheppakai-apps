@@ -1,9 +1,10 @@
 <script lang="ts">
-	import * as Chart from '$lib/components/ui/chart/index.js';
-	import type { MonthlyNetflowData } from '$lib/types';
-	import { formatCurrency } from '$lib/utils';
 	import { scaleBand } from 'd3-scale';
 	import { BarChart, Highlight } from 'layerchart';
+
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import type { MonthlyNetflowData } from '#lib/types.js';
+	import { formatCurrency } from '#lib/utils.js';
 
 	interface Props {
 		chartData: MonthlyNetflowData[];

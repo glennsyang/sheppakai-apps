@@ -1,7 +1,8 @@
 import { CRON_SECRET } from '$app/env/private';
-import { runWeeklySummaryEmail } from '$lib/server/jobs/weeklySummaryEmail';
-import { logger } from '$lib/server/logger';
 import { createCronHandler } from '@sheppakai/shared/cron';
+
+import { runWeeklySummaryEmail } from '#lib/server/jobs/weeklySummaryEmail.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

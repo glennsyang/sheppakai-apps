@@ -1,9 +1,9 @@
 <script lang="ts">
-	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
-	import SpendPaceChart from '$lib/components/SpendPaceChart.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { formatCurrency, monthNames } from '$lib/utils';
-	import { getMonthProgress } from '$lib/utils/dates';
+	import InfoTooltip from '#lib/components/InfoTooltip.svelte';
+	import SpendPaceChart from '#lib/components/SpendPaceChart.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { formatCurrency, monthNames } from '#lib/utils.js';
+	import { getMonthProgress } from '#lib/utils/dates.js';
 
 	interface Props {
 		dailyDiscretionary: number;

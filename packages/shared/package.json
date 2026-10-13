@@ -69,7 +69,7 @@
 	"peerDependencies": {
 		"@getbrevo/brevo": "^6",
 		"@sentry/sveltekit": "^11",
-		"@sveltejs/kit": "^2",
+		"@sveltejs/kit": "^3",
 		"better-auth": "^1",
 		"better-sqlite3": "^13",
 		"clsx": "^2",

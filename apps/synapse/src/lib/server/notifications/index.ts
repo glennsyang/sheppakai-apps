@@ -1,6 +1,7 @@
 import { AUTH_ALERTS_URL, REMINDER_ALERTS_URL } from '$app/env/private';
-import { logger } from '$lib/server/logger';
 import { sendNtfy } from '@sheppakai/shared/ntfy';
+
+import { logger } from '#lib/server/logger.js';
 
 /**
  * Sends a notification to your phone

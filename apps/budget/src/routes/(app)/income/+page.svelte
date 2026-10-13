@@ -1,14 +1,15 @@
 <script lang="ts">
-	import type { Stat } from '$lib/components/DashboardStatStrip.svelte';
-	import IncomeModal from '$lib/components/IncomeModal.svelte';
-	import MonthlyTablePageShell from '$lib/components/MonthlyTablePageShell.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { DataTable } from '$lib/components/ui/data-table';
-	import { incomeFormContext } from '$lib/contexts';
-	import { formatCurrency, monthNames } from '$lib/utils';
-	import { formatDayHeading } from '$lib/utils/dates';
-	import { useMonthYearParams } from '$lib/utils/monthYearParams.svelte';
 	import PlusIcon from '@lucide/svelte/icons/plus';
+
+	import type { Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import IncomeModal from '#lib/components/IncomeModal.svelte';
+	import MonthlyTablePageShell from '#lib/components/MonthlyTablePageShell.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { DataTable } from '#lib/components/ui/data-table/index.js';
+	import { incomeFormContext } from '#lib/contexts/index.js';
+	import { formatCurrency, monthNames } from '#lib/utils.js';
+	import { formatDayHeading } from '#lib/utils/dates.js';
+	import { useMonthYearParams } from '#lib/utils/monthYearParams.svelte.js';
 
 	import type { PageProps } from './$types';
 	import { columns } from './columns';

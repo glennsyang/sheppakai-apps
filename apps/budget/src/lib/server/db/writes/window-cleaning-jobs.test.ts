@@ -24,11 +24,11 @@ const mockFindById = vi.hoisted(() =>
 	}))
 );
 
-vi.mock('$lib/server/db', () => ({ getDb: () => ({ insert: mockInsert }) }));
-vi.mock('$lib/server/db/queries', () => ({
+vi.mock('#lib/server/db/index.js', () => ({ getDb: () => ({ insert: mockInsert }) }));
+vi.mock('#lib/server/db/queries/index.js', () => ({
 	windowCleaningJobQueries: { findById: mockFindById }
 }));
-vi.mock('$lib/server/db/schema', () => ({ windowCleaningJob: {} }));
+vi.mock('#lib/server/db/schema/index.js', () => ({ windowCleaningJob: {} }));
 
 import { createWindowCleaningJob, toWindowCleaningJobRow } from './window-cleaning-jobs';
 

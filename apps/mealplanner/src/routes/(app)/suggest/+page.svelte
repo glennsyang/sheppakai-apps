@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import Icon from '$lib/components/Icon.svelte';
-	import RecipeDrawer from '$lib/components/RecipeDrawer.svelte';
-	import SuggestionCard from '$lib/components/SuggestionCard.svelte';
-	import { Alert } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import { mealSuggestionListSchema } from '$lib/schemas/mealPlan';
-	import { magnetTilt } from '$lib/tilt';
-	import type { MealSuggestion } from '$lib/types';
 	import { autoAnimate } from '@formkit/auto-animate';
+
+	import Icon from '#lib/components/Icon.svelte';
+	import RecipeDrawer from '#lib/components/RecipeDrawer.svelte';
+	import SuggestionCard from '#lib/components/SuggestionCard.svelte';
+	import { Alert } from '#lib/components/ui/alert/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { mealSuggestionListSchema } from '#lib/schemas/mealPlan.js';
+	import { magnetTilt } from '#lib/tilt.js';
+	import type { MealSuggestion } from '#lib/types.js';
 
 	import type { PageData } from './$types';
 

@@ -1,11 +1,12 @@
-// The handler itself is tested in @sheppakai/shared. This guards the app-side contract:
-// both payload shapes must render in this app's AuthFormMessage banner.
-import AuthFormMessage from '$lib/components/AuthFormMessage.svelte';
 import { render } from 'svelte/server';
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+
+// The handler itself is tested in @sheppakai/shared. This guards the app-side contract:
+// both payload shapes must render in this app's AuthFormMessage banner.
+import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
 
 import { handleAuthFormAction, invalidAuthForm } from './auth-form-handler';
 

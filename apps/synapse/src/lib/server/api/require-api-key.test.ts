@@ -15,7 +15,7 @@ vi.mock('../auth', () => ({
 
 vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: 'env-admin' }));
 
-vi.mock('$lib/server/db', () => {
+vi.mock('#lib/server/db/index.js', () => {
 	const chain = {
 		select: () => chain,
 		from: () => chain,
@@ -28,7 +28,7 @@ vi.mock('$lib/server/db', () => {
 	return { getDb: () => chain };
 });
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		warn: vi.fn<(...args: unknown[]) => void>(),
 		error: vi.fn<(...args: unknown[]) => void>(),

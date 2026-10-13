@@ -1,9 +1,10 @@
-import { getDb } from '$lib/server/db';
-import { windowCleaningCustomerQueries } from '$lib/server/db/queries';
-import { windowCleaningCustomer } from '$lib/server/db/schema';
-import { withUpdatedAt } from '$lib/server/db/utils';
-import type { WindowCleaningCustomer } from '$lib/types';
 import { eq } from 'drizzle-orm';
+
+import { getDb } from '#lib/server/db/index.js';
+import { windowCleaningCustomerQueries } from '#lib/server/db/queries/index.js';
+import { windowCleaningCustomer } from '#lib/server/db/schema/index.js';
+import { withUpdatedAt } from '#lib/server/db/utils.js';
+import type { WindowCleaningCustomer } from '#lib/types.js';
 
 export type WindowCleaningCustomerInput = {
 	name: string;

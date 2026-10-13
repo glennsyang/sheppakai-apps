@@ -1,8 +1,8 @@
 <script lang="ts">
-	import AdminUsersTable from '$lib/components/admin/AdminUsersTable.svelte';
-	import CreateUserForm from '$lib/components/admin/CreateUserForm.svelte';
-	import type { AdminUser } from '$lib/components/admin/types';
-	import { Alert } from '$lib/components/ui/alert';
+	import AdminUsersTable from '#lib/components/admin/AdminUsersTable.svelte';
+	import CreateUserForm from '#lib/components/admin/CreateUserForm.svelte';
+	import type { AdminUser } from '#lib/components/admin/types.js';
+	import { Alert } from '#lib/components/ui/alert/index.js';
 
 	import type { ActionData, PageData } from './$types';
 

@@ -1,8 +1,8 @@
-import { getDb } from '$lib/server/db';
-import { contributionQueries } from '$lib/server/db/queries';
-import { contribution } from '$lib/server/db/schema';
-import type { Contribution } from '$lib/types';
-import { formatDateForStorage } from '$lib/utils/dates';
+import { getDb } from '#lib/server/db/index.js';
+import { contributionQueries } from '#lib/server/db/queries/index.js';
+import { contribution } from '#lib/server/db/schema/index.js';
+import type { Contribution } from '#lib/types.js';
+import { formatDateForStorage } from '#lib/utils/dates.js';
 
 export type CreateContributionInput = {
 	amount: number;

@@ -1,5 +1,6 @@
-import { formatDateMedium } from '$lib/utils/date';
 import { escapeHtml, renderEmailLayout } from '@sheppakai/shared/email';
+
+import { formatDateMedium } from '#lib/utils/date.js';
 
 export const TASKS_DUE_TODAY_NOTIFICATION_TYPE = 'tasks_due_today_digest';
 export const TASKS_DUE_TODAY_DIGEST_TAGS = 'round_pushpin';
