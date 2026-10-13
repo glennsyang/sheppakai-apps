@@ -5,7 +5,7 @@ packages:
 catalog:
   '@better-auth/api-key': ^1.7.7
   '@flydotio/dockerfile': ^0.7.10
-  '@getbrevo/brevo': ^6.0.3
+  '@getbrevo/brevo': ^6.1.0
   '@internationalized/date': ^3.12.4
   '@lucide/svelte': ^1.56.0
   '@sentry/sveltekit': ^11.7.0
