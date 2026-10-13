@@ -1,16 +1,17 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
-	import PageShell from '$lib/components/app/PageShell.svelte';
-	import JournalEntryCard from '$lib/components/journal/JournalEntryCard.svelte';
-	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
-	import PageSkeleton from '$lib/components/skeletons/PageSkeleton.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Collapsible from '$lib/components/ui/collapsible';
-	import { Input } from '$lib/components/ui/input';
-	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { Calendar, CircleX, ListFilter, Plus, Search } from '@lucide/svelte';
 	import { onDestroy } from 'svelte';
+
+	import PageShell from '#lib/components/app/PageShell.svelte';
+	import JournalEntryCard from '#lib/components/journal/JournalEntryCard.svelte';
+	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
+	import PageSkeleton from '#lib/components/skeletons/PageSkeleton.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
 
 	import type { PageData } from './$types';
 
@@ -49,8 +50,8 @@
 	});
 
 	function buildNextUrl(update: (searchParams: URLSearchParams) => void) {
-		const nextUrl = new URL(page.url);
-		const nextParams = new URLSearchParams(page.url.searchParams);
+		const nextUrl = new URL(page.url.href);
+		const nextParams = new URLSearchParams(page.url.search);
 
 		update(nextParams);
 
@@ -101,7 +102,7 @@
 		});
 
 		try {
-			await goto(nextUrl.toString(), { replaceState: true, noScroll: true, keepFocus: true });
+			await goto(nextUrl.toString(), { replace: true, reset: false });
 		} finally {
 			contentDirty = false;
 		}
@@ -122,7 +123,7 @@
 			}
 		});
 
-		await goto(nextUrl.toString(), { replaceState: true, noScroll: true, keepFocus: true });
+		await goto(nextUrl.toString(), { replace: true, reset: false });
 	}
 </script>
 

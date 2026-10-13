@@ -1,12 +1,13 @@
 <script lang="ts">
-	import type { SavingsGoalWithProgress } from '$lib';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
-	import StatusBadge from '$lib/components/table/StatusBadge.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { formatCurrency } from '$lib/utils';
-	import { formatLocalTimestamp } from '$lib/utils/dates';
 	import PlusIcon from '@lucide/svelte/icons/plus';
+
+	import type { SavingsGoalWithProgress } from '#lib';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import StatusBadge from '#lib/components/table/StatusBadge.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { formatCurrency } from '#lib/utils.js';
+	import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
 	interface Props {
 		goal: SavingsGoalWithProgress;

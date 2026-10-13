@@ -2,35 +2,39 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import type { MonthlyNetflowData, SpendingBreakdownData } from '$lib';
-	import BudgetAlertRow from '$lib/components/BudgetAlertRow.svelte';
-	import CardGridSkeleton from '$lib/components/CardGridSkeleton.svelte';
-	import CategoryAnomalyAlert from '$lib/components/CategoryAnomalyAlert.svelte';
-	import CategoryBudgetList from '$lib/components/CategoryBudgetList.svelte';
-	import CategoryTransactionSheet from '$lib/components/CategoryTransactionSheet.svelte';
-	import DashboardCustomizePopover from '$lib/components/DashboardCustomizePopover.svelte';
-	import DashboardStatStrip, { type Stat } from '$lib/components/DashboardStatStrip.svelte';
-	import GoalsSummaryStrip from '$lib/components/GoalsSummaryStrip.svelte';
-	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import MonthDetailCard from '$lib/components/MonthDetailCard.svelte';
-	import MonthlyCategoryChart from '$lib/components/MonthlyCategoryChart.svelte';
-	import MonthlyNetSavingsCard from '$lib/components/MonthlyNetSavingsCard.svelte';
-	import RecurringExpensesCard from '$lib/components/RecurringExpensesCard.svelte';
-	import SafeToSpendHeroBand from '$lib/components/SafeToSpendHeroBand.svelte';
-	import SpendingBreakdownChart from '$lib/components/SpendingBreakdownChart.svelte';
-	import TransactionModal from '$lib/components/TransactionModal.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
-	import * as Select from '$lib/components/ui/select/index.js';
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import UpcomingBillsCard from '$lib/components/UpcomingBillsCard.svelte';
-	import YearOverviewHero from '$lib/components/YearOverviewHero.svelte';
-	import { getCategoriesContext } from '$lib/contexts';
-	import { dashboardSectionsForMode } from '$lib/dashboardSections';
-	import { formatCurrency, monthNames, months } from '$lib/utils';
-	import { computeCashFlowProjection } from '$lib/utils/cashFlowProjection';
-	import { categoryColorMap } from '$lib/utils/categoryColors';
+	import { ChevronDownIcon } from '@lucide/svelte';
+	import { PlusIcon } from '@lucide/svelte/icons';
+	import { SvelteMap } from 'svelte/reactivity';
+
+	import type { MonthlyNetflowData, SpendingBreakdownData } from '#lib';
+	import BudgetAlertRow from '#lib/components/BudgetAlertRow.svelte';
+	import CardGridSkeleton from '#lib/components/CardGridSkeleton.svelte';
+	import CategoryAnomalyAlert from '#lib/components/CategoryAnomalyAlert.svelte';
+	import CategoryBudgetList from '#lib/components/CategoryBudgetList.svelte';
+	import CategoryTransactionSheet from '#lib/components/CategoryTransactionSheet.svelte';
+	import DashboardCustomizePopover from '#lib/components/DashboardCustomizePopover.svelte';
+	import DashboardStatStrip, { type Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import GoalsSummaryStrip from '#lib/components/GoalsSummaryStrip.svelte';
+	import InfoTooltip from '#lib/components/InfoTooltip.svelte';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import MonthDetailCard from '#lib/components/MonthDetailCard.svelte';
+	import MonthlyCategoryChart from '#lib/components/MonthlyCategoryChart.svelte';
+	import MonthlyNetSavingsCard from '#lib/components/MonthlyNetSavingsCard.svelte';
+	import RecurringExpensesCard from '#lib/components/RecurringExpensesCard.svelte';
+	import SafeToSpendHeroBand from '#lib/components/SafeToSpendHeroBand.svelte';
+	import SpendingBreakdownChart from '#lib/components/SpendingBreakdownChart.svelte';
+	import TransactionModal from '#lib/components/TransactionModal.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import UpcomingBillsCard from '#lib/components/UpcomingBillsCard.svelte';
+	import YearOverviewHero from '#lib/components/YearOverviewHero.svelte';
+	import { getCategoriesContext } from '#lib/contexts/index.js';
+	import { dashboardSectionsForMode } from '#lib/dashboardSections.js';
+	import { formatCurrency, monthNames, months } from '#lib/utils.js';
+	import { computeCashFlowProjection } from '#lib/utils/cashFlowProjection.js';
+	import { categoryColorMap } from '#lib/utils/categoryColors.js';
 	import {
 		getCurrentPacificMonthYear,
 		getMonthProgress,
@@ -38,27 +42,16 @@
 		padMonth,
 		parseMonthParam,
 		parseYearParam
-	} from '$lib/utils/dates';
-	import { usePendingReload } from '$lib/utils/pendingNavigation.svelte';
-	import { ChevronDownIcon } from '@lucide/svelte';
-	import { PlusIcon } from '@lucide/svelte/icons';
-	import { SvelteMap } from 'svelte/reactivity';
+	} from '#lib/utils/dates.js';
+	import { usePendingReload } from '#lib/utils/pendingNavigation.svelte.js';
 
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	type YearlyView = 'current' | 'full';
 	type DashboardNavigationState =
-		| {
-				mode: 'monthly';
-				month: string;
-				year: string;
-		  }
-		| {
-				mode: 'yearly';
-				view: YearlyView;
-				year: string;
-		  };
+		| { mode: 'monthly'; month: string; year: string }
+		| { mode: 'yearly'; view: YearlyView; year: string };
 
 	const { month: currentMonth, year: currentYear } = getCurrentPacificMonthYear();
 
@@ -93,7 +86,7 @@
 	let openLogExpenseModal = $state(false);
 
 	const categories = getCategoriesContext();
-	const dashboardPath = resolve('/dashboard');
+	const dashboardPath = resolve('dashboard');
 
 	// Mode/month/year changes are same-route navigations: keep the controls
 	// interactive and skeleton the body, which re-derives entirely from `data`.
@@ -118,7 +111,7 @@
 	}
 
 	function navigateDashboard(state: DashboardNavigationState) {
-		goto(buildDashboardUrl(state), { keepFocus: true, replaceState: true });
+		goto(buildDashboardUrl(state), { replace: true, reset: false });
 	}
 
 	let filteredTransactions = $derived(
@@ -234,9 +227,12 @@
 		const previous = series[series.length - 2].value;
 		const current = series[series.length - 1].value;
 		if (previous <= 0) return undefined;
+
 		const pctChange = ((current - previous) / previous) * 100;
+
 		if (Math.abs(pctChange) < TREND_EPSILON)
 			return { direction: 'flat', label: 'flat vs last month' };
+
 		const direction = pctChange > 0 ? 'up' : 'down';
 		const verb = direction === 'up' ? 'more spent' : 'less spent';
 		return { direction, label: `${Math.abs(pctChange).toFixed(0)}% ${verb} vs last month` };
@@ -335,27 +331,32 @@
 
 	// Net balance and budget pct for KPI cards
 	let netBalance = $derived((data.totalIncome || 0) - (data.actualExpensesTotal || 0));
+
 	let budgetPct = $derived(
 		data.plannedExpensesTotal && data.plannedExpensesTotal > 0
 			? Math.min(((data.actualExpensesTotal || 0) / data.plannedExpensesTotal) * 100, 999)
 			: 0
 	);
+
 	let nonRecurringActual = $derived(
 		Math.max(0, (data.actualExpensesTotal || 0) - recurringMonthlyTotal)
 	);
 	let nonRecurringBudgetPlanned = $derived(
 		Math.max(0, (data.plannedExpensesTotal || 0) - recurringMonthlyTotal)
 	);
+
 	let nonRecurringBudgetPct = $derived(
 		nonRecurringBudgetPlanned > 0
 			? Math.min((nonRecurringActual / nonRecurringBudgetPlanned) * 100, 999)
 			: 0
 	);
+
 	let recurringBurdenPct = $derived(
 		data.totalIncome && data.totalIncome > 0
 			? Math.min((recurringMonthlyTotal / data.totalIncome) * 100, 100)
 			: 0
 	);
+
 	let goalsWithProgress = $derived(data.goalsWithProgress || []);
 	let totalGoalsSaved = $derived(goalsWithProgress.reduce((acc, g) => acc + g.currentAmount, 0));
 	let totalGoalsTarget = $derived(goalsWithProgress.reduce((acc, g) => acc + g.targetAmount, 0));
@@ -485,7 +486,12 @@
 	// YTD net balance (yearly view)
 	let yearlyStats: Stat[] = $derived.by(() => {
 		const stats: Stat[] = [
-			{ label: 'Income', value: formatCurrency(data.totalIncome || 0), subtext: 'year to date' },
+			{
+				label: 'Income',
+				value: formatCurrency(data.totalIncome || 0),
+				subtext: 'year to date'
+			},
+
 			{
 				label: 'Spent',
 				value: formatCurrency(data.actualExpensesTotal || 0),

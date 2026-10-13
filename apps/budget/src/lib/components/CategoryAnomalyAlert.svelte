@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import type { CategoryAnomaly } from '$lib/types';
 	import { TrendingUpIcon } from '@lucide/svelte/icons';
+
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import type { CategoryAnomaly } from '#lib/types.js';
 
 	interface Props {
 		anomalies: CategoryAnomaly[];

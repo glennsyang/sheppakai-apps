@@ -1,5 +1,6 @@
-import { MAX_WORKOUT_EXERCISES } from '$lib/schemas/fitness';
 import { z } from 'zod';
+
+import { MAX_WORKOUT_EXERCISES } from '#lib/schemas/fitness.js';
 
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (use YYYY-MM-DD)');
 const timeString = z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format (use HH:MM)');

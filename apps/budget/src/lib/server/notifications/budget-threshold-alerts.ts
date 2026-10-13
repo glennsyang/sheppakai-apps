@@ -1,6 +1,7 @@
-import { formatCurrency } from '$lib/utils';
-import { getMonthDateRange, padMonth } from '$lib/utils/dates';
 import { and, eq, sql } from 'drizzle-orm';
+
+import { formatCurrency } from '#lib/utils.js';
+import { getMonthDateRange, padMonth } from '#lib/utils/dates.js';
 
 import { getDb } from '../db';
 import { budget, transaction } from '../db/schema';

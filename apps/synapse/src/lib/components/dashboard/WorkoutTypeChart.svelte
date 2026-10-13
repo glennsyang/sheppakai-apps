@@ -1,7 +1,8 @@
 <script lang="ts">
-	import * as Chart from '$lib/components/ui/chart/index.js';
-	import { getWorkoutLabel } from '$lib/utils/workout';
 	import { BarChart } from 'layerchart';
+
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import { getWorkoutLabel } from '#lib/utils/workout.js';
 
 	interface WorkoutTypeCount {
 		type: string;

@@ -1,6 +1,11 @@
-import { type Features, renderComponent, renderSnippet } from '$lib/components/ui/data-table';
 import type { ColumnDef } from '@tanstack/table-core';
 import { createRawSnippet } from 'svelte';
+
+import {
+	type Features,
+	renderComponent,
+	renderSnippet
+} from '#lib/components/ui/data-table/index.js';
 
 import DataTableSortButton from './DataTableSortButton.svelte';
 

@@ -1,5 +1,6 @@
-import { windowCleaningJobSchema } from '$lib/formSchemas';
 import { z } from 'zod';
+
+import { windowCleaningJobSchema } from '#lib/formSchemas/index.js';
 
 // Reuses the field rules the job form action already validates against. `id` is
 // server-generated, never accepted from the client.

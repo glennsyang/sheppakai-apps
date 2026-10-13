@@ -19,13 +19,13 @@ const { apiMock, loggerMock, emailMock, alertsMock } = vi.hoisted(() => ({
 	}
 }));
 
-vi.mock('$lib/server/auth', () => ({
+vi.mock('#lib/server/auth/index.js', () => ({
 	auth: { api: apiMock },
 	allowedEmails: new Set(['admin@example.com', 'listed@example.com'])
 }));
-vi.mock('$lib/server/logger', () => ({ logger: loggerMock }));
-vi.mock('$lib/server/email', () => ({ sendAccountCreatedEmail: emailMock }));
-vi.mock('$lib/server/notifications', () => ({ sendAuthAlerts: alertsMock }));
+vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
+vi.mock('#lib/server/email/index.js', () => ({ sendAccountCreatedEmail: emailMock }));
+vi.mock('#lib/server/notifications/index.js', () => ({ sendAuthAlerts: alertsMock }));
 vi.mock('$app/env/private', () => ({
 	BETTER_AUTH_BASE_URL: 'https://app.example.com',
 	ADMIN_USER_IDS: ''

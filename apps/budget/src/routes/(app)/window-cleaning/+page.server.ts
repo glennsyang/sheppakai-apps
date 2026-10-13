@@ -1,18 +1,26 @@
-import { idSchema, windowCleaningCustomerSchema, windowCleaningJobSchema } from '$lib/formSchemas';
-import { requireAuth } from '$lib/server/actions/auth-guard';
-import { createAction, updateAction } from '$lib/server/actions/crud-helpers';
-import { deleteJob, updateJob } from '$lib/server/actions/window-cleaning-jobs';
-import { getDb } from '$lib/server/db';
-import { windowCleaningCustomerQueries, windowCleaningJobQueries } from '$lib/server/db/queries';
-import { windowCleaningCustomer, windowCleaningJob } from '$lib/server/db/schema';
-import { withUpdatedAt } from '$lib/server/db/utils';
-import { toWindowCleaningCustomerRow } from '$lib/server/db/writes/window-cleaning-customers';
-import { toWindowCleaningJobRow } from '$lib/server/db/writes/window-cleaning-jobs';
-import { logger } from '$lib/server/logger';
-import type { WindowCleaningJob } from '$lib/types';
 import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import {
+	idSchema,
+	windowCleaningCustomerSchema,
+	windowCleaningJobSchema
+} from '#lib/formSchemas/index.js';
+import { requireAuth } from '#lib/server/actions/auth-guard.js';
+import { createAction, updateAction } from '#lib/server/actions/crud-helpers.js';
+import { deleteJob, updateJob } from '#lib/server/actions/window-cleaning-jobs.js';
+import { getDb } from '#lib/server/db/index.js';
+import {
+	windowCleaningCustomerQueries,
+	windowCleaningJobQueries
+} from '#lib/server/db/queries/index.js';
+import { windowCleaningCustomer, windowCleaningJob } from '#lib/server/db/schema/index.js';
+import { withUpdatedAt } from '#lib/server/db/utils.js';
+import { toWindowCleaningCustomerRow } from '#lib/server/db/writes/window-cleaning-customers.js';
+import { toWindowCleaningJobRow } from '#lib/server/db/writes/window-cleaning-jobs.js';
+import { logger } from '#lib/server/logger.js';
+import type { WindowCleaningJob } from '#lib/types.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

@@ -1,15 +1,16 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Separator from '$lib/components/ui/separator/index.js';
-	import type { Recurring } from '$lib/types';
-	import { formatCurrency } from '$lib/utils';
-	import { getCurrentPeriodDueDate, getDaysUntilDue } from '$lib/utils/dates';
+	import { refreshAll } from '$app/navigation';
 	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
+
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Separator from '#lib/components/ui/separator/index.js';
+	import type { Recurring } from '#lib/types.js';
+	import { formatCurrency } from '#lib/utils.js';
+	import { getCurrentPeriodDueDate, getDaysUntilDue } from '#lib/utils/dates.js';
 
 	interface Props {
 		recurring: Recurring[];
@@ -81,7 +82,7 @@
 									togglingId = item.id;
 									return async ({ result, update }) => {
 										if (result.type === 'success') {
-											await invalidateAll();
+											await refreshAll();
 										} else {
 											const { text } = actionMessage(result, {
 												success: 'Marked as paid',
@@ -89,7 +90,8 @@
 											});
 											toast.error(text);
 										}
-										await update();
+										// Stay on this page even when the action lives on another route (SvelteKit 3 navigates by default).
+										await update({ navigate: false });
 										togglingId = null;
 									};
 								}}

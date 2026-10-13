@@ -1,21 +1,22 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { personSchema, scheduleVisitSchema, visitSchema } from '$lib/schemas/visits';
-	import { formatDateLong, formatDateShort } from '$lib/utils/date';
-	import { getStatusLabel } from '$lib/utils/visit-status';
 	import { Archive, ArrowLeft, Calendar, CalendarClock, Pencil, Trash2 } from '@lucide/svelte';
 	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
+
+	import ConfirmDialog from '#lib/components/shared/ConfirmDialog.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import { personSchema, scheduleVisitSchema, visitSchema } from '#lib/schemas/visits.js';
+	import { formatDateLong, formatDateShort } from '#lib/utils/date.js';
+	import { getStatusLabel } from '#lib/utils/visit-status.js';
 
 	import type { PageData } from './$types';
 

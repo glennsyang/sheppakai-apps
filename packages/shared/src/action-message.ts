@@ -1,4 +1,4 @@
-import type { ActionResult } from '@sveltejs/kit';
+import type { ActionResult } from '$app/forms';
 
 function isMessage(value: unknown): value is App.Superforms.Message {
 	if (typeof value !== 'object' || value === null) {
@@ -32,10 +32,9 @@ export function actionMessage(
 	}
 
 	if (result.type === 'error') {
-		return {
-			type: 'error',
-			text: result.error instanceof Error ? result.error.message : fallbacks.error
-		};
+		// App.Error from handleError: a sanitized, generic message, so the action-specific
+		// fallback reads better.
+		return { type: 'error', text: fallbacks.error };
 	}
 
 	const data = result.data as { form?: { message?: unknown }; error?: unknown } | undefined;

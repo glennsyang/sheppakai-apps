@@ -1,13 +1,14 @@
-import { deleteSessionSchema, editSessionSchema } from '$lib/schemas/meditation';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { getDb } from '$lib/server/db';
-import { meditationSessions } from '$lib/server/db/schema';
-import { withTimestampsForUpdate } from '$lib/server/db/utils';
-import { logger } from '$lib/server/logger';
-import { parseAppDateTime } from '$lib/utils/date';
 import { and, eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { deleteSessionSchema, editSessionSchema } from '#lib/schemas/meditation.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { getDb } from '#lib/server/db/index.js';
+import { meditationSessions } from '#lib/server/db/schema/index.js';
+import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
+import { logger } from '#lib/server/logger.js';
+import { parseAppDateTime } from '#lib/utils/date.js';
 
 export async function handleUpdateSession(request: Request, userId: string) {
 	const form = await superValidate(request, zod4(editSessionSchema));

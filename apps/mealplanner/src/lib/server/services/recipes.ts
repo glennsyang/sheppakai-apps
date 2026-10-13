@@ -1,8 +1,9 @@
-import { storedIngredientListSchema, storedInstructionListSchema } from '$lib/schemas/mealPlan';
-import { logger } from '$lib/server/logger';
-import type { Recipe, Ingredient, RecipeSource } from '$lib/types';
 import { eq } from 'drizzle-orm';
 import type { z } from 'zod';
+
+import { storedIngredientListSchema, storedInstructionListSchema } from '#lib/schemas/mealPlan.js';
+import { logger } from '#lib/server/logger.js';
+import type { Recipe, Ingredient, RecipeSource } from '#lib/types.js';
 
 import { getDb } from '../db';
 import { recipes } from '../db/schema';

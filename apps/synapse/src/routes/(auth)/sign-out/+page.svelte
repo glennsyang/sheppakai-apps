@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Button } from '$lib/components/ui/button';
+
+	import { Button } from '#lib/components/ui/button/index.js';
 </script>
 
 <div class="bg-muted flex min-h-screen items-center justify-center">

@@ -1,5 +1,6 @@
-import type { SidebarNav } from '$lib/types';
 import { Book, Dumbbell, Heart, House, Shield, SquareCheck, Users } from '@lucide/svelte/icons';
+
+import type { SidebarNav } from '#lib/types.js';
 
 export const navItems: SidebarNav = {
 	navMain: [

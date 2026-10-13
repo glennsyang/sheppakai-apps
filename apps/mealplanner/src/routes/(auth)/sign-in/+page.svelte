@@ -1,14 +1,15 @@
 <script lang="ts">
-	import { FORGOT_PASSWORD_ROUTE } from '$lib/auth-routes';
-	import AuthFormMessage from '$lib/components/AuthFormMessage.svelte';
-	import AuthShell from '$lib/components/AuthShell.svelte';
-	import { Alert } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { signInSchema } from '$lib/schemas/auth';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
+
+	import { FORGOT_PASSWORD_ROUTE } from '#lib/auth-routes.js';
+	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
+	import AuthShell from '#lib/components/AuthShell.svelte';
+	import { Alert } from '#lib/components/ui/alert/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { signInSchema } from '#lib/schemas/auth.js';
 
 	import type { PageData } from './$types';
 

@@ -1,17 +1,18 @@
-import { getUser } from '$lib/server/actions/auth-guard';
-import { getDb } from '$lib/server/db';
-import { people, visits } from '$lib/server/db/schema';
-import { logger } from '$lib/server/logger';
-import { getVisitStatusThresholdsForUser } from '$lib/server/visit-status-settings';
-import { getTodayString } from '$lib/utils/date';
-import { safeParse } from '$lib/utils/json';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+
+import { getUser } from '#lib/server/actions/auth-guard.js';
+import { getDb } from '#lib/server/db/index.js';
+import { people, visits } from '#lib/server/db/schema/index.js';
+import { logger } from '#lib/server/logger.js';
+import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
+import { getTodayString } from '#lib/utils/date.js';
+import { safeParse } from '#lib/utils/json.js';
 import {
 	calculatePersonVisitStatus,
 	getEffectiveFollowUpDate,
 	getStatusPriority,
 	type PersonWithStatus
-} from '$lib/utils/visit-status';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+} from '#lib/utils/visit-status.js';
 
 import type { PageServerLoad } from './$types';
 

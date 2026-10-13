@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { formatCurrency, formatCurrencyRounded, monthNames } from '$lib/utils';
+
+	import { formatCurrency, formatCurrencyRounded, monthNames } from '#lib/utils.js';
 
 	interface Props {
 		/** Discretionary transactions for the month (recurring excluded). */
@@ -127,8 +128,9 @@
 		>
 			<defs>
 				<linearGradient id="pace-fill" x1="0" x2="0" y1="0" y2="1">
-					<stop offset="0%" stop-color="var(--foreground)" stop-opacity="0.1" />
-					<stop offset="100%" stop-color="var(--foreground)" stop-opacity="0" />
+					<stop offset="0%" stop-color="var(--foreground)" stop-opacity="0.1"></stop>
+
+					<stop offset="100%" stop-color="var(--foreground)" stop-opacity="0"></stop>
 				</linearGradient>
 			</defs>
 			<line
@@ -138,7 +140,7 @@
 				y2="100"
 				class="stroke-border"
 				vector-effect="non-scaling-stroke"
-			/>
+			></line>
 			<line
 				x1="0"
 				x2="100"
@@ -147,7 +149,7 @@
 				class="stroke-border"
 				stroke-dasharray="2 4"
 				vector-effect="non-scaling-stroke"
-			/>
+			></line>
 			<line
 				x1="0"
 				y1={y(0)}
@@ -157,9 +159,9 @@
 				stroke-width="1.5"
 				stroke-dasharray="4 4"
 				vector-effect="non-scaling-stroke"
-			/>
+			></line>
 			{#if areaPath}
-				<path d={areaPath} fill="url(#pace-fill)" />
+				<path d={areaPath} fill="url(#pace-fill)"></path>
 				<path
 					d={actualPath}
 					fill="none"
@@ -167,7 +169,7 @@
 					stroke-width="2"
 					stroke-linejoin="round"
 					vector-effect="non-scaling-stroke"
-				/>
+				></path>
 			{/if}
 			{#if scrubDay !== null}
 				<line
@@ -177,7 +179,7 @@
 					y2="100"
 					class="stroke-foreground/25"
 					vector-effect="non-scaling-stroke"
-				/>
+				></line>
 			{/if}
 		</svg>
 
@@ -233,7 +235,7 @@
 		<p class="text-muted-foreground text-sm">
 			No discretionary budget set for {monthNames[month - 1]}.
 			<a
-				href={resolve('/budget')}
+				href={resolve('budget')}
 				class="text-primary font-medium underline-offset-4 hover:underline">Set one</a
 			>
 			to see your pace.

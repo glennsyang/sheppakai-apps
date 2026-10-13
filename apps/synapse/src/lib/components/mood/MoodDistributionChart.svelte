@@ -1,8 +1,9 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import * as Chart from '$lib/components/ui/chart';
 	import PieChartIcon from '@lucide/svelte/icons/chart-pie';
 	import { PieChart } from 'layerchart';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
 
 	interface MoodDistributionPoint {
 		mood: string;

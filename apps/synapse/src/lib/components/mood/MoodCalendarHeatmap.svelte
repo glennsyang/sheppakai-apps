@@ -1,9 +1,10 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { parseLocalDateString, toLocalDateString } from '$lib/utils/date';
-	import { getMoodScoreLabel } from '$lib/utils/mood';
 	import CalendarIcon from '@lucide/svelte/icons/calendar-days';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import { parseLocalDateString, toLocalDateString } from '#lib/utils/date.js';
+	import { getMoodScoreLabel } from '#lib/utils/mood.js';
 
 	interface CalendarLog {
 		date: string;

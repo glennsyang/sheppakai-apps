@@ -1,6 +1,7 @@
-import { meditationRoutines } from '$lib/server/db/schema';
 import { and, eq, like, or } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { meditationRoutines } from '#lib/server/db/schema/index.js';
 
 const mockRoutinesFindMany = vi.hoisted(() =>
 	vi.fn<(args: unknown) => Promise<unknown[]>>(async () => [])
@@ -12,7 +13,7 @@ const mockSessionsFindMany = vi.hoisted(() =>
 	vi.fn<(args: unknown) => Promise<unknown[]>>(async () => [])
 );
 
-vi.mock('$lib/server/db', () => ({
+vi.mock('#lib/server/db/index.js', () => ({
 	getDb: () => ({
 		query: {
 			meditationRoutines: { findMany: mockRoutinesFindMany },
@@ -22,7 +23,7 @@ vi.mock('$lib/server/db', () => ({
 	})
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<(...args: unknown[]) => void>(),
 		info: vi.fn<(...args: unknown[]) => void>(),

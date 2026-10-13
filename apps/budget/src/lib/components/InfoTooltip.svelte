@@ -1,7 +1,8 @@
 <script lang="ts">
-	import * as Popover from '$lib/components/ui/popover/index.js';
-	import { cn } from '$lib/utils.js';
 	import InfoIcon from '@lucide/svelte/icons/info';
+
+	import * as Popover from '#lib/components/ui/popover/index.js';
+	import { cn } from '#lib/utils.js';
 
 	interface Props {
 		text: string;

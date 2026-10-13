@@ -1,8 +1,9 @@
 import { GEMINI_API_KEY } from '$app/env/private';
-import { pickValidSuggestions } from '$lib/schemas/mealPlan';
-import { logger } from '$lib/server/logger';
-import type { MealSuggestion } from '$lib/types';
 import { GoogleGenAI, Type } from '@google/genai';
+
+import { pickValidSuggestions } from '#lib/schemas/mealPlan.js';
+import { logger } from '#lib/server/logger.js';
+import type { MealSuggestion } from '#lib/types.js';
 
 import { sanitizePromptText } from './promptSafety';
 

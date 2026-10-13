@@ -1,12 +1,13 @@
 <script lang="ts">
-	import CardGridSkeleton from '$lib/components/CardGridSkeleton.svelte';
-	import DashboardStatStrip, { type Stat } from '$lib/components/DashboardStatStrip.svelte';
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import PageShell from '$lib/components/PageShell.svelte';
-	import PeriodPicker from '$lib/components/PeriodPicker.svelte';
-	import TableSkeleton from '$lib/components/TableSkeleton.svelte';
-	import { usePendingReload } from '$lib/utils/pendingNavigation.svelte';
 	import type { Snippet } from 'svelte';
+
+	import CardGridSkeleton from '#lib/components/CardGridSkeleton.svelte';
+	import DashboardStatStrip, { type Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import PageShell from '#lib/components/PageShell.svelte';
+	import PeriodPicker from '#lib/components/PeriodPicker.svelte';
+	import TableSkeleton from '#lib/components/TableSkeleton.svelte';
+	import { usePendingReload } from '#lib/utils/pendingNavigation.svelte.js';
 
 	interface Props {
 		title: string;

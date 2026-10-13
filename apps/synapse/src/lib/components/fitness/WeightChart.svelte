@@ -1,10 +1,11 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import * as Chart from '$lib/components/ui/chart/index.js';
 	import { TrendingDown, TrendingUp } from '@lucide/svelte/icons';
 	import { scaleUtc } from 'd3-scale';
 	import { curveNatural } from 'd3-shape';
 	import { AreaChart } from 'layerchart';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
 
 	interface Props {
 		title: string;

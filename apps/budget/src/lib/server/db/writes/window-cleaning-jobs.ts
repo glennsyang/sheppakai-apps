@@ -1,8 +1,8 @@
-import { getDb } from '$lib/server/db';
-import { windowCleaningJobQueries } from '$lib/server/db/queries';
-import { windowCleaningJob } from '$lib/server/db/schema';
-import type { WindowCleaningJob } from '$lib/types';
-import { formatDateForStorage } from '$lib/utils/dates';
+import { getDb } from '#lib/server/db/index.js';
+import { windowCleaningJobQueries } from '#lib/server/db/queries/index.js';
+import { windowCleaningJob } from '#lib/server/db/schema/index.js';
+import type { WindowCleaningJob } from '#lib/types.js';
+import { formatDateForStorage } from '#lib/utils/dates.js';
 
 export type CreateWindowCleaningJobInput = {
 	customerId: string;

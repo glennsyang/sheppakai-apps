@@ -1,7 +1,8 @@
-import { DEFAULT_DASHBOARD_GOALS } from '$lib/utils/dashboard-goals';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/server/db', () => ({ getDb: vi.fn<() => unknown>() }));
+import { DEFAULT_DASHBOARD_GOALS } from '#lib/utils/dashboard-goals.js';
+
+vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => unknown>() }));
 
 import { getDashboardGoalsForUser } from './dashboard-goal-settings';
 

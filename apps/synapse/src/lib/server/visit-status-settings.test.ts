@@ -1,7 +1,8 @@
-import { DEFAULT_VISIT_STATUS_THRESHOLDS } from '$lib/utils/visit-status';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/server/db', () => ({ getDb: vi.fn<() => unknown>() }));
+import { DEFAULT_VISIT_STATUS_THRESHOLDS } from '#lib/utils/visit-status.js';
+
+vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => unknown>() }));
 
 import {
 	getVisitStatusThresholdsByUserIds,

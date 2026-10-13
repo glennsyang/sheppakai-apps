@@ -5,15 +5,15 @@ const mockState = vi.hoisted(() => ({
 	loggerError: vi.fn<(...args: unknown[]) => void>()
 }));
 
-vi.mock('$lib/server/db', () => ({
+vi.mock('#lib/server/db/index.js', () => ({
 	getDb: () => {
 		throw mockState.dbError;
 	}
 }));
 
-vi.mock('$lib/server/auth', () => ({ auth: { api: {} }, allowedEmails: new Set<string>() }));
+vi.mock('#lib/server/auth.js', () => ({ auth: { api: {} }, allowedEmails: new Set<string>() }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<(...args: unknown[]) => void>(),
 		info: vi.fn<(...args: unknown[]) => void>(),

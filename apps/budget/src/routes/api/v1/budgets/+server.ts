@@ -1,8 +1,8 @@
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
-import { apiBudgetsQuerySchema } from '$lib/server/api/schemas/budgets';
-import { budgetQueries } from '$lib/server/db/queries';
-import { logger } from '$lib/server/logger';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
+import { apiBudgetsQuerySchema } from '#lib/server/api/schemas/budgets.js';
+import { budgetQueries } from '#lib/server/db/queries/index.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

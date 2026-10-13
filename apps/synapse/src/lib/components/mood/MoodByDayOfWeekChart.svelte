@@ -1,9 +1,10 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import * as Chart from '$lib/components/ui/chart';
-	import { getMoodScoreLabel } from '$lib/utils/mood';
 	import BarChartIcon from '@lucide/svelte/icons/bar-chart-2';
 	import { BarChart } from 'layerchart';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import { getMoodScoreLabel } from '#lib/utils/mood.js';
 
 	interface WeekdayPoint {
 		day: string;

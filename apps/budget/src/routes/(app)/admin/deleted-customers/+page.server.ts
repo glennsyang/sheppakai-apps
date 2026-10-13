@@ -1,11 +1,12 @@
-import { restoreCustomerSchema } from '$lib/formSchemas';
-import { adminFormAction } from '$lib/server/actions/admin-guard';
-import { assertAdmin } from '$lib/server/auth';
-import { windowCleaningCustomerQueries } from '$lib/server/db/queries';
-import { restoreWindowCleaningCustomer } from '$lib/server/db/writes/window-cleaning-customers';
-import { logger } from '$lib/server/logger';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { restoreCustomerSchema } from '#lib/formSchemas/index.js';
+import { adminFormAction } from '#lib/server/actions/admin-guard.js';
+import { assertAdmin } from '#lib/server/auth.js';
+import { windowCleaningCustomerQueries } from '#lib/server/db/queries/index.js';
+import { restoreWindowCleaningCustomer } from '#lib/server/db/writes/window-cleaning-customers.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { SIGN_IN_ROUTE } from '$lib/auth-routes';
-	import BrandMark from '$lib/components/BrandMark.svelte';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
-	import { Button } from '$lib/components/ui/button';
+	import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
+	import BrandMark from '#lib/components/BrandMark.svelte';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
 
 	const areas = [
 		{

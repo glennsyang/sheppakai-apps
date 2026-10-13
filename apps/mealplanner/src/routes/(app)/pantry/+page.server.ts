@@ -1,11 +1,12 @@
-import { addPantryItemSchema, removePantryItemSchema } from '$lib/schemas/pantry';
-import { requireAuth } from '$lib/server/actions/auth-guard';
-import { handleDomainAction } from '$lib/server/actions/domain-action';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { logger } from '$lib/server/logger';
-import { listPantryItems, addPantryItem, removePantryItem } from '$lib/server/services/pantry';
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { addPantryItemSchema, removePantryItemSchema } from '#lib/schemas/pantry.js';
+import { requireAuth } from '#lib/server/actions/auth-guard.js';
+import { handleDomainAction } from '#lib/server/actions/domain-action.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { logger } from '#lib/server/logger.js';
+import { listPantryItems, addPantryItem, removePantryItem } from '#lib/server/services/pantry.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

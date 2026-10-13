@@ -1,7 +1,8 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { formatCurrency } from '$lib/utils';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { formatCurrency } from '#lib/utils.js';
 
 	interface CategoryRow {
 		id: string;

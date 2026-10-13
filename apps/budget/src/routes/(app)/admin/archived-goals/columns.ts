@@ -1,7 +1,8 @@
-import type { SavingsGoal } from '$lib';
-import { moneyCell, stackCell } from '$lib/components/table/cells';
-import { type Features, renderComponent } from '$lib/components/ui/data-table/index.js';
 import type { ColumnDef } from '@tanstack/table-core';
+
+import type { SavingsGoal } from '#lib';
+import { moneyCell, stackCell } from '#lib/components/table/cells.js';
+import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
 
 import DataTableActions from './data-table-actions.svelte';
 

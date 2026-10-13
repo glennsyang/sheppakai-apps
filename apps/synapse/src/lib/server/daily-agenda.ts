@@ -1,13 +1,15 @@
-import { getDb } from '$lib/server/db';
-import { dailyAgendaEntries, dailyAgendaTemplates } from '$lib/server/db/schema';
-import { generateId, withTimestampsForUpdate } from '$lib/server/db/utils';
+import { and, asc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+
+import { getDb } from '#lib/server/db/index.js';
+import { dailyAgendaEntries, dailyAgendaTemplates } from '#lib/server/db/schema/index.js';
+import { generateId, withTimestampsForUpdate } from '#lib/server/db/utils.js';
 import type {
 	DailyAgendaChartPoint,
 	DailyAgendaData,
 	DailyAgendaDay,
 	DailyAgendaEntry,
 	DailyAgendaTemplate
-} from '$lib/types';
+} from '#lib/types.js';
 import {
 	addDaysToDateString,
 	getRollingDateRange,
@@ -15,8 +17,7 @@ import {
 	getTodayString,
 	getWeekDates,
 	parseLocalDateString
-} from '$lib/utils/date';
-import { and, asc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+} from '#lib/utils/date.js';
 
 const DEFAULT_SOURCE = 'default' as const;
 const CUSTOM_SOURCE = 'custom' as const;

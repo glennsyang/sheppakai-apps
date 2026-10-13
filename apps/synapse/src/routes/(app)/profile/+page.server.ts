@@ -1,29 +1,39 @@
+import { eq } from 'drizzle-orm';
+import { message, superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
 import {
 	changePasswordSchema,
 	updateDashboardGoalSettingsSchema,
 	updateProfileSchema,
 	updateVisitStatusSettingsSchema
-} from '$lib/schemas/auth';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
-import { auth } from '$lib/server/auth';
-import { getDashboardGoalsForUser } from '$lib/server/dashboard-goal-settings';
-import { getDb } from '$lib/server/db';
-import { account, dashboardGoalSettings, user, visitStatusSettings } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
-import { sendPasswordChangedEmail } from '$lib/server/email';
-import { logger } from '$lib/server/logger';
-import { createUserRateLimiter, rateLimitedMessage } from '$lib/server/rate-limiter';
-import { getVisitStatusThresholdsForUser } from '$lib/server/visit-status-settings';
-import { getBetterAuthErrorMessage } from '$lib/utils/auth';
-import { DEFAULT_DASHBOARD_GOALS, normalizeDashboardGoals } from '$lib/utils/dashboard-goals';
+} from '#lib/schemas/auth.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { auth } from '#lib/server/auth.js';
+import { getDashboardGoalsForUser } from '#lib/server/dashboard-goal-settings.js';
+import { getDb } from '#lib/server/db/index.js';
+import {
+	account,
+	dashboardGoalSettings,
+	user,
+	visitStatusSettings
+} from '#lib/server/db/schema/index.js';
+import {
+	generateId,
+	withTimestampsForCreate,
+	withTimestampsForUpdate
+} from '#lib/server/db/utils.js';
+import { sendPasswordChangedEmail } from '#lib/server/email/index.js';
+import { logger } from '#lib/server/logger.js';
+import { createUserRateLimiter, rateLimitedMessage } from '#lib/server/rate-limiter.js';
+import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
+import { getBetterAuthErrorMessage } from '#lib/utils/auth.js';
+import { DEFAULT_DASHBOARD_GOALS, normalizeDashboardGoals } from '#lib/utils/dashboard-goals.js';
 import {
 	convertVisitThresholdToDays,
 	DEFAULT_VISIT_STATUS_THRESHOLDS,
 	normalizeVisitStatusThresholds
-} from '$lib/utils/visit-status';
-import { eq } from 'drizzle-orm';
-import { message, superValidate } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
+} from '#lib/utils/visit-status.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

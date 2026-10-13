@@ -9,7 +9,7 @@ const mockState = vi.hoisted(() => ({
 	loggerError: vi.fn<() => void>()
 }));
 
-vi.mock('$lib/server/db', () => ({
+vi.mock('#lib/server/db/index.js', () => ({
 	getDb: () => ({
 		select: () => ({ from: () => ({ where: mockState.transactionSpendTotal }) }),
 		query: {
@@ -23,7 +23,7 @@ vi.mock('$lib/server/db', () => ({
 	})
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		info: mockState.loggerInfo,
 		error: mockState.loggerError

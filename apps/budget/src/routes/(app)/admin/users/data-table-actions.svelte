@@ -1,23 +1,24 @@
 <script lang="ts">
-	import type { AdminSessionSummary, UserWithSessions } from '$lib';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import * as Select from '$lib/components/ui/select/index.js';
-	import * as Sheet from '$lib/components/ui/sheet/index.js';
-	import * as Table from '$lib/components/ui/table/index.js';
+	import { toast } from 'svelte-sonner';
+	import { superForm } from 'sveltekit-superforms';
+
+	import type { AdminSessionSummary, UserWithSessions } from '#lib';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import * as Sheet from '#lib/components/ui/sheet/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
 	import {
 		banUserFormContext,
 		setPasswordFormContext,
 		setUserRoleFormContext
-	} from '$lib/contexts';
-	import { formatLocalTimestamp } from '$lib/utils/dates';
-	import { toast } from 'svelte-sonner';
-	import { superForm } from 'sveltekit-superforms';
+	} from '#lib/contexts/index.js';
+	import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
 	let { user }: { user: UserWithSessions } = $props();
 

@@ -1,10 +1,15 @@
-import { budgetSchema } from '$lib/formSchemas';
-import { createAction, updateAction } from '$lib/server/actions/crud-helpers';
-import { budgetQueries, recurringQueries, transactionQueries } from '$lib/server/db/queries';
-import { budget } from '$lib/server/db/schema';
-import { logger } from '$lib/server/logger';
-import { getMonthYearFromUrl, padMonth } from '$lib/utils/dates';
 import type { z } from 'zod';
+
+import { budgetSchema } from '#lib/formSchemas/index.js';
+import { createAction, updateAction } from '#lib/server/actions/crud-helpers.js';
+import {
+	budgetQueries,
+	recurringQueries,
+	transactionQueries
+} from '#lib/server/db/queries/index.js';
+import { budget } from '#lib/server/db/schema/index.js';
+import { logger } from '#lib/server/logger.js';
+import { getMonthYearFromUrl, padMonth } from '#lib/utils/dates.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

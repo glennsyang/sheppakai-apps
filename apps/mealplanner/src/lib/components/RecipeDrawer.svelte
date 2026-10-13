@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import { actionFailureText } from '$lib/action-result';
-	import Icon from '$lib/components/Icon.svelte';
-	import { Alert } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import type { Ingredient, MealSuggestion } from '$lib/types';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance, type SubmitFunction } from '$app/forms';
 	import { SvelteSet } from 'svelte/reactivity';
+
+	import { actionFailureText } from '#lib/action-result.js';
+	import Icon from '#lib/components/Icon.svelte';
+	import { Alert } from '#lib/components/ui/alert/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import type { Ingredient, MealSuggestion } from '#lib/types.js';
 
 	import Modal from './Modal.svelte';
 
@@ -134,7 +134,9 @@
 				class="flex min-h-0 flex-1 flex-col"
 			>
 				<input type="hidden" name="recipeId" value={recipeId} />
+
 				<input type="hidden" name="ingredientsJson" value={JSON.stringify(filledIngredients)} />
+
 				<input type="hidden" name="instructionsJson" value={JSON.stringify(filledSteps)} />
 
 				<div class="flex-1 space-y-8 overflow-y-auto px-6 py-7 sm:px-8">
@@ -270,9 +272,10 @@
 				</div>
 
 				<div class="foot flex gap-2 px-6 py-4 sm:px-8">
-					<Button type="submit" disabled={saving} class="flex-1 py-3">
-						{saving ? 'Saving…' : 'Save recipe'}
-					</Button>
+					<Button type="submit" disabled={saving} class="flex-1 py-3"
+						>{saving ? 'Saving…' : 'Save recipe'}</Button
+					>
+
 					<Button
 						type="button"
 						disabled={saving}

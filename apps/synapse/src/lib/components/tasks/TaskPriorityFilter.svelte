@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { cn } from '$lib';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import * as Command from '$lib/components/ui/command';
-	import * as Popover from '$lib/components/ui/popover';
 	import { Check, ChevronsUpDown, X } from '@lucide/svelte';
 	import { SvelteSet } from 'svelte/reactivity';
+
+	import { cn } from '#lib';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Command from '#lib/components/ui/command/index.js';
+	import * as Popover from '#lib/components/ui/popover/index.js';
 
 	import { type TaskPriority, taskPriorityOptions } from './task-ui';
 
@@ -51,14 +52,14 @@
 	}
 
 	async function updateUrl(priorities: TaskPriority[]) {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		if (priorities.length > 0) {
 			url.searchParams.set('priority', priorities.join(','));
 		} else {
 			url.searchParams.delete('priority');
 		}
 
-		await goto(url.toString(), { replaceState: true, noScroll: true, keepFocus: true });
+		await goto(url.toString(), { replace: true, reset: false });
 	}
 </script>
 

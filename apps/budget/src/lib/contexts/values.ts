@@ -1,5 +1,6 @@
-import type { SavingsGoal, WindowCleaningCustomerWithStats } from '$lib/types';
 import { getContext, setContext } from 'svelte';
+
+import type { SavingsGoal, WindowCleaningCustomerWithStats } from '#lib/types.js';
 
 /**
  * Creates typed, symbol-keyed context helpers for a single value.

@@ -1,26 +1,27 @@
 <script lang="ts">
 	import { navigating, page } from '$app/state';
-	import PageShell from '$lib/components/app/PageShell.svelte';
-	import ActivityHistorySheet from '$lib/components/fitness/dashboard/ActivityHistorySheet.svelte';
-	import FitnessDashboardHeader from '$lib/components/fitness/dashboard/FitnessDashboardHeader.svelte';
-	import FitnessMomentumPanel from '$lib/components/fitness/dashboard/FitnessMomentumPanel.svelte';
-	import FitnessStatusCard from '$lib/components/fitness/dashboard/FitnessStatusCard.svelte';
-	import NutritionInsightsSection from '$lib/components/fitness/dashboard/NutritionInsightsSection.svelte';
-	import RecentActivityPreview from '$lib/components/fitness/dashboard/RecentActivityPreview.svelte';
-	import ReminderSummarySection from '$lib/components/fitness/dashboard/ReminderSummarySection.svelte';
-	import WeightInsightsSection from '$lib/components/fitness/dashboard/WeightInsightsSection.svelte';
-	import WorkoutInsightsSection from '$lib/components/fitness/dashboard/WorkoutInsightsSection.svelte';
-	import LogMealDialog from '$lib/components/fitness/dialogs/LogMealDialog.svelte';
-	import LogWeightDialog from '$lib/components/fitness/dialogs/LogWeightDialog.svelte';
-	import LogWorkoutDialog from '$lib/components/fitness/dialogs/LogWorkoutDialog.svelte';
-	import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte';
-	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
-	import PageSkeleton from '$lib/components/skeletons/PageSkeleton.svelte';
-	import * as Accordion from '$lib/components/ui/accordion';
-	import { getTodayString, parseLocalDateString } from '$lib/utils/date';
 	import { Activity, Dumbbell, Flame, Scale, UtensilsCrossed } from '@lucide/svelte/icons';
 	import { toast } from 'svelte-sonner';
 	import { SvelteSet } from 'svelte/reactivity';
+
+	import PageShell from '#lib/components/app/PageShell.svelte';
+	import ActivityHistorySheet from '#lib/components/fitness/dashboard/ActivityHistorySheet.svelte';
+	import FitnessDashboardHeader from '#lib/components/fitness/dashboard/FitnessDashboardHeader.svelte';
+	import FitnessMomentumPanel from '#lib/components/fitness/dashboard/FitnessMomentumPanel.svelte';
+	import FitnessStatusCard from '#lib/components/fitness/dashboard/FitnessStatusCard.svelte';
+	import NutritionInsightsSection from '#lib/components/fitness/dashboard/NutritionInsightsSection.svelte';
+	import RecentActivityPreview from '#lib/components/fitness/dashboard/RecentActivityPreview.svelte';
+	import ReminderSummarySection from '#lib/components/fitness/dashboard/ReminderSummarySection.svelte';
+	import WeightInsightsSection from '#lib/components/fitness/dashboard/WeightInsightsSection.svelte';
+	import WorkoutInsightsSection from '#lib/components/fitness/dashboard/WorkoutInsightsSection.svelte';
+	import LogMealDialog from '#lib/components/fitness/dialogs/LogMealDialog.svelte';
+	import LogWeightDialog from '#lib/components/fitness/dialogs/LogWeightDialog.svelte';
+	import LogWorkoutDialog from '#lib/components/fitness/dialogs/LogWorkoutDialog.svelte';
+	import ConfirmDialog from '#lib/components/shared/ConfirmDialog.svelte';
+	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
+	import PageSkeleton from '#lib/components/skeletons/PageSkeleton.svelte';
+	import * as Accordion from '#lib/components/ui/accordion/index.js';
+	import { getTodayString, parseLocalDateString } from '#lib/utils/date.js';
 
 	import type { PageData } from './$types.js';
 

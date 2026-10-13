@@ -1,10 +1,11 @@
+import { describe, expect, it } from 'vitest';
+
 import {
 	banUserSchema,
 	createUserSchema,
 	removeUserSchema,
 	setRoleSchema
-} from '$lib/schemas/admin';
-import { describe, expect, it } from 'vitest';
+} from '#lib/schemas/admin.js';
 
 describe('setRoleSchema', () => {
 	it('accepts a valid userId + known role', () => {

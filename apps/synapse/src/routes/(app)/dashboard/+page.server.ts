@@ -1,6 +1,8 @@
-import { getUser } from '$lib/server/actions/auth-guard';
-import { getDashboardGoalsForUser } from '$lib/server/dashboard-goal-settings';
-import { getDb } from '$lib/server/db';
+import { and, desc, eq, gte, lt, lte, ne, sql } from 'drizzle-orm';
+
+import { getUser } from '#lib/server/actions/auth-guard.js';
+import { getDashboardGoalsForUser } from '#lib/server/dashboard-goal-settings.js';
+import { getDb } from '#lib/server/db/index.js';
 import {
 	dailyAgendaEntries,
 	journalEntries,
@@ -9,10 +11,10 @@ import {
 	tasks,
 	visits,
 	workoutLogs
-} from '$lib/server/db/schema';
-import { logger } from '$lib/server/logger';
-import { getVisitStatusThresholdsForUser } from '$lib/server/visit-status-settings';
-import { DEFAULT_DASHBOARD_GOALS } from '$lib/utils/dashboard-goals';
+} from '#lib/server/db/schema/index.js';
+import { logger } from '#lib/server/logger.js';
+import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
+import { DEFAULT_DASHBOARD_GOALS } from '#lib/utils/dashboard-goals.js';
 import {
 	addDaysToDateString,
 	calendarDaysBetween,
@@ -24,15 +26,14 @@ import {
 	formatTodayLabel,
 	getISODayOfWeek,
 	getTodayString
-} from '$lib/utils/date';
-import { createMarkdownExcerpt } from '$lib/utils/markdown';
+} from '#lib/utils/date.js';
+import { createMarkdownExcerpt } from '#lib/utils/markdown.js';
 import {
 	calculatePersonVisitStatus,
 	getEffectiveFollowUpDate,
 	type VisitStatusThresholds
-} from '$lib/utils/visit-status';
-import { getWorkoutLabel } from '$lib/utils/workout';
-import { and, desc, eq, gte, lt, lte, ne, sql } from 'drizzle-orm';
+} from '#lib/utils/visit-status.js';
+import { getWorkoutLabel } from '#lib/utils/workout.js';
 
 import type { PageServerLoad } from './$types';
 import { buildAgendaItemStats, buildDateRanges, type DashboardDateRanges } from './dashboard-utils';

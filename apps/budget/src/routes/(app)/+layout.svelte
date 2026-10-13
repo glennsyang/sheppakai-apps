@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { navigating, page } from '$app/state';
-	import AppSidebar from '$lib/components/AppSidebar.svelte';
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
-	import MobileTabBar from '$lib/components/MobileTabBar.svelte';
-	import SiteHeader from '$lib/components/SiteHeader.svelte';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import { setCategoriesContext } from '$lib/contexts';
-	import { classifyNavigation } from '$lib/utils/navigation';
+
+	import AppSidebar from '#lib/components/AppSidebar.svelte';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import LoadingSpinner from '#lib/components/LoadingSpinner.svelte';
+	import MobileTabBar from '#lib/components/MobileTabBar.svelte';
+	import SiteHeader from '#lib/components/SiteHeader.svelte';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	import { setCategoriesContext } from '#lib/contexts/index.js';
+	import { classifyNavigation } from '#lib/utils/navigation.js';
 
 	import { sidebarData } from './sidebarData';
 

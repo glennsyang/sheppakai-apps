@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import { cn, type WithElementRef } from '$lib/utils.js';
+	import Icon from '#lib/components/Icon.svelte';
+	import { cn, type WithElementRef } from '#lib/utils.js';
 	import type { HTMLSelectAttributes } from 'svelte/elements';
 
 	type NativeSelectProps = Omit<WithElementRef<HTMLSelectAttributes>, 'size'> & {

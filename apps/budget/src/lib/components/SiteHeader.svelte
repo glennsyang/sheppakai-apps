@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import type { SidebarData } from '$lib';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
-	import { Separator } from '$lib/components/ui/separator/index.js';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+
+	import type { SidebarData } from '#lib';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
+	import { Separator } from '#lib/components/ui/separator/index.js';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 
 	interface Props {
 		sidebarData: SidebarData;

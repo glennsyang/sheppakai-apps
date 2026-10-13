@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { cn, type WithoutChildren } from '$lib/utils';
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
+
+	import { cn, type WithoutChildren } from '#lib/utils.js';
 
 	let {
 		value = $bindable(),

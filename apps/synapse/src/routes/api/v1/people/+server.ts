@@ -1,10 +1,11 @@
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
-import { apiPeopleListQuerySchema } from '$lib/server/api/schemas/people';
-import { getDb } from '$lib/server/db';
-import { people } from '$lib/server/db/schema';
-import { logger } from '$lib/server/logger';
 import { and, asc, eq } from 'drizzle-orm';
+
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
+import { apiPeopleListQuerySchema } from '#lib/server/api/schemas/people.js';
+import { getDb } from '#lib/server/db/index.js';
+import { people } from '#lib/server/db/schema/index.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

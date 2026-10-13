@@ -1,19 +1,19 @@
 <script lang="ts">
-	import type { Budget, ChartData } from '$lib';
-	import CardGridSkeleton from '$lib/components/CardGridSkeleton.svelte';
-	import DashboardStatStrip, { type Stat } from '$lib/components/DashboardStatStrip.svelte';
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import PageShell from '$lib/components/PageShell.svelte';
-	import PeriodPicker from '$lib/components/PeriodPicker.svelte';
-	import PresetBudgetCard from '$lib/components/PresetBudgetCard.svelte';
-	import SpendTrendChart from '$lib/components/SpendTrendChart.svelte';
-	import * as Select from '$lib/components/ui/select/index.js';
-	import { getCategoriesContext } from '$lib/contexts';
-	import { formatCurrency, monthNames } from '$lib/utils';
-	import { categoryColorMap } from '$lib/utils/categoryColors';
-	import { padMonth } from '$lib/utils/dates';
-	import { useMonthYearParams } from '$lib/utils/monthYearParams.svelte';
-	import { usePendingReload } from '$lib/utils/pendingNavigation.svelte';
+	import type { Budget, ChartData } from '#lib';
+	import CardGridSkeleton from '#lib/components/CardGridSkeleton.svelte';
+	import DashboardStatStrip, { type Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import PageShell from '#lib/components/PageShell.svelte';
+	import PeriodPicker from '#lib/components/PeriodPicker.svelte';
+	import PresetBudgetCard from '#lib/components/PresetBudgetCard.svelte';
+	import SpendTrendChart from '#lib/components/SpendTrendChart.svelte';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import { getCategoriesContext } from '#lib/contexts/index.js';
+	import { formatCurrency, monthNames } from '#lib/utils.js';
+	import { categoryColorMap } from '#lib/utils/categoryColors.js';
+	import { padMonth } from '#lib/utils/dates.js';
+	import { useMonthYearParams } from '#lib/utils/monthYearParams.svelte.js';
+	import { usePendingReload } from '#lib/utils/pendingNavigation.svelte.js';
 
 	import type { PageProps } from './$types';
 

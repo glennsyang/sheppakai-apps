@@ -5,8 +5,8 @@ declare global {
 		interface Locals {
 			// Inferred from the configured better-auth instance so plugin fields (the `admin`
 			// plugin's `role` / `banned` / …) are present on the type, not just at runtime.
-			user: import('$lib/server/auth').SessionUser | null;
-			session: import('$lib/server/auth').SessionData | null;
+			user: import('#lib/server/auth/index.js').SessionUser | null;
+			session: import('#lib/server/auth/index.js').SessionData | null;
 			requestId?: string;
 		}
 		// interface Error {}

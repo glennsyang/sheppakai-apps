@@ -1,9 +1,14 @@
-import type { ApiCreateVisitInput, ApiUpdateVisitInput } from '$lib/server/api/schemas/visits';
-import { getDb } from '$lib/server/db';
-import { people, visits } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { and, eq } from 'drizzle-orm';
+
+import type { ApiCreateVisitInput, ApiUpdateVisitInput } from '#lib/server/api/schemas/visits.js';
+import { getDb } from '#lib/server/db/index.js';
+import { people, visits } from '#lib/server/db/schema/index.js';
+import {
+	generateId,
+	withTimestampsForCreate,
+	withTimestampsForUpdate
+} from '#lib/server/db/utils.js';
 
 function companionsToJson(companions: string[] | undefined | null): string | null {
 	if (!companions || companions.length === 0) return null;

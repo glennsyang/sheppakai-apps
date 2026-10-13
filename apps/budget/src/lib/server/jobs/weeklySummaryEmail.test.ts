@@ -8,15 +8,15 @@ const mockState = vi.hoisted(() => ({
 	loggerError: vi.fn<() => void>()
 }));
 
-vi.mock('$lib/server/db', () => ({
+vi.mock('#lib/server/db/index.js', () => ({
 	getDb: () => ({ select: mockState.select })
 }));
 
-vi.mock('$lib/server/email', () => ({
+vi.mock('#lib/server/email/index.js', () => ({
 	sendWeeklySummaryEmail: mockState.sendWeeklySummaryEmail
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<() => void>(),
 		info: mockState.loggerInfo,

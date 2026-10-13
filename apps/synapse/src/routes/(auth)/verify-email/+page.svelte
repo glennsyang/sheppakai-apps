@@ -1,8 +1,9 @@
 <script lang="ts">
-	import AuthFormMessage from '$lib/components/AuthFormMessage.svelte';
-	import { Button } from '$lib/components/ui/button';
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import { superForm } from 'sveltekit-superforms';
+
+	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
 
 	import type { PageData } from './$types';
 

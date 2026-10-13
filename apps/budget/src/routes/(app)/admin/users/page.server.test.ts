@@ -37,7 +37,7 @@ const {
 
 vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: 'env-admin' }));
 
-vi.mock('$lib/server/auth', () => ({
+vi.mock('#lib/server/auth.js', () => ({
 	auth: {
 		api: {
 			banUser: banUserMock,
@@ -53,21 +53,21 @@ vi.mock('$lib/server/auth', () => ({
 	}
 }));
 
-vi.mock('$lib/server/db/queries', () => ({
+vi.mock('#lib/server/db/queries/index.js', () => ({
 	sessionQueries: { findSummariesByUserIds: findSessionSummariesMock }
 }));
 
-vi.mock('$lib/server/db/writes/api-keys', () => ({
+vi.mock('#lib/server/db/writes/api-keys.js', () => ({
 	disableApiKeysForUser: disableApiKeysForUserMock
 }));
 
-vi.mock('$lib/server/logger', () => ({ logger: loggerMock }));
+vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 
-vi.mock('$lib/server/auth/welcome', () => welcomeMock);
+vi.mock('#lib/server/auth/welcome.js', () => welcomeMock);
 
-vi.mock('$lib/server/notifications', () => ({ sendAuthAlerts: sendAuthAlertsMock }));
+vi.mock('#lib/server/notifications/index.js', () => ({ sendAuthAlerts: sendAuthAlertsMock }));
 
-import type { UserWithSessions } from '$lib/types';
+import type { UserWithSessions } from '#lib/types.js';
 
 import { actions, load } from './+page.server';
 

@@ -1,5 +1,6 @@
-import { logger } from '$lib/server/logger';
 import { and, eq } from 'drizzle-orm';
+
+import { logger } from '#lib/server/logger.js';
 
 import { getDb } from '../db';
 import { people, user, visits } from '../db/schema';

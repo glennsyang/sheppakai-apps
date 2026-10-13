@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Transaction } from '$lib';
-	import TransactionRowActions from '$lib/components/TransactionRowActions.svelte';
+	import type { Transaction } from '#lib';
+	import TransactionRowActions from '#lib/components/TransactionRowActions.svelte';
 
 	let { id, transactionData }: { id: string; transactionData: Transaction } = $props();
 </script>

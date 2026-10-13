@@ -14,11 +14,12 @@
 </script>
 
 <script lang="ts">
-	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
 	import ArrowDownRightIcon from '@lucide/svelte/icons/arrow-down-right';
 	import ArrowUpRightIcon from '@lucide/svelte/icons/arrow-up-right';
 	import MinusIcon from '@lucide/svelte/icons/minus';
+
+	import InfoTooltip from '#lib/components/InfoTooltip.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
 
 	let { stats }: { stats: Stat[] } = $props();
 

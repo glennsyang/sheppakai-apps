@@ -1,27 +1,36 @@
-import { noFieldsSchema } from '$lib/schemas/common';
+import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
+import { and, desc, eq, or } from 'drizzle-orm';
+import { message, superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { noFieldsSchema } from '#lib/schemas/common.js';
 import {
 	completeSessionSchema,
 	editSessionSchema,
 	scheduleSchema,
 	updateRoutineSchema
-} from '$lib/schemas/meditation';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
-import { invalidForm } from '$lib/server/actions/form-responses';
+} from '#lib/schemas/meditation.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
 import {
 	handleDeleteSession,
 	handleUpdateSession
-} from '$lib/server/actions/meditation-session-actions';
-import { splitCommaSeparated } from '$lib/server/actions/string-parsers';
-import { getDb } from '$lib/server/db';
-import { meditationRoutines, meditationSchedules, meditationSessions } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
-import { logger } from '$lib/server/logger';
-import { parseAppDateTime } from '$lib/utils/date';
-import { safeParse } from '$lib/utils/json';
-import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
-import { and, desc, eq, or } from 'drizzle-orm';
-import { message, superValidate } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
+} from '#lib/server/actions/meditation-session-actions.js';
+import { splitCommaSeparated } from '#lib/server/actions/string-parsers.js';
+import { getDb } from '#lib/server/db/index.js';
+import {
+	meditationRoutines,
+	meditationSchedules,
+	meditationSessions
+} from '#lib/server/db/schema/index.js';
+import {
+	generateId,
+	withTimestampsForCreate,
+	withTimestampsForUpdate
+} from '#lib/server/db/utils.js';
+import { logger } from '#lib/server/logger.js';
+import { parseAppDateTime } from '#lib/utils/date.js';
+import { safeParse } from '#lib/utils/json.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

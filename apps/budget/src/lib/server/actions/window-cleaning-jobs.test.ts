@@ -22,14 +22,14 @@ vi.mock('./crud-helpers', () => ({
 }));
 
 // Mock schema and schema-dependent modules after mocks are wired
-vi.mock('$lib/formSchemas', () => ({ windowCleaningJobSchema: { _tag: 'mock-schema' } }));
-vi.mock('$lib/server/db/schema', () => ({
+vi.mock('#lib/formSchemas', () => ({ windowCleaningJobSchema: { _tag: 'mock-schema' } }));
+vi.mock('#lib/server/db/schema/index.js', () => ({
 	windowCleaningJob: { id: 'id-column', _tag: 'mock-table' }
 }));
 // The shared row mapper lives in db/writes, which pulls in the db client and queries
-vi.mock('$lib/server/db', () => ({ getDb: vi.fn<() => void>() }));
-vi.mock('$lib/server/db/queries', () => ({ windowCleaningJobQueries: {} }));
-vi.mock('$lib/utils/dates', () => ({
+vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => void>() }));
+vi.mock('#lib/server/db/queries/index.js', () => ({ windowCleaningJobQueries: {} }));
+vi.mock('#lib/utils/dates.js', () => ({
 	formatDateForStorage: (d: string) => `stored:${d}`
 }));
 

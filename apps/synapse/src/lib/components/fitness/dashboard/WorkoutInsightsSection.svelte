@@ -1,9 +1,10 @@
 <script lang="ts">
-	import WorkoutFrequencyChart from '$lib/components/fitness/analytics/WorkoutFrequencyChart.svelte';
-	import LogWorkoutDialog from '$lib/components/fitness/dialogs/LogWorkoutDialog.svelte';
-	import type { logWorkoutSchema } from '$lib/schemas/fitness';
-	import { getTodayString, parseLocalDateString } from '$lib/utils/date';
 	import type { Infer, SuperValidated } from 'sveltekit-superforms';
+
+	import WorkoutFrequencyChart from '#lib/components/fitness/analytics/WorkoutFrequencyChart.svelte';
+	import LogWorkoutDialog from '#lib/components/fitness/dialogs/LogWorkoutDialog.svelte';
+	import type { logWorkoutSchema } from '#lib/schemas/fitness.js';
+	import { getTodayString, parseLocalDateString } from '#lib/utils/date.js';
 
 	import FitnessStatusCard from './FitnessStatusCard.svelte';
 

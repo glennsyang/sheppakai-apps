@@ -1,23 +1,24 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { API_SCOPES, type ApiScope } from '$lib/api-scopes';
-	import AdminApiKeysTable from '$lib/components/admin/AdminApiKeysTable.svelte';
-	import AdminApiLogsTable from '$lib/components/admin/AdminApiLogsTable.svelte';
-	import AdminArchivedPersonsTable from '$lib/components/admin/AdminArchivedPersonsTable.svelte';
-	import AdminUsersTable from '$lib/components/admin/AdminUsersTable.svelte';
-	import CreateUserDialog from '$lib/components/admin/CreateUserDialog.svelte';
-	import PageShell from '$lib/components/app/PageShell.svelte';
-	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import * as Tabs from '$lib/components/ui/tabs';
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
+
+	import { API_SCOPES, type ApiScope } from '#lib/api-scopes.js';
+	import AdminApiKeysTable from '#lib/components/admin/AdminApiKeysTable.svelte';
+	import AdminApiLogsTable from '#lib/components/admin/AdminApiLogsTable.svelte';
+	import AdminArchivedPersonsTable from '#lib/components/admin/AdminArchivedPersonsTable.svelte';
+	import AdminUsersTable from '#lib/components/admin/AdminUsersTable.svelte';
+	import CreateUserDialog from '#lib/components/admin/CreateUserDialog.svelte';
+	import PageShell from '#lib/components/app/PageShell.svelte';
+	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Card, CardContent, CardHeader, CardTitle } from '#lib/components/ui/card/index.js';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
 
 	import type { PageData } from './$types';
 
@@ -29,13 +30,13 @@
 	});
 
 	async function switchTab(tab: string) {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		if (tab === 'users') {
 			url.searchParams.delete('tab');
 		} else {
 			url.searchParams.set('tab', tab);
 		}
-		await goto(url.toString(), { replaceState: true, noScroll: true, keepFocus: true });
+		await goto(url.toString(), { replace: true, reset: false });
 	}
 
 	let revealedKey = $state<string | null>(null);

@@ -1,25 +1,26 @@
 import { randomBytes } from 'node:crypto';
 
+import { isRedirect } from '@sveltejs/kit';
+import { message, superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
 import {
 	banUserSchema,
 	createUserSchema,
 	setPasswordSchema,
 	setUserRoleSchema,
 	userIdSchema
-} from '$lib/formSchemas';
-import { adminFormAction } from '$lib/server/actions/admin-guard';
-import { isAdminUser } from '$lib/server/admin-status';
-import { assertAdmin, auth } from '$lib/server/auth';
-import { allowlistCommandFor, isEmailAllowlisted, sendWelcome } from '$lib/server/auth/welcome';
-import { sessionQueries } from '$lib/server/db/queries';
-import { disableApiKeysForUser } from '$lib/server/db/writes/api-keys';
-import { logger } from '$lib/server/logger';
-import { sendAuthAlerts } from '$lib/server/notifications';
-import type { UserWithSessions } from '$lib/types';
-import { getBetterAuthErrorCode, getBetterAuthErrorMessage } from '$lib/utils';
-import { isRedirect } from '@sveltejs/kit';
-import { message, superValidate } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
+} from '#lib/formSchemas/index.js';
+import { adminFormAction } from '#lib/server/actions/admin-guard.js';
+import { isAdminUser } from '#lib/server/admin-status.js';
+import { assertAdmin, auth } from '#lib/server/auth.js';
+import { allowlistCommandFor, isEmailAllowlisted, sendWelcome } from '#lib/server/auth/welcome.js';
+import { sessionQueries } from '#lib/server/db/queries/index.js';
+import { disableApiKeysForUser } from '#lib/server/db/writes/api-keys.js';
+import { logger } from '#lib/server/logger.js';
+import { sendAuthAlerts } from '#lib/server/notifications/index.js';
+import type { UserWithSessions } from '#lib/types.js';
+import { getBetterAuthErrorCode, getBetterAuthErrorMessage } from '#lib/utils.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

@@ -1,8 +1,9 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import * as Chart from '$lib/components/ui/chart';
-	import { workoutTypeOptions } from '$lib/utils/workout';
 	import { BarChart } from 'layerchart';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import { workoutTypeOptions } from '#lib/utils/workout.js';
 
 	interface Workout {
 		id: string;

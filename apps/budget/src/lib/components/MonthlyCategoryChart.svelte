@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type { MonthlySpentChartData } from '$lib';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Chart from '$lib/components/ui/chart/index.js';
-	import { formatCurrency } from '$lib/utils';
 	import { scaleBand } from 'd3-scale';
 	import { BarChart, Highlight } from 'layerchart';
 	import { cubicInOut } from 'svelte/easing';
+
+	import type { MonthlySpentChartData } from '#lib';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import { formatCurrency } from '#lib/utils.js';
 
 	interface Props {
 		chartTitle: string;

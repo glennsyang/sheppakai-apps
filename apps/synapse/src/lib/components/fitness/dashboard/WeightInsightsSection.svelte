@@ -1,11 +1,12 @@
 <script lang="ts">
-	import LogWeightDialog from '$lib/components/fitness/dialogs/LogWeightDialog.svelte';
-	import SetGoalWeightDialog from '$lib/components/fitness/dialogs/SetGoalWeightDialog.svelte';
-	import WeightChart from '$lib/components/fitness/WeightChart.svelte';
-	import type { logWeightSchema, setGoalWeightSchema } from '$lib/schemas/fitness';
-	import { parseLocalDateString } from '$lib/utils/date';
 	import { Minus, Target, TrendingDown, TrendingUp } from '@lucide/svelte/icons';
 	import type { Infer, SuperValidated } from 'sveltekit-superforms';
+
+	import LogWeightDialog from '#lib/components/fitness/dialogs/LogWeightDialog.svelte';
+	import SetGoalWeightDialog from '#lib/components/fitness/dialogs/SetGoalWeightDialog.svelte';
+	import WeightChart from '#lib/components/fitness/WeightChart.svelte';
+	import type { logWeightSchema, setGoalWeightSchema } from '#lib/schemas/fitness.js';
+	import { parseLocalDateString } from '#lib/utils/date.js';
 
 	import FitnessStatusCard from './FitnessStatusCard.svelte';
 

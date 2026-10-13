@@ -1,16 +1,17 @@
 <script lang="ts">
-	import type { BaseModalProps, Category } from '$lib';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Input } from '$lib/components/ui/input';
-	import * as Select from '$lib/components/ui/select/index.js';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import type { transactionSchema } from '$lib/formSchemas';
-	import { extractDateFromTimestamp, getTodayDate } from '$lib/utils/dates';
 	import { toast } from 'svelte-sonner';
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import { superForm } from 'sveltekit-superforms';
 	import type { z } from 'zod';
+
+	import type { BaseModalProps, Category } from '#lib';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import type { transactionSchema } from '#lib/formSchemas/index.js';
+	import { extractDateFromTimestamp, getTodayDate } from '#lib/utils/dates.js';
 
 	interface Props extends Omit<BaseModalProps<z.infer<typeof transactionSchema>>, 'initialData'> {
 		initialData?: Partial<z.infer<typeof transactionSchema>>;

@@ -26,7 +26,7 @@ A personal life-management app: fitness (workouts/weight/meals), journal, medita
 
 - Strict TypeScript, no `any` — enforced repo-wide by oxlint's `typescript/no-explicit-any` rule.
 - Svelte 5 runes only (`$state`, `$derived`, `$effect`, `$props`, `$bindable`).
-- Env vars: import from **`$app/env/private`** (SvelteKit's typed env, via `experimental.explicitEnvironmentVariables` in `svelte.config.js`) — not `$env/static/private`.
+- Env vars: import from **`$app/env/private`** (SvelteKit's typed env, declared in `src/env.ts`) — not `$env/static/private`.
 
 ### Database — camelCase columns
 
@@ -40,7 +40,7 @@ Load and action error handling: follow `docs/ERROR_HANDLING_POLICY.md` at the re
 
 ### Logging
 
-Never use `console.log`/`console.error`/etc. directly — import `logger` from `$lib/server/logger` (a server-only module; SvelteKit's import guard blocks it from client bundles, so client-side code can't reach it — see `src/lib/utils/journal-context.ts` for the one deliberate exception). In production (`NODE_ENV === 'production'`) it strips `userId`, `id`, `email`, `password`, `token`, `createdBy`, and `updatedBy` from log output and from what's sent to Sentry — `requestId` is the only supported cross-log correlation key in prod. The `LOG_LEVEL` env var sets the minimum level logged (`debug`/`info`/`warn`/`error`); defaults to `debug` in dev, `info` in prod.
+Never use `console.log`/`console.error`/etc. directly — import `logger` from `#lib/server/logger` (a server-only module; SvelteKit's import guard blocks it from client bundles, so client-side code can't reach it — see `src/lib/utils/journal-context.ts` for the one deliberate exception). In production (`NODE_ENV === 'production'`) it strips `userId`, `id`, `email`, `password`, `token`, `createdBy`, and `updatedBy` from log output and from what's sent to Sentry — `requestId` is the only supported cross-log correlation key in prod. The `LOG_LEVEL` env var sets the minimum level logged (`debug`/`info`/`warn`/`error`); defaults to `debug` in dev, `info` in prod.
 
 ### Custom static checks
 
@@ -135,7 +135,7 @@ ALLOWED_EMAILS=you@example.com   # comma-separated; every request 500s without i
 SENTRY_AUTH_TOKEN=...
 ```
 
-Sentry (`@sentry/sveltekit`) is now actually wired up — `vite.config.ts` (`sentrySvelteKit({ org: 'sheppakai', project: 'synapse' })`), `src/hooks.client.ts`, and `src/hooks.server.ts` all reference it, and `$lib/server/logger`'s `warn()`/`error()` forward to it in production. The `dsn` in both files points at the real `synapse` project under the `sheppakai` org. `hooks.server.ts` wires `Sentry.sentryHandle()` into the `handle` sequence and intentionally leaves `handleError` unwrapped — see `docs/SENTRY.md` at the repo root for the cross-app strategy.
+Sentry (`@sentry/sveltekit`) is now actually wired up — `vite.config.ts` (`sentrySvelteKit({ org: 'sheppakai', project: 'synapse' })`), `src/hooks.client.ts`, and `src/hooks.server.ts` all reference it, and `#lib/server/logger`'s `warn()`/`error()` forward to it in production. The `dsn` in both files points at the real `synapse` project under the `sheppakai` org. `hooks.server.ts` wires `Sentry.sentryHandle()` into the `handle` sequence and intentionally leaves `handleError` unwrapped — see `docs/SENTRY.md` at the repo root for the cross-app strategy.
 
 ---
 

@@ -1,11 +1,12 @@
-import { unArchiveSchema } from '$lib/formSchemas';
-import { adminFormAction } from '$lib/server/actions/admin-guard';
-import { assertAdmin } from '$lib/server/auth';
-import { savingsGoalQueries } from '$lib/server/db/queries';
-import { unarchiveSavingsGoal } from '$lib/server/db/writes/savings-goals';
-import { logger } from '$lib/server/logger';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { unArchiveSchema } from '#lib/formSchemas/index.js';
+import { adminFormAction } from '#lib/server/actions/admin-guard.js';
+import { assertAdmin } from '#lib/server/auth.js';
+import { savingsGoalQueries } from '#lib/server/db/queries/index.js';
+import { unarchiveSavingsGoal } from '#lib/server/db/writes/savings-goals.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

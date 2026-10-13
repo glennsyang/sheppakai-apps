@@ -1,5 +1,6 @@
-import { logger } from '$lib/server/logger';
 import { eq } from 'drizzle-orm';
+
+import { logger } from '#lib/server/logger.js';
 
 import { getDb } from '../db';
 import { meditationRoutines, meditationSchedules, user } from '../db/schema';

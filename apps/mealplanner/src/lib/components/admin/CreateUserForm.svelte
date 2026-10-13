@@ -1,14 +1,15 @@
 <script lang="ts">
-	import { Alert, type AlertVariant } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { NativeSelect } from '$lib/components/ui/native-select';
-	import { createUserSchema, USER_ROLES, type CreateUserSchema } from '$lib/schemas/admin';
 	import { fly } from 'svelte/transition';
 	import { superForm, type SuperValidated } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import type { z } from 'zod';
+
+	import { Alert, type AlertVariant } from '#lib/components/ui/alert/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { NativeSelect } from '#lib/components/ui/native-select/index.js';
+	import { createUserSchema, USER_ROLES, type CreateUserSchema } from '#lib/schemas/admin.js';
 
 	interface Props {
 		data: SuperValidated<z.infer<CreateUserSchema>>;

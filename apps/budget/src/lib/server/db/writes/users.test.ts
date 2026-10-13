@@ -13,9 +13,9 @@ const mockUpdate = vi.hoisted(() =>
 	vi.fn<(table: unknown) => { set: typeof mockUpdateSet }>(() => ({ set: mockUpdateSet }))
 );
 
-vi.mock('$lib/server/db', () => ({ getDb: () => ({ update: mockUpdate }) }));
+vi.mock('#lib/server/db/index.js', () => ({ getDb: () => ({ update: mockUpdate }) }));
 vi.mock('drizzle-orm', () => ({ eq: (field: unknown, value: unknown) => ({ field, value }) }));
-vi.mock('$lib/server/db/schema', () => ({ user: { id: 'user.id' } }));
+vi.mock('#lib/server/db/schema', () => ({ user: { id: 'user.id' } }));
 
 import { updateUserName } from './users';
 

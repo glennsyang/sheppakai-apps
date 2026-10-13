@@ -1,9 +1,14 @@
-import type { ApiCreateMealInput, ApiUpdateMealInput } from '$lib/server/api/schemas/meals';
-import { getDb } from '$lib/server/db';
-import { mealLogs } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { and, eq } from 'drizzle-orm';
+
+import type { ApiCreateMealInput, ApiUpdateMealInput } from '#lib/server/api/schemas/meals.js';
+import { getDb } from '#lib/server/db/index.js';
+import { mealLogs } from '#lib/server/db/schema/index.js';
+import {
+	generateId,
+	withTimestampsForCreate,
+	withTimestampsForUpdate
+} from '#lib/server/db/utils.js';
 
 /**
  * Insert path for API-key-driven meal logging. Mirrors the `logMeal` action in

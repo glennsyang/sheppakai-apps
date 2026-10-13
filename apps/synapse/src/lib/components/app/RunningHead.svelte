@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import type { SidebarNav, User } from '$lib/types';
+
+	import type { SidebarNav, User } from '#lib/types.js';
 
 	import ThemeToggle from './ThemeToggle.svelte';
 	import UserMenu from './UserMenu.svelte';

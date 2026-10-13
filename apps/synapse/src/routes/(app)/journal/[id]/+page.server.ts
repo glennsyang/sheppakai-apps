@@ -1,16 +1,17 @@
-import { idSchema } from '$lib/schemas/common';
-import { buildWeatherJson, journalEntrySchema } from '$lib/schemas/journal';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { getDb } from '$lib/server/db';
-import { journalEntries } from '$lib/server/db/schema';
-import { withTimestampsForUpdate } from '$lib/server/db/utils';
-import { logger } from '$lib/server/logger';
-import { safeParse } from '$lib/utils/json';
 import { error, redirect } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { idSchema } from '#lib/schemas/common.js';
+import { buildWeatherJson, journalEntrySchema } from '#lib/schemas/journal.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { getDb } from '#lib/server/db/index.js';
+import { journalEntries } from '#lib/server/db/schema/index.js';
+import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
+import { logger } from '#lib/server/logger.js';
+import { safeParse } from '#lib/utils/json.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

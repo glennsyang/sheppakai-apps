@@ -1,14 +1,15 @@
-import { createRoutineSchema, MOOD_TAGS, type MoodTag } from '$lib/schemas/meditation';
-import { requireAuth } from '$lib/server/actions/auth-guard';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { splitCommaSeparated } from '$lib/server/actions/string-parsers';
-import { getDb } from '$lib/server/db';
-import { meditationRoutines } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate } from '$lib/server/db/utils';
-import { logger } from '$lib/server/logger';
 import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { createRoutineSchema, MOOD_TAGS, type MoodTag } from '#lib/schemas/meditation.js';
+import { requireAuth } from '#lib/server/actions/auth-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { splitCommaSeparated } from '#lib/server/actions/string-parsers.js';
+import { getDb } from '#lib/server/db/index.js';
+import { meditationRoutines } from '#lib/server/db/schema/index.js';
+import { generateId, withTimestampsForCreate } from '#lib/server/db/utils.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

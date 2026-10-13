@@ -1,7 +1,7 @@
 <script lang="ts">
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import SectionHeader from '$lib/components/SectionHeader.svelte';
-	import DataTable from '$lib/components/ui/data-table/data-table.svelte';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import SectionHeader from '#lib/components/SectionHeader.svelte';
+	import DataTable from '#lib/components/ui/data-table/data-table.svelte';
 
 	import type { PageProps } from './$types';
 	import { columns } from './columns';

@@ -1,13 +1,4 @@
 <script lang="ts">
-	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import * as Separator from '$lib/components/ui/separator';
-	import {
-		convertVisitThresholdFromDays,
-		convertVisitThresholdToDays
-	} from '$lib/utils/visit-status';
 	import {
 		CircleAlert,
 		CircleCheck,
@@ -20,6 +11,16 @@
 		X
 	} from '@lucide/svelte';
 	import { superForm } from 'sveltekit-superforms';
+
+	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import * as Separator from '#lib/components/ui/separator/index.js';
+	import {
+		convertVisitThresholdFromDays,
+		convertVisitThresholdToDays
+	} from '#lib/utils/visit-status.js';
 
 	import type { PageProps } from './$types';
 

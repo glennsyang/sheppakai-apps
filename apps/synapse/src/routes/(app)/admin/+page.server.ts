@@ -1,27 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
 import { BETTER_AUTH_BASE_URL, FLY_APP_NAME } from '$app/env/private';
-import { scopesToPermissions, type ApiScope } from '$lib/api-scopes';
-import type { AdminApiLogEntry } from '$lib/components/admin/api-logs-columns';
-import {
-	banUserSchema,
-	createUserSchema,
-	removeUserSchema,
-	sendWelcomeEmailSchema,
-	setRoleSchema,
-	unbanUserSchema
-} from '$lib/schemas/admin-user';
-import { createApiKeySchema, revokeApiKeySchema } from '$lib/schemas/api-key';
-import { unarchivePersonSchema } from '$lib/schemas/visits';
-import { assertAdmin, requireAdmin } from '$lib/server/actions/auth-guard';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { allowedEmails, auth } from '$lib/server/auth';
-import { getDb } from '$lib/server/db';
-import { apiAuditLog, apiKey, people, user, visits } from '$lib/server/db/schema';
-import { withTimestampsForUpdate } from '$lib/server/db/utils';
-import { sendWelcomeEmail } from '$lib/server/email';
-import { logger } from '$lib/server/logger';
-import { sendAuthAlerts } from '$lib/server/notifications';
 import { parsePermissions } from '@sheppakai/shared/api-scopes';
 import { buildAllowlistCommand, formatAlertEmail } from '@sheppakai/shared/auth-allowlist';
 import { isRedirect } from '@sveltejs/kit';
@@ -29,6 +8,28 @@ import { APIError } from 'better-auth/api';
 import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { message, setError, superValidate, type SuperValidated } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { scopesToPermissions, type ApiScope } from '#lib/api-scopes.js';
+import type { AdminApiLogEntry } from '#lib/components/admin/api-logs-columns.js';
+import {
+	banUserSchema,
+	createUserSchema,
+	removeUserSchema,
+	sendWelcomeEmailSchema,
+	setRoleSchema,
+	unbanUserSchema
+} from '#lib/schemas/admin-user.js';
+import { createApiKeySchema, revokeApiKeySchema } from '#lib/schemas/api-key.js';
+import { unarchivePersonSchema } from '#lib/schemas/visits.js';
+import { assertAdmin, requireAdmin } from '#lib/server/actions/auth-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { allowedEmails, auth } from '#lib/server/auth.js';
+import { getDb } from '#lib/server/db/index.js';
+import { apiAuditLog, apiKey, people, user, visits } from '#lib/server/db/schema/index.js';
+import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
+import { sendWelcomeEmail } from '#lib/server/email/index.js';
+import { logger } from '#lib/server/logger.js';
+import { sendAuthAlerts } from '#lib/server/notifications/index.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

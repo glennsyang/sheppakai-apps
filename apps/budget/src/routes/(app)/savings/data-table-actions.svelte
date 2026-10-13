@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { Savings } from '$lib';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
-	import SavingsModal from '$lib/components/SavingsModal.svelte';
-	import { savingsFormContext } from '$lib/contexts';
+	import type { Savings } from '#lib';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import SavingsModal from '#lib/components/SavingsModal.svelte';
+	import { savingsFormContext } from '#lib/contexts/index.js';
 
 	let { id, savingsData }: { id: string; savingsData: Savings } = $props();
 

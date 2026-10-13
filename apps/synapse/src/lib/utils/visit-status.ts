@@ -1,4 +1,4 @@
-import { calendarDaysBetween, getTodayString } from '$lib/utils/date';
+import { calendarDaysBetween, getTodayString } from '#lib/utils/date.js';
 
 /**
  * Visit status types

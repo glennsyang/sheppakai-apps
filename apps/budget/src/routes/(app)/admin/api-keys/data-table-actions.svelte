@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import { revokeApiKeyFormContext } from '$lib/contexts';
 	import TrashIcon from '@lucide/svelte/icons/trash-2';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { revokeApiKeyFormContext } from '#lib/contexts/index.js';
 
 	import type { AdminApiKey } from './columns';
 

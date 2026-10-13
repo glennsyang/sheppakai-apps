@@ -1,11 +1,12 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import * as Chart from '$lib/components/ui/chart';
-	import { parseLocalDateString } from '$lib/utils/date';
-	import { getMoodScoreLabel } from '$lib/utils/mood';
 	import AreaChartIcon from '@lucide/svelte/icons/chart-area';
 	import { scaleUtc } from 'd3-scale';
 	import { AreaChart } from 'layerchart';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import { parseLocalDateString } from '#lib/utils/date.js';
+	import { getMoodScoreLabel } from '#lib/utils/mood.js';
 
 	interface MoodTrendPoint {
 		date: string;

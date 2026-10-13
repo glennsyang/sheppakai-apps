@@ -1,5 +1,5 @@
 // This module runs in the browser (geolocation + fetch from a client-side dialog), so it
-// cannot import the canonical logger — that logger lives under `$lib/server/` specifically so
+// cannot import the canonical logger — that logger lives under `#lib/server/` specifically so
 // SvelteKit's server-only import guard keeps it (and the Sentry SDK it pulls in) out of client
 // bundles. A plain console.error is the deliberate exception to the "no console.*" convention.
 const weatherMap: Record<number, { label: string; icon: string }> = {

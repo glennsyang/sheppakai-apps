@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import type { JournalEntry } from '$lib/types';
-	import { formatDateHeuristic } from '$lib/utils/date';
-	import { renderMarkdownToSafeHtml } from '$lib/utils/markdown';
 	import { Cloud, MapPin, Pencil, Trash2 } from '@lucide/svelte/icons';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import type { JournalEntry } from '#lib/types.js';
+	import { formatDateHeuristic } from '#lib/utils/date.js';
+	import { renderMarkdownToSafeHtml } from '#lib/utils/markdown.js';
 
 	import ConfirmDialog from '../shared/ConfirmDialog.svelte';
 

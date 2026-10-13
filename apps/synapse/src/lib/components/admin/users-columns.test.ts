@@ -1,7 +1,8 @@
-import type { User } from '$lib/types';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/components/ui/data-table', () => ({
+import type { User } from '#lib/types.js';
+
+vi.mock('#lib/components/ui/data-table/index.js', () => ({
 	renderComponent: (component: unknown, props: Record<string, unknown>) => ({
 		component,
 		props

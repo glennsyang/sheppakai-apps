@@ -1,8 +1,13 @@
-import type { ApiUpsertMoodInput } from '$lib/server/api/schemas/mood';
-import { getDb } from '$lib/server/db';
-import { moodLogs } from '$lib/server/db/schema';
-import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '$lib/server/db/utils';
 import { and, eq } from 'drizzle-orm';
+
+import type { ApiUpsertMoodInput } from '#lib/server/api/schemas/mood.js';
+import { getDb } from '#lib/server/db/index.js';
+import { moodLogs } from '#lib/server/db/schema/index.js';
+import {
+	generateId,
+	withTimestampsForCreate,
+	withTimestampsForUpdate
+} from '#lib/server/db/utils.js';
 
 function normalizeOptionalText(value: string | undefined): string | null {
 	if (!value) return null;

@@ -1,13 +1,14 @@
-import { recurringSchema, togglePaidSchema } from '$lib/formSchemas';
-import { requireAuth } from '$lib/server/actions/auth-guard';
-import { createCrudActions } from '$lib/server/actions/crud-helpers';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { recurringQueries } from '$lib/server/db/queries';
-import { recurring } from '$lib/server/db/schema';
-import { markRecurringPaid } from '$lib/server/db/writes/recurring';
-import { logger } from '$lib/server/logger';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { recurringSchema, togglePaidSchema } from '#lib/formSchemas/index.js';
+import { requireAuth } from '#lib/server/actions/auth-guard.js';
+import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { recurringQueries } from '#lib/server/db/queries/index.js';
+import { recurring } from '#lib/server/db/schema/index.js';
+import { markRecurringPaid } from '#lib/server/db/writes/recurring.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

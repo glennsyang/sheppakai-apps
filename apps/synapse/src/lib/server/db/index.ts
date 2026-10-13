@@ -1,6 +1,7 @@
 import { DATABASE_URL, NODE_ENV } from '$app/env/private';
-import { logger } from '$lib/server/logger';
 import { createGetDb } from '@sheppakai/shared/db';
+
+import { logger } from '#lib/server/logger.js';
 
 import * as schema from './schema';
 

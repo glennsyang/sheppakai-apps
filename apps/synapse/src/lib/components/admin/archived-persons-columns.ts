@@ -1,7 +1,8 @@
-import { type Features, renderComponent } from '$lib/components/ui/data-table';
-import type { people } from '$lib/server/db/schema';
-import { formatDateMedium, getTodayString } from '$lib/utils/date';
 import type { ColumnDef } from '@tanstack/table-core';
+
+import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
+import type { people } from '#lib/server/db/schema/index.js';
+import { formatDateMedium, getTodayString } from '#lib/utils/date.js';
 
 import DataTableActions from './archived-table-actions.svelte';
 import DataTableSortButton from './DataTableSortButton.svelte';

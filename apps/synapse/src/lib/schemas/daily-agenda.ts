@@ -1,5 +1,6 @@
-import { getStartOfWeek, getTodayString } from '$lib/utils/date';
 import { z } from 'zod';
+
+import { getStartOfWeek, getTodayString } from '#lib/utils/date.js';
 
 const LOCAL_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 

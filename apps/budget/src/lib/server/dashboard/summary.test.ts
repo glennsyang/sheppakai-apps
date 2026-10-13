@@ -26,7 +26,7 @@ const mockSavingsQueries = vi.hoisted(() => ({
 	getTotal: vi.fn<() => Promise<number>>(async () => 0)
 }));
 
-vi.mock('$lib/server/db/queries', () => ({
+vi.mock('#lib/server/db/queries/index.js', () => ({
 	transactionQueries: mockTransactionQueries,
 	budgetQueries: mockBudgetQueries,
 	recurringQueries: mockRecurringQueries,
@@ -34,8 +34,8 @@ vi.mock('$lib/server/db/queries', () => ({
 	savingsGoalQueries: mockSavingsGoalQueries,
 	savingsQueries: mockSavingsQueries
 }));
-vi.mock('$lib/server/db', () => ({ getDb: vi.fn<() => unknown>(() => undefined) }));
-vi.mock('$lib/server/db/schema', () => ({ contribution: {} }));
+vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => unknown>(() => undefined) }));
+vi.mock('#lib/server/db/schema/index.js', () => ({ contribution: {} }));
 
 import { getDashboardSummary, loadMonthlyDashboard, loadYearlyDashboard } from './summary';
 

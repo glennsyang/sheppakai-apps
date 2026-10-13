@@ -41,9 +41,9 @@ const mockFindById = vi.hoisted(() =>
 	}))
 );
 
-vi.mock('$lib/server/db', () => ({ getDb: () => ({ insert: mockInsert }) }));
-vi.mock('$lib/server/db/queries', () => ({ incomeQueries: { findById: mockFindById } }));
-vi.mock('$lib/server/db/schema', () => ({ income: {} }));
+vi.mock('#lib/server/db/index.js', () => ({ getDb: () => ({ insert: mockInsert }) }));
+vi.mock('#lib/server/db/queries/index.js', () => ({ incomeQueries: { findById: mockFindById } }));
+vi.mock('#lib/server/db/schema/index.js', () => ({ income: {} }));
 
 import { createIncome } from './income';
 

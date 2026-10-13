@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import { actionFailureText } from '$lib/action-result';
-	import Icon from '$lib/components/Icon.svelte';
-	import TodayRing from '$lib/components/TodayRing.svelte';
-	import { DAY_LABELS } from '$lib/types';
-	import type { MealPlanEntryWithRecipe } from '$lib/types';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance, type SubmitFunction } from '$app/forms';
+
+	import { actionFailureText } from '#lib/action-result.js';
+	import Icon from '#lib/components/Icon.svelte';
+	import TodayRing from '#lib/components/TodayRing.svelte';
+	import { DAY_LABELS } from '#lib/types.js';
+	import type { MealPlanEntryWithRecipe } from '#lib/types.js';
 
 	interface PlannerActions {
 		/** Called after the `?/remove` action succeeds. */

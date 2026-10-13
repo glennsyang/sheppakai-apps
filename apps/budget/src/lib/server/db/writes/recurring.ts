@@ -1,9 +1,10 @@
-import { getDb } from '$lib/server/db';
-import { recurringQueries } from '$lib/server/db/queries';
-import { recurring } from '$lib/server/db/schema';
-import { withUpdatedAt } from '$lib/server/db/utils';
-import type { Recurring } from '$lib/types';
 import { eq } from 'drizzle-orm';
+
+import { getDb } from '#lib/server/db/index.js';
+import { recurringQueries } from '#lib/server/db/queries/index.js';
+import { recurring } from '#lib/server/db/schema/index.js';
+import { withUpdatedAt } from '#lib/server/db/utils.js';
+import type { Recurring } from '#lib/types.js';
 
 /**
  * The single write path for paid/unpaid toggling, shared by the UI's `togglePaid` action and

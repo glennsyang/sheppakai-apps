@@ -1,17 +1,18 @@
 <script lang="ts">
-	import { API_SCOPES, type ApiScope } from '$lib/api-scopes';
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import SectionHeader from '$lib/components/SectionHeader.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-	import DataTable from '$lib/components/ui/data-table/data-table.svelte';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
-	import { revokeApiKeyFormContext } from '$lib/contexts';
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import KeyRoundIcon from '@lucide/svelte/icons/key-round';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
+
+	import { API_SCOPES, type ApiScope } from '#lib/api-scopes.js';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import SectionHeader from '#lib/components/SectionHeader.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
+	import DataTable from '#lib/components/ui/data-table/data-table.svelte';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { revokeApiKeyFormContext } from '#lib/contexts/index.js';
 
 	import type { PageProps } from './$types';
 	import { columns } from './columns';

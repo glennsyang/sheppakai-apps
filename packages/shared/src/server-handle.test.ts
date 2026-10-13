@@ -181,20 +181,19 @@ describe('createServerHandle', () => {
 });
 
 describe('createHandleError', () => {
-	const input = (event: RequestEvent) => ({
+	const unknownInput = (event: RequestEvent) => ({
+		kind: 'unknown' as const,
 		error: new Error('boom'),
-		event,
-		status: 500,
-		message: 'Internal Error'
+		event
 	});
 
-	it('logs the error with request context and hides the message in production', () => {
+	it('logs unknown errors with request context and hides the message in production', () => {
 		const logger = fakeLogger();
 		const event = fakeEvent();
 		event.locals.requestId = 'req-1';
 		event.locals.user = { id: 'user-1' };
 
-		const result = createHandleError({ logger, dev: false })(input(event));
+		const result = createHandleError({ logger, dev: false })(unknownInput(event));
 
 		expect(result).toEqual({ message: 'An unexpected error occurred', requestId: 'req-1' });
 		expect(logger.error).toHaveBeenCalledWith(
@@ -204,10 +203,10 @@ describe('createHandleError', () => {
 		);
 	});
 
-	it('shows the real message in dev and falls back for missing context', () => {
+	it('shows the generic dev message and falls back for missing context', () => {
 		const logger = fakeLogger();
 
-		const result = createHandleError({ logger, dev: true })(input(fakeEvent()));
+		const result = createHandleError({ logger, dev: true })(unknownInput(fakeEvent()));
 
 		expect(result).toEqual({ message: 'Internal Error', requestId: 'unknown' });
 		expect(logger.error).toHaveBeenCalledWith(
@@ -215,5 +214,20 @@ describe('createHandleError', () => {
 			expect.any(Error),
 			expect.objectContaining({ userId: 'anonymous' })
 		);
+	});
+
+	it('passes expected app and framework errors through without logging', () => {
+		const logger = fakeLogger();
+		const event = fakeEvent();
+		event.locals.requestId = 'req-2';
+		const handleError = createHandleError({ logger, dev: false });
+
+		expect(
+			handleError({ kind: 'app', error: { status: 403, message: 'Forbidden' }, event })
+		).toEqual({ status: 403, message: 'Forbidden', requestId: 'req-2' });
+		expect(
+			handleError({ kind: 'framework', error: { status: 404, message: 'Not Found' }, event })
+		).toEqual({ status: 404, message: 'Not Found', requestId: 'req-2' });
+		expect(logger.error).not.toHaveBeenCalled();
 	});
 });

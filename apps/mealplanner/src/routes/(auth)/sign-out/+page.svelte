@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { POST_LOGIN_ROUTE } from '$lib/auth-routes';
-	import AuthShell from '$lib/components/AuthShell.svelte';
-	import { Button } from '$lib/components/ui/button';
+
+	import { POST_LOGIN_ROUTE } from '#lib/auth-routes.js';
+	import AuthShell from '#lib/components/AuthShell.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
 </script>
 
 <svelte:head>

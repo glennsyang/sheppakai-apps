@@ -1,5 +1,6 @@
-import type { WindowCleaningCustomer } from '$lib/types';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+
+import type { WindowCleaningCustomer } from '#lib/types.js';
 
 import { getDb } from '../index';
 import { windowCleaningCustomer } from '../schema';

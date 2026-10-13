@@ -1,8 +1,9 @@
-import { suggestFromPantrySchema } from '$lib/schemas/pantry';
-import { suggestMeals } from '$lib/server/ai/gemini';
-import { logger } from '$lib/server/logger';
-import { createUserRateLimiter } from '$lib/server/rate-limiter';
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
+
+import { suggestFromPantrySchema } from '#lib/schemas/pantry.js';
+import { suggestMeals } from '#lib/server/ai/gemini.js';
+import { logger } from '#lib/server/logger.js';
+import { createUserRateLimiter } from '#lib/server/rate-limiter.js';
 
 import type { RequestHandler } from './$types';
 
@@ -32,7 +33,7 @@ export const POST: RequestHandler = async (event) => {
 
 	try {
 		const suggestions = await suggestMeals(items);
-		return json(suggestions);
+		return Response.json(suggestions);
 	} catch (err) {
 		logger.error('Suggest API error', err);
 		error(500, 'Failed to generate suggestions');

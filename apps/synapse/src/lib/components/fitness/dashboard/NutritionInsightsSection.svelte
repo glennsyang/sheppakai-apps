@@ -1,12 +1,13 @@
 <script lang="ts">
-	import LogMealDialog from '$lib/components/fitness/dialogs/LogMealDialog.svelte';
-	import SetCalorieTargetDialog from '$lib/components/fitness/dialogs/SetCalorieTargetDialog.svelte';
-	import * as Card from '$lib/components/ui/card';
-	import * as Chart from '$lib/components/ui/chart';
-	import type { logMealSchema, setCalorieTargetSchema } from '$lib/schemas/fitness';
-	import { getTodayString, parseLocalDateString } from '$lib/utils/date';
 	import { BarChart } from 'layerchart';
 	import type { Infer, SuperValidated } from 'sveltekit-superforms';
+
+	import LogMealDialog from '#lib/components/fitness/dialogs/LogMealDialog.svelte';
+	import SetCalorieTargetDialog from '#lib/components/fitness/dialogs/SetCalorieTargetDialog.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import type { logMealSchema, setCalorieTargetSchema } from '#lib/schemas/fitness.js';
+	import { getTodayString, parseLocalDateString } from '#lib/utils/date.js';
 
 	import FitnessStatusCard from './FitnessStatusCard.svelte';
 

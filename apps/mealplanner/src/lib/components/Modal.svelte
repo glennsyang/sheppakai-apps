@@ -1,7 +1,8 @@
 <script lang="ts">
-	import * as Dialog from '$lib/components/ui/dialog';
-	import * as Sheet from '$lib/components/ui/sheet';
 	import type { Snippet } from 'svelte';
+
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import * as Sheet from '#lib/components/ui/sheet/index.js';
 
 	interface Props {
 		open: boolean;

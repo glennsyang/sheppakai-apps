@@ -1,9 +1,10 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Chart from '$lib/components/ui/chart/index.js';
-	import type { SpendingBreakdownData } from '$lib/types';
-	import { formatCurrency } from '$lib/utils';
 	import { Arc, PieChart } from 'layerchart';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import type { SpendingBreakdownData } from '#lib/types.js';
+	import { formatCurrency } from '#lib/utils.js';
 
 	interface Props {
 		chartData: SpendingBreakdownData[];

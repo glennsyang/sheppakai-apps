@@ -1,5 +1,6 @@
-import type { Income } from '$lib/types';
 import { and, asc } from 'drizzle-orm';
+
+import type { Income } from '#lib/types.js';
 
 import { income } from '../schema';
 import { dateInRange } from '../utils';

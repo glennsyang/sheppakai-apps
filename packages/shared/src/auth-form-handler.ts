@@ -1,5 +1,5 @@
 // Auth-action wrapper. Each app binds its logger and Better Auth error-message map
-// via `createAuthFormHandler` in its own `$lib/server/actions/auth-form-handler`.
+// via `createAuthFormHandler` in its own `#lib/server/actions/auth-form-handler`.
 
 import { isRedirect } from '@sveltejs/kit';
 import { message } from 'sveltekit-superforms/server';

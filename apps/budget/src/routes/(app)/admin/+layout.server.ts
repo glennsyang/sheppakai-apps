@@ -1,4 +1,4 @@
-import { assertAdmin } from '$lib/server/auth';
+import { assertAdmin } from '#lib/server/auth.js';
 
 import type { LayoutServerLoad } from './$types';
 

@@ -1,9 +1,10 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card/index.js';
-	import type { SavingsGoalWithProgress } from '$lib/types';
-	import { formatCurrency } from '$lib/utils';
-	import { formatLocalTimestamp } from '$lib/utils/dates';
 	import { CheckIcon, ChevronRightIcon, PauseIcon, TargetIcon } from '@lucide/svelte/icons';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import type { SavingsGoalWithProgress } from '#lib/types.js';
+	import { formatCurrency } from '#lib/utils.js';
+	import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
 	interface Props {
 		goals: SavingsGoalWithProgress[];

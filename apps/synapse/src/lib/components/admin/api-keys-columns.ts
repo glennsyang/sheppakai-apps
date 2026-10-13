@@ -1,5 +1,6 @@
-import { type Features, renderComponent } from '$lib/components/ui/data-table';
 import type { ColumnDef } from '@tanstack/table-core';
+
+import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
 
 import DataTableActions from './api-key-table-actions.svelte';
 import ApiKeyScopesBadges from './ApiKeyScopesBadges.svelte';

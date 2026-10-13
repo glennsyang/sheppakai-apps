@@ -1,5 +1,6 @@
-import { isMoodValue, moodPeriods } from '$lib/utils/mood';
 import { z } from 'zod';
+
+import { isMoodValue, moodPeriods } from '#lib/utils/mood.js';
 
 const localDateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format');
 

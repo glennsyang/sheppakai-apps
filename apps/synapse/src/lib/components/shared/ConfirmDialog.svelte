@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Dialog from '$lib/components/ui/dialog';
+	import { enhance, type ActionResult } from '$app/forms';
 	import { actionMessage } from '@sheppakai/shared/action-message';
-	import type { ActionResult } from '@sveltejs/kit';
 	import { toast } from 'svelte-sonner';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
 
 	import Input from '../ui/input/input.svelte';
 
@@ -68,7 +68,8 @@
 						toast.error(resultMessage.text);
 					}
 
-					await update();
+					// Stay on this page even when the action lives on another route (SvelteKit 3 navigates by default).
+					await update({ navigate: false });
 				};
 			}}
 		>

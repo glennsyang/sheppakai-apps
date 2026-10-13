@@ -1,5 +1,6 @@
-import { TaskStateEnum } from '$lib/schemas/task';
 import { z } from 'zod';
+
+import { TaskStateEnum } from '#lib/schemas/task.js';
 
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (use YYYY-MM-DD)');
 

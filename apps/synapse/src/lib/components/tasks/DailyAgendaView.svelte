@@ -1,17 +1,7 @@
 <script lang="ts">
-	import { applyAction, enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { applyAction, enhance, type ActionResult } from '$app/forms';
+	import { refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
-	import { cn } from '$lib';
-	import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte';
-	import PenCheck from '$lib/components/shared/PenCheck.svelte';
-	import * as Alert from '$lib/components/ui/alert';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Input } from '$lib/components/ui/input';
-	import type { DailyAgendaData, DailyAgendaEntry, DailyAgendaTemplate } from '$lib/types';
-	import { daysOfWeek, getStartOfWeek } from '$lib/utils/date';
 	import {
 		CalendarDays,
 		ChevronLeft,
@@ -22,8 +12,18 @@
 		Trash2,
 		X
 	} from '@lucide/svelte';
-	import type { ActionResult } from '@sveltejs/kit';
 	import { toast } from 'svelte-sonner';
+
+	import { cn } from '#lib';
+	import ConfirmDialog from '#lib/components/shared/ConfirmDialog.svelte';
+	import PenCheck from '#lib/components/shared/PenCheck.svelte';
+	import * as Alert from '#lib/components/ui/alert/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import type { DailyAgendaData, DailyAgendaEntry, DailyAgendaTemplate } from '#lib/types.js';
+	import { daysOfWeek, getStartOfWeek } from '#lib/utils/date.js';
 
 	import Confetti from '../shared/Confetti.svelte';
 	import DailyAgendaRadial from './DailyAgendaRadial.svelte';
@@ -262,14 +262,14 @@
 	};
 
 	function buildAgendaHref(weekStart: string): string {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		url.searchParams.set('tab', 'agenda');
 		url.searchParams.set('week', weekStart);
 		return `${url.pathname}?${url.searchParams.toString()}`;
 	}
 
 	function buildAgendaActionHref(actionName: string): string {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		const searchParams = new URLSearchParams(url.searchParams);
 
 		for (const key of Array.from(searchParams.keys())) {
@@ -304,7 +304,7 @@
 					if (!options.silentSuccess && options.successMessage) {
 						toast.success(typeof message === 'string' ? message : options.successMessage);
 					}
-					await invalidateAll();
+					await refreshAll();
 					await applyAction(result);
 					return;
 				}
@@ -315,6 +315,7 @@
 							? message
 							: (options.errorMessage ?? 'Unable to save Daily Agenda changes.')
 					);
+
 					options.afterFailure?.();
 					await applyAction(result);
 					return;
@@ -968,9 +969,9 @@
 			</div>
 
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (defaultsDialogOpen = false)}>
-					Close
-				</Button>
+				<Button type="button" variant="outline" onclick={() => (defaultsDialogOpen = false)}
+					>Close</Button
+				>
 			</Dialog.Footer>
 		</Dialog.Content>
 	</Dialog.Root>

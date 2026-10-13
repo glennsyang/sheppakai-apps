@@ -1,13 +1,13 @@
 <script lang="ts">
-	import type { Contribution, SavingsGoal } from '$lib';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import ContributionModal from '$lib/components/ContributionModal.svelte';
-	import RowActionsMenu from '$lib/components/RowActionsMenu.svelte';
+	import type { Contribution, SavingsGoal } from '#lib';
+	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import ContributionModal from '#lib/components/ContributionModal.svelte';
+	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
 	import {
 		contributionFormContext,
 		contributionSuccessContext,
 		savingsGoalsContext
-	} from '$lib/contexts';
+	} from '#lib/contexts/index.js';
 
 	let { id, contributionData }: { id: string; contributionData: Contribution } = $props();
 

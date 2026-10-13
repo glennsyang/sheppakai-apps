@@ -15,13 +15,13 @@ const mockState = vi.hoisted(() => {
 	};
 });
 
-vi.mock('$lib/server/db', () => ({
+vi.mock('#lib/server/db/index.js', () => ({
 	getDb: () => {
 		throw mockState.dbError;
 	}
 }));
 
-vi.mock('$lib/server/db/queries', () => ({
+vi.mock('#lib/server/db/queries/index.js', () => ({
 	accountQueries: mockState.failingQueries,
 	budgetQueries: mockState.failingQueries,
 	contributionQueries: mockState.failingQueries,
@@ -34,15 +34,15 @@ vi.mock('$lib/server/db/queries', () => ({
 	windowCleaningJobQueries: mockState.failingQueries
 }));
 
-vi.mock('$lib/server/dashboard/summary', () => ({
+vi.mock('#lib/server/dashboard/summary.js', () => ({
 	loadMonthlyDashboard: async () => Promise.reject(mockState.dbError),
 	loadYearlyDashboard: async () => Promise.reject(mockState.dbError)
 }));
 
-vi.mock('$lib/server/auth', () => ({ auth: { api: {} } }));
-vi.mock('$lib/server/email', () => ({ sendPasswordChangedEmail: vi.fn<() => void>() }));
+vi.mock('#lib/server/auth.js', () => ({ auth: { api: {} } }));
+vi.mock('#lib/server/email/index.js', () => ({ sendPasswordChangedEmail: vi.fn<() => void>() }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<() => void>(),
 		info: vi.fn<() => void>(),

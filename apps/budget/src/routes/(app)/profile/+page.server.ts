@@ -1,15 +1,16 @@
-import { changePasswordSchema, updateProfileSchema } from '$lib/formSchemas';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { auth } from '$lib/server/auth';
-import { accountQueries, userQueries } from '$lib/server/db/queries';
-import { updateUserName } from '$lib/server/db/writes/users';
-import { sendPasswordChangedEmail } from '$lib/server/email';
-import { logger } from '$lib/server/logger';
-import { createUserRateLimiter, rateLimitedMessage } from '$lib/server/rate-limiter';
-import { getBetterAuthErrorMessage } from '$lib/utils';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { changePasswordSchema, updateProfileSchema } from '#lib/formSchemas/index.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { auth } from '#lib/server/auth.js';
+import { accountQueries, userQueries } from '#lib/server/db/queries/index.js';
+import { updateUserName } from '#lib/server/db/writes/users.js';
+import { sendPasswordChangedEmail } from '#lib/server/email/index.js';
+import { logger } from '#lib/server/logger.js';
+import { createUserRateLimiter, rateLimitedMessage } from '#lib/server/rate-limiter.js';
+import { getBetterAuthErrorMessage } from '#lib/utils.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

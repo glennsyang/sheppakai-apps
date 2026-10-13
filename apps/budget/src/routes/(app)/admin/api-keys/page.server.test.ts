@@ -11,22 +11,22 @@ const { listAllWithOwnerMock, deleteApiKeyByIdMock, loggerMock } = vi.hoisted(()
 	}
 }));
 
-vi.mock('$lib/server/auth', () => ({
+vi.mock('#lib/server/auth.js', () => ({
 	auth: { api: {} },
 	assertAdmin: (locals: App.Locals) => {
 		if (locals.user?.role !== 'admin') throw new Error('Forbidden');
 	}
 }));
 
-vi.mock('$lib/server/db/queries', () => ({
+vi.mock('#lib/server/db/queries/index.js', () => ({
 	apiKeyQueries: { listAllWithOwner: listAllWithOwnerMock }
 }));
 
-vi.mock('$lib/server/db/writes/api-keys', () => ({
+vi.mock('#lib/server/db/writes/api-keys.js', () => ({
 	deleteApiKeyById: deleteApiKeyByIdMock
 }));
 
-vi.mock('$lib/server/logger', () => ({ logger: loggerMock }));
+vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 
 import { actions, load } from './+page.server';
 

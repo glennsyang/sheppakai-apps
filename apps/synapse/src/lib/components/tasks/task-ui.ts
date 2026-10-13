@@ -1,4 +1,4 @@
-import type { TaskState } from '$lib/schemas/task';
+import type { TaskState } from '#lib/schemas/task.js';
 
 export type TaskPriority = 1 | 2 | 3 | 4;
 

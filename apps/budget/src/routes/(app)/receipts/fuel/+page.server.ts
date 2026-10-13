@@ -1,7 +1,7 @@
-import { transactionQueries } from '$lib/server/db/queries';
-import { logger } from '$lib/server/logger';
-import { getReceiptLoadContext } from '$lib/server/receipts';
-import { calculateMonthsSinceJanuary } from '$lib/utils/dates';
+import { transactionQueries } from '#lib/server/db/queries/index.js';
+import { logger } from '#lib/server/logger.js';
+import { getReceiptLoadContext } from '#lib/server/receipts/index.js';
+import { calculateMonthsSinceJanuary } from '#lib/utils/dates.js';
 
 import type { PageServerLoad } from './$types';
 
@@ -36,4 +36,4 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 	}
 };
 
-export { receiptActions as actions } from '$lib/server/receipts';
+export { receiptActions as actions } from '#lib/server/receipts/index.js';

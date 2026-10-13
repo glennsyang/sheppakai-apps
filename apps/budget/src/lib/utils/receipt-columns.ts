@@ -1,11 +1,12 @@
-import type { Transaction } from '$lib';
-import DataTableSortButton from '$lib/components/DataTableSortButton.svelte';
-import { moneyCell } from '$lib/components/table/cells';
-import TransactionRowActions from '$lib/components/TransactionRowActions.svelte';
-import { type Features, renderComponent } from '$lib/components/ui/data-table/index.js';
-import { formatCurrency } from '$lib/utils';
-import { formatLocalTimestamp } from '$lib/utils/dates';
 import type { ColumnDef } from '@tanstack/table-core';
+
+import type { Transaction } from '#lib';
+import DataTableSortButton from '#lib/components/DataTableSortButton.svelte';
+import { moneyCell } from '#lib/components/table/cells.js';
+import TransactionRowActions from '#lib/components/TransactionRowActions.svelte';
+import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
+import { formatCurrency } from '#lib/utils.js';
+import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
 export function createReceiptColumns(
 	actionUrl: string,

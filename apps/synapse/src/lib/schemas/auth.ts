@@ -1,6 +1,7 @@
-import { convertVisitThresholdToDays } from '$lib/utils/visit-status';
 import { updateNameSchema } from '@sheppakai/shared/auth-schemas';
 import { z } from 'zod';
+
+import { convertVisitThresholdToDays } from '#lib/utils/visit-status.js';
 
 export { changePasswordSchema } from '@sheppakai/shared/auth-schemas';
 

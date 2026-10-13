@@ -1,5 +1,6 @@
-import { transactionSchema } from '$lib/formSchemas';
 import { z } from 'zod';
+
+import { transactionSchema } from '#lib/formSchemas/index.js';
 
 // Reuses the field rules (amount positivity, payee/notes length, date format) the form
 // action already validates against, so the API and the UI can't drift on what counts as

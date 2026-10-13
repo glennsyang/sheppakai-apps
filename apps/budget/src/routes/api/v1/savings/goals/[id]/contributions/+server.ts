@@ -1,10 +1,11 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError } from '$lib/server/api/response';
-import { apiCreateContributionSchema } from '$lib/server/api/schemas/contributions';
-import { savingsGoalQueries } from '$lib/server/db/queries';
-import { createContribution } from '$lib/server/db/writes/contributions';
 import { parseJsonBody } from '@sheppakai/shared/api-write';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError } from '#lib/server/api/response.js';
+import { apiCreateContributionSchema } from '#lib/server/api/schemas/contributions.js';
+import { savingsGoalQueries } from '#lib/server/db/queries/index.js';
+import { createContribution } from '#lib/server/db/writes/contributions.js';
 
 import type { RequestHandler } from './$types';
 

@@ -1,6 +1,7 @@
-import { logger } from '$lib/server/logger';
-import { getVisitStatusThresholdsByUserIds } from '$lib/server/visit-status-settings';
 import { and, eq, gte, sql } from 'drizzle-orm';
+
+import { logger } from '#lib/server/logger.js';
+import { getVisitStatusThresholdsByUserIds } from '#lib/server/visit-status-settings.js';
 
 import { getDb } from '../db';
 import { emailNotifications, people, user, visits } from '../db/schema';

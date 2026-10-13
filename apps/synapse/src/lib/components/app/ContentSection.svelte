@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cn } from '$lib';
+	import { cn } from '#lib';
 
 	type SectionColor = 'teal' | 'blue' | 'green' | 'orange' | 'purple' | 'pink';
 

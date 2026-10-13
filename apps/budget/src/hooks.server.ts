@@ -1,11 +1,12 @@
 import { building, dev } from '$app/env';
 import { SENTRY_DSN } from '$app/env/public';
-import { sentryDataCollection } from '$lib/sentry-data-collection';
-import { allowedEmails, auth } from '$lib/server/auth';
-import { logger } from '$lib/server/logger';
 import * as Sentry from '@sentry/sveltekit';
 import { createHandleError, createServerHandle } from '@sheppakai/shared/server-handle';
 import { sequence } from '@sveltejs/kit/hooks';
+
+import { sentryDataCollection } from '#lib/sentry-data-collection.js';
+import { allowedEmails, auth } from '#lib/server/auth.js';
+import { logger } from '#lib/server/logger.js';
 
 Sentry.init({
 	dsn: SENTRY_DSN,

@@ -34,8 +34,8 @@ vi.mock('./factory', () => ({
 }));
 
 // padMonth is a real utility — do NOT mock it
-vi.mock('$lib/utils/dates', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('$lib/utils/dates')>();
+vi.mock('#lib/utils/dates.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('#lib/utils/dates.js')>();
 	return { padMonth: actual.padMonth };
 });
 

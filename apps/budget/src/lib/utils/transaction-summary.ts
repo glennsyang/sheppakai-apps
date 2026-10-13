@@ -1,4 +1,4 @@
-import type { Transaction } from '$lib/types';
+import type { Transaction } from '#lib/types.js';
 
 export type TransactionSummary = {
 	monthlyTotal: number;

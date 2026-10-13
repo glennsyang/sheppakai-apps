@@ -1,7 +1,7 @@
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
-import { recurringQueries } from '$lib/server/db/queries';
-import { logger } from '$lib/server/logger';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
+import { recurringQueries } from '#lib/server/db/queries/index.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

@@ -1,5 +1,5 @@
-import { logger } from '$lib/server/logger';
-import { listPantryItems } from '$lib/server/services/pantry';
+import { logger } from '#lib/server/logger.js';
+import { listPantryItems } from '#lib/server/services/pantry.js';
 
 import type { PageServerLoad } from './$types';
 

@@ -7,12 +7,12 @@ const mockState = vi.hoisted(() => ({
 	listUsers: vi.fn<() => Promise<unknown>>()
 }));
 
-vi.mock('$lib/server/db', () => ({ getDb: mockState.getDb }));
+vi.mock('#lib/server/db/index.js', () => ({ getDb: mockState.getDb }));
 
 // Importing the real module boots better-auth, so fake assertAdmin with the same
 // 401/403 contract. What these tests pin down is that each load guards itself
 // before touching data, rather than relying on the parent layout.
-vi.mock('$lib/server/auth', async () => {
+vi.mock('#lib/server/auth.js', async () => {
 	const { error } = await import('@sveltejs/kit');
 	return {
 		assertAdmin: (locals: App.Locals) => {
@@ -23,7 +23,7 @@ vi.mock('$lib/server/auth', async () => {
 	};
 });
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<() => void>(),
 		info: vi.fn<() => void>(),

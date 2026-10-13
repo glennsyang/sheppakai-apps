@@ -3,7 +3,7 @@
  *
  * Shared by every app, and imported by both client (`.svelte`) and server code. No inline
  * route literals anywhere else. Convention: a `(auth)` route group with unprefixed URLs and
- * the `sign-in` / `sign-out` verb set. Each app's `$lib/auth-routes` re-exports these and
+ * the `sign-in` / `sign-out` verb set. Each app's `#lib/auth-routes` re-exports these and
  * adds its own `POST_LOGIN_ROUTE`.
  */
 

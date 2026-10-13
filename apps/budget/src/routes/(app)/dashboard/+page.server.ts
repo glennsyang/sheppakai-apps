@@ -1,11 +1,12 @@
-import { dashboardVisibilitySchema, transactionSchema } from '$lib/formSchemas';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { loadMonthlyDashboard, loadYearlyDashboard } from '$lib/server/dashboard/summary';
-import { dashboardPreferenceQueries } from '$lib/server/db/queries';
-import { logger } from '$lib/server/logger';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { dashboardVisibilitySchema, transactionSchema } from '#lib/formSchemas/index.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { loadMonthlyDashboard, loadYearlyDashboard } from '#lib/server/dashboard/summary.js';
+import { dashboardPreferenceQueries } from '#lib/server/db/queries/index.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

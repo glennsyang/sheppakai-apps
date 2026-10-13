@@ -1,9 +1,10 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError } from '$lib/server/api/response';
-import { apiUpdateWindowCleaningCustomerSchema } from '$lib/server/api/schemas/window-cleaning-customers';
-import { updateWindowCleaningCustomer } from '$lib/server/db/writes/window-cleaning-customers';
 import { ApiWriteError, parseJsonBody } from '@sheppakai/shared/api-write';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError } from '#lib/server/api/response.js';
+import { apiUpdateWindowCleaningCustomerSchema } from '#lib/server/api/schemas/window-cleaning-customers.js';
+import { updateWindowCleaningCustomer } from '#lib/server/db/writes/window-cleaning-customers.js';
 
 import type { RequestHandler } from './$types';
 

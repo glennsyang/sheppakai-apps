@@ -16,9 +16,11 @@ const mockFindById = vi.hoisted(() =>
 	vi.fn<(id: string) => Promise<FoundRecurring>>(async (id) => ({ id, paid: true }))
 );
 
-vi.mock('$lib/server/db', () => ({ getDb: () => ({ update: mockUpdate }) }));
-vi.mock('$lib/server/db/queries', () => ({ recurringQueries: { findById: mockFindById } }));
-vi.mock('$lib/server/db/schema', () => ({ recurring: { id: 'recurring.id' } }));
+vi.mock('#lib/server/db/index.js', () => ({ getDb: () => ({ update: mockUpdate }) }));
+vi.mock('#lib/server/db/queries/index.js', () => ({
+	recurringQueries: { findById: mockFindById }
+}));
+vi.mock('#lib/server/db/schema', () => ({ recurring: { id: 'recurring.id' } }));
 vi.mock('drizzle-orm', () => ({ eq: (field: unknown, value: unknown) => ({ field, value }) }));
 
 import { markRecurringPaid } from './recurring';

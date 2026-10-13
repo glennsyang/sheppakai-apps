@@ -158,11 +158,11 @@ vi.mock('drizzle-orm', () => ({
 	getTableColumns: () => ({ id: 'id-column' })
 }));
 
-vi.mock('$lib/server/db', () => ({
+vi.mock('#lib/server/db/index.js', () => ({
 	getDb: () => mockState.db
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		info: mockState.loggerInfo,
 		error: mockState.loggerError

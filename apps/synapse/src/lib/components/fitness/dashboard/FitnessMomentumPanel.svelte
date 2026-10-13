@@ -1,10 +1,11 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { getTodayString, parseLocalDateString } from '$lib/utils/date';
-	import { calorieLegendItems, getCalorieAdherenceClass } from '$lib/utils/weight';
-	import { getWorkoutChartColor, workoutTypeOptions } from '$lib/utils/workout';
 	import { Dumbbell, Scale, UtensilsCrossed } from '@lucide/svelte/icons';
+
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import { getTodayString, parseLocalDateString } from '#lib/utils/date.js';
+	import { calorieLegendItems, getCalorieAdherenceClass } from '#lib/utils/weight.js';
+	import { getWorkoutChartColor, workoutTypeOptions } from '#lib/utils/workout.js';
 
 	interface Workout {
 		id: string;

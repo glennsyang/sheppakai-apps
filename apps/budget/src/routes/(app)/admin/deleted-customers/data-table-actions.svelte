@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type { WindowCleaningCustomer } from '$lib';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import { restoreCustomerFormContext } from '$lib/contexts';
 	import ArchiveRestoreIcon from '@lucide/svelte/icons/archive-restore';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
+
+	import type { WindowCleaningCustomer } from '#lib';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { restoreCustomerFormContext } from '#lib/contexts/index.js';
 
 	type DeletedCustomer = WindowCleaningCustomer & { user: { name: string; email: string } };
 

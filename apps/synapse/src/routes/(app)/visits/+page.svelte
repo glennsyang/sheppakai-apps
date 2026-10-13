@@ -1,14 +1,15 @@
 <script lang="ts">
-	import { replaceState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
-	import PageShell from '$lib/components/app/PageShell.svelte';
-	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
-	import PageSkeleton from '$lib/components/skeletons/PageSkeleton.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Tabs from '$lib/components/ui/tabs';
-	import { formatDateHeuristic } from '$lib/utils/date';
-	import { getStatusLabel, type VisitStatus } from '$lib/utils/visit-status';
 	import { Plus } from '@lucide/svelte';
+
+	import PageShell from '#lib/components/app/PageShell.svelte';
+	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
+	import PageSkeleton from '#lib/components/skeletons/PageSkeleton.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import { formatDateHeuristic } from '#lib/utils/date.js';
+	import { getStatusLabel, type VisitStatus } from '#lib/utils/visit-status.js';
 
 	import type { PageData } from './$types';
 
@@ -63,7 +64,7 @@
 			nextUrl.searchParams.set('status', nextTab);
 		}
 
-		replaceState(nextUrl, page.state);
+		goto(nextUrl, { shallow: true, replace: true, state: page.state });
 	}
 
 	function peopleForTab(tab: VisitTab) {
@@ -233,9 +234,11 @@
 											></span>
 											<span class="truncate">{person.name}</span>
 										</span>
+
 										<span class="text-xs font-bold {statusText}"
 											>{getStatusLabel(person.status)}</span
 										>
+
 										<span class="text-muted-foreground col-span-2 min-w-0 md:col-span-1">
 											{#if isScheduledTab && person.nextFollowUpDate}
 												<span class="text-pen-mind font-bold">

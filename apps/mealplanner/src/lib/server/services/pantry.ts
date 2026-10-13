@@ -1,6 +1,7 @@
-import { logger } from '$lib/server/logger';
-import type { PantryItem } from '$lib/types';
 import { eq } from 'drizzle-orm';
+
+import { logger } from '#lib/server/logger.js';
+import type { PantryItem } from '#lib/types.js';
 
 import { getDb } from '../db';
 import { pantryItems } from '../db/schema';

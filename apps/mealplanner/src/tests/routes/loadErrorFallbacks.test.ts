@@ -14,10 +14,10 @@ const mockState = vi.hoisted(() => {
 	};
 });
 
-vi.mock('$lib/server/services/pantry', () => mockState.pantryMock);
-vi.mock('$lib/server/services/mealPlan', () => mockState.mealPlanMock);
-vi.mock('$lib/server/services/recipes', () => ({}));
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/services/pantry.js', () => mockState.pantryMock);
+vi.mock('#lib/server/services/mealPlan.js', () => mockState.mealPlanMock);
+vi.mock('#lib/server/services/recipes.js', () => ({}));
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<() => void>(),
 		info: vi.fn<() => void>(),

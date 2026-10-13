@@ -9,6 +9,7 @@ describe('actionFailureText (#167)', () => {
 				{
 					type: 'failure',
 					status: 500,
+					location: '/',
 					data: { form: { message: { type: 'error', text: 'Could not remove' } } }
 				},
 				'fallback'
@@ -17,9 +18,9 @@ describe('actionFailureText (#167)', () => {
 	});
 
 	it.each([
-		{ type: 'failure', status: 401, data: { error: 'Unauthorized' } },
-		{ type: 'failure', status: 400, data: { form: { valid: false } } },
-		{ type: 'error', error: new Error('boom') },
+		{ type: 'failure', status: 401, location: '/', data: { error: 'Unauthorized' } },
+		{ type: 'failure', status: 400, location: '/', data: { form: { valid: false } } },
+		{ type: 'error', error: { status: 500, message: 'boom' } },
 		{ type: 'redirect', status: 303, location: '/sign-in' }
 	] as const)('falls back for %o', (result) => {
 		expect(actionFailureText(result, 'fallback')).toBe('fallback');

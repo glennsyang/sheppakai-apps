@@ -1,14 +1,15 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
+import { parseJsonBody } from '@sheppakai/shared/api-write';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import {
 	apiCreateWindowCleaningJobSchema,
 	apiWindowCleaningJobListQuerySchema
-} from '$lib/server/api/schemas/window-cleaning-jobs';
-import { windowCleaningJobQueries } from '$lib/server/db/queries';
-import { createWindowCleaningJob } from '$lib/server/db/writes/window-cleaning-jobs';
-import { logger } from '$lib/server/logger';
-import { parseJsonBody } from '@sheppakai/shared/api-write';
+} from '#lib/server/api/schemas/window-cleaning-jobs.js';
+import { windowCleaningJobQueries } from '#lib/server/db/queries/index.js';
+import { createWindowCleaningJob } from '#lib/server/db/writes/window-cleaning-jobs.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

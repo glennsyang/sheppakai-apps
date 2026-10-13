@@ -1,13 +1,14 @@
-import type { Category } from '$lib';
-import { transactionSchema } from '$lib/formSchemas';
-import { createCrudActions } from '$lib/server/actions/crud-helpers';
-import { transaction } from '$lib/server/db/schema';
-import { toTransactionRow } from '$lib/server/db/writes/transactions';
-import { transactionBudgetAlertHooks } from '$lib/server/notifications/budget-threshold-alerts';
-import { getMonthRangeFromUrl, getYearDateRange } from '$lib/utils/dates';
 import { error } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import type { Category } from '#lib';
+import { transactionSchema } from '#lib/formSchemas/index.js';
+import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
+import { transaction } from '#lib/server/db/schema/index.js';
+import { toTransactionRow } from '#lib/server/db/writes/transactions.js';
+import { transactionBudgetAlertHooks } from '#lib/server/notifications/budget-threshold-alerts.js';
+import { getMonthRangeFromUrl, getYearDateRange } from '#lib/utils/dates.js';
 
 /** Fuel receipts are the transactions in this category; business receipts are everything else. */
 const FUEL_CATEGORY_NAME = 'Gas';

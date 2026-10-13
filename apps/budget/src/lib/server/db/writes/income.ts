@@ -1,8 +1,8 @@
-import { getDb } from '$lib/server/db';
-import { incomeQueries } from '$lib/server/db/queries';
-import { income } from '$lib/server/db/schema';
-import type { Income } from '$lib/types';
-import { formatDateForStorage } from '$lib/utils/dates';
+import { getDb } from '#lib/server/db/index.js';
+import { incomeQueries } from '#lib/server/db/queries/index.js';
+import { income } from '#lib/server/db/schema/index.js';
+import type { Income } from '#lib/types.js';
+import { formatDateForStorage } from '#lib/utils/dates.js';
 
 export type CreateIncomeInput = {
 	name: string;

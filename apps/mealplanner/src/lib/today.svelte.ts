@@ -1,4 +1,4 @@
-import { getMondayOf, weekdayIndex } from '$lib/dates';
+import { getMondayOf, weekdayIndex } from '#lib/dates.js';
 
 /**
  * Today's Mon=0 … Sun=6 index within the week starting `weekStartDate`, or null when

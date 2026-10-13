@@ -1,5 +1,5 @@
 // Auth-page `load` helpers. Each app binds its POST_LOGIN_ROUTE via
-// `createRedirectIfAuthenticated` in its own `$lib/server/auth/form-helpers`.
+// `createRedirectIfAuthenticated` in its own `#lib/server/auth/form-helpers`.
 
 import { redirect } from '@sveltejs/kit';
 import { zod4 } from 'sveltekit-superforms/adapters';

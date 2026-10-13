@@ -1,16 +1,21 @@
-import { editSessionSchema, routineFilterSchema } from '$lib/schemas/meditation';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
-import {
-	handleDeleteSession,
-	handleUpdateSession
-} from '$lib/server/actions/meditation-session-actions';
-import { getDb } from '$lib/server/db';
-import { meditationRoutines, meditationSchedules, meditationSessions } from '$lib/server/db/schema';
-import { logger } from '$lib/server/logger';
-import { safeParse } from '$lib/utils/json';
 import { and, desc, eq, like, or } from 'drizzle-orm';
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { editSessionSchema, routineFilterSchema } from '#lib/schemas/meditation.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import {
+	handleDeleteSession,
+	handleUpdateSession
+} from '#lib/server/actions/meditation-session-actions.js';
+import { getDb } from '#lib/server/db/index.js';
+import {
+	meditationRoutines,
+	meditationSchedules,
+	meditationSessions
+} from '#lib/server/db/schema/index.js';
+import { logger } from '#lib/server/logger.js';
+import { safeParse } from '#lib/utils/json.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

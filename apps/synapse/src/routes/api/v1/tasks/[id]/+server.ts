@@ -1,13 +1,14 @@
-import { handleApiWrite } from '$lib/server/api/handle-write';
-import { requireApiKey } from '$lib/server/api/require-api-key';
-import { apiError, apiSuccess } from '$lib/server/api/response';
-import { apiUpdateTaskSchema } from '$lib/server/api/schemas/tasks';
-import { getDb } from '$lib/server/db';
-import { tasks } from '$lib/server/db/schema';
-import { updateTask } from '$lib/server/db/writes/tasks';
-import { logger } from '$lib/server/logger';
 import { parseJsonBody } from '@sheppakai/shared/api-write';
 import { and, eq } from 'drizzle-orm';
+
+import { handleApiWrite } from '#lib/server/api/handle-write.js';
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
+import { apiUpdateTaskSchema } from '#lib/server/api/schemas/tasks.js';
+import { getDb } from '#lib/server/db/index.js';
+import { tasks } from '#lib/server/db/schema/index.js';
+import { updateTask } from '#lib/server/db/writes/tasks.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

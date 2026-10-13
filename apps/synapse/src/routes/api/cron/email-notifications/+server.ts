@@ -1,7 +1,8 @@
 import { CRON_SECRET } from '$app/env/private';
-import { runEmailNotifications } from '$lib/server/email/email-notifications';
-import { logger } from '$lib/server/logger';
 import { createCronHandler } from '@sheppakai/shared/cron';
+
+import { runEmailNotifications } from '#lib/server/email/email-notifications.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
 

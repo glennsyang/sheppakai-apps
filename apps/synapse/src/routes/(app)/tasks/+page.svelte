@@ -1,22 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
-	import PageShell from '$lib/components/app/PageShell.svelte';
-	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
-	import PageSkeleton from '$lib/components/skeletons/PageSkeleton.svelte';
-	import DailyAgendaView from '$lib/components/tasks/DailyAgendaView.svelte';
-	import MoodTrackerView from '$lib/components/tasks/MoodTrackerView.svelte';
-	import TaskDueDateFilter from '$lib/components/tasks/TaskDueDateFilter.svelte';
-	import TaskKanbanView from '$lib/components/tasks/TaskKanbanView.svelte';
-	import TaskPriorityFilter from '$lib/components/tasks/TaskPriorityFilter.svelte';
-	import TaskTagFilter from '$lib/components/tasks/TaskTagFilter.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Collapsible from '$lib/components/ui/collapsible';
-	import { Input } from '$lib/components/ui/input';
-	import * as Tabs from '$lib/components/ui/tabs';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import type { TaskPageTab } from '$lib/types';
-	import { type MoodPeriod, moodPeriods } from '$lib/utils/mood';
 	import {
 		CalendarCog,
 		CalendarDays,
@@ -27,6 +11,23 @@
 		SquareKanban
 	} from '@lucide/svelte';
 	import { onDestroy } from 'svelte';
+
+	import PageShell from '#lib/components/app/PageShell.svelte';
+	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
+	import PageSkeleton from '#lib/components/skeletons/PageSkeleton.svelte';
+	import DailyAgendaView from '#lib/components/tasks/DailyAgendaView.svelte';
+	import MoodTrackerView from '#lib/components/tasks/MoodTrackerView.svelte';
+	import TaskDueDateFilter from '#lib/components/tasks/TaskDueDateFilter.svelte';
+	import TaskKanbanView from '#lib/components/tasks/TaskKanbanView.svelte';
+	import TaskPriorityFilter from '#lib/components/tasks/TaskPriorityFilter.svelte';
+	import TaskTagFilter from '#lib/components/tasks/TaskTagFilter.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import type { TaskPageTab } from '#lib/types.js';
+	import { type MoodPeriod, moodPeriods } from '#lib/utils/mood.js';
 
 	import type { PageData } from './$types';
 
@@ -64,7 +65,7 @@
 	});
 
 	function buildTasksHref(tab: TaskPageTab, week?: string | null): string {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		url.searchParams.set('tab', tab);
 
 		if (week) {
@@ -77,7 +78,7 @@
 	async function openTaskTab(tab: TaskPageTab) {
 		const week =
 			tab === 'agenda' ? (data.agenda?.weekStart ?? page.url.searchParams.get('week')) : null;
-		await goto(buildTasksHref(tab, week), { replaceState: true, noScroll: true, keepFocus: true });
+		await goto(buildTasksHref(tab, week), { replace: true, reset: false });
 	}
 
 	onDestroy(() => {
@@ -120,7 +121,7 @@
 			return;
 		}
 
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		if (normalizedKeyword) {
 			url.searchParams.set('keyword', normalizedKeyword);
 		} else {
@@ -128,7 +129,7 @@
 		}
 
 		try {
-			await goto(url.toString(), { replaceState: true, noScroll: true, keepFocus: true });
+			await goto(url.toString(), { replace: true, reset: false });
 		} finally {
 			keywordDirty = false;
 		}
@@ -139,7 +140,7 @@
 			return;
 		}
 
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		url.searchParams.set('tab', 'mood');
 
 		if (nextPeriod === 'week') {
@@ -148,7 +149,7 @@
 			url.searchParams.set('period', nextPeriod);
 		}
 
-		await goto(url.toString(), { replaceState: true, noScroll: true, keepFocus: true });
+		await goto(url.toString(), { replace: true, reset: false });
 	}
 </script>
 

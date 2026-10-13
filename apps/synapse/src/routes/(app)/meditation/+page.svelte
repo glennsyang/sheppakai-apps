@@ -1,27 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
-	import PageShell from '$lib/components/app/PageShell.svelte';
-	import MeditationDurationFilter from '$lib/components/meditation/MeditationDurationFilter.svelte';
-	import MeditationMoodFilter from '$lib/components/meditation/MeditationMoodFilter.svelte';
-	import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte';
-	import LoadErrorAlert from '$lib/components/shared/LoadErrorAlert.svelte';
-	import PageSkeleton from '$lib/components/skeletons/PageSkeleton.svelte';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import * as Collapsible from '$lib/components/ui/collapsible';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import * as Tabs from '$lib/components/ui/tabs';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import {
-		formatTimeFromTimestamp,
-		formatTimestampDateHeuristic,
-		toAppDatetimeLocal
-	} from '$lib/utils/date';
 	import {
 		CirclePlay,
 		Clock,
@@ -35,6 +14,28 @@
 	import { onDestroy } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
+
+	import PageShell from '#lib/components/app/PageShell.svelte';
+	import MeditationDurationFilter from '#lib/components/meditation/MeditationDurationFilter.svelte';
+	import MeditationMoodFilter from '#lib/components/meditation/MeditationMoodFilter.svelte';
+	import ConfirmDialog from '#lib/components/shared/ConfirmDialog.svelte';
+	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
+	import PageSkeleton from '#lib/components/skeletons/PageSkeleton.svelte';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import {
+		formatTimeFromTimestamp,
+		formatTimestampDateHeuristic,
+		toAppDatetimeLocal
+	} from '#lib/utils/date.js';
 
 	import type { PageData } from './$types';
 
@@ -132,27 +133,27 @@
 			keywordDirty = false;
 			return;
 		}
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		if (normalizedKeyword) {
 			url.searchParams.set('search', normalizedKeyword);
 		} else {
 			url.searchParams.delete('search');
 		}
 		try {
-			await goto(url.toString(), { replaceState: true, noScroll: true, keepFocus: true });
+			await goto(url.toString(), { replace: true, reset: false });
 		} finally {
 			keywordDirty = false;
 		}
 	}
 
 	async function switchTab(tab: string) {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		if (tab === 'routines') {
 			url.searchParams.delete('tab');
 		} else {
 			url.searchParams.set('tab', tab);
 		}
-		await goto(url.toString(), { replaceState: true, noScroll: true, keepFocus: true });
+		await goto(url.toString(), { replace: true, reset: false });
 	}
 </script>
 

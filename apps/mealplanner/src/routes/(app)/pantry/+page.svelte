@@ -1,16 +1,17 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import AuthFormMessage from '$lib/components/AuthFormMessage.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import { Alert } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { addPantryItemSchema } from '$lib/schemas/pantry';
-	import { magnetTilt } from '$lib/tilt';
 	import { autoAnimate } from '@formkit/auto-animate';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
+
+	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import { Alert } from '#lib/components/ui/alert/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { addPantryItemSchema } from '#lib/schemas/pantry.js';
+	import { magnetTilt } from '#lib/tilt.js';
 
 	import type { PageData } from './$types';
 

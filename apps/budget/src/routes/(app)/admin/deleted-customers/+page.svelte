@@ -1,8 +1,8 @@
 <script lang="ts">
-	import LoadErrorBanner from '$lib/components/LoadErrorBanner.svelte';
-	import SectionHeader from '$lib/components/SectionHeader.svelte';
-	import DataTable from '$lib/components/ui/data-table/data-table.svelte';
-	import { restoreCustomerFormContext } from '$lib/contexts';
+	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
+	import SectionHeader from '#lib/components/SectionHeader.svelte';
+	import DataTable from '#lib/components/ui/data-table/data-table.svelte';
+	import { restoreCustomerFormContext } from '#lib/contexts/index.js';
 
 	import type { PageProps } from './$types';
 	import { columns } from './columns';

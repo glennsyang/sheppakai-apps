@@ -1,22 +1,23 @@
 <script lang="ts">
-	import ContentSection from '$lib/components/app/ContentSection.svelte';
-	import PageShell from '$lib/components/app/PageShell.svelte';
-	import SectionHeader from '$lib/components/app/SectionHeader.svelte';
-	import JournalEntryEditor from '$lib/components/journal/JournalEntryEditor.svelte';
-	import * as Alert from '$lib/components/ui/alert';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import * as Collapsible from '$lib/components/ui/collapsible';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { Separator } from '$lib/components/ui/separator';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import type { JournalEntryFormValues } from '$lib/schemas/journal';
-	import { getCurrentWeather } from '$lib/utils/journal-context';
 	import { ArrowLeft, ChevronDown, CircleAlert, Info, Thermometer } from '@lucide/svelte/icons';
 	import { toast } from 'svelte-sonner';
 	import { fromAction } from 'svelte/attachments';
 	import { type SuperValidated, superForm } from 'sveltekit-superforms';
+
+	import ContentSection from '#lib/components/app/ContentSection.svelte';
+	import PageShell from '#lib/components/app/PageShell.svelte';
+	import SectionHeader from '#lib/components/app/SectionHeader.svelte';
+	import JournalEntryEditor from '#lib/components/journal/JournalEntryEditor.svelte';
+	import * as Alert from '#lib/components/ui/alert/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import type { JournalEntryFormValues } from '#lib/schemas/journal.js';
+	import { getCurrentWeather } from '#lib/utils/journal-context.js';
 
 	const starterPrompts = [
 		"What's one thing that went well today?",

@@ -1,4 +1,4 @@
-import { contributionSchema } from '$lib/formSchemas';
+import { contributionSchema } from '#lib/formSchemas/index.js';
 
 // The goal a contribution belongs to comes from the URL path param
 // (`/api/v1/savings/goals/:id/contributions`), not the body, so `goalId` is omitted

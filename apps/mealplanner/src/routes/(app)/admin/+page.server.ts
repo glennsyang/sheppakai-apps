@@ -1,7 +1,12 @@
 import { randomBytes } from 'node:crypto';
 
 import { BETTER_AUTH_BASE_URL } from '$app/env/private';
-import { FORGOT_PASSWORD_ROUTE } from '$lib/auth-routes';
+import { error, isRedirect } from '@sveltejs/kit';
+import { APIError } from 'better-auth/api';
+import { message, setError, superValidate, type SuperValidated } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { FORGOT_PASSWORD_ROUTE } from '#lib/auth-routes.js';
 import {
 	banUserSchema,
 	createUserSchema,
@@ -9,17 +14,13 @@ import {
 	sendWelcomeSchema,
 	setRoleSchema,
 	unbanUserSchema
-} from '$lib/schemas/admin';
-import { requireAdmin } from '$lib/server/actions/auth-guard';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { allowedEmails, auth } from '$lib/server/auth';
-import { sendAccountCreatedEmail } from '$lib/server/email';
-import { logger } from '$lib/server/logger';
-import { sendAuthAlerts } from '$lib/server/notifications';
-import { error, isRedirect } from '@sveltejs/kit';
-import { APIError } from 'better-auth/api';
-import { message, setError, superValidate, type SuperValidated } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
+} from '#lib/schemas/admin.js';
+import { requireAdmin } from '#lib/server/actions/auth-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { allowedEmails, auth } from '#lib/server/auth/index.js';
+import { sendAccountCreatedEmail } from '#lib/server/email/index.js';
+import { logger } from '#lib/server/logger.js';
+import { sendAuthAlerts } from '#lib/server/notifications/index.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

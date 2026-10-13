@@ -1,5 +1,6 @@
-import { POST_LOGIN_ROUTE } from '$lib/auth-routes';
 import { redirect } from '@sveltejs/kit';
+
+import { POST_LOGIN_ROUTE } from '#lib/auth-routes.js';
 
 import type { PageServerLoad } from './$types';
 

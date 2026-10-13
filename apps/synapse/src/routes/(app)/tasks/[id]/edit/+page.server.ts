@@ -1,24 +1,25 @@
+import { redirect } from '@sveltejs/kit';
+import { and, eq, ne, sql } from 'drizzle-orm';
+import { message, setError, superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
 import {
 	deleteTaskSchema,
 	type TaskState,
 	type UpdateTaskInput,
 	updateTaskSchema
-} from '$lib/schemas/task';
-import { getUser, requireAuth } from '$lib/server/actions/auth-guard';
+} from '#lib/schemas/task.js';
+import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
 import {
 	getOwnedEntityOrNull,
 	getOwnedEntityOrThrow
-} from '$lib/server/actions/edit-route-helpers';
-import { invalidForm } from '$lib/server/actions/form-responses';
-import { parseTaskTags, toCommaSeparatedJson } from '$lib/server/actions/string-parsers';
-import { getDb } from '$lib/server/db';
-import { tasks } from '$lib/server/db/schema';
-import { withTimestampsForUpdate } from '$lib/server/db/utils';
-import { logger } from '$lib/server/logger';
-import { redirect } from '@sveltejs/kit';
-import { and, eq, ne, sql } from 'drizzle-orm';
-import { message, setError, superValidate } from 'sveltekit-superforms';
-import { zod4 } from 'sveltekit-superforms/adapters';
+} from '#lib/server/actions/edit-route-helpers.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { parseTaskTags, toCommaSeparatedJson } from '#lib/server/actions/string-parsers.js';
+import { getDb } from '#lib/server/db/index.js';
+import { tasks } from '#lib/server/db/schema/index.js';
+import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

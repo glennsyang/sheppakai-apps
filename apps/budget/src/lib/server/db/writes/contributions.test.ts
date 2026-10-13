@@ -24,9 +24,11 @@ const mockFindById = vi.hoisted(() =>
 	}))
 );
 
-vi.mock('$lib/server/db', () => ({ getDb: () => ({ insert: mockInsert }) }));
-vi.mock('$lib/server/db/queries', () => ({ contributionQueries: { findById: mockFindById } }));
-vi.mock('$lib/server/db/schema', () => ({ contribution: {} }));
+vi.mock('#lib/server/db/index.js', () => ({ getDb: () => ({ insert: mockInsert }) }));
+vi.mock('#lib/server/db/queries/index.js', () => ({
+	contributionQueries: { findById: mockFindById }
+}));
+vi.mock('#lib/server/db/schema/index.js', () => ({ contribution: {} }));
 
 import { createContribution } from './contributions';
 

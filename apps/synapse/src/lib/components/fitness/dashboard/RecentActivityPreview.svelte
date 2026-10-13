@@ -1,11 +1,4 @@
 <script lang="ts">
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import type { Workout } from '$lib/types';
-	import { formatDateShort, formatTime12Hour } from '$lib/utils/date';
-	import { getWorkoutBadgeClass, getWorkoutLabel } from '$lib/utils/workout';
 	import {
 		ChevronRight,
 		Dumbbell,
@@ -14,6 +7,14 @@
 		Trash2,
 		UtensilsCrossed
 	} from '@lucide/svelte/icons';
+
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import type { Workout } from '#lib/types.js';
+	import { formatDateShort, formatTime12Hour } from '#lib/utils/date.js';
+	import { getWorkoutBadgeClass, getWorkoutLabel } from '#lib/utils/workout.js';
 
 	interface WeightEntry {
 		id: string;

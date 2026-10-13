@@ -1,7 +1,7 @@
-import { weekdayIndex } from '$lib/dates';
-import { logger } from '$lib/server/logger';
-import { getMealPlanWithEntries, getMondayOfCurrentWeek } from '$lib/server/services/mealPlan';
-import { listPantryItems } from '$lib/server/services/pantry';
+import { weekdayIndex } from '#lib/dates.js';
+import { logger } from '#lib/server/logger.js';
+import { getMealPlanWithEntries, getMondayOfCurrentWeek } from '#lib/server/services/mealPlan.js';
+import { listPantryItems } from '#lib/server/services/pantry.js';
 
 import type { PageServerLoad } from './$types';
 

@@ -1,9 +1,9 @@
-import { getDb } from '$lib/server/db';
-import { transactionQueries } from '$lib/server/db/queries';
-import { transaction } from '$lib/server/db/schema';
-import { evaluateCreatedTransactionBudgetAlert } from '$lib/server/notifications/budget-threshold-alerts';
-import type { Transaction } from '$lib/types';
-import { formatDateForStorage } from '$lib/utils/dates';
+import { getDb } from '#lib/server/db/index.js';
+import { transactionQueries } from '#lib/server/db/queries/index.js';
+import { transaction } from '#lib/server/db/schema/index.js';
+import { evaluateCreatedTransactionBudgetAlert } from '#lib/server/notifications/budget-threshold-alerts.js';
+import type { Transaction } from '#lib/types.js';
+import { formatDateForStorage } from '#lib/utils/dates.js';
 
 export type CreateTransactionInput = {
 	amount: number;

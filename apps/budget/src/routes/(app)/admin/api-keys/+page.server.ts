@@ -1,13 +1,14 @@
-import type { ApiScope } from '$lib/api-scopes';
-import { scopesToPermissions } from '$lib/api-scopes';
-import { createApiKeySchema, idSchema } from '$lib/formSchemas';
-import { adminFormAction } from '$lib/server/actions/admin-guard';
-import { assertAdmin, auth } from '$lib/server/auth';
-import { apiKeyQueries } from '$lib/server/db/queries';
-import { deleteApiKeyById } from '$lib/server/db/writes/api-keys';
-import { logger } from '$lib/server/logger';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+
+import type { ApiScope } from '#lib/api-scopes.js';
+import { scopesToPermissions } from '#lib/api-scopes.js';
+import { createApiKeySchema, idSchema } from '#lib/formSchemas/index.js';
+import { adminFormAction } from '#lib/server/actions/admin-guard.js';
+import { assertAdmin, auth } from '#lib/server/auth.js';
+import { apiKeyQueries } from '#lib/server/db/queries/index.js';
+import { deleteApiKeyById } from '#lib/server/db/writes/api-keys.js';
+import { logger } from '#lib/server/logger.js';
 
 import type { Actions, PageServerLoad } from './$types';
 

@@ -1,7 +1,8 @@
-import DataTableSortButton from '$lib/components/DataTableSortButton.svelte';
-import { badgeCell, stackCell } from '$lib/components/table/cells';
-import { type Features, renderComponent } from '$lib/components/ui/data-table/index.js';
 import type { ColumnDef } from '@tanstack/table-core';
+
+import DataTableSortButton from '#lib/components/DataTableSortButton.svelte';
+import { badgeCell, stackCell } from '#lib/components/table/cells.js';
+import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
 
 export type AdminApiLogEntry = {
 	id: string;

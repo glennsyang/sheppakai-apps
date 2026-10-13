@@ -1,9 +1,9 @@
 <script lang="ts">
-	import IndexTabs from '$lib/components/app/IndexTabs.svelte';
-	import MobileTabs from '$lib/components/app/MobileTabs.svelte';
-	import RunningHead from '$lib/components/app/RunningHead.svelte';
-	import { Toaster } from '$lib/components/ui/sonner/index.js';
-	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
+	import IndexTabs from '#lib/components/app/IndexTabs.svelte';
+	import MobileTabs from '#lib/components/app/MobileTabs.svelte';
+	import RunningHead from '#lib/components/app/RunningHead.svelte';
+	import { Toaster } from '#lib/components/ui/sonner/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
 
 	import { navItems } from './sidebar';
 

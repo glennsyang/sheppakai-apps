@@ -1,11 +1,13 @@
+import { inArray, sum } from 'drizzle-orm';
+
 import type {
 	CategoryAnomaly,
 	ExcludedSpendCategory,
 	SavingsGoalWithProgress,
 	TimeRangeInOutData,
 	Transaction
-} from '$lib';
-import { getDb } from '$lib/server/db';
+} from '#lib';
+import { getDb } from '#lib/server/db/index.js';
 import {
 	budgetQueries,
 	incomeQueries,
@@ -13,10 +15,10 @@ import {
 	savingsGoalQueries,
 	savingsQueries,
 	transactionQueries
-} from '$lib/server/db/queries';
-import { contribution } from '$lib/server/db/schema';
-import { computeCategoryAnomalies } from '$lib/server/insights/category-anomalies';
-import { monthNames } from '$lib/utils';
+} from '#lib/server/db/queries/index.js';
+import { contribution } from '#lib/server/db/schema/index.js';
+import { computeCategoryAnomalies } from '#lib/server/insights/category-anomalies.js';
+import { monthNames } from '#lib/utils.js';
 import {
 	getCalendarYearMonthsRange,
 	getMonthDateRange,
@@ -24,8 +26,7 @@ import {
 	getPreviousMonthsRange,
 	getYearDateRange,
 	parseYearParam
-} from '$lib/utils/dates';
-import { inArray, sum } from 'drizzle-orm';
+} from '#lib/utils/dates.js';
 
 type RecurringItem = { cadence: string; amount: number };
 

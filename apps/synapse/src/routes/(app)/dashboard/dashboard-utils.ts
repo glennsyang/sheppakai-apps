@@ -3,7 +3,7 @@ import {
 	getISODayOfWeek,
 	getStartOfWeek,
 	getWeekDates
-} from '$lib/utils/date';
+} from '#lib/utils/date.js';
 
 export type DashboardDateRanges = {
 	today: string;

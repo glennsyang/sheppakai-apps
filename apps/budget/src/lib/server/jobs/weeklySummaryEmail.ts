@@ -1,13 +1,14 @@
-import { getDb } from '$lib/server/db';
-import { budget, category, transaction, user } from '$lib/server/db/schema';
-import { dateInRange } from '$lib/server/db/utils';
+import { and, eq, inArray, ne } from 'drizzle-orm';
+
+import { getDb } from '#lib/server/db/index.js';
+import { budget, category, transaction, user } from '#lib/server/db/schema/index.js';
+import { dateInRange } from '#lib/server/db/utils.js';
 import {
 	sendWeeklySummaryEmail,
 	type WeeklySummaryCategory,
 	type WeeklySummaryExcludedTransaction
-} from '$lib/server/email';
-import { logger } from '$lib/server/logger';
-import { and, eq, inArray, ne } from 'drizzle-orm';
+} from '#lib/server/email/index.js';
+import { logger } from '#lib/server/logger.js';
 
 type WeeklySummaryRunResult = {
 	success: boolean;

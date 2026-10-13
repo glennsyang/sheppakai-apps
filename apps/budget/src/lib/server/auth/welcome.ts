@@ -1,8 +1,9 @@
 import { randomBytes } from 'node:crypto';
 
 import { ALLOWED_EMAILS, BETTER_AUTH_BASE_URL } from '$app/env/private';
-import { RESET_PASSWORD_ROUTE, SIGN_IN_ROUTE } from '$lib/auth-routes';
 import { buildAllowlistCommand, parseAllowedEmails } from '@sheppakai/shared/auth-allowlist';
+
+import { RESET_PASSWORD_ROUTE, SIGN_IN_ROUTE } from '#lib/auth-routes.js';
 
 import { auth } from '../auth';
 import { sendWelcomeEmail } from '../email';

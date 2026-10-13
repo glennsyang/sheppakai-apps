@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { TimeRangeInOutData } from '$lib';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { formatCurrency } from '$lib/utils';
+	import type { TimeRangeInOutData } from '#lib';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { formatCurrency } from '#lib/utils.js';
 
 	interface Props {
 		chartData: TimeRangeInOutData[];

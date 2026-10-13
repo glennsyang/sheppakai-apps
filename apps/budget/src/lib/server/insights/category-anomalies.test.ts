@@ -1,5 +1,6 @@
-import type { Budget, Transaction } from '$lib/types';
 import { describe, expect, it } from 'vitest';
+
+import type { Budget, Transaction } from '#lib/types.js';
 
 import { computeCategoryAnomalies, type HistoricalMonthRange } from './category-anomalies';
 

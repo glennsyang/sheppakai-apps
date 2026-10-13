@@ -1,5 +1,6 @@
-import { isMoodValue } from '$lib/utils/mood';
 import { z } from 'zod';
+
+import { isMoodValue } from '#lib/utils/mood.js';
 
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (use YYYY-MM-DD)');
 

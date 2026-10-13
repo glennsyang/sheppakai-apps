@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import type { MealSuggestion } from '$lib/types';
+	import Icon from '#lib/components/Icon.svelte';
+	import type { MealSuggestion } from '#lib/types.js';
 
 	import Modal from './Modal.svelte';
 	import SuggestionCard from './SuggestionCard.svelte';

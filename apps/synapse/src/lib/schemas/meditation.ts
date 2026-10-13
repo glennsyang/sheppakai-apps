@@ -1,5 +1,6 @@
-import { isValidAppDateTime } from '$lib/utils/date';
 import { z } from 'zod';
+
+import { isValidAppDateTime } from '#lib/utils/date.js';
 
 /**
  * Allowed mood tags for meditation routines

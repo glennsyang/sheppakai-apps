@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import * as Select from '$lib/components/ui/select/index.js';
-	import { monthNames } from '$lib/utils';
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
+
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import { monthNames } from '#lib/utils.js';
 
 	// Month mode steps month by month and offers a jump-to-month menu; year mode steps whole years.
 	type Props =

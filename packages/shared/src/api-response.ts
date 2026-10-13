@@ -1,5 +1,3 @@
-import { json } from '@sveltejs/kit';
-
 /**
  * JSON-API counterpart to the superforms `message(form, {...}, {status})` contract in
  * docs/ERROR_HANDLING_POLICY.md: exactly one success shape, one error shape, explicit
@@ -18,9 +16,9 @@ export type ApiErrorCode =
 	| 'internal_error';
 
 export function apiSuccess<T>(data: T, status = 200): Response {
-	return json({ data }, { status });
+	return Response.json({ data }, { status });
 }
 
 export function apiError(code: ApiErrorCode, message: string, status: number): Response {
-	return json({ error: { code, message } }, { status });
+	return Response.json({ error: { code, message } }, { status });
 }
