@@ -43,8 +43,8 @@ catalogs:
       specifier: ^9.2.6
       version: 9.2.6
     '@tanstack/table-core':
-      specifier: ^9.2.6
-      version: 9.2.6
+      specifier: ^9.2.8
+      version: 9.2.8
     '@types/better-sqlite3':
       specifier: ^9.6.0
       version: 9.6.0
@@ -233,7 +233,7 @@ importers:
         version: 9.2.6(svelte@5.57.1)
       '@tanstack/table-core':
         specifier: 'catalog:'
-        version: 9.2.6
+        version: 9.2.8
       '@types/better-sqlite3':
         specifier: 'catalog:'
         version: 9.6.0
@@ -387,7 +387,7 @@ importers:
         version: 9.2.6(svelte@5.57.1)
       '@tanstack/table-core':
         specifier: 'catalog:'
-        version: 9.2.6
+        version: 9.2.8
       '@types/better-sqlite3':
         specifier: 'catalog:'
         version: 9.6.0
@@ -529,7 +529,7 @@ importers:
         version: 9.2.6(svelte@5.57.1)
       '@tanstack/table-core':
         specifier: 'catalog:'
-        version: 9.2.6
+        version: 9.2.8
       '@types/better-sqlite3':
         specifier: 'catalog:'
         version: 9.6.0
@@ -2576,6 +2576,10 @@ packages:
 
   '@tanstack/table-core@9.2.6':
     resolution: {integrity: sha512-t5LaLx8gDCgzjvwtZo5xtLklJP11D9zaKOW8q6jOCyuQYhkqpTK1heqMfgTQwDlhl0dU8f1X66Xurbj3jpCUSw==}
+    engines: {node: '>=20'}
+
+  '@tanstack/table-core@9.2.8':
+    resolution: {integrity: sha512-M4D6fY5jnc7z7TaoD3Pjvz5R+8MbhzCGYdkcFf2T1AgjigwLinvFWZh6mtqfN016A7yGIroOL0GiTlVGsTh6Vg==}
     engines: {node: '>=20'}
 
   '@types/better-sqlite3@9.6.0':
@@ -5711,6 +5715,10 @@ snapshots:
       svelte: 5.57.1
 
   '@tanstack/table-core@9.2.6':
+    dependencies:
+      '@tanstack/store': 0.11.2
+
+  '@tanstack/table-core@9.2.8':
     dependencies:
       '@tanstack/store': 0.11.2
 
