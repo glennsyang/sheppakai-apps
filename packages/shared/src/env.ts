@@ -15,6 +15,33 @@ export const DUMMY_ENV = {
 } as const;
 
 /**
+ * Valid, non-placeholder values for every required variable, used by Vitest. SvelteKit 3
+ * validates env when the config resolves (via Vite's `loadEnv`), so CI, which has no `.env`,
+ * needs these before any test imports `$app/env/private`.
+ */
+export const TEST_ENV = {
+	DATABASE_URL: ':memory:',
+	BETTER_AUTH_SECRET: 'test_secret_at_least_32_characters_long',
+	BETTER_AUTH_BASE_URL: 'http://localhost:5173',
+	BREVO_API_KEY: 'test_brevo_key',
+	BREVO_FROM_ADDRESS: 'test@example.com',
+	ADMIN_USER_IDS: 'test_admin_id',
+	ALLOWED_EMAILS: 'test@example.com',
+	CRON_SECRET: 'test_cron_secret_16_chars'
+} as const;
+
+/**
+ * Call at the top of an app's `vite.config.ts`. Under Vitest, fills `process.env` with
+ * `TEST_ENV` (plus app-only `extra` values) so SvelteKit's env validation passes.
+ */
+export function applyTestEnv(extra: Record<string, string> = {}) {
+	if (!process.env.VITEST) return;
+	for (const [key, value] of Object.entries({ ...TEST_ENV, ...extra })) {
+		process.env[key] ??= value;
+	}
+}
+
+/**
  * `building ? placeholder : runtime schema that rejects the placeholder`. The refine runs
  * whenever the app is not building: in dev, in tests and in production.
  */
