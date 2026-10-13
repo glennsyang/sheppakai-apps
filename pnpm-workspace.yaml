@@ -32,7 +32,7 @@ catalog:
   drizzle-kit: ^0.31.11
   drizzle-orm: ^0.45.3
   fallow: ^3.31.0
-  layerchart: ^2.5.1
+  layerchart: ^2.6.1
   lefthook: ^2.1.17
   lint-staged: ^17.6.0
   mode-watcher: ^1.1.0
