@@ -14,8 +14,8 @@ catalog:
   '@sveltejs/vite-plugin-svelte': ^7.3.1
   '@tailwindcss/typography': ^0.5.19
   '@tailwindcss/vite': ^4.3.3
-  '@tanstack/svelte-table': ^9.2.6
-  '@tanstack/table-core': ^9.2.6
+  '@tanstack/svelte-table': ^9.3.1
+  '@tanstack/table-core': ^9.3.1
   '@types/better-sqlite3': ^9.6.0
   '@types/canvas-confetti': ^1.9.0
   '@types/d3-scale': ^4.0.9
