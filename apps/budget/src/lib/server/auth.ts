@@ -6,10 +6,9 @@ import {
 	NODE_ENV
 } from '$app/env/private';
 import { getRequestEvent } from '$app/server';
-import { apiKey } from '@better-auth/api-key';
+import { createApiKeyPlugin } from '@sheppakai/shared/api-key-plugin';
 import { parseAllowedEmails } from '@sheppakai/shared/auth-allowlist';
 import { createAppAuth } from '@sheppakai/shared/auth-config';
-import { eq } from 'drizzle-orm';
 
 import { logger } from '#lib/server/logger.js';
 
@@ -44,14 +43,6 @@ export const auth = createAppAuth({
 		apikey: schema.apiKey,
 		rateLimit: schema.rateLimit
 	},
-	findUserEmail: async (userId) => {
-		const [row] = await getDb()
-			.select({ email: schema.user.email })
-			.from(schema.user)
-			.where(eq(schema.user.id, userId))
-			.limit(1);
-		return row?.email;
-	},
 	email: {
 		sendPasswordResetEmail,
 		sendVerificationEmail,
@@ -61,25 +52,7 @@ export const auth = createAppAuth({
 	sendAuthAlerts,
 	logger,
 	getRequestEvent,
-	plugins: [
-		apiKey({
-			references: 'user',
-			storage: 'database',
-			requireName: true,
-			// Only ever verified explicitly via auth.api.verifyApiKey (see src/lib/server/api/require-api-key.ts).
-			// Never let a valid API key stand in for a session on the app's own cookie-based routes.
-			enableSessionForAPIKeys: false,
-			keyExpiration: {
-				minExpiresIn: 1,
-				maxExpiresIn: 365
-			},
-			rateLimit: {
-				enabled: true,
-				timeWindow: 60 * 1000, // 1 minute
-				maxRequests: 100
-			}
-		})
-	]
+	plugins: [createApiKeyPlugin()]
 });
 
 // Kept here for existing `#lib/server/auth.js` importers; the guard itself is shared.

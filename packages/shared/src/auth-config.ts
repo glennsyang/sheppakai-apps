@@ -30,8 +30,6 @@ export interface AppAuthConfig<Extra extends BetterAuthPlugin[]> {
 	db: DrizzleDb;
 	/** Drizzle tables keyed by Better Auth model name (user, session, account, …). */
 	tables: Record<string, unknown>;
-	/** Looks up a user's email for the allowlist session guard. */
-	findUserEmail: (userId: string) => Promise<string | undefined>;
 	email: {
 		sendPasswordResetEmail: (to: string, name: string, url: string) => Promise<unknown>;
 		sendVerificationEmail: (to: string, name: string, url: string) => Promise<unknown>;
@@ -62,7 +60,13 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 	const { appName, allowedEmails, email, sendAuthAlerts, logger } = config;
 	const auditDeps = { logger, sendNewUserEmail: email.sendNewUserEmail, sendAuthAlerts };
 
-	return betterAuth({
+	// The session guard needs the user's email, read through Better Auth's own adapter. The
+	// instance only exists after `betterAuth()` returns, so the lookup is bound just below.
+	const userLookup = {
+		findEmail: async (_userId: string): Promise<string | undefined> => undefined
+	};
+
+	const auth = betterAuth({
 		appName,
 		secret: config.secret,
 		baseURL: config.baseURL,
@@ -151,7 +155,9 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 				create: {
 					// Backstop for every session-creating flow (sign-in, verify-email auto sign-in,
 					// impersonation, …), not just the paths hooks.before sees.
-					before: createAllowlistSessionGuard(allowedEmails, config.findUserEmail)
+					before: createAllowlistSessionGuard(allowedEmails, (userId) =>
+						userLookup.findEmail(userId)
+					)
 				}
 			}
 		},
@@ -212,4 +218,11 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 			sveltekitCookies(config.getRequestEvent) // must stay the last plugin
 		]
 	});
+
+	userLookup.findEmail = async (userId) => {
+		const { internalAdapter } = await auth.$context;
+		return (await internalAdapter.findUserById(userId))?.email;
+	};
+
+	return auth;
 }

@@ -9,6 +9,7 @@
 		"./admin-user-schemas": "./src/admin-user-schemas.ts",
 		"./api-audit-log": "./src/api-audit-log.ts",
 		"./api-key": "./src/api-key.ts",
+		"./api-key-plugin": "./src/api-key-plugin.ts",
 		"./api-response": "./src/api-response.ts",
 		"./api-scopes": "./src/api-scopes.ts",
 		"./api-write": "./src/api-write.ts",
@@ -49,6 +50,7 @@
 		"lint:github": "oxlint --format=github"
 	},
 	"devDependencies": {
+		"@better-auth/api-key": "catalog:",
 		"@getbrevo/brevo": "catalog:",
 		"@sentry/sveltekit": "catalog:",
 		"@sveltejs/kit": "catalog:",
@@ -70,6 +72,7 @@
 		"zod": "catalog:"
 	},
 	"peerDependencies": {
+		"@better-auth/api-key": "^1",
 		"@getbrevo/brevo": "^6",
 		"@sentry/sveltekit": "^11",
 		"@sveltejs/kit": "^3",
@@ -81,5 +84,10 @@
 		"sveltekit-superforms": "^3",
 		"tailwind-merge": "^3",
 		"zod": "^4"
+	},
+	"peerDependenciesMeta": {
+		"@better-auth/api-key": {
+			"optional": true
+		}
 	}
 }
