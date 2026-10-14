@@ -1,4 +1,4 @@
-import { parseJsonBody } from '@sheppakai/shared/api-write';
+import { parseJsonBody, parseQuery } from '@sheppakai/shared/api-write';
 import { and, desc, eq } from 'drizzle-orm';
 
 import { handleApiWrite } from '#lib/server/api/handle-write.js';
@@ -16,10 +16,8 @@ export const GET: RequestHandler = async ({ request, url }) => {
 	const auth = await requireApiKey(request, 'visits:read');
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
-	const parsed = apiVisitListQuerySchema.safeParse(Object.fromEntries(url.searchParams));
-	if (!parsed.success) {
-		return apiError('validation_failed', parsed.error.issues.map((i) => i.message).join('; '), 400);
-	}
+	const parsed = parseQuery(url, apiVisitListQuerySchema);
+	if (!parsed.ok) return parsed.response;
 
 	const { personId, limit } = parsed.data;
 

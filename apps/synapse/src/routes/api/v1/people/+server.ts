@@ -1,3 +1,4 @@
+import { parseQuery } from '@sheppakai/shared/api-write';
 import { and, asc, eq } from 'drizzle-orm';
 
 import { requireApiKey } from '#lib/server/api/require-api-key.js';
@@ -13,10 +14,8 @@ export const GET: RequestHandler = async ({ request, url }) => {
 	const auth = await requireApiKey(request, 'people:read');
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
-	const parsed = apiPeopleListQuerySchema.safeParse(Object.fromEntries(url.searchParams));
-	if (!parsed.success) {
-		return apiError('validation_failed', parsed.error.issues.map((i) => i.message).join('; '), 400);
-	}
+	const parsed = parseQuery(url, apiPeopleListQuerySchema);
+	if (!parsed.ok) return parsed.response;
 
 	try {
 		const conditions = [eq(people.userId, auth.userId)];

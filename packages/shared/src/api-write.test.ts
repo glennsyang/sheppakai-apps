@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { ApiWriteError, createHandleApiWrite, parseJsonBody } from './api-write';
+import { ApiWriteError, createHandleApiWrite, parseJsonBody, parseQuery } from './api-write';
 
 const mockRecordApiWrite = vi.fn<(...args: unknown[]) => Promise<void>>();
 const mockLoggerError = vi.fn<(...args: unknown[]) => void>();
@@ -118,5 +118,21 @@ describe('parseJsonBody', () => {
 		expect(await result.response.json()).toEqual({
 			error: { code: 'validation_failed', message: 'Title is required' }
 		});
+	});
+});
+
+describe('parseQuery', () => {
+	const schema = z.object({ limit: z.coerce.number().int().max(100).optional() });
+
+	it('returns the parsed query string', () => {
+		const result = parseQuery(new URL('https://app.example.com/api?limit=10'), schema);
+		expect(result).toEqual({ ok: true, data: { limit: 10 } });
+	});
+
+	it('returns a 400 validation_failed response for an invalid query', async () => {
+		const result = parseQuery(new URL('https://app.example.com/api?limit=500'), schema);
+		if (result.ok) throw new Error('expected failure');
+		expect(result.response.status).toBe(400);
+		expect(await result.response.json()).toMatchObject({ error: { code: 'validation_failed' } });
 	});
 });

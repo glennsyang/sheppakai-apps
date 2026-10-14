@@ -38,7 +38,25 @@ export async function parseJsonBody<T>(
 		};
 	}
 
-	const parsed = schema.safeParse(body);
+	return validate(body, schema);
+}
+
+/**
+ * Validates a GET route's query string (`?a=1&b=2` as a flat object): `validation_failed`
+ * (400) on failure, the parsed data otherwise.
+ */
+export function parseQuery<T>(
+	url: URL,
+	schema: ZodType<T>
+): { ok: true; data: T } | { ok: false; response: Response } {
+	return validate(Object.fromEntries(url.searchParams), schema);
+}
+
+function validate<T>(
+	input: unknown,
+	schema: ZodType<T>
+): { ok: true; data: T } | { ok: false; response: Response } {
+	const parsed = schema.safeParse(input);
 	if (!parsed.success) {
 		return {
 			ok: false,
