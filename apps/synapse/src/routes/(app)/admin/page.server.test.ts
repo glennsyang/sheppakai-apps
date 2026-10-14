@@ -56,6 +56,14 @@ const mockLogger = vi.hoisted(() => ({
 
 vi.mock('#lib/server/logger.js', () => ({ logger: mockLogger }));
 
+const mockDisableApiKeysForUser = vi.hoisted(() =>
+	vi.fn<(userId: string) => Promise<number>>(async () => 0)
+);
+
+vi.mock('#lib/server/db/writes/api-keys.js', () => ({
+	disableApiKeysForUser: mockDisableApiKeysForUser
+}));
+
 const { load, actions } = await import('./+page.server');
 
 async function runLoad(locals: App.Locals): Promise<unknown> {
@@ -320,6 +328,50 @@ describe('admin user-management actions', () => {
 		mockSendAuthAlerts.mockResolvedValue(true);
 		mockLogger.warn.mockClear();
 		mockLogger.error.mockClear();
+		mockDisableApiKeysForUser.mockReset();
+		mockDisableApiKeysForUser.mockResolvedValue(2);
+	});
+
+	it("banUser disables the banned user's API keys", async () => {
+		const result = await runAction('banUser', { userId: TARGET.id });
+
+		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
+		expect(mockDisableApiKeysForUser).toHaveBeenCalledWith(TARGET.id);
+	});
+
+	it('banUser leaves keys alone when the ban itself fails', async () => {
+		mockAdminApi.banUser.mockRejectedValue(new Error('network'));
+
+		await runAction('banUser', { userId: TARGET.id });
+
+		expect(mockDisableApiKeysForUser).not.toHaveBeenCalled();
+	});
+
+	it('banUser reports an error when disabling keys fails', async () => {
+		mockDisableApiKeysForUser.mockRejectedValue(new Error('db down'));
+
+		const result = await runAction('banUser', { userId: TARGET.id });
+
+		expect(result.status).toBe(500);
+		expect(result).toMatchObject({
+			data: {
+				form: {
+					message: { type: 'error', text: 'User banned, but failed to disable their API keys' }
+				}
+			}
+		});
+	});
+
+	it("setRole disables the user's API keys on demotion to user", async () => {
+		await runAction('setRole', { userId: TARGET.id, role: 'user' });
+
+		expect(mockDisableApiKeysForUser).toHaveBeenCalledWith(TARGET.id);
+	});
+
+	it('setRole leaves keys alone on promotion to admin', async () => {
+		await runAction('setRole', { userId: TARGET.id, role: 'admin' });
+
+		expect(mockDisableApiKeysForUser).not.toHaveBeenCalled();
 	});
 
 	it('setRole calls auth.api.setRole with the parsed body and the request headers', async () => {

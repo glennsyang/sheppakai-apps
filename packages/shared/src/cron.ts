@@ -1,8 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 
 import { parseBearerToken, type BearerTokenFailureReason } from './bearer-token';
-
-const MIN_CRON_SECRET_LENGTH = 32;
+import { MIN_CRON_SECRET_LENGTH } from './env';
 
 type CronAuthFailureReason =
 	| 'missing_secret'

@@ -21,12 +21,13 @@ import {
 } from '#lib/schemas/admin-user.js';
 import { createApiKeySchema, revokeApiKeySchema } from '#lib/schemas/api-key.js';
 import { unarchivePersonSchema } from '#lib/schemas/visits.js';
-import { assertAdmin, requireAdmin } from '#lib/server/actions/auth-guard.js';
+import { assertAdmin, isAdminUser, requireAdmin } from '#lib/server/actions/auth-guard.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { allowedEmails, auth } from '#lib/server/auth.js';
 import { getDb } from '#lib/server/db/index.js';
 import { apiAuditLog, apiKey, people, user, visits } from '#lib/server/db/schema/index.js';
 import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
+import { disableApiKeysForUser } from '#lib/server/db/writes/api-keys.js';
 import { sendWelcomeEmail } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';
 import { sendAuthAlerts } from '#lib/server/notifications/index.js';
@@ -34,6 +35,25 @@ import { sendAuthAlerts } from '#lib/server/notifications/index.js';
 import type { Actions, PageServerLoad } from './$types';
 
 type MessageStatus = NonNullable<Parameters<typeof message>[2]>['status'];
+
+/**
+ * Disables a user's API keys after a ban or demotion. `requireApiKey` already rejects keys
+ * whose owner is banned or no longer an admin; this makes the change stick, so unbanning or
+ * re-promoting the user later doesn't quietly bring the old keys back. Returns false when
+ * the disable failed, so the action can report it instead of claiming full success.
+ */
+async function disableKeysAfter(action: 'ban' | 'demotion', userId: string): Promise<boolean> {
+	try {
+		const count = await disableApiKeysForUser(userId);
+		if (count > 0) {
+			logger.info(`Disabled API keys after ${action}`, { userId, count });
+		}
+		return true;
+	} catch (error) {
+		logger.error(`Failed to disable API keys after ${action}`, { userId, error });
+		return false;
+	}
+}
 
 /**
  * Turns a failed `auth.api.*` admin call into a `message(form, …)` failure. better-auth raises
@@ -339,6 +359,16 @@ export const actions = {
 			return adminActionError(form, 'Failed to change user role', err, 'Failed to change role');
 		}
 
+		// A user listed in ADMIN_USER_IDS stays an admin whatever their role, so their keys stay valid.
+		const demoted = !isAdminUser({ id: userId, role });
+		if (demoted && !(await disableKeysAfter('demotion', userId))) {
+			return message(
+				form,
+				{ type: 'error', text: 'Role changed, but failed to disable their API keys' },
+				{ status: 500 }
+			);
+		}
+
 		return message(form, { type: 'success', text: `Role changed to ${role}.` });
 	}),
 
@@ -369,6 +399,14 @@ export const actions = {
 			);
 		} catch (err) {
 			return adminActionError(form, 'Failed to ban user', err, 'Failed to ban user');
+		}
+
+		if (!(await disableKeysAfter('ban', userId))) {
+			return message(
+				form,
+				{ type: 'error', text: 'User banned, but failed to disable their API keys' },
+				{ status: 500 }
+			);
 		}
 
 		return message(form, { type: 'success', text: 'User banned.' });

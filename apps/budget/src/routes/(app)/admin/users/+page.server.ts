@@ -12,6 +12,7 @@ import {
 	userIdSchema
 } from '#lib/formSchemas/index.js';
 import { adminFormAction } from '#lib/server/actions/admin-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { isAdminUser } from '#lib/server/admin-status.js';
 import { assertAdmin, auth } from '#lib/server/auth.js';
 import { allowlistCommandFor, isEmailAllowlisted, sendWelcome } from '#lib/server/auth/welcome.js';
@@ -246,7 +247,11 @@ export const actions = {
 		{ invalidMessage: 'User ID is required' }
 	),
 
-	setRole: adminFormAction(setUserRoleSchema, async ({ request }, form) => {
+	setRole: adminFormAction(setUserRoleSchema, async ({ request }, form, actingUser) => {
+		if (form.data.userId === actingUser.id) {
+			return invalidForm(form, 'You cannot change your own role');
+		}
+
 		try {
 			await auth.api.setRole({
 				body: {
@@ -321,7 +326,11 @@ export const actions = {
 		}
 	}),
 
-	banUser: adminFormAction(banUserSchema, async ({ request }, form) => {
+	banUser: adminFormAction(banUserSchema, async ({ request }, form, actingUser) => {
+		if (form.data.userId === actingUser.id) {
+			return invalidForm(form, 'You cannot ban yourself');
+		}
+
 		try {
 			await auth.api.banUser({
 				body: {
@@ -414,7 +423,11 @@ export const actions = {
 
 	deleteUser: adminFormAction(
 		userIdSchema,
-		async ({ request }, form) => {
+		async ({ request }, form, actingUser) => {
+			if (form.data.id === actingUser.id) {
+				return invalidForm(form, 'You cannot remove your own account');
+			}
+
 			try {
 				await auth.api.removeUser({
 					body: {
