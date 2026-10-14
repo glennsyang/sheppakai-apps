@@ -23,7 +23,7 @@ import { invalidAuthForm as invalidForm } from './auth-form-handler';
 import { getBetterAuthErrorCode } from './better-auth-errors';
 
 type MessageStatus = NonNullable<Parameters<typeof message>[2]>['status'];
-type AdminUser = NonNullable<App.Locals['user']> & { email?: string };
+type AdminUser = NonNullable<App.Locals['user']>;
 type TargetUser = { id: string; email: string; name: string };
 
 /** The better-auth `admin` plugin endpoints these actions call. */
@@ -168,7 +168,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 					});
 					logger.info('User role changed by admin', { adminId: admin.id, userId, role });
 					await alert(
-						`🔑 Admin ${formatAlertEmail(admin.email ?? '')} set ${formatAlertEmail(target.email)}'s role to ${role}.`,
+						`🔑 Admin ${formatAlertEmail(admin.email)} set ${formatAlertEmail(target.email)}'s role to ${role}.`,
 						'Role Changed Alert'
 					);
 				} catch (err) {
@@ -206,7 +206,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 					});
 					logger.info('User banned by admin', { adminId: admin.id, userId });
 					await alert(
-						`🚫 Admin ${formatAlertEmail(admin.email ?? '')} banned ${formatAlertEmail(target.email)}.`,
+						`🚫 Admin ${formatAlertEmail(admin.email)} banned ${formatAlertEmail(target.email)}.`,
 						'User Banned Alert'
 					);
 				} catch (err) {
@@ -260,7 +260,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 					await auth.api.removeUser({ body: { userId }, headers: request.headers });
 					logger.info('User removed by admin', { adminId: admin.id, userId });
 					await alert(
-						`🗑️ Admin ${formatAlertEmail(admin.email ?? '')} removed ${formatAlertEmail(target.email)}.`,
+						`🗑️ Admin ${formatAlertEmail(admin.email)} removed ${formatAlertEmail(target.email)}.`,
 						'User Removed Alert'
 					);
 				} catch (err) {
@@ -293,7 +293,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 
 			logger.info('User created by admin', { adminId: admin.id, userId: created.id, role });
 			await alert(
-				`👤 Admin ${formatAlertEmail(admin.email ?? '')} created ${role} account for ${formatAlertEmail(email)}.`,
+				`👤 Admin ${formatAlertEmail(admin.email)} created ${role} account for ${formatAlertEmail(email)}.`,
 				'User Created Alert'
 			);
 
@@ -344,7 +344,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 					await deps.sendWelcome(target);
 					logger.info('Welcome email sent by admin', { adminId: admin.id, userId: target.id });
 					await alert(
-						`✉️ Admin ${formatAlertEmail(admin.email ?? '')} sent a welcome email to ${formatAlertEmail(target.email)}.`,
+						`✉️ Admin ${formatAlertEmail(admin.email)} sent a welcome email to ${formatAlertEmail(target.email)}.`,
 						'Welcome Email Alert'
 					);
 

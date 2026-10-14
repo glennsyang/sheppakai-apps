@@ -191,7 +191,7 @@ describe('createHandleError', () => {
 		const logger = fakeLogger();
 		const event = fakeEvent();
 		event.locals.requestId = 'req-1';
-		event.locals.user = { id: 'user-1' };
+		event.locals.user = { id: 'user-1', email: 'user@example.com', name: 'User' };
 
 		const result = createHandleError({ logger, dev: false })(unknownInput(event));
 

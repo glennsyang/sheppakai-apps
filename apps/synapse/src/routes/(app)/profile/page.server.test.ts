@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockUpdateUser = vi.hoisted(() => vi.fn<(args: unknown) => Promise<unknown>>());
+const { api, sendPasswordChangedEmail } = vi.hoisted(() => ({
+	api: {
+		updateUser: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		changePassword: vi.fn<(...args: unknown[]) => Promise<unknown>>()
+	},
+	sendPasswordChangedEmail: vi.fn<(...args: unknown[]) => Promise<unknown>>()
+}));
 
-vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: '' }));
-
-vi.mock('#lib/server/auth.js', () => ({ auth: { api: { updateUser: mockUpdateUser } } }));
-
-vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => void>() }));
-
-vi.mock('#lib/server/email/index.js', () => ({ sendPasswordChangedEmail: vi.fn<() => void>() }));
-
+vi.mock('#lib/server/auth.js', () => ({ auth: { api } }));
+vi.mock('#lib/server/email/index.js', () => ({ sendPasswordChangedEmail }));
 vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<() => void>(),
@@ -18,44 +18,56 @@ vi.mock('#lib/server/logger.js', () => ({
 		error: vi.fn<() => void>()
 	}
 }));
+vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: '' }));
+vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => void>() }));
 
 const { actions } = await import('./+page.server');
 
-const currentUser = { id: 'user-1', name: 'Old Name', email: 'user@example.com' };
+const USER = { id: 'user-1', name: 'Alice', email: 'alice@example.com', role: 'user' };
 
-function updateRequest(name: string) {
-	return new Request('https://synapse.example.com/profile?/update', {
+function post(fields: Record<string, string>) {
+	return new Request('https://synapse.example.com/profile', {
 		method: 'POST',
-		body: new URLSearchParams({ name })
+		body: new URLSearchParams(fields)
 	});
 }
 
-describe('profile update action', () => {
+// The action behaviour itself is tested in @sheppakai/shared/profile-actions; these check
+// this app's wiring (its auth instance and password-changed email).
+describe('profile actions — wiring', () => {
 	beforeEach(() => {
-		mockUpdateUser.mockReset();
-		mockUpdateUser.mockResolvedValue({ status: true });
+		vi.clearAllMocks();
+		api.updateUser.mockResolvedValue({ status: true });
+		api.changePassword.mockResolvedValue({});
+		sendPasswordChangedEmail.mockResolvedValue(undefined);
 	});
 
-	it('updates the name through better-auth so its user-update hooks run', async () => {
-		const request = updateRequest('New Name');
+	it("updateName goes through this app's better-auth instance", async () => {
+		const result = await actions.updateName({
+			request: post({ name: 'New Name' }),
+			locals: { user: USER }
+		} as never);
 
-		const result = await actions.update({ request, locals: { user: currentUser } } as never);
-
-		expect(mockUpdateUser).toHaveBeenCalledWith({
-			body: { name: 'New Name' },
-			headers: request.headers
-		});
+		expect(api.updateUser).toHaveBeenCalledWith(
+			expect.objectContaining({ body: { name: 'New Name' } })
+		);
 		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
 	});
 
-	it('reports a 500 when better-auth rejects the update', async () => {
-		mockUpdateUser.mockRejectedValue(new Error('nope'));
-
-		const result = await actions.update({
-			request: updateRequest('New Name'),
-			locals: { user: currentUser }
+	it("changePassword sends this app's password-changed email", async () => {
+		await actions.changePassword({
+			request: post({
+				currentPassword: 'old-password-123',
+				newPassword: 'new-password-1234',
+				confirmPassword: 'new-password-1234'
+			}),
+			getClientAddress: () => '203.0.113.7',
+			locals: { user: USER }
 		} as never);
 
-		expect(result).toMatchObject({ status: 500 });
+		expect(api.changePassword).toHaveBeenCalledOnce();
+		expect(sendPasswordChangedEmail).toHaveBeenCalledWith(
+			expect.objectContaining({ to: 'alice@example.com', ipAddress: '203.0.113.7' })
+		);
 	});
 });

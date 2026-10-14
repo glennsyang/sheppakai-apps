@@ -5,7 +5,7 @@ declare global {
 	namespace App {
 		interface Locals {
 			requestId?: string;
-			user?: { id: string; role?: string | null } | null;
+			user?: { id: string; role?: string | null; email: string; name: string } | null;
 			session?: { token: string };
 		}
 

@@ -1,3 +1,4 @@
+import { createProfileActions } from '@sheppakai/shared/profile-actions';
 import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -25,7 +26,6 @@ import {
 } from '#lib/server/db/utils.js';
 import { sendPasswordChangedEmail } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';
-import { createUserRateLimiter, rateLimitedMessage } from '#lib/server/rate-limiter.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
 import { getBetterAuthErrorMessage } from '#lib/utils/auth.js';
 import { DEFAULT_DASHBOARD_GOALS, normalizeDashboardGoals } from '#lib/utils/dashboard-goals.js';
@@ -36,10 +36,6 @@ import {
 } from '#lib/utils/visit-status.js';
 
 import type { Actions, PageServerLoad } from './$types';
-
-// Keyed by user id (not IP): this is an authenticated action, and the current-password
-// check is the thing worth rate limiting against brute-forcing.
-const changePasswordLimiter = createUserRateLimiter([5, 'm']);
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = getUser(locals).id;
@@ -99,104 +95,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 };
 
+// Change-name and change-password actions, shared by every app.
+const profileActions = createProfileActions({
+	auth,
+	sendPasswordChangedEmail,
+	getErrorMessage: getBetterAuthErrorMessage,
+	logger
+});
+
 export const actions = {
-	update: requireAuth(async ({ request }, currentUser) => {
-		const form = await superValidate(request, zod4(updateProfileSchema));
-		if (!form.valid) {
-			return message(
-				form,
-				{ type: 'error', text: 'Please correct the errors in the form.' },
-				{ status: 400 }
-			);
-		}
-
-		try {
-			// Through better-auth, not a direct DB write, so its user-update hooks (name length
-			// guard), updatedAt stamping and session cookie refresh all apply.
-			await auth.api.updateUser({ body: { name: form.data.name }, headers: request.headers });
-
-			logger.info('User profile updated successfully', { userId: currentUser.id });
-			return message(form, { type: 'success', text: 'Profile updated successfully.' });
-		} catch (error) {
-			logger.error('Failed to update user profile', error);
-			return message(
-				form,
-				{ type: 'error', text: 'Failed to update profile. Please try again.' },
-				{ status: 500 }
-			);
-		}
-	}),
-
-	changePassword: requireAuth(async (event, currentUser) => {
-		const { request } = event;
-		const form = await superValidate(request, zod4(changePasswordSchema));
-		if (!form.valid) {
-			return message(
-				form,
-				{ type: 'error', text: 'Please correct the errors in the form.' },
-				{ status: 400 }
-			);
-		}
-
-		const rateLimitStatus = await changePasswordLimiter.check(event, { userId: currentUser.id });
-		if (rateLimitStatus.limited) {
-			return rateLimitedMessage(form, rateLimitStatus.retryAfter);
-		}
-
-		try {
-			// Not X-Forwarded-For: its first entry is client-supplied. getClientAddress()
-			// reads the proxy-set Fly-Client-IP (ADDRESS_HEADER in fly.toml).
-			let ipAddress: string | undefined;
-			try {
-				ipAddress = event.getClientAddress() || undefined;
-			} catch {
-				ipAddress = undefined;
-			}
-			const userAgent = request.headers.get('user-agent') || undefined;
-
-			await auth.api.changePassword({
-				body: {
-					currentPassword: form.data.currentPassword,
-					newPassword: form.data.newPassword,
-					revokeOtherSessions: true
-				},
-				headers: request.headers
-			});
-
-			logger.info('Security event: password changed and other sessions revoked', {
-				userId: currentUser.id,
-				ipAddress,
-				userAgent
-			});
-
-			void sendPasswordChangedEmail({
-				to: currentUser.email,
-				name: currentUser.name || currentUser.email,
-				changedAt: new Date(),
-				ipAddress,
-				userAgent,
-				source: 'Profile settings'
-			}).catch((err: unknown) => logger.error('Password changed email failed', err));
-
-			return message(form, {
-				type: 'success',
-				text: `Password changed successfully for user ${currentUser.name}.`
-			});
-		} catch (error) {
-			logger.error('Failed to change password', error);
-			return message(
-				form,
-				{
-					type: 'error',
-					text: getBetterAuthErrorMessage(
-						error,
-						'Current password is incorrect or password change failed.'
-					)
-				},
-				{ status: 400 }
-			);
-		}
-	}),
+	...profileActions,
 
 	updateVisitSettings: requireAuth(async ({ request }, currentUser) => {
 		const form = await superValidate(request, zod4(updateVisitStatusSettingsSchema));

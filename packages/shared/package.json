@@ -32,6 +32,7 @@
 		"./healthz": "./src/healthz.ts",
 		"./name-guard": "./src/name-guard.ts",
 		"./ntfy": "./src/ntfy.ts",
+		"./profile-actions": "./src/profile-actions.ts",
 		"./rate-limiter": "./src/rate-limiter.ts",
 		"./sentry-client": "./src/sentry-client.ts",
 		"./sentry-data-collection": "./src/sentry-data-collection.ts",
