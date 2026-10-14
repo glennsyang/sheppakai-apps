@@ -1,18 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { changePasswordMock, sendPasswordChangedEmailMock, loggerMock } = vi.hoisted(() => ({
-	changePasswordMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-	sendPasswordChangedEmailMock: vi.fn<(...args: unknown[]) => Promise<void>>(),
-	loggerMock: {
-		error: vi.fn<() => void>(),
-		warn: vi.fn<() => void>(),
-		info: vi.fn<() => void>(),
-		debug: vi.fn<() => void>()
-	}
-}));
+const { changePasswordMock, updateUserMock, sendPasswordChangedEmailMock, loggerMock } = vi.hoisted(
+	() => ({
+		changePasswordMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		updateUserMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		sendPasswordChangedEmailMock: vi.fn<(...args: unknown[]) => Promise<void>>(),
+		loggerMock: {
+			error: vi.fn<() => void>(),
+			warn: vi.fn<() => void>(),
+			info: vi.fn<() => void>(),
+			debug: vi.fn<() => void>()
+		}
+	})
+);
 
 vi.mock('#lib/server/auth.js', () => ({
-	auth: { api: { changePassword: changePasswordMock } }
+	auth: { api: { changePassword: changePasswordMock, updateUser: updateUserMock } }
 }));
 
 vi.mock('#lib/server/email/index.js', () => ({
@@ -102,5 +105,41 @@ describe('profile changePassword action', () => {
 
 		expect(changePasswordMock).not.toHaveBeenCalled();
 		expect(result).toMatchObject({ status: 429 });
+	});
+});
+
+describe('profile update action', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		updateUserMock.mockResolvedValue({ status: true });
+	});
+
+	it('updates the name through better-auth so its user-update hooks run', async () => {
+		const request = new Request('https://budget.example.com/profile?/update', {
+			method: 'POST',
+			body: new URLSearchParams({ name: 'New Name' })
+		});
+
+		const result = await actions.update({ request, locals: { user: currentUser } } as never);
+
+		expect(updateUserMock).toHaveBeenCalledWith({
+			body: { name: 'New Name' },
+			headers: request.headers
+		});
+		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
+	});
+
+	it('reports a 500 when better-auth rejects the update', async () => {
+		updateUserMock.mockRejectedValue(new Error('nope'));
+
+		const result = await actions.update({
+			request: new Request('https://budget.example.com/profile?/update', {
+				method: 'POST',
+				body: new URLSearchParams({ name: 'New Name' })
+			}),
+			locals: { user: currentUser }
+		} as never);
+
+		expect(result).toMatchObject({ status: 500 });
 	});
 });

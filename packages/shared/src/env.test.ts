@@ -68,11 +68,11 @@ describe('cronSecretEnvVar', () => {
 		expect(cronSecretEnvVar(true).CRON_SECRET.schema.parse(undefined)).toBe(DUMMY_ENV.CRON_SECRET);
 	});
 
-	it('requires at least 16 characters and rejects the placeholder at runtime', () => {
+	it('requires at least 32 characters (matching verifyCronAuthorization) and rejects the placeholder at runtime', () => {
 		const { schema } = cronSecretEnvVar(false).CRON_SECRET;
-		expect(schema.safeParse('x'.repeat(15)).success).toBe(false);
+		expect(schema.safeParse('x'.repeat(31)).success).toBe(false);
 		expect(schema.safeParse(DUMMY_ENV.CRON_SECRET).success).toBe(false);
 		expect(schema.safeParse(undefined).success).toBe(false);
-		expect(schema.parse('x'.repeat(16))).toHaveLength(16);
+		expect(schema.parse('x'.repeat(32))).toHaveLength(32);
 	});
 });

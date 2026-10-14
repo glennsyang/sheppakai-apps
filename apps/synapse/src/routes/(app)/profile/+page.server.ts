@@ -111,12 +111,11 @@ export const actions = {
 		}
 
 		try {
-			await getDb().update(user).set({ name: form.data.name }).where(eq(user.id, currentUser.id));
+			// Through better-auth, not a direct DB write, so its user-update hooks (name length
+			// guard), updatedAt stamping and session cookie refresh all apply.
+			await auth.api.updateUser({ body: { name: form.data.name }, headers: request.headers });
 
-			logger.info('User profile updated successfully', {
-				userId: currentUser.id,
-				name: form.data.name
-			});
+			logger.info('User profile updated successfully', { userId: currentUser.id });
 			return message(form, { type: 'success', text: 'Profile updated successfully.' });
 		} catch (error) {
 			logger.error('Failed to update user profile', error);

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const {
 	banUserMock,
 	setRoleMock,
+	removeUserMock,
 	createUserMock,
 	getUserMock,
 	listUsersMock,
@@ -15,6 +16,7 @@ const {
 } = vi.hoisted(() => ({
 	banUserMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 	setRoleMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+	removeUserMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 	createUserMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 	getUserMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 	listUsersMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
@@ -42,6 +44,7 @@ vi.mock('#lib/server/auth.js', () => ({
 		api: {
 			banUser: banUserMock,
 			setRole: setRoleMock,
+			removeUser: removeUserMock,
 			createUser: createUserMock,
 			getUser: getUserMock,
 			listUsers: listUsersMock,
@@ -385,5 +388,51 @@ describe('admin users load: sessions', () => {
 		expect(result.usersWithSessions).toEqual([]);
 		expect(result.loadError).toBeDefined();
 		expect(loggerMock.error).toHaveBeenCalled();
+	});
+});
+
+describe('admin users actions: an admin cannot act on their own account', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('refuses to change their own role', async () => {
+		const result = await actions.setRole({
+			request: post({ userId: 'admin-1', role: 'user' }),
+			locals: adminLocals
+		} as never);
+
+		expect(setRoleMock).not.toHaveBeenCalled();
+		expect(disableApiKeysForUserMock).not.toHaveBeenCalled();
+		expect(result).toMatchObject({
+			status: 400,
+			data: { form: { message: { type: 'error', text: 'You cannot change your own role' } } }
+		});
+	});
+
+	it('refuses to ban themselves', async () => {
+		const result = await actions.banUser({
+			request: post({ userId: 'admin-1', banReason: 'oops' }),
+			locals: adminLocals
+		} as never);
+
+		expect(banUserMock).not.toHaveBeenCalled();
+		expect(result).toMatchObject({
+			status: 400,
+			data: { form: { message: { type: 'error', text: 'You cannot ban yourself' } } }
+		});
+	});
+
+	it('refuses to delete their own account', async () => {
+		const result = await actions.deleteUser({
+			request: post({ id: 'admin-1' }),
+			locals: adminLocals
+		} as never);
+
+		expect(removeUserMock).not.toHaveBeenCalled();
+		expect(result).toMatchObject({
+			status: 400,
+			data: { form: { message: { type: 'error', text: 'You cannot remove your own account' } } }
+		});
 	});
 });

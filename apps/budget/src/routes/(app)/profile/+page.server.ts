@@ -6,7 +6,6 @@ import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { auth } from '#lib/server/auth.js';
 import { accountQueries, userQueries } from '#lib/server/db/queries/index.js';
-import { updateUserName } from '#lib/server/db/writes/users.js';
 import { sendPasswordChangedEmail } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';
 import { createUserRateLimiter, rateLimitedMessage } from '#lib/server/rate-limiter.js';
@@ -59,7 +58,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions = {
-	update: requireAuth(async ({ request }, currentUser) => {
+	update: requireAuth(async ({ request }) => {
 		const form = await superValidate(request, zod4(updateProfileSchema));
 
 		if (!form.valid) {
@@ -67,7 +66,9 @@ export const actions = {
 		}
 
 		try {
-			await updateUserName(currentUser.id, form.data.name);
+			// Through better-auth, not a direct DB write, so its user-update hooks (name length
+			// guard), updatedAt stamping and session cookie refresh all apply.
+			await auth.api.updateUser({ body: { name: form.data.name }, headers: request.headers });
 
 			logger.info('User profile updated successfully');
 			return message(form, { type: 'success', text: 'Profile updated successfully.' });
