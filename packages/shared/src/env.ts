@@ -106,6 +106,11 @@ export function sharedEnvVars(building: boolean) {
 			// POSTing alert text (which can include a user's email) to a live third-party domain.
 			schema: z.url().default('https://auth-alerts.invalid')
 		},
+		FLY_APP_NAME: {
+			description:
+				'Fly app name, set automatically by Fly at runtime; used in the admin allowlist hint',
+			schema: z.string().optional()
+		},
 		NODE_ENV: {
 			description: 'Application runtime environment',
 			schema: z.enum(['development', 'production', 'test']).default('development')

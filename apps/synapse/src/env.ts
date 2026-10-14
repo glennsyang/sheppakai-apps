@@ -12,11 +12,6 @@ export const variables = defineEnvVars({
 		description: 'ntfy.sh topic URL for reminder push notifications',
 		schema: building ? z.string().catch('https://ntfy.sh/placeholder') : z.url()
 	},
-	FLY_APP_NAME: {
-		description:
-			'Fly app name, set automatically by Fly at runtime; used in the admin allowlist hint',
-		schema: z.string().optional()
-	},
 	SENTRY_DSN: {
 		description:
 			'Sentry DSN, sent to the browser to initialize error tracking client-side. Not a secret — defaults to the project DSN so no config is required.',

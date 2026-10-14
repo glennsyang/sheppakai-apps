@@ -5,6 +5,8 @@
 	"type": "module",
 	"exports": {
 		"./action-message": "./src/action-message.ts",
+		"./admin-user-actions": "./src/admin-user-actions.ts",
+		"./admin-user-schemas": "./src/admin-user-schemas.ts",
 		"./api-audit-log": "./src/api-audit-log.ts",
 		"./api-key": "./src/api-key.ts",
 		"./api-response": "./src/api-response.ts",

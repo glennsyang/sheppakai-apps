@@ -110,7 +110,7 @@
 	$effect(() => {
 		if (openSetRoleDialog) {
 			$setRoleForm.userId = user.id;
-			$setRoleForm.role = user.role || 'user';
+			$setRoleForm.role = user.role === 'admin' ? 'admin' : 'user';
 		}
 	});
 
@@ -268,6 +268,7 @@
 <ConfirmModal
 	bind:open={openUnbanDialog}
 	id={user.id}
+	idField="userId"
 	actionUrl="/admin/users?/unbanUser"
 	title="Unban user"
 	message="Are you sure you want to unban {user.email}?"
@@ -278,6 +279,7 @@
 <ConfirmModal
 	bind:open={openRevokeDialog}
 	id={user.id}
+	idField="userId"
 	actionUrl="/admin/users?/revokeSession"
 	title="Revoke session"
 	message="Are you sure you want to permanently revoke all sessions for {user.email}? This action cannot be undone."
@@ -288,6 +290,7 @@
 <ConfirmModal
 	bind:open={openWelcomeModal}
 	id={user.id}
+	idField="userId"
 	actionUrl="/admin/users?/sendWelcomeEmail"
 	title="Send welcome email"
 	message="Send {user.email} a welcome email with a new 72-hour link to set their password?"
@@ -298,7 +301,8 @@
 <ConfirmModal
 	bind:open={openDeleteModal}
 	id={user.id}
-	actionUrl="/admin/users?/deleteUser"
+	idField="userId"
+	actionUrl="/admin/users?/removeUser"
 	title="Delete user"
 	message="Are you sure you want to permanently delete {user.email}? This action cannot be undone."
 	confirmButtonText="Delete User"

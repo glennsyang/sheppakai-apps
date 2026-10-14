@@ -1,32 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-	banUserMock,
-	setRoleMock,
-	removeUserMock,
-	createUserMock,
-	getUserMock,
-	listUsersMock,
-	listUserSessionsMock,
+	api,
 	findSessionSummariesMock,
 	disableApiKeysForUserMock,
 	loggerMock,
-	welcomeMock,
+	sendWelcomeMock,
 	sendAuthAlertsMock
 } = vi.hoisted(() => ({
-	banUserMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-	setRoleMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-	removeUserMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-	createUserMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-	getUserMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-	listUsersMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-	listUserSessionsMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-	findSessionSummariesMock: vi.fn<(userIds: string[]) => Promise<unknown[]>>(),
-	welcomeMock: {
-		isEmailAllowlisted: vi.fn<(email: string) => boolean>(),
-		allowlistCommandFor: vi.fn<(email: string) => string>(),
-		sendWelcome: vi.fn<(user: unknown) => Promise<void>>()
+	api: {
+		banUser: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		setRole: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		unbanUser: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		removeUser: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		createUser: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		getUser: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		listUsers: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		listUserSessions: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		revokeUserSessions: vi.fn<(...args: unknown[]) => Promise<unknown>>()
 	},
+	findSessionSummariesMock: vi.fn<(userIds: string[]) => Promise<unknown[]>>(),
+	sendWelcomeMock: vi.fn<(user: unknown) => Promise<void>>(),
 	sendAuthAlertsMock: vi.fn<(...args: unknown[]) => Promise<boolean>>(),
 	disableApiKeysForUserMock: vi.fn<(userId: string) => Promise<number>>(),
 	loggerMock: {
@@ -37,20 +31,11 @@ const {
 	}
 }));
 
-vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: 'env-admin' }));
+vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: 'env-admin', FLY_APP_NAME: 'budget-test' }));
 
 vi.mock('#lib/server/auth.js', () => ({
-	auth: {
-		api: {
-			banUser: banUserMock,
-			setRole: setRoleMock,
-			removeUser: removeUserMock,
-			createUser: createUserMock,
-			getUser: getUserMock,
-			listUsers: listUsersMock,
-			listUserSessions: listUserSessionsMock
-		}
-	},
+	auth: { api },
+	allowedEmails: new Set(['admin@example.com', 'listed@example.com']),
 	assertAdmin: (locals: App.Locals) => {
 		if (locals.user?.role !== 'admin') throw new Error('Forbidden');
 	}
@@ -66,7 +51,7 @@ vi.mock('#lib/server/db/writes/api-keys.js', () => ({
 
 vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 
-vi.mock('#lib/server/auth/welcome.js', () => welcomeMock);
+vi.mock('#lib/server/auth/welcome.js', () => ({ sendWelcome: sendWelcomeMock }));
 
 vi.mock('#lib/server/notifications/index.js', () => ({ sendAuthAlerts: sendAuthAlertsMock }));
 
@@ -75,6 +60,7 @@ import type { UserWithSessions } from '#lib/types.js';
 import { actions, load } from './+page.server';
 
 const adminLocals = { user: { id: 'admin-1', role: 'admin' } } as App.Locals;
+const LISTED = { id: 'u-2', name: 'Listed', email: 'listed@example.com' };
 
 function post(fields: Record<string, string>) {
 	return new Request('https://budget.example.com/admin/users', {
@@ -83,263 +69,72 @@ function post(fields: Record<string, string>) {
 	});
 }
 
-describe('admin users actions: API keys follow the owner', () => {
+// The user-management behaviour itself is tested in @sheppakai/shared/admin-user-actions;
+// these check this app's wiring (guard, API-key hook, welcome email, Fly app name).
+describe('admin users actions — wiring', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		banUserMock.mockResolvedValue({});
-		setRoleMock.mockResolvedValue({});
-		disableApiKeysForUserMock.mockResolvedValue(2);
+		api.banUser.mockResolvedValue({ user: LISTED });
+		api.getUser.mockResolvedValue(LISTED);
+		api.createUser.mockResolvedValue({ user: { ...LISTED, email: 'new@example.com' } });
+		api.revokeUserSessions.mockResolvedValue({});
+		sendWelcomeMock.mockResolvedValue(undefined);
+		disableApiKeysForUserMock.mockResolvedValue(1);
 	});
 
-	describe('banUser', () => {
-		it("disables the banned user's API keys", async () => {
-			const result = await actions.banUser({
-				request: post({ userId: 'u-2', banReason: 'abuse' }),
-				locals: adminLocals
-			} as never);
+	it.each([
+		'setRole',
+		'banUser',
+		'unbanUser',
+		'removeUser',
+		'createUser',
+		'sendWelcomeEmail',
+		'setPassword',
+		'revokeSession'
+	] as const)('%s is admin-only', async (name) => {
+		const result = await actions[name]({
+			request: post({ userId: LISTED.id }),
+			locals: { user: { id: 'u-3', role: 'user' } } as App.Locals
+		} as never);
 
-			expect(banUserMock).toHaveBeenCalledOnce();
-			expect(disableApiKeysForUserMock).toHaveBeenCalledWith('u-2');
-			expect(result).toMatchObject({ form: { message: { type: 'success' } } });
-		});
-
-		it('does not touch keys when the ban itself fails', async () => {
-			banUserMock.mockRejectedValue(new Error('nope'));
-
-			const result = await actions.banUser({
-				request: post({ userId: 'u-2', banReason: 'abuse' }),
-				locals: adminLocals
-			} as never);
-
-			expect(disableApiKeysForUserMock).not.toHaveBeenCalled();
-			expect(result).toMatchObject({ status: 500 });
-		});
-
-		it('reports an error when the ban succeeds but disabling keys fails', async () => {
-			disableApiKeysForUserMock.mockRejectedValue(new Error('db down'));
-
-			const result = await actions.banUser({
-				request: post({ userId: 'u-2', banReason: 'abuse' }),
-				locals: adminLocals
-			} as never);
-
-			expect(result).toMatchObject({
-				status: 500,
-				data: {
-					form: {
-						message: {
-							type: 'error',
-							text: 'User banned, but failed to disable their API keys'
-						}
-					}
-				}
-			});
-		});
-
-		it('rejects a non-admin caller without banning or disabling anything', async () => {
-			const result = await actions.banUser({
-				request: post({ userId: 'u-2', banReason: 'abuse' }),
-				locals: { user: { id: 'u-3', role: 'user' } } as App.Locals
-			} as never);
-
-			expect(banUserMock).not.toHaveBeenCalled();
-			expect(disableApiKeysForUserMock).not.toHaveBeenCalled();
-			expect(result).toMatchObject({ status: 403 });
-		});
+		expect(result).toMatchObject({ status: 403 });
 	});
 
-	describe('setRole', () => {
-		it("disables the user's API keys when they are demoted to user", async () => {
-			const result = await actions.setRole({
-				request: post({ userId: 'u-2', role: 'user' }),
-				locals: adminLocals
-			} as never);
+	it("banUser disables the banned user's API keys", async () => {
+		await actions.banUser({ request: post({ userId: LISTED.id }), locals: adminLocals } as never);
 
-			expect(setRoleMock).toHaveBeenCalledOnce();
-			expect(disableApiKeysForUserMock).toHaveBeenCalledWith('u-2');
-			expect(result).toMatchObject({ form: { message: { type: 'success' } } });
-		});
-
-		it('leaves keys alone when the user is promoted to admin', async () => {
-			await actions.setRole({
-				request: post({ userId: 'u-2', role: 'admin' }),
-				locals: adminLocals
-			} as never);
-
-			expect(disableApiKeysForUserMock).not.toHaveBeenCalled();
-		});
-
-		it('leaves keys alone for an ADMIN_USER_IDS admin, who stays admin whatever their role', async () => {
-			await actions.setRole({
-				request: post({ userId: 'env-admin', role: 'user' }),
-				locals: adminLocals
-			} as never);
-
-			expect(disableApiKeysForUserMock).not.toHaveBeenCalled();
-		});
-
-		it('reports an error when the demotion succeeds but disabling keys fails', async () => {
-			disableApiKeysForUserMock.mockRejectedValue(new Error('db down'));
-
-			const result = await actions.setRole({
-				request: post({ userId: 'u-2', role: 'user' }),
-				locals: adminLocals
-			} as never);
-
-			expect(result).toMatchObject({
-				status: 500,
-				data: { form: { message: { type: 'error' } } }
-			});
-		});
+		expect(disableApiKeysForUserMock).toHaveBeenCalledWith(LISTED.id);
 	});
-});
 
-describe('admin users actions: create user + welcome email', () => {
-	const newUser = { id: 'u-new', email: 'new@example.com', name: 'New Person' };
+	it('sendWelcomeEmail sends the set-password welcome email', async () => {
+		await actions.sendWelcomeEmail({
+			request: post({ userId: LISTED.id }),
+			locals: adminLocals
+		} as never);
 
-	beforeEach(() => {
-		vi.clearAllMocks();
-		createUserMock.mockResolvedValue({ user: newUser });
-		getUserMock.mockResolvedValue(newUser);
-		welcomeMock.isEmailAllowlisted.mockReturnValue(true);
-		welcomeMock.allowlistCommandFor.mockReturnValue(
-			'fly secrets set ALLOWED_EMAILS="a@example.com,new@example.com" -a sheppakai-budget'
+		expect(sendWelcomeMock).toHaveBeenCalledWith(LISTED);
+	});
+
+	it('createUser points the allowlist hint at this Fly app', async () => {
+		const result = await actions.createUser({
+			request: post({ name: 'New', email: 'new@example.com', role: 'user' }),
+			locals: adminLocals
+		} as never);
+
+		expect(result).toMatchObject({ allowlistCommand: expect.stringMatching(/-a budget-test$/) });
+		expect(sendWelcomeMock).not.toHaveBeenCalled();
+	});
+
+	it('revokeSession revokes every session of the posted userId', async () => {
+		const result = await actions.revokeSession({
+			request: post({ userId: LISTED.id }),
+			locals: adminLocals
+		} as never);
+
+		expect(api.revokeUserSessions).toHaveBeenCalledWith(
+			expect.objectContaining({ body: { userId: LISTED.id } })
 		);
-		welcomeMock.sendWelcome.mockResolvedValue();
-		sendAuthAlertsMock.mockResolvedValue(true);
-	});
-
-	describe('createUser', () => {
-		const fields = { name: 'New Person', email: 'new@example.com', role: 'user' };
-
-		it('creates the user with a generated password and sends the welcome email', async () => {
-			const result = await actions.createUser({
-				request: post(fields),
-				locals: adminLocals
-			} as never);
-
-			expect(createUserMock).toHaveBeenCalledOnce();
-			const { body } = createUserMock.mock.calls[0][0] as {
-				body: { name: string; email: string; role: string; password: string };
-			};
-			expect(body).toMatchObject({ name: 'New Person', email: 'new@example.com', role: 'user' });
-			expect(body.password.length).toBeGreaterThanOrEqual(32);
-			expect(welcomeMock.sendWelcome).toHaveBeenCalledWith(newUser);
-			expect(sendAuthAlertsMock).toHaveBeenCalledOnce();
-			expect(result).toMatchObject({ form: { message: { type: 'success' } } });
-
-			// The generated password must never reach the logs.
-			expect(JSON.stringify(loggerMock.info.mock.calls)).not.toContain(body.password);
-			expect(loggerMock.info).toHaveBeenCalledWith('Admin created user', {
-				adminId: 'admin-1',
-				userId: 'u-new'
-			});
-		});
-
-		it('returns a 400 message when the email already exists', async () => {
-			createUserMock.mockRejectedValue({
-				body: { code: 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL' }
-			});
-
-			const result = await actions.createUser({
-				request: post(fields),
-				locals: adminLocals
-			} as never);
-
-			expect(welcomeMock.sendWelcome).not.toHaveBeenCalled();
-			expect(result).toMatchObject({
-				status: 400,
-				data: {
-					form: { message: { type: 'error', text: 'A user with this email already exists.' } }
-				}
-			});
-		});
-
-		it('rejects a non-admin caller without creating anything', async () => {
-			const result = await actions.createUser({
-				request: post(fields),
-				locals: { user: { id: 'u-3', role: 'user' } } as App.Locals
-			} as never);
-
-			expect(createUserMock).not.toHaveBeenCalled();
-			expect(welcomeMock.sendWelcome).not.toHaveBeenCalled();
-			expect(result).toMatchObject({ status: 403 });
-		});
-
-		it('rejects an invalid form', async () => {
-			const result = await actions.createUser({
-				request: post({ name: '', email: 'nope', role: 'user' }),
-				locals: adminLocals
-			} as never);
-
-			expect(createUserMock).not.toHaveBeenCalled();
-			expect(result).toMatchObject({ status: 400 });
-		});
-
-		it('holds the welcome email and returns the fly command when not allowlisted', async () => {
-			welcomeMock.isEmailAllowlisted.mockReturnValue(false);
-
-			const result = await actions.createUser({
-				request: post(fields),
-				locals: adminLocals
-			} as never);
-
-			expect(createUserMock).toHaveBeenCalledOnce();
-			expect(welcomeMock.sendWelcome).not.toHaveBeenCalled();
-			expect(result).toMatchObject({
-				form: { message: { type: 'success' } },
-				allowlistCommand: expect.stringContaining('fly secrets set ALLOWED_EMAILS=')
-			});
-		});
-
-		it('reports an error when the user is created but the welcome email fails', async () => {
-			welcomeMock.sendWelcome.mockRejectedValue(new Error('brevo down'));
-
-			const result = await actions.createUser({
-				request: post(fields),
-				locals: adminLocals
-			} as never);
-
-			expect(createUserMock).toHaveBeenCalledOnce();
-			expect(result).toMatchObject({
-				status: 500,
-				data: { form: { message: { type: 'error' } } }
-			});
-		});
-	});
-
-	describe('sendWelcomeEmail', () => {
-		it('sends the welcome email to an allowlisted user', async () => {
-			const result = await actions.sendWelcomeEmail({
-				request: post({ id: 'u-new' }),
-				locals: adminLocals
-			} as never);
-
-			expect(welcomeMock.sendWelcome).toHaveBeenCalledWith(newUser);
-			expect(result).toMatchObject({ form: { message: { type: 'success' } } });
-		});
-
-		it('refuses when the user is still not allowlisted', async () => {
-			welcomeMock.isEmailAllowlisted.mockReturnValue(false);
-
-			const result = await actions.sendWelcomeEmail({
-				request: post({ id: 'u-new' }),
-				locals: adminLocals
-			} as never);
-
-			expect(welcomeMock.sendWelcome).not.toHaveBeenCalled();
-			expect(result).toMatchObject({ status: 400 });
-		});
-
-		it('rejects a non-admin caller', async () => {
-			const result = await actions.sendWelcomeEmail({
-				request: post({ id: 'u-new' }),
-				locals: { user: { id: 'u-3', role: 'user' } } as App.Locals
-			} as never);
-
-			expect(getUserMock).not.toHaveBeenCalled();
-			expect(result).toMatchObject({ status: 403 });
-		});
+		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
 	});
 });
 
@@ -355,7 +150,7 @@ describe('admin users load: sessions', () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		listUsersMock.mockResolvedValue({
+		api.listUsers.mockResolvedValue({
 			users: [
 				{ id: 'u1', name: 'One', email: 'one@example.com' },
 				{ id: 'u2', name: 'Two', email: 'two@example.com' }
@@ -373,7 +168,7 @@ describe('admin users load: sessions', () => {
 
 		expect(findSessionSummariesMock).toHaveBeenCalledOnce();
 		expect(findSessionSummariesMock).toHaveBeenCalledWith(['u1', 'u2']);
-		expect(listUserSessionsMock).not.toHaveBeenCalled();
+		expect(api.listUserSessions).not.toHaveBeenCalled();
 		expect(result.usersWithSessions.map((u) => [u.id, u.sessions.map((s) => s.id)])).toEqual([
 			['u1', ['s1', 's2']],
 			['u2', []]
@@ -388,51 +183,5 @@ describe('admin users load: sessions', () => {
 		expect(result.usersWithSessions).toEqual([]);
 		expect(result.loadError).toBeDefined();
 		expect(loggerMock.error).toHaveBeenCalled();
-	});
-});
-
-describe('admin users actions: an admin cannot act on their own account', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
-
-	it('refuses to change their own role', async () => {
-		const result = await actions.setRole({
-			request: post({ userId: 'admin-1', role: 'user' }),
-			locals: adminLocals
-		} as never);
-
-		expect(setRoleMock).not.toHaveBeenCalled();
-		expect(disableApiKeysForUserMock).not.toHaveBeenCalled();
-		expect(result).toMatchObject({
-			status: 400,
-			data: { form: { message: { type: 'error', text: 'You cannot change your own role' } } }
-		});
-	});
-
-	it('refuses to ban themselves', async () => {
-		const result = await actions.banUser({
-			request: post({ userId: 'admin-1', banReason: 'oops' }),
-			locals: adminLocals
-		} as never);
-
-		expect(banUserMock).not.toHaveBeenCalled();
-		expect(result).toMatchObject({
-			status: 400,
-			data: { form: { message: { type: 'error', text: 'You cannot ban yourself' } } }
-		});
-	});
-
-	it('refuses to delete their own account', async () => {
-		const result = await actions.deleteUser({
-			request: post({ id: 'admin-1' }),
-			locals: adminLocals
-		} as never);
-
-		expect(removeUserMock).not.toHaveBeenCalled();
-		expect(result).toMatchObject({
-			status: 400,
-			data: { form: { message: { type: 'error', text: 'You cannot remove your own account' } } }
-		});
 	});
 });

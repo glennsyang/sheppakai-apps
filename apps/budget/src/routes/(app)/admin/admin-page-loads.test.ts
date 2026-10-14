@@ -19,7 +19,8 @@ vi.mock('#lib/server/auth.js', async () => {
 			if (!locals.user) throw error(401, 'Unauthorized');
 			if (locals.user.role !== 'admin') throw error(403, 'Forbidden');
 		},
-		auth: { api: { listApiKeys: mockState.listApiKeys, listUsers: mockState.listUsers } }
+		auth: { api: { listApiKeys: mockState.listApiKeys, listUsers: mockState.listUsers } },
+		allowedEmails: new Set<string>()
 	};
 });
 

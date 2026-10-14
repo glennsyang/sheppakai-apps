@@ -46,7 +46,7 @@
 	{/if}
 
 	<div class="space-y-10">
-		<CreateUserForm data={data.createForm} allowlist={data.allowlist} />
+		<CreateUserForm data={data.createForm} />
 		<AdminUsersTable {users} currentUserId={data.user.id} allowlistedIds={data.allowlistedIds} />
 	</div>
 </div>

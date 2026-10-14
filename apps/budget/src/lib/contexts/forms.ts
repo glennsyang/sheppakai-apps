@@ -11,7 +11,7 @@ import type {
 	restoreCustomerSchema,
 	savingsSchema,
 	setPasswordSchema,
-	setUserRoleSchema,
+	setRoleSchema,
 	transactionSchema,
 	unArchiveSchema,
 	windowCleaningCustomerSchema,
@@ -47,7 +47,7 @@ export const jobFormContext = createFormContext<z.infer<typeof windowCleaningJob
 export const restoreCustomerFormContext =
 	createFormContext<z.infer<typeof restoreCustomerSchema>>('restoreCustomerForm');
 export const setUserRoleFormContext =
-	createFormContext<z.infer<typeof setUserRoleSchema>>('setUserRoleForm');
+	createFormContext<z.infer<typeof setRoleSchema>>('setUserRoleForm');
 export const setPasswordFormContext =
 	createFormContext<z.infer<typeof setPasswordSchema>>('setPasswordForm');
 export const banUserFormContext = createFormContext<z.infer<typeof banUserSchema>>('banUserForm');

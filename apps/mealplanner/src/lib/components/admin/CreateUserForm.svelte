@@ -13,35 +13,25 @@
 
 	interface Props {
 		data: SuperValidated<z.infer<CreateUserSchema>>;
-		allowlist: string[];
 	}
 
-	let { data, allowlist }: Props = $props();
+	let { data }: Props = $props();
 
 	let open = $state(false);
-	// Email of the last user created while not on the allowlist — drives the
-	// `fly secrets set` hint. Captured in onUpdate because the form resets after.
-	let pendingAllowlistEmail = $state<string | null>(null);
+	// The `fly secrets set` hint the server returns when the new user isn't allowlisted yet.
+	let allowlistCommand = $state<string | null>(null);
 	let copied = $state(false);
 
 	// svelte-ignore state_referenced_locally — superForm is intentionally initialized once from props
 	const { form, errors, constraints, enhance, message, submitting } = superForm(data, {
 		validators: zod4Client(createUserSchema),
 		resetForm: true,
-		onUpdate: ({ form: result }) => {
-			pendingAllowlistEmail =
-				result.valid && !allowlist.includes(result.data.email) && result.message?.type !== 'error'
-					? result.data.email
-					: null;
+		onUpdate: ({ result }) => {
+			const resultData = result.data as { allowlistCommand?: string } | undefined;
+			allowlistCommand = resultData?.allowlistCommand ?? null;
 			copied = false;
 		}
 	});
-
-	const allowlistCommand = $derived(
-		pendingAllowlistEmail
-			? `fly secrets set ALLOWED_EMAILS="${[...allowlist, pendingAllowlistEmail].join(',')}" -a sheppakai-mealplanner`
-			: null
-	);
 
 	const messageVariant: AlertVariant = $derived(
 		$message?.type === 'error'

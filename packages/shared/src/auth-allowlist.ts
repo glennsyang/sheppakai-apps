@@ -19,6 +19,11 @@ export function parseAllowedEmails(raw: string): Set<string> {
 	);
 }
 
+/** Exact, case-insensitive membership check against a set built by `parseAllowedEmails`. */
+export function isEmailAllowed(allowedEmails: Set<string>, email: string): boolean {
+	return allowedEmails.has(email.trim().toLowerCase());
+}
+
 /**
  * The `fly secrets set` command an admin runs to allowlist `email`. `fly secrets set`
  * replaces the whole value, so the command carries the current list plus the new email.
@@ -56,7 +61,7 @@ export function isUserAccessAllowed(
 	user: { email: string } & BanFields,
 	allowedEmails: Set<string>
 ): boolean {
-	return allowedEmails.has(user.email.trim().toLowerCase()) && !isBanActive(user);
+	return isEmailAllowed(allowedEmails, user.email) && !isBanActive(user);
 }
 
 /** Posts an operator alert (each app's `sendAuthAlerts`). Must not throw. */

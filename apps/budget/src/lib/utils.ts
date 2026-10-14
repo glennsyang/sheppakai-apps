@@ -71,7 +71,4 @@ export function formatCurrencyRounded(amount: number): string {
 }
 
 // Better Auth error code -> message map, shared by every app.
-export {
-	getBetterAuthErrorCode,
-	getBetterAuthErrorMessage
-} from '@sheppakai/shared/better-auth-errors';
+export { getBetterAuthErrorMessage } from '@sheppakai/shared/better-auth-errors';

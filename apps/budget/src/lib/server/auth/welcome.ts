@@ -1,25 +1,14 @@
 import { randomBytes } from 'node:crypto';
 
-import { ALLOWED_EMAILS, BETTER_AUTH_BASE_URL } from '$app/env/private';
-import { buildAllowlistCommand, parseAllowedEmails } from '@sheppakai/shared/auth-allowlist';
+import { BETTER_AUTH_BASE_URL } from '$app/env/private';
 
 import { RESET_PASSWORD_ROUTE, SIGN_IN_ROUTE } from '#lib/auth-routes.js';
 
 import { auth } from '../auth';
 import { sendWelcomeEmail } from '../email';
 
-const FLY_APP = 'sheppakai-budget';
-
 // Far longer than the 10-minute reset link: a welcome email may sit unread for a day or two.
 const WELCOME_LINK_TTL_MS = 72 * 60 * 60 * 1000;
-
-export function isEmailAllowlisted(email: string): boolean {
-	return parseAllowedEmails(ALLOWED_EMAILS).has(email.trim().toLowerCase());
-}
-
-export function allowlistCommandFor(email: string): string {
-	return buildAllowlistCommand(parseAllowedEmails(ALLOWED_EMAILS), email, FLY_APP);
-}
 
 /**
  * Mints a set-password link for a newly created user. It is a standard Better Auth

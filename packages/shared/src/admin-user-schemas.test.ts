@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+	adminUserIdSchema,
 	banUserSchema,
 	createUserSchema,
-	removeUserSchema,
-	sendWelcomeEmailSchema,
-	setRoleSchema,
-	unbanUserSchema
-} from './admin-user';
+	setRoleSchema
+} from './admin-user-schemas';
 
 describe('createUserSchema', () => {
 	it('accepts a valid user and defaults the role to user', () => {
@@ -40,12 +38,10 @@ describe('createUserSchema', () => {
 			createUserSchema.safeParse({ name: 'Ada', email: 'ada@example.com', role: 'owner' }).success
 		).toBe(false);
 	});
-});
 
-describe('sendWelcomeEmailSchema', () => {
-	it('requires a user id', () => {
-		expect(sendWelcomeEmailSchema.safeParse({ userId: '' }).success).toBe(false);
-		expect(sendWelcomeEmailSchema.safeParse({ userId: 'abc' }).success).toBe(true);
+	it('rejects an email over 254 characters', () => {
+		const email = `${'a'.repeat(250)}@example.com`;
+		expect(createUserSchema.safeParse({ name: 'Ada', email }).success).toBe(false);
 	});
 });
 
@@ -72,12 +68,9 @@ describe('banUserSchema', () => {
 	});
 });
 
-describe.each([
-	['unbanUserSchema', unbanUserSchema],
-	['removeUserSchema', removeUserSchema]
-])('%s', (_name, schema) => {
+describe('adminUserIdSchema', () => {
 	it('requires a user id', () => {
-		expect(schema.safeParse({ userId: '' }).success).toBe(false);
-		expect(schema.safeParse({ userId: 'abc' }).success).toBe(true);
+		expect(adminUserIdSchema.safeParse({ userId: '' }).success).toBe(false);
+		expect(adminUserIdSchema.safeParse({ userId: 'abc' }).success).toBe(true);
 	});
 });
