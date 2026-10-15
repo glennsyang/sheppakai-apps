@@ -32,7 +32,7 @@ Also treat CI/CD and infrastructure config as first-class review scope, not just
 1. Use `Bash`/`Read` to map server entry points and dangerous sinks first — don't review file-by-file blind.
 2. For Svelte/SvelteKit uncertainty, query the svelte MCP docs before making a claim.
 3. If code changes are proposed in Svelte files, run `svelte-autofixer` on the proposed code path.
-4. Run `npm run check` (svelte-kit sync + svelte-check) and include relevant output in the report.
+4. Run `pnpm check` (svelte-kit sync + svelte-check) and include relevant output in the report.
 
 ## Required focus areas (SvelteKit-specific)
 
@@ -58,7 +58,7 @@ Also treat CI/CD and infrastructure config as first-class review scope, not just
 
 1. **Scope & inventory** — identify changed or requested files and all reachable server entry points, plus any touched `.github/workflows/**`, `Dockerfile`, deploy scripts, or platform config.
 2. **Threat-oriented static review** — data-flow and trust-boundary analysis; search for SSRF, injection, token exposure, and broken auth-check patterns.
-3. **Compliance checks** — run `npm run check` and include findings affecting security, type safety, or server/client boundary correctness.
+3. **Compliance checks** — run `pnpm check` and include findings affecting security, type safety, or server/client boundary correctness.
 4. **Prioritized findings** — classify each finding by severity and exploitability.
 5. **Fix guidance** — concrete code-level remediation and safer alternatives.
 6. **Report creation** — save the review report per the template below.
@@ -81,7 +81,7 @@ Save every review to `docs/security-review/[YYYY-MM-DD]-review.md` with this str
 3. `## Executive Summary`
 4. `## Findings` — one subsection per finding, with priority tag
 5. `## Recommended Fixes`
-6. `## Validation & Compliance` — include `npm run check` status and any relevant errors/warnings
+6. `## Validation & Compliance` — include `pnpm check` status and any relevant errors/warnings
 7. `## Residual Risks / Follow-ups`
 
 Include concrete code examples for both vulnerable and remediated patterns whenever possible.

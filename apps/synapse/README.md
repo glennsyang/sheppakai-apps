@@ -59,7 +59,7 @@ Synapse demonstrates:
 If you want to explore the project locally:
 
 1. Clone the repository.
-2. Install dependencies with npm.
+2. Install dependencies with pnpm (`pnpm install` from the repo root).
 3. Start the development server.
 
 For setup specifics, see repository files and scripts.

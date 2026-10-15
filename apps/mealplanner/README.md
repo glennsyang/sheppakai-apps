@@ -41,12 +41,12 @@ A dinner-focused meal planning app. Add your pantry ingredients, get AI-generate
 ### Prerequisites
 
 - Node.js **22.23.3** (pinned in the root `.node-version`)
-- npm
+- pnpm 10 (`corepack enable` picks the version pinned in the root `package.json`)
 
 ### Install
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### Environment variables
@@ -62,13 +62,13 @@ uses, which are required, their defaults, and where each is consumed.
 ### Database setup
 
 ```bash
-npm run db:migrate   # Create ./data/db.sqlite and apply committed migrations
+pnpm db:migrate   # Create ./data/db.sqlite and apply committed migrations
 ```
 
 ### Dev server
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 App runs at `http://localhost:5173`.
@@ -78,17 +78,17 @@ App runs at `http://localhost:5173`.
 ## Common Commands
 
 ```bash
-npm run dev            # Dev server
-npm run build          # Production build
-npm run preview        # Preview production build
-npm run test           # Run all Vitest tests
-npm run test:coverage  # Tests with v8 coverage report
-npm run check          # svelte-check (TypeScript + Svelte)
-npm run lint           # oxlint
-npm run fmt            # oxfmt (format)
-npm run db:generate    # Generate a migration from schema.ts changes
-npm run db:migrate     # Apply committed migrations to SQLite
-npm run db:studio      # Drizzle visual browser
+pnpm dev            # Dev server
+pnpm build          # Production build
+pnpm preview        # Preview production build
+pnpm test           # Run all Vitest tests
+pnpm test:coverage  # Tests with v8 coverage report
+pnpm check          # svelte-check (TypeScript + Svelte)
+pnpm lint           # oxlint + fallow dead-code
+pnpm fmt            # oxfmt (format)
+pnpm db:generate    # Generate a migration from schema changes
+pnpm db:migrate     # Apply committed migrations to SQLite
+pnpm db:studio      # Drizzle visual browser
 ```
 
 ---
