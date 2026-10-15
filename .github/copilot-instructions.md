@@ -8,9 +8,15 @@ pnpm monorepo with three SvelteKit (Svelte 5 runes) apps and shared workspace pa
 - `apps/mealplanner`: pantry-driven dinner planning
 - `apps/synapse`: personal life management (tasks, journal, fitness)
 - `packages/logger`: shared structured logger (`@sheppakai/logger`)
+- `packages/shared`: server/client modules shared by all three apps (`@sheppakai/shared/<module>`)
 
-App-specific guidance lives in `.github/instructions/<app>.instructions.md` and each app's
-`CLAUDE.md`.
+## Where the guidance lives
+
+There is one source of agent guidance, and it is not under `.github/`:
+
+- `CLAUDE.md` (repo root): repo-wide conventions.
+- `apps/<app>/CLAUDE.md`: app-specific stack, conventions and patterns.
+- `.claude/skills/` and `.claude/agents/`: shared skills and reviewer agents.
 
 ## Conventions
 

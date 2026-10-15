@@ -1,34 +1,28 @@
 # Meal Planner — Claude Code Guide
 
-A dinner-focused meal planner. Users enter pantry ingredients → Claude AI suggests dinners with full recipes → meals slot into a Monday–Sunday weekly planner.
-
----
-
-## Node Version
-
-Always use **Node.js 22.23.3** for all development, testing, and tooling. Do not use any other Node version.
+A dinner-focused meal planner. Users enter pantry ingredients → Gemini suggests dinners with full recipes → meals slot into a Monday–Sunday weekly planner.
 
 ---
 
 ## Tech Stack
 
-| Concern    | Choice                                         |
-| ---------- | ---------------------------------------------- |
-| Framework  | SvelteKit + TypeScript (strict)                |
-| Database   | SQLite via Drizzle ORM (better-sqlite3)        |
-| Auth       | better-auth v1 (email + password)              |
-| AI         | `@anthropic-ai/sdk` — `claude-sonnet-4-6`      |
-| UI         | shadcn-svelte (bits-ui) + Tailwind CSS v4      |
-| Animations | Svelte 5 transitions + `@formkit/auto-animate` |
-| Forms      | sveltekit-superforms v2 + Zod v4               |
-| Testing    | Vitest v4                                      |
-| Deployment | fly.io (Node 22, SQLite on persistent volume)  |
+| Concern    | Choice                                                           |
+| ---------- | ---------------------------------------------------------------- |
+| Framework  | SvelteKit + TypeScript (strict)                                  |
+| Database   | SQLite via Drizzle ORM (better-sqlite3)                          |
+| Auth       | better-auth v1 (email + password)                                |
+| AI         | `@google/genai` (suggestions) + `@anthropic-ai/sdk` (variations) |
+| UI         | shadcn-svelte (bits-ui) + Tailwind CSS v4                        |
+| Animations | Svelte 5 transitions + `@formkit/auto-animate`                   |
+| Forms      | sveltekit-superforms v3 + Zod v4                                 |
+| Testing    | Vitest v5                                                        |
+| Deployment | fly.io (Node 22, SQLite on persistent volume)                    |
 
 ---
 
 ## Product Data-Sharing Model (Critical Requirement)
 
-- This app is intentionally a **shared-data** system for exactly **two users** — the same model used by the sibling `budget` repo (see its `AGENTS.md`, "Product Data-Sharing Model").
+- This app is intentionally a **shared-data** system for exactly **two users** — the same model used by the sibling `budget` app (see `apps/budget/CLAUDE.md`, "Product Data-Sharing Model").
 - Both users are expected to see and edit the same household data: `pantry_items`, `recipes`, `meal_plans`, and `meal_plan_entries` are shared, not per-user-private. There is one shared pantry and one shared weekly planner, not one per user.
 - Do **not** treat cross-user visibility or editing of these tables as a tenant-isolation bug (IDOR) in this project unless this product requirement changes. A full-codebase security review (2026-08-27) initially flagged this as critical in #31 and #32 — both were closed as by-design once this was clarified.
 - This does **not** extend to auth-only data. Session tokens, account credentials, and verification records must stay strictly per-user and never be exposed to another user or leaked to the client beyond what better-auth already scopes — that's a real security bug, not a data-sharing question (see #33, still open).
@@ -78,7 +72,7 @@ Always use **Node.js 22.23.3** for all development, testing, and tooling. Do not
 
 ```
 src/
-├── hooks.server.ts              # Session middleware, security headers, CSP, error handler
+├── hooks.server.ts              # Sentry + createServerHandle / createHandleError from @sheppakai/shared
 ├── app.css                      # Tailwind v4, tw-animate-css, fridge theme, world classes
 ├── app.html                     # Pre-paint dark-mode script, fonts
 ├── lib/
@@ -89,13 +83,16 @@ src/
 │   └── server/
 │       ├── logger.ts            # App-wide logger — use this, never console.log (server-only, keeps it out of client bundles)
 │       ├── db/
-│       │   ├── schema.ts        # All Drizzle tables (auth + app)
+│       │   ├── schema/index.ts  # All Drizzle tables (auth + app)
 │       │   ├── index.ts         # Drizzle client (WAL mode enabled)
 │       │   └── utils.ts         # generateId(), withTimestampsForCreate/Update()
 │       ├── auth/
 │       │   └── index.ts         # betterAuth instance
 │       ├── ai/
-│       │   └── claude.ts        # suggestMeals() — tool use for typed MealSuggestion[]
+│       │   ├── gemini.ts        # suggestMeals() — pantry → dinner suggestions
+│       │   ├── claude.ts        # suggestVariations() — variations on a meal
+│       │   ├── endpoint.ts      # createAiEndpoint() — auth, rate limit, body parse for both
+│       │   └── promptSafety.ts  # sanitizePromptText() for user text sent to either model
 │       └── services/
 │           ├── pantry.ts
 │           ├── mealPlan.ts      # includes getMondayOfCurrentWeek()
@@ -105,13 +102,18 @@ src/
 │   ├── (app)/                   # Protected: auth guard in +layout.server.ts
 │   │   ├── pantry/
 │   │   ├── suggest/
-│   │   └── planner/
+│   │   ├── planner/
+│   │   ├── profile/
+│   │   └── admin/
 │   ├── api/auth/[...all]/       # better-auth request handler
-│   └── api/suggest/             # Claude AI endpoint
-└── tests/
-    ├── logger.test.ts
-    ├── schemas/auth.test.ts
-    └── services/pantry.test.ts, mealPlan.test.ts
+│   ├── api/healthz/
+│   ├── api/suggest/             # Gemini meal suggestions
+│   └── api/variations/          # Claude recipe variations
+└── tests/                       # Vitest suites
+    ├── lib/                     # server helpers, AI endpoint, prompt safety, email, …
+    ├── routes/                  # load/action tests per route
+    ├── schemas/                 # pantry.test.ts, mealPlan.test.ts
+    └── services/                # pantry, mealPlan, mealPlanAtomicity
 ```
 
 ---
@@ -121,7 +123,7 @@ src/
 - **better-auth v1** with email+password only (no OAuth).
 - **Public sign-up is disabled** (`emailAndPassword.disableSignUp: true`, no `/register` route) — the shared-data model depends on exactly two users (#124). Sign-in is also gated to the exact `ALLOWED_EMAILS` list (`createAppAuth` in `@sheppakai/shared/auth-config`) — same as `budget` and `synapse`. New accounts: admin plugin's `createUser`, then add the email to `ALLOWED_EMAILS`.
 - Minimum password length: **12 characters**.
-- `src/hooks.server.ts` runs the session middleware on every request, populating `event.locals.user` and `event.locals.session` via `svelteKitHandler`.
+- `src/hooks.server.ts` runs `createServerHandle` (`@sheppakai/shared/server-handle`) on every request: it populates `event.locals.user` / `event.locals.session` via `svelteKitHandler` and re-checks the allowlist.
 - `(app)/+layout.server.ts` enforces the auth guard — redirects to `/sign-in` if no session. Auth route paths are centralised in `src/lib/auth-routes.ts` (`SIGN_IN_ROUTE`, etc.) — no inline route literals.
 - **Sign-out** is a form POST to `/sign-out` (handled by `(auth)/sign-out/+page.server.ts`). The layout submits a hidden form via `requestSubmit()`.
 - `auth.advanced.useSecureCookies` is `true` — cookies require HTTPS. In dev, ensure `http://localhost:5173` is in `trustedOrigins`.
@@ -147,29 +149,27 @@ with `.env.example`. Don't duplicate the list here; update that doc instead.
 ### Working with the DB
 
 ```bash
-npm run db:generate  # Generate a migration from schema.ts changes
-npm run db:migrate   # Apply committed migrations (dev creates ./data/db.sqlite, prod runs on boot via start.sh)
-npm run db:studio    # Open Drizzle visual browser
+pnpm db:generate  # Generate a migration from schema changes
+pnpm db:migrate   # Apply committed migrations (dev creates ./data/db.sqlite, prod runs on boot via start.sh)
+pnpm db:studio    # Open Drizzle visual browser
 ```
 
 ---
 
 ## AI Integration
 
-`src/lib/server/ai/claude.ts` — uses **tool use** (not streaming text) for fully typed output.
+Two providers, one per feature. Both return typed `MealSuggestion[]` and validate the model output with `pickValidSuggestions` (`#lib/schemas/mealPlan.js`).
 
-- Model: `claude-sonnet-4-6`
-- Tool: `suggest_meals` — returns `MealSuggestion[]`
-- `suggestMeals(items)` — full response, returns all suggestions at once
-- `suggestMealsStream(items)` — async generator, yields one `MealSuggestion` at a time
-
-The `/api/suggest` endpoint (`GET ?items=...`) calls `suggestMeals` and returns JSON. The suggest page fetches this client-side.
+- **Suggestions — Gemini** (`src/lib/server/ai/gemini.ts`, model `gemini-3-flash-preview`, `GEMINI_API_KEY`): `suggestMeals(pantryItems)` uses a JSON response schema. Served by `POST /api/suggest`.
+- **Variations — Claude** (`src/lib/server/ai/claude.ts`, model `claude-sonnet-4-6`, `ANTHROPIC_API_KEY`): `suggestVariations(mealName)` uses tool use for typed output. Served by `POST /api/variations`.
+- Both routes are built with `createAiEndpoint()` (`ai/endpoint.ts`): session check, per-user rate limit (10/min), JSON body validated with the route's Zod schema, `apiSuccess` / `apiError` responses.
+- User text goes through `sanitizePromptText()` (`ai/promptSafety.ts`) and is wrapped in delimiter tags the system prompts treat as data only.
 
 ---
 
 ## shadcn-svelte (bits-ui)
 
-- Components live in `src/lib/components/ui/` (added with `npx shadcn-svelte@latest add <name>`, config in `components.json`) and are owned code — restyle them freely. Currently: `alert`, `button`, `dialog`, `input`, `label`, `native-select`, `sheet`, `table`, `textarea`, plus the hand-written `data-table`.
+- Components live in `src/lib/components/ui/` (added with `pnpm dlx shadcn-svelte@latest add <name>`, config in `components.json`) and are owned code — restyle them freely. Currently: `alert`, `button`, `dialog`, `input`, `label`, `native-select`, `sheet`, `table`, `textarea`, plus the hand-written `data-table`.
 - `cn()` and the prop helper types live in `src/lib/utils.ts`. Icons use the local `Icon.svelte`, not lucide.
 - Theme: the `fridge` palette and shadcn semantic tokens (`--background`, `--primary`, `--destructive`, `--input`, …) are in `src/lib/styles/fridge-theme.css` (imported from `app.css`), mapped onto the world tokens (`--board`, `--ink`, `--marker-*`). World classes (`.board`, `.act`, `.tile`, `.index-card`, `.magnet`, `.marker`) live in `app.css`; see `DESIGN.md`.
 - The type scale runs 6.7% above Tailwind's default (`--text-*` in `fridge-theme.css`), and `--default-border-width` is 1.5px.
@@ -245,14 +245,8 @@ const { form, errors, constraints, enhance, message, submitting } = superForm(da
 
 ## Security
 
-All configured in `src/hooks.server.ts`:
-
-- `X-Frame-Options: DENY`
-- `X-Content-Type-Options: nosniff`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy: geolocation=(), camera=(), microphone=()`
-- `Strict-Transport-Security` (production only)
-- Content Security Policy — `unsafe-inline` required for SvelteKit CSS injection
+- Security headers are set by `createServerHandle` in `packages/shared/src/server-handle.ts` (shared by all three apps): `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, and `Strict-Transport-Security` in production.
+- **CSP is not set in `hooks.server.ts`.** It is nonce-based, configured by the `csp` option of `sveltekit()` in `vite.config.ts` — see `docs/CSP.md` at the repo root before changing it.
 
 `hooks.server.ts` wires `Sentry.sentryHandle()` into the `handle` sequence and intentionally
 leaves `handleError` unwrapped (the structured logger already forwards to Sentry) — see
@@ -262,28 +256,27 @@ leaves `handleError` unwrapped (the structured logger already forwards to Sentry
 
 ## Shared Tooling & Review
 
-Shared skills, agents and commands for all three apps live in the repo-root `.claude/` folder (no plugin install needed). It holds the skills `svelte-code-writer`, `svelte5-best-practices`, `better-auth-best-practices`, `shadcn-svelte-components`, `tailwind-patterns`, `brevo-email-log` (checks Brevo's transactional email event log to verify whether a specific email actually sent/delivered/bounced — all three apps send through the same Brevo account) and `restore-db-backup`, the `code-structure-reviewer` and `security-reviewer` agents, and a `/scaffold-form` command for scaffolding a new form/CRUD feature (`/scaffold-form mealplanner ...`) — this repo's flavor is the full-page form pattern (schema + `+page.server.ts` with superValidate + `+page.svelte` with superForm).
-
-Like the other apps, this one uses shadcn-svelte + bits-ui, so the `shadcn-svelte-components` skill applies.
-
-The `code-structure-reviewer` and `security-reviewer` agents (in the repo-root `.claude/agents/`) are available on demand — invoke them when you want a structural or security pass on a change, not automatically on every PR.
+Repo-wide conventions, the shared `.claude/` skills and agents, and `packages/shared` are described in the repo-root `CLAUDE.md`. This app's `/scaffold-form mealplanner ...` flavor is the full-page form pattern (schema + `+page.server.ts` with superValidate + `+page.svelte` with superForm).
 
 ---
 
 ## Common Commands
 
 ```bash
-npm run dev          # Dev server — http://localhost:5173
-npm run build        # Production build
-npm run preview      # Preview production build
-npm run test         # Vitest (all tests)
-npm run test:watch   # Vitest watch mode
-npm run check        # svelte-check (TypeScript + Svelte)
-npm run lint         # oxlint
-npm run lint:fix     # oxlint --fix
-npm run db:generate  # drizzle-kit generate (write a migration from schema.ts)
-npm run db:migrate   # drizzle-kit migrate (apply committed migrations)
-npm run db:studio    # Drizzle visual browser
+pnpm dev                    # Dev server — http://localhost:5173
+pnpm build                  # Production build
+pnpm preview                # Preview production build
+pnpm test                   # Vitest, single run
+pnpm test:unit              # Vitest, watch mode
+pnpm test:coverage          # Vitest with v8 coverage
+pnpm check                  # svelte-check (TypeScript + Svelte)
+pnpm lint                   # oxlint + fallow dead-code
+pnpm lint:fix               # oxlint --fix
+pnpm check:redirect-throws  # redirect-throw static check (not part of lint)
+pnpm check:all              # fmt + lint + test
+pnpm db:generate            # drizzle-kit generate (write a migration from the schema)
+pnpm db:migrate             # drizzle-kit migrate (apply committed migrations)
+pnpm db:studio              # Drizzle visual browser
 ```
 
 ---
@@ -295,7 +288,7 @@ npm run db:studio    # Drizzle visual browser
 - Node 22 slim image
 - Set secrets before first deploy:
   ```bash
-  fly secrets set BETTER_AUTH_SECRET=... ANTHROPIC_API_KEY=... BETTER_AUTH_BASE_URL=https://sheppakai-mealplanner.fly.dev
+  fly secrets set BETTER_AUTH_SECRET=... ANTHROPIC_API_KEY=... GEMINI_API_KEY=... BETTER_AUTH_BASE_URL=https://sheppakai-mealplanner.fly.dev
   ```
 - The `trustedOrigins` in `auth/index.ts` is derived from `BETTER_AUTH_BASE_URL` — no manual update needed when the fly.io app URL changes.
 

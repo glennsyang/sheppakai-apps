@@ -26,7 +26,7 @@ All three apps follow this policy (#19). New code in any app does too.
 
 Each app has the same building blocks: `invalidForm` in
 `src/lib/server/actions/form-responses.ts` for validation failures, and (budget, synapse)
-`actionMessage()` in `src/lib/utils/actionMessage.ts` for components that submit with plain
+`actionMessage()` in `@sheppakai/shared/action-message` for components that submit with plain
 `use:enhance`. mealplanner's planner/pantry components use `actionFailureText()` in
 `src/lib/action-result.ts` for the same job. Actions that post no fields of their own (synapse's
 `archivePerson`, `deleteRoutine`, …) validate against `noFieldsSchema` / `idSchema` in
@@ -165,7 +165,7 @@ usable success check — but prefer `form.message?.type === 'success'`, which is
 A few budget components submit with plain `use:enhance` from `$app/forms` rather than a `superForm`
 instance, because they render no fields of their own: `ConfirmModal`, `PresetBudgetCard`,
 `UpcomingBillsCard`, and the recurring table's `paid-toggle` / `data-table-actions`. They read the
-banner out of the raw `ActionResult` via `actionMessage()` in `src/lib/utils/actionMessage.ts`, which
+banner out of the raw `ActionResult` via `actionMessage()` in `@sheppakai/shared/action-message`, which
 is the only place that unwraps a result by hand.
 
 ### Migration status (budget)
@@ -195,7 +195,8 @@ soft-deletes and so cannot use `deleteAction`.
   It is shared by all three apps, so it is not bent to one app's contract. The 401 is defence-in-depth: `src/routes/(app)/+layout.server.ts`
   already redirects unauthenticated users, so the path is reachable only when a session expires
   between page load and submit, and `actionMessage()` keeps its `data.error` fallback for it.
-  Contrast `adminAuthFailure` (`src/lib/server/actions/admin-guard.ts`), which always runs after
+  Contrast `createAdminFormAction` (`packages/shared/src/admin-form-action.ts`, bound as
+  `adminFormAction` in budget's `src/lib/server/actions/admin-guard.ts`), which always runs after
   validation and answers with `message(form, ...)`.
 - **Admin actions in budget use `adminFormAction`**: it answers with `message(form, ...)` after
   validation. Its admin check is the same one `requireAdmin` / `assertAdmin` use
