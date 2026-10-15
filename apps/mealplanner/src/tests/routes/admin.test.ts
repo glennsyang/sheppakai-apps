@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { apiMock, loggerMock, emailMock, alertsMock } = vi.hoisted(() => ({
-	emailMock: vi.fn<() => Promise<void>>(),
+	emailMock: vi.fn<(user: unknown) => Promise<void>>(),
 	alertsMock: vi.fn<() => Promise<boolean>>(),
 	apiMock: {
 		createUser: vi.fn<() => Promise<unknown>>(),
@@ -24,7 +24,7 @@ vi.mock('#lib/server/auth/index.js', () => ({
 	allowedEmails: new Set(['admin@example.com', 'listed@example.com'])
 }));
 vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
-vi.mock('#lib/server/email/index.js', () => ({ sendAccountCreatedEmail: emailMock }));
+vi.mock('#lib/server/auth/welcome.js', () => ({ sendWelcome: emailMock }));
 vi.mock('#lib/server/notifications/index.js', () => ({ sendAuthAlerts: alertsMock }));
 vi.mock('$app/env/private', () => ({
 	BETTER_AUTH_BASE_URL: 'https://app.example.com',
@@ -110,17 +110,13 @@ describe('admin actions — wiring', () => {
 		expect(result).toMatchObject({ status: 403 });
 	});
 
-	it('sends the welcome email with links built from the base URL', async () => {
+	it('sends the welcome email to the target user', async () => {
 		apiMock.getUser.mockResolvedValueOnce(LISTED);
 		emailMock.mockResolvedValueOnce();
 
 		await actions.sendWelcomeEmail(ctx(ADMIN, { userId: LISTED.id }));
 
-		expect(emailMock).toHaveBeenCalledWith('listed@example.com', 'Listed', {
-			appUrl: 'https://app.example.com',
-			forgotPasswordUrl: 'https://app.example.com/forgot-password',
-			profileUrl: 'https://app.example.com/profile'
-		});
+		expect(emailMock).toHaveBeenCalledWith(LISTED);
 	});
 
 	it('points the allowlist hint at this Fly app', async () => {

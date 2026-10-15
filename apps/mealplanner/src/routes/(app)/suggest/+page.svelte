@@ -52,12 +52,13 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ items: Array.from(selectedItems) })
 			});
-			if (!res.ok) {
-				const body = (await res.json().catch(() => ({}))) as { message?: string };
-				throw new Error(body.message ?? 'Failed to get suggestions');
-			}
+			const body = (await res.json().catch(() => ({}))) as {
+				data?: unknown;
+				error?: { code: string; message: string };
+			};
+			if (!res.ok) throw new Error(body.error?.message ?? 'Failed to get suggestions');
 
-			const parsed = mealSuggestionListSchema.safeParse(await res.json());
+			const parsed = mealSuggestionListSchema.safeParse(body.data);
 			if (!parsed.success) throw new Error('Got an unexpected response. Please try again.');
 			suggestions = parsed.data;
 		} catch (err) {

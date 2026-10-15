@@ -54,6 +54,9 @@ export function createServerHandle(options: ServerHandleOptions): Handle {
 
 		const requestId = crypto.randomUUID();
 		event.locals.requestId = requestId;
+		// Signed out until the session below says otherwise; `App.Locals` types these as `| null`.
+		event.locals.user = null;
+		event.locals.session = null;
 
 		let requestLogger = logger.child({
 			requestId,

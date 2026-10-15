@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { User } from '#lib/types.js';
+import type { AdminUser } from './types';
 
 vi.mock('#lib/components/ui/data-table/index.js', () => ({
 	renderComponent: (component: unknown, props: Record<string, unknown>) => ({
@@ -33,7 +33,7 @@ function column(key: string) {
 	};
 }
 
-function makeUser(overrides: Partial<User> = {}): User {
+function makeUser(overrides: Partial<AdminUser> = {}): AdminUser {
 	return {
 		id: 'u1',
 		name: 'Ada',
@@ -42,10 +42,10 @@ function makeUser(overrides: Partial<User> = {}): User {
 		banned: false,
 		createdAt: new Date('2026-01-15T12:00:00Z'),
 		...overrides
-	} as User;
+	} as AdminUser;
 }
 
-const cellCtx = (user: User) => ({ row: { original: user } });
+const cellCtx = (user: AdminUser) => ({ row: { original: user } });
 
 describe('makeColumns', () => {
 	it('renders sortable headers for email and name', () => {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { superForm } from 'sveltekit-superforms';
 
+	import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
 	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
@@ -58,7 +59,7 @@
 				</Button>
 
 				<FieldDescription class="text-center">
-					<a href="/sign-in"> Back to Sign in </a>
+					<a href={SIGN_IN_ROUTE}> Back to Sign in </a>
 				</FieldDescription>
 			</FieldGroup>
 		</form>

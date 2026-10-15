@@ -11,60 +11,47 @@ vi.mock('../../lib/server/logger', () => ({
 }));
 
 import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
 import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 
 import * as schema from '../../lib/server/db/schema';
 
+// Built from the real migrations, so the test schema can't drift from production.
 function makeDb() {
-	const sqlite = new Database(':memory:');
-	sqlite.exec(`
-		CREATE TABLE user (
-			id TEXT PRIMARY KEY,
-			name TEXT NOT NULL,
-			email TEXT NOT NULL UNIQUE,
-			email_verified INTEGER NOT NULL DEFAULT 0,
-			image TEXT,
-			created_at INTEGER NOT NULL,
-			updated_at INTEGER NOT NULL
-		);
-		CREATE TABLE pantry_items (
-			id TEXT PRIMARY KEY,
-			user_id TEXT NOT NULL,
-			name TEXT NOT NULL,
-			quantity REAL,
-			unit TEXT,
-			created_at INTEGER NOT NULL,
-			updated_at INTEGER NOT NULL
-		);
-	`);
-	return drizzle(sqlite, { schema });
+	const db = drizzle(new Database(':memory:'), { schema });
+	migrate(db, {
+		migrationsFolder: fileURLToPath(new URL('../../lib/server/db/migrations', import.meta.url))
+	});
+	return db;
 }
 
 describe('pantry operations (in-memory SQLite)', () => {
 	const db = makeDb();
 	const userId = 'test-user-1';
+	const otherUserId = 'other-user';
 
 	beforeEach(() => {
 		const now = new Date();
 		// Clear all pantry items (shared data model — no per-user filtering)
 		db.delete(schema.pantryItems).run();
-		try {
-			db.insert(schema.user)
-				.values({
-					id: userId,
-					name: 'Test User',
-					email: `${userId}@test.com`,
+		// pantry_items.user_id references user.id, so both owners must exist.
+		db.insert(schema.user)
+			.values(
+				[userId, otherUserId].map((id) => ({
+					id,
+					name: id,
+					email: `${id}@test.com`,
 					emailVerified: false,
 					createdAt: now,
 					updatedAt: now
-				})
-				.run();
-		} catch {
-			// User already exists — fine
-		}
+				}))
+			)
+			.onConflictDoNothing()
+			.run();
 	});
 
 	it('inserts and retrieves a pantry item', () => {
@@ -91,7 +78,6 @@ describe('pantry operations (in-memory SQLite)', () => {
 	it('deletes a pantry item by id regardless of owner', () => {
 		const now = new Date();
 		const id = randomUUID();
-		const otherUserId = 'other-user';
 		db.insert(schema.pantryItems)
 			.values({
 				id,
@@ -127,7 +113,7 @@ describe('pantry operations (in-memory SQLite)', () => {
 		db.insert(schema.pantryItems)
 			.values({
 				id: randomUUID(),
-				userId: 'other-user',
+				userId: otherUserId,
 				name: 'Garlic',
 				quantity: null,
 				unit: null,

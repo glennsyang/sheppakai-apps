@@ -54,3 +54,9 @@ export const auth = createAppAuth({
 	getRequestEvent,
 	plugins: [createApiKeyPlugin()]
 });
+
+// Session shapes with every plugin's additional fields folded in (the `admin` plugin adds
+// `role` / `banned` / …). Used for `App.Locals`, so the app has one source of truth for the
+// authenticated-user type.
+export type SessionUser = typeof auth.$Infer.Session.user;
+export type SessionData = typeof auth.$Infer.Session.session;

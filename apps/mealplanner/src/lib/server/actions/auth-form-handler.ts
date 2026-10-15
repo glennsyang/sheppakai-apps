@@ -1,6 +1,6 @@
 import { createAuthFormHandler } from '@sheppakai/shared/auth-form-handler';
+import { getBetterAuthErrorMessage } from '@sheppakai/shared/better-auth-errors';
 
-import { getBetterAuthErrorMessage } from '#lib/server/auth/errors.js';
 // The shared auth-action wrapper, bound to this app's logger and Better Auth
 // error-message map.
 import { logger } from '#lib/server/logger.js';

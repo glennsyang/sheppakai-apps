@@ -131,8 +131,8 @@
 			</Button>
 
 			<p class="ink-soft text-sm sm:col-span-4">
-				No password is set here — the new user chooses their own via "Forgot password", as explained
-				in the welcome email.
+				No password is set here — the welcome email gives the new user a 72-hour link to choose
+				their own.
 			</p>
 		</form>
 	{/if}

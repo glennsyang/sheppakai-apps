@@ -23,8 +23,8 @@ const mockCreateUser = vi.hoisted(() =>
 		}) => Promise<{ user: { id: string; email: string; name: string } }>
 	>()
 );
-const mockSendWelcomeEmail = vi.hoisted(() =>
-	vi.fn<(to: string, name: string, appUrl: string) => Promise<void>>()
+const mockSendWelcome = vi.hoisted(() =>
+	vi.fn<(user: { id: string; email: string; name: string }) => Promise<void>>()
 );
 const mockSendAuthAlerts = vi.hoisted(() => vi.fn<(message: string) => Promise<boolean>>());
 
@@ -39,7 +39,8 @@ const mockAdminApi = vi.hoisted(() => ({
 	banUser: vi.fn<(args: unknown) => Promise<unknown>>(),
 	unbanUser: vi.fn<(args: unknown) => Promise<unknown>>(),
 	removeUser: vi.fn<(args: unknown) => Promise<unknown>>(),
-	getUser: vi.fn<(args: unknown) => Promise<unknown>>()
+	getUser: vi.fn<(args: unknown) => Promise<unknown>>(),
+	listUsers: vi.fn<(args: unknown) => Promise<unknown>>(async () => ({ users: [], total: 0 }))
 }));
 
 vi.mock('#lib/server/auth.js', () => ({
@@ -47,7 +48,7 @@ vi.mock('#lib/server/auth.js', () => ({
 	allowedEmails: new Set(['admin@example.com', 'allowed@example.com'])
 }));
 
-vi.mock('#lib/server/email/index.js', () => ({ sendWelcomeEmail: mockSendWelcomeEmail }));
+vi.mock('#lib/server/auth/welcome.js', () => ({ sendWelcome: mockSendWelcome }));
 
 vi.mock('#lib/server/notifications/index.js', () => ({ sendAuthAlerts: mockSendAuthAlerts }));
 
@@ -147,8 +148,8 @@ describe('admin user-management actions — wiring', () => {
 		mockAdminApi.getUser.mockResolvedValue(TARGET);
 		mockCreateUser.mockReset();
 		mockCreateUser.mockResolvedValue({ user: { ...TARGET, email: 'new@example.com' } });
-		mockSendWelcomeEmail.mockReset();
-		mockSendWelcomeEmail.mockResolvedValue(undefined);
+		mockSendWelcome.mockReset();
+		mockSendWelcome.mockResolvedValue(undefined);
 		mockSendAuthAlerts.mockReset();
 		mockSendAuthAlerts.mockResolvedValue(true);
 		mockDisableApiKeysForUser.mockReset();
@@ -174,20 +175,16 @@ describe('admin user-management actions — wiring', () => {
 		expect(mockDisableApiKeysForUser).toHaveBeenCalledWith(TARGET.id);
 	});
 
-	it('sendWelcomeEmail sends the app welcome email with the base URL', async () => {
+	it('sendWelcomeEmail sends the welcome email to the target user', async () => {
 		await runAction('sendWelcomeEmail', { userId: TARGET.id });
 
-		expect(mockSendWelcomeEmail).toHaveBeenCalledWith(
-			'allowed@example.com',
-			'Target',
-			'https://synapse.example.com'
-		);
+		expect(mockSendWelcome).toHaveBeenCalledWith(TARGET);
 	});
 
 	it('createUser points the allowlist hint at this Fly app', async () => {
 		const result = await runAction('createUser', { name: 'New', email: 'new@example.com' });
 
 		expect(result.allowlistCommand).toMatch(/-a synapse-test$/);
-		expect(mockSendWelcomeEmail).not.toHaveBeenCalled();
+		expect(mockSendWelcome).not.toHaveBeenCalled();
 	});
 });

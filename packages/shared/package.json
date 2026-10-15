@@ -40,7 +40,8 @@
 		"./sentry-client": "./src/sentry-client.ts",
 		"./sentry-data-collection": "./src/sentry-data-collection.ts",
 		"./server-handle": "./src/server-handle.ts",
-		"./timestamps": "./src/timestamps.ts"
+		"./timestamps": "./src/timestamps.ts",
+		"./welcome": "./src/welcome.ts"
 	},
 	"scripts": {
 		"check": "tsc --noEmit",

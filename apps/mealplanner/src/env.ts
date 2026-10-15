@@ -1,5 +1,5 @@
 import { building } from '$app/env';
-import { sharedEnvVars } from '@sheppakai/shared/env';
+import { guarded, sharedEnvVars } from '@sheppakai/shared/env';
 import { defineEnvVars } from '@sveltejs/kit/env';
 import { z } from 'zod';
 
@@ -9,11 +9,11 @@ export const variables = defineEnvVars({
 	...sharedEnvVars(building),
 	ANTHROPIC_API_KEY: {
 		description: 'Anthropic API key',
-		schema: z.string().min(1).default('dummy_key_for_build')
+		schema: guarded(building, 'ANTHROPIC_API_KEY', z.string().min(1))
 	},
 	GEMINI_API_KEY: {
 		description: 'Gemini API key',
-		schema: z.string().min(1).default('dummy_key_for_build')
+		schema: guarded(building, 'GEMINI_API_KEY', z.string().min(1))
 	},
 	SENTRY_DSN: {
 		description:

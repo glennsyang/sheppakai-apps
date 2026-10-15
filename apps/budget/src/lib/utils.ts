@@ -69,6 +69,3 @@ export function formatCurrencyRounded(amount: number): string {
 		maximumFractionDigits: 0
 	}).format(Math.round(amount));
 }
-
-// Better Auth error code -> message map, shared by every app.
-export { getBetterAuthErrorMessage } from '@sheppakai/shared/better-auth-errors';

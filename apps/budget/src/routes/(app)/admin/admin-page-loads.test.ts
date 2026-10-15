@@ -1,4 +1,4 @@
-import { isHttpError } from '@sveltejs/kit';
+import { isHttpError, isRedirect } from '@sveltejs/kit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
@@ -9,20 +9,13 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock('#lib/server/db/index.js', () => ({ getDb: mockState.getDb }));
 
-// Importing the real module boots better-auth, so fake assertAdmin with the same
-// 401/403 contract. What these tests pin down is that each load guards itself
-// before touching data, rather than relying on the parent layout.
-vi.mock('#lib/server/auth.js', async () => {
-	const { error } = await import('@sveltejs/kit');
-	return {
-		assertAdmin: (locals: App.Locals) => {
-			if (!locals.user) throw error(401, 'Unauthorized');
-			if (locals.user.role !== 'admin') throw error(403, 'Forbidden');
-		},
-		auth: { api: { listApiKeys: mockState.listApiKeys, listUsers: mockState.listUsers } },
-		allowedEmails: new Set<string>()
-	};
-});
+// Importing the real module boots better-auth, so fake it. The guard itself is the real
+// `assertAdmin`: what these tests pin down is that each load guards itself before touching
+// data, rather than relying on the parent layout.
+vi.mock('#lib/server/auth.js', () => ({
+	auth: { api: { listApiKeys: mockState.listApiKeys, listUsers: mockState.listUsers } },
+	allowedEmails: new Set<string>()
+}));
 
 vi.mock('#lib/server/logger.js', () => ({
 	logger: {
@@ -52,7 +45,7 @@ async function statusOf(promise: unknown): Promise<number | undefined> {
 		await promise;
 		return undefined;
 	} catch (error) {
-		return isHttpError(error) ? error.status : undefined;
+		return isHttpError(error) || isRedirect(error) ? error.status : undefined;
 	}
 }
 
@@ -72,8 +65,8 @@ describe.each(Object.entries(loads))('admin/%s load', (_name, load) => {
 		vi.clearAllMocks();
 	});
 
-	it('rejects anonymous callers with 401 before touching data', async () => {
-		expect(await statusOf(load(event(undefined)))).toBe(401);
+	it('redirects anonymous callers to sign-in before touching data', async () => {
+		expect(await statusOf(load(event(null)))).toBe(302);
 		expect(mockState.getDb).not.toHaveBeenCalled();
 		expect(mockState.listApiKeys).not.toHaveBeenCalled();
 		expect(mockState.listUsers).not.toHaveBeenCalled();

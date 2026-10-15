@@ -1,12 +1,17 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 
+	import { POST_LOGIN_ROUTE } from '#lib/auth-routes.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import { Spinner } from '#lib/components/ui/spinner/index.js';
 
 	let isSubmitting = $state(false);
 </script>
+
+<svelte:head>
+	<title>Sign Out - Sheppakai Budget</title>
+</svelte:head>
 
 <Card.Root class="w-full">
 	<Card.Header>
@@ -34,6 +39,6 @@
 				{/if}
 			</Button>
 		</form>
-		<Button href="/dashboard" variant="ghost" class="w-full">Cancel</Button>
+		<Button href={POST_LOGIN_ROUTE} variant="ghost" class="w-full">Cancel</Button>
 	</Card.Content>
 </Card.Root>

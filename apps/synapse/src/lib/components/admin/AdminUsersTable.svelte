@@ -1,10 +1,9 @@
 <script lang="ts">
-	import type { User } from '#lib/types.js';
-
 	import DataTable from './DataTable.svelte';
+	import type { AdminUser } from './types';
 	import { makeColumns } from './users-columns';
 
-	let { users, currentUserId }: { users: User[]; currentUserId: string } = $props();
+	let { users, currentUserId }: { users: AdminUser[]; currentUserId: string } = $props();
 
 	const columns = $derived(makeColumns(currentUserId));
 </script>

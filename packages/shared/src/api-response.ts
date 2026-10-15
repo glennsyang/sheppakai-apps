@@ -9,6 +9,7 @@ export type ApiErrorCode =
 	| 'invalid_scheme'
 	| 'malformed_header'
 	| 'invalid_api_key'
+	| 'unauthorized'
 	| 'rate_limited'
 	| 'validation_failed'
 	| 'invalid_json'

@@ -1,14 +1,14 @@
 import type { ColumnDef } from '@tanstack/table-core';
 
 import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
-import type { User } from '#lib/types.js';
 
 import DataTableSortButton from './DataTableSortButton.svelte';
 import RoleBadge from './RoleBadge.svelte';
 import StatusBadge from './StatusBadge.svelte';
+import type { AdminUser } from './types';
 import UsersTableActions from './users-table-actions.svelte';
 
-export function makeColumns(currentUserId: string): ColumnDef<Features, User>[] {
+export function makeColumns(currentUserId: string): ColumnDef<Features, AdminUser>[] {
 	return [
 		{
 			accessorKey: 'email',
@@ -35,7 +35,7 @@ export function makeColumns(currentUserId: string): ColumnDef<Features, User>[] 
 			accessorKey: 'status',
 			header: 'Status',
 			accessorFn: (row) => (row.banned ? 'Banned' : 'Active'),
-			cell: ({ row }) => renderComponent(StatusBadge, { banned: row.original.banned })
+			cell: ({ row }) => renderComponent(StatusBadge, { banned: row.original.banned ?? false })
 		},
 		{
 			accessorKey: 'createdAt',

@@ -20,6 +20,9 @@ import { buildAllowlistCommand, formatAlertEmail, isEmailAllowed } from './auth-
 import { invalidAuthForm as invalidForm } from './auth-form-handler';
 import { getBetterAuthErrorCode } from './better-auth-errors';
 
+/** Page size for every app's admin user list (`auth.api.listUsers`). */
+export const ADMIN_USER_LIST_LIMIT = 500;
+
 type MessageStatus = NonNullable<Parameters<typeof message>[2]>['status'];
 type TargetUser = { id: string; email: string; name: string };
 

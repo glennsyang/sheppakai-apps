@@ -1,15 +1,14 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
-
-import type { User, Session } from '#lib/types.js';
-
 declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			session?: Session;
-			user?: User;
-			requestId: string;
+			// Inferred from the configured better-auth instance so plugin fields (the `admin`
+			// plugin's `role` / `banned` / …) are present on the type, not just at runtime.
+			user: import('#lib/server/auth.js').SessionUser | null;
+			session: import('#lib/server/auth.js').SessionData | null;
+			requestId?: string;
 		}
 		// interface PageData {}
 		// interface PageState {}
@@ -23,3 +22,5 @@ declare global {
 		}
 	}
 }
+
+export {};

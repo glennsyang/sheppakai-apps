@@ -1,5 +1,8 @@
-import { BETTER_AUTH_BASE_URL, FLY_APP_NAME } from '$app/env/private';
-import { createAdminUserActions } from '@sheppakai/shared/admin-user-actions';
+import { FLY_APP_NAME } from '$app/env/private';
+import {
+	ADMIN_USER_LIST_LIMIT,
+	createAdminUserActions
+} from '@sheppakai/shared/admin-user-actions';
 import { createUserSchema } from '@sheppakai/shared/admin-user-schemas';
 import { isEmailAllowed } from '@sheppakai/shared/auth-allowlist';
 import { error } from '@sveltejs/kit';
@@ -7,24 +10,13 @@ import { APIError } from 'better-auth/api';
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import { FORGOT_PASSWORD_ROUTE } from '#lib/auth-routes.js';
 import { assertAdmin, isAdminUser } from '#lib/server/actions/auth-guard.js';
 import { allowedEmails, auth } from '#lib/server/auth/index.js';
-import { sendAccountCreatedEmail } from '#lib/server/email/index.js';
+import { sendWelcome } from '#lib/server/auth/welcome.js';
 import { logger } from '#lib/server/logger.js';
 import { sendAuthAlerts } from '#lib/server/notifications/index.js';
 
 import type { Actions, PageServerLoad } from './$types';
-
-/** Sends the #138 welcome email with links built from the app's canonical origin. */
-function sendWelcome(target: { email: string; name: string }) {
-	const origin = new URL(BETTER_AUTH_BASE_URL).origin;
-	return sendAccountCreatedEmail(target.email, target.name, {
-		appUrl: origin,
-		forgotPasswordUrl: new URL(FORGOT_PASSWORD_ROUTE, origin).href,
-		profileUrl: new URL('/profile', origin).href
-	});
-}
 
 export const load: PageServerLoad = async ({ request, locals }) => {
 	// Server loads run in parallel with the layout's guard, so check here too.
@@ -33,7 +25,7 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 	const createForm = await superValidate(zod4(createUserSchema));
 	try {
 		const { users } = await auth.api.listUsers({
-			query: { limit: 500, sortBy: 'createdAt', sortDirection: 'desc' },
+			query: { limit: ADMIN_USER_LIST_LIMIT, sortBy: 'createdAt', sortDirection: 'desc' },
 			headers: request.headers
 		});
 		const allowlistedIds = users

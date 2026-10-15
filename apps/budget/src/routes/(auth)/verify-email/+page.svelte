@@ -2,6 +2,7 @@
 	import { MailIcon } from '@lucide/svelte/icons';
 	import { superForm } from 'sveltekit-superforms';
 
+	import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
 	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
@@ -63,6 +64,6 @@
 				<p class="text-destructive text-xs">{$errors.email}</p>
 			{/if}
 		</form>
-		<Button href="/sign-in" variant="ghost" class="w-full">Back to sign in</Button>
+		<Button href={SIGN_IN_ROUTE} variant="ghost" class="w-full">Back to sign in</Button>
 	</Card.Content>
 </Card.Root>

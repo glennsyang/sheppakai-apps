@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { superForm } from 'sveltekit-superforms';
 
+	import { FORGOT_PASSWORD_ROUTE } from '#lib/auth-routes.js';
 	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
 	import FormMessage from '#lib/components/FormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -63,7 +64,7 @@
 					<div class="flex items-center">
 						<FieldLabel for="password">Password</FieldLabel>
 						<a
-							href="/forgot-password"
+							href={FORGOT_PASSWORD_ROUTE}
 							class="text-primary ms-auto text-sm font-medium hover:underline"
 						>
 							Forgot password?

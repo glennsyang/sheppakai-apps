@@ -15,13 +15,7 @@
 	let { data }: { data: PageData } = $props();
 
 	// svelte-ignore state_referenced_locally
-	const { form, errors, enhance, message, submitting } = superForm(data.form, {
-		onUpdated: ({ form }) => {
-			if (form.message) {
-				// The error message will be displayed below
-			}
-		}
-	});
+	const { form, errors, enhance, message, submitting } = superForm(data.form);
 </script>
 
 <svelte:head><title>Reset Password - Synapse</title></svelte:head>

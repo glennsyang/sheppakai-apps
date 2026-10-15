@@ -18,6 +18,10 @@
 	const { form, errors, message, submitting, enhance } = superForm(data.form);
 </script>
 
+<svelte:head>
+	<title>Reset Password - Sheppakai Budget</title>
+</svelte:head>
+
 <Card.Root class="w-full">
 	{#if data.invalid}
 		<Card.Header>

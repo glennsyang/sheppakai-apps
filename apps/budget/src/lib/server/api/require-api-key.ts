@@ -6,7 +6,7 @@ import type { ApiScope } from '#lib/api-scopes.js';
 import { userQueries } from '#lib/server/db/queries/index.js';
 import { logger } from '#lib/server/logger.js';
 
-import { isAdminUser } from '../admin-status';
+import { isAdminUser } from '../actions/auth-guard';
 import { allowedEmails, auth } from '../auth';
 
 export const requireApiKey = createRequireApiKey<ApiScope>({

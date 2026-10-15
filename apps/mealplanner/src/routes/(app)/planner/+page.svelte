@@ -126,8 +126,17 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ meal: mealName })
 			});
-			if (!res.ok) throw new Error('Failed to get variations');
-			variationsList = mealSuggestionListSchema.parse(await res.json());
+			const body = (await res.json().catch(() => ({}))) as {
+				data?: unknown;
+				error?: { code: string; message: string };
+			};
+			const parsed = mealSuggestionListSchema.safeParse(body.data);
+			if (res.ok && parsed.success) {
+				variationsList = parsed.data;
+			} else {
+				actionError =
+					body.error?.message ?? `Could not load variations for ${mealName}. Please try again.`;
+			}
 		} catch {
 			actionError = `Could not load variations for ${mealName}. Please try again.`;
 		} finally {

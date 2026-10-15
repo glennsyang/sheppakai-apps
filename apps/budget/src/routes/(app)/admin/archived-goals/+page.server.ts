@@ -3,7 +3,7 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { unArchiveSchema } from '#lib/formSchemas/index.js';
 import { adminFormAction } from '#lib/server/actions/admin-guard.js';
-import { assertAdmin } from '#lib/server/auth.js';
+import { assertAdmin } from '#lib/server/actions/auth-guard.js';
 import { savingsGoalQueries } from '#lib/server/db/queries/index.js';
 import { unarchiveSavingsGoal } from '#lib/server/db/writes/savings-goals.js';
 import { logger } from '#lib/server/logger.js';

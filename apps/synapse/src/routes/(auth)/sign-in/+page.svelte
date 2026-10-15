@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { superForm } from 'sveltekit-superforms';
 
+	import { FORGOT_PASSWORD_ROUTE } from '#lib/auth-routes.js';
 	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
@@ -12,13 +13,7 @@
 	let { data } = $props();
 
 	// svelte-ignore state_referenced_locally
-	const { form, errors, enhance, message, submitting } = superForm(data.form, {
-		onUpdated: ({ form }) => {
-			if (form.message) {
-				// The error message will be displayed below
-			}
-		}
-	});
+	const { form, errors, enhance, message, submitting } = superForm(data.form);
 
 	const verified = $derived(page.url.searchParams.get('verified') === 'true');
 </script>
@@ -76,7 +71,7 @@
 				<Field>
 					<div class="flex items-center">
 						<FieldLabel for="password">Password</FieldLabel>
-						<a href="/forgot-password" class="ms-auto inline-block text-sm underline">
+						<a href={FORGOT_PASSWORD_ROUTE} class="ms-auto inline-block text-sm underline">
 							Forgot your password?
 						</a>
 					</div>

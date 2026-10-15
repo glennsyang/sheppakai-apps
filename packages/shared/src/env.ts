@@ -11,7 +11,10 @@ export const DUMMY_ENV = {
 	BREVO_API_KEY: 'build_time_dummy_key',
 	BREVO_FROM_ADDRESS: 'noreply@example.com',
 	ADMIN_USER_IDS: 'dummy_admin_id',
-	CRON_SECRET: 'build_time_dummy_cron_secret_min_32_chars'
+	CRON_SECRET: 'build_time_dummy_cron_secret_min_32_chars',
+	// mealplanner's AI keys
+	ANTHROPIC_API_KEY: 'build_time_dummy_anthropic_key',
+	GEMINI_API_KEY: 'build_time_dummy_gemini_key'
 } as const;
 
 /**
@@ -43,9 +46,10 @@ export function applyTestEnv(extra: Record<string, string> = {}) {
 
 /**
  * `building ? placeholder : runtime schema that rejects the placeholder`. The refine runs
- * whenever the app is not building: in dev, in tests and in production.
+ * whenever the app is not building: in dev, in tests and in production. Exported for
+ * app-only secrets that need the same guard (its placeholder goes in `DUMMY_ENV`).
  */
-function guarded<T extends z.ZodType<string>>(
+export function guarded<T extends z.ZodType<string>>(
 	building: boolean,
 	name: keyof typeof DUMMY_ENV,
 	runtime: T
