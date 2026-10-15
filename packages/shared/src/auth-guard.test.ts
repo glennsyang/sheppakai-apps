@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createAdminGuards } from './auth-guard';
+import { createAdminGuards, getUser, requireAuth } from './auth-guard';
 
 type Locals = App.Locals;
 const event = (user: Locals['user']) => ({ locals: { user } }) as never;
@@ -60,5 +60,34 @@ describe('assertAdmin', () => {
 	it('returns the user for an admin', () => {
 		const user = { id: 'env-admin-2', role: null, ...contact };
 		expect(assertAdmin({ user })).toBe(user);
+	});
+});
+
+describe('requireAuth', () => {
+	it('returns 401 without calling the handler when signed out', async () => {
+		const handler = vi.fn();
+		const result = await requireAuth(handler)(event(null));
+		expect(result).toMatchObject({ status: 401 });
+		expect(handler).not.toHaveBeenCalled();
+	});
+
+	it('passes the authenticated user to the handler and returns its result', async () => {
+		const user = { id: 'u1', role: 'user', ...contact };
+		const handler = vi.fn(async () => 'ok');
+		await expect(requireAuth(handler)(event(user))).resolves.toBe('ok');
+		expect(handler).toHaveBeenCalledWith(expect.anything(), user);
+	});
+});
+
+describe('getUser', () => {
+	it('returns the user from locals when signed in', () => {
+		const user = { id: 'u1', role: 'user', ...contact };
+		expect(getUser({ user })).toBe(user);
+	});
+
+	it('redirects to sign-in when signed out', () => {
+		expect(() => getUser({ user: null })).toThrow(
+			expect.objectContaining({ status: 302, location: '/sign-in' })
+		);
 	});
 });
