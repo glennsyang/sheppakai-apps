@@ -2,7 +2,7 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
-	svelteKitHandler: vi.fn()
+	svelteKitHandler: vi.fn<() => Promise<Response>>()
 }));
 
 vi.mock('better-auth/svelte-kit', () => ({
@@ -18,10 +18,10 @@ import {
 
 function fakeLogger() {
 	const logger = {
-		child: vi.fn(),
-		info: vi.fn(),
-		warn: vi.fn(),
-		error: vi.fn()
+		child: vi.fn<RequestLogger['child']>(),
+		info: vi.fn<RequestLogger['info']>(),
+		warn: vi.fn<RequestLogger['warn']>(),
+		error: vi.fn<RequestLogger['error']>()
 	};
 	logger.child.mockReturnValue(logger);
 	return logger satisfies RequestLogger;
@@ -44,17 +44,17 @@ const session = {
 
 function fakeAuth(lookup: typeof session | null = session) {
 	return {
-		handler: vi.fn(),
+		handler: vi.fn<ServerHandleAuth['handler']>(),
 		options: {},
 		api: {
-			getSession: vi.fn().mockResolvedValue(lookup),
-			revokeSession: vi.fn().mockResolvedValue(undefined)
+			getSession: vi.fn<ServerHandleAuth['api']['getSession']>().mockResolvedValue(lookup as never),
+			revokeSession: vi.fn<ServerHandleAuth['api']['revokeSession']>().mockResolvedValue(undefined)
 		}
 	} satisfies ServerHandleAuth;
 }
 
 const allowedEmails = new Set(['owner@example.com']);
-const resolve = vi.fn();
+const resolve = vi.fn<() => Promise<Response>>();
 
 beforeEach(() => {
 	vi.clearAllMocks();

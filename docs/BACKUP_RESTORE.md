@@ -145,10 +145,6 @@ Test a restore every month, so you know the backups actually work:
 4. Optionally, run `pnpm --filter <app> dev` against the restored db and click through a few
    pages.
 
-`apps/budget/scripts/test-restore.sh` and `apps/budget/scripts/check-backup-health.sh` are
-older budget-only helpers. `test-restore.sh` takes a decrypted `.sql` or `.sql.gz` file and
-queries budget's tables, so it won't work for the other apps.
-
 ## Troubleshooting
 
 | Symptom                                          | Likely cause and fix                                                                                      |

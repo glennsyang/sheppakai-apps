@@ -4,7 +4,7 @@ import { sendNtfy } from './ntfy';
 
 describe('sendNtfy', () => {
 	const fetchMock = vi.fn<(input: string, init?: RequestInit) => Promise<{ ok: boolean }>>();
-	const logger = { info: vi.fn(), error: vi.fn() };
+	const logger = { info: vi.fn<() => void>(), error: vi.fn<() => void>() };
 
 	beforeEach(() => {
 		vi.stubGlobal('fetch', fetchMock);

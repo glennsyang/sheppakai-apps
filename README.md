@@ -72,7 +72,7 @@ Dependencies shared by more than one app are pinned once in the `catalog:` secti
 
 ## Running locally
 
-Requires Node 22.23.3. pnpm is pinned through corepack.
+Requires Node 22.23.3 (pinned in `.node-version`). pnpm is pinned through corepack.
 
 ```sh
 corepack enable

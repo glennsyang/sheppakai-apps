@@ -190,6 +190,16 @@ describe('logger', () => {
 			expect(entry.error).toBe('string reason');
 		});
 
+		it('falls back to a placeholder for an unserializable object', async () => {
+			vi.resetModules();
+			const { logger } = await import('./index');
+			const circular: Record<string, unknown> = {};
+			circular.self = circular;
+			logger.error('boom', circular);
+			const entry = lastEntry(errorSpy);
+			expect(entry.error).toBe('[unserializable error]');
+		});
+
 		it('accepts no error argument at all', async () => {
 			vi.resetModules();
 			const { logger } = await import('./index');

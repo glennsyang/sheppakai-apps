@@ -65,6 +65,7 @@
 		"drizzle-orm": "catalog:",
 		"oxfmt": "catalog:",
 		"oxlint": "catalog:",
+		"oxlint-tsgolint": "catalog:",
 		"svelte": "catalog:",
 		"sveltekit-rate-limiter": "catalog:",
 		"sveltekit-superforms": "catalog:",

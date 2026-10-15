@@ -139,7 +139,7 @@ with `.env.example`. Don't duplicate the list here; update that doc instead.
 ## Database
 
 - Drizzle ORM with `better-sqlite3`, WAL mode enabled.
-- Schema file: `src/lib/server/db/schema.ts` — defines **both** better-auth tables and app tables.
+- Schema file: `src/lib/server/db/schema/index.ts` — defines **both** better-auth tables and app tables.
 - Better-auth tables: `user`, `session`, `account`, `verification` — defined with camelCase Drizzle field names mapping to snake_case DB columns.
 - App tables: `pantry_items`, `recipes`, `meal_plans`, `meal_plan_entries`.
 - Migrations output: `src/lib/server/db/migrations/`.

@@ -88,7 +88,7 @@ describe('renderEmailLayout', () => {
 });
 
 describe('createMailer', () => {
-	const logger = { info: vi.fn(), error: vi.fn() };
+	const logger = { info: vi.fn<() => void>(), error: vi.fn<() => void>() };
 	const mailer = createMailer({
 		apiKey: 'key',
 		from: 'from@example.com',

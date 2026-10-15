@@ -5,21 +5,12 @@ on:
     - cron: '10 16 * * 1' # Monday 8:10am PST / 9:10am PDT
   workflow_dispatch: # Allow manual trigger
 
-# Only curls the app with CRON_SECRET; needs no GITHUB_TOKEN scopes.
 permissions: {}
 
 jobs:
   trigger-emails:
-    runs-on: ubuntu-latest
-    environment: budget
-    steps:
-      - name: Trigger weekly summary email
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          APP_URL: ${{ secrets.APP_URL }}
-        run: |
-          response=$(curl -f -X POST "$APP_URL/api/cron/email-weekly-summary" \
-            -H "Authorization: Bearer $CRON_SECRET" \
-            -H "Content-Type: application/json")
-          echo "$response"
-          echo "$response" | jq -e '.result.emailsFailed == 0'
+    uses: ./.github/workflows/cron-trigger.yml
+    with:
+      environment: budget
+      path: /api/cron/email-weekly-summary
+      jq-check: '.result.emailsFailed == 0'
