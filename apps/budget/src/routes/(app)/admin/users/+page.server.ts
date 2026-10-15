@@ -1,5 +1,9 @@
 import { FLY_APP_NAME } from '$app/env/private';
-import { createAdminUserActions } from '@sheppakai/shared/admin-user-actions';
+import {
+	ADMIN_USER_LIST_LIMIT,
+	createAdminUserActions
+} from '@sheppakai/shared/admin-user-actions';
+import { getBetterAuthErrorMessage } from '@sheppakai/shared/better-auth-errors';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
@@ -11,15 +15,14 @@ import {
 	setRoleSchema
 } from '#lib/formSchemas/index.js';
 import { adminFormAction } from '#lib/server/actions/admin-guard.js';
-import { isAdminUser } from '#lib/server/admin-status.js';
+import { assertAdmin, isAdminUser } from '#lib/server/actions/auth-guard.js';
 import { apiKeyStore } from '#lib/server/api/api-key-store.js';
-import { allowedEmails, assertAdmin, auth } from '#lib/server/auth.js';
+import { allowedEmails, auth } from '#lib/server/auth.js';
 import { sendWelcome } from '#lib/server/auth/welcome.js';
 import { sessionQueries } from '#lib/server/db/queries/index.js';
 import { logger } from '#lib/server/logger.js';
 import { sendAuthAlerts } from '#lib/server/notifications/index.js';
 import type { UserWithSessions } from '#lib/types.js';
-import { getBetterAuthErrorMessage } from '#lib/utils.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -57,7 +60,7 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 		// List all users using better-auth admin API
 		const result = await auth.api.listUsers({
 			query: {
-				limit: 100,
+				limit: ADMIN_USER_LIST_LIMIT,
 				sortBy: 'name',
 				sortDirection: 'desc'
 			},

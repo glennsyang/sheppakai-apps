@@ -25,8 +25,8 @@ describe('redirectIfAuthenticated', () => {
 		expect((caughtError as Redirect).location).toBe('/dashboard');
 	});
 
-	it('does not throw when the user is undefined', () => {
-		expect(() => redirectIfAuthenticated(undefined)).not.toThrow();
+	it('does not throw when signed out', () => {
+		expect(() => redirectIfAuthenticated(null)).not.toThrow();
 	});
 });
 

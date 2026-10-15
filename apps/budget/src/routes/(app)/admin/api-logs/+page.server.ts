@@ -1,6 +1,6 @@
 import { inArray } from 'drizzle-orm';
 
-import { assertAdmin } from '#lib/server/auth.js';
+import { assertAdmin } from '#lib/server/actions/auth-guard.js';
 import { getDb } from '#lib/server/db/index.js';
 import { apiKey } from '#lib/server/db/schema/index.js';
 import { logger } from '#lib/server/logger.js';

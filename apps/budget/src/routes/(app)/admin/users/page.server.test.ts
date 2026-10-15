@@ -35,10 +35,7 @@ vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: 'env-admin', FLY_APP_NAME: 
 
 vi.mock('#lib/server/auth.js', () => ({
 	auth: { api },
-	allowedEmails: new Set(['admin@example.com', 'listed@example.com']),
-	assertAdmin: (locals: App.Locals) => {
-		if (locals.user?.role !== 'admin') throw new Error('Forbidden');
-	}
+	allowedEmails: new Set(['admin@example.com', 'listed@example.com'])
 }));
 
 vi.mock('#lib/server/db/queries/index.js', () => ({

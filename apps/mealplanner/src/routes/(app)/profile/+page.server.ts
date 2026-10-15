@@ -1,10 +1,10 @@
+import { getBetterAuthErrorMessage } from '@sheppakai/shared/better-auth-errors';
 import { createProfileActions } from '@sheppakai/shared/profile-actions';
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { changePasswordSchema, updateNameSchema } from '#lib/schemas/auth.js';
 import { getUser } from '#lib/server/actions/auth-guard.js';
-import { getBetterAuthErrorMessage } from '#lib/server/auth/errors.js';
 import { auth } from '#lib/server/auth/index.js';
 import { sendPasswordChangedEmail } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';

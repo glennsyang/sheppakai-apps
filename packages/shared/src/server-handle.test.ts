@@ -115,8 +115,8 @@ describe('createServerHandle', () => {
 			body: { token: 'tok-1' },
 			headers: event.request.headers
 		});
-		expect(event.locals.user).toBeUndefined();
-		expect(event.locals.session).toBeUndefined();
+		expect(event.locals.user).toBeNull();
+		expect(event.locals.session).toBeNull();
 		expect(logger.warn).toHaveBeenCalledWith('Session rejected', {
 			userId: 'user-1',
 			reason: 'owner_not_allowed'
@@ -134,7 +134,7 @@ describe('createServerHandle', () => {
 		const response = await handle({ event, resolve });
 
 		expect(response.status).toBe(200);
-		expect(event.locals.user).toBeUndefined();
+		expect(event.locals.user).toBeNull();
 		expect(logger.error).toHaveBeenCalledWith('Failed to revoke disallowed session', failure, {
 			userId: 'user-1'
 		});
@@ -153,7 +153,7 @@ describe('createServerHandle', () => {
 
 		await handle({ event, resolve });
 
-		expect(event.locals.user).toBeUndefined();
+		expect(event.locals.user).toBeNull();
 		expect(mockState.svelteKitHandler).toHaveBeenCalledWith({
 			event,
 			resolve,

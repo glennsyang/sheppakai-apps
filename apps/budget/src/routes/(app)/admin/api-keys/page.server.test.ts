@@ -13,12 +13,7 @@ const { listAllWithOwnerMock, deleteByIdMock, loggerMock } = vi.hoisted(() => ({
 
 vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: '' }));
 
-vi.mock('#lib/server/auth.js', () => ({
-	auth: { api: {} },
-	assertAdmin: (locals: App.Locals) => {
-		if (locals.user?.role !== 'admin') throw new Error('Forbidden');
-	}
-}));
+vi.mock('#lib/server/auth.js', () => ({ auth: { api: {} } }));
 
 // The store itself (and the actions' behaviour) is tested in @sheppakai/shared/api-key-admin.
 vi.mock('#lib/server/api/api-key-store.js', () => ({
@@ -71,7 +66,7 @@ describe('admin api-keys page', () => {
 		it('refuses a non-admin before querying any keys', async () => {
 			await expect(
 				load(loadEvent({ user: { id: 'u-1', role: 'user' } } as App.Locals))
-			).rejects.toThrow('Forbidden');
+			).rejects.toMatchObject({ status: 403 });
 			expect(listAllWithOwnerMock).not.toHaveBeenCalled();
 		});
 	});

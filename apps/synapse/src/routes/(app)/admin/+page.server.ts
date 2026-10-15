@@ -1,6 +1,11 @@
-import { BETTER_AUTH_BASE_URL, FLY_APP_NAME } from '$app/env/private';
-import { createAdminUserActions } from '@sheppakai/shared/admin-user-actions';
+import { FLY_APP_NAME } from '$app/env/private';
+import {
+	ADMIN_USER_LIST_LIMIT,
+	createAdminUserActions
+} from '@sheppakai/shared/admin-user-actions';
 import { createApiKeyAdminActions } from '@sheppakai/shared/api-key-admin';
+import { error } from '@sveltejs/kit';
+import { APIError } from 'better-auth/api';
 import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -14,10 +19,10 @@ import { assertAdmin, isAdminUser, requireAdmin } from '#lib/server/actions/auth
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { apiKeyStore } from '#lib/server/api/api-key-store.js';
 import { allowedEmails, auth } from '#lib/server/auth.js';
+import { sendWelcome } from '#lib/server/auth/welcome.js';
 import { getDb } from '#lib/server/db/index.js';
 import { apiAuditLog, apiKey, people, user, visits } from '#lib/server/db/schema/index.js';
 import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
-import { sendWelcomeEmail } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';
 import { sendAuthAlerts } from '#lib/server/notifications/index.js';
 
@@ -30,7 +35,7 @@ const adminUserActions = createAdminUserActions({
 	isAdminUser,
 	allowedEmails,
 	flyAppName: FLY_APP_NAME,
-	sendWelcome: (target) => sendWelcomeEmail(target.email, target.name, BETTER_AUTH_BASE_URL),
+	sendWelcome,
 	sendAuthAlerts,
 	logger,
 	disableApiKeysForUser: (userId) => apiKeyStore.disableForUser(userId)
@@ -46,7 +51,7 @@ const apiKeyActions = createApiKeyAdminActions({
 	toPermissions: (scopes) => scopesToPermissions(scopes as ApiScope[])
 });
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ request, locals }) => {
 	// Server loads run in parallel with the layout's guard, so check here too.
 	assertAdmin(locals);
 
@@ -58,8 +63,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	try {
 		const db = getDb();
 
-		const [users, archivedPeople, apiKeys, auditEntries] = await Promise.all([
-			db.query.user.findMany({ orderBy: [desc(user.createdAt)] }),
+		const [{ users }, archivedPeople, apiKeys, auditEntries] = await Promise.all([
+			// Through the admin plugin, not the db, so better-auth's own admin check runs.
+			auth.api.listUsers({
+				query: { limit: ADMIN_USER_LIST_LIMIT, sortBy: 'createdAt', sortDirection: 'desc' },
+				headers: request.headers
+			}),
 			db.query.people.findMany({
 				where: eq(people.isArchived, true),
 				orderBy: [desc(people.updatedAt)]
@@ -128,6 +137,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			createUserForm
 		};
 	} catch (err) {
+		// The plugin's own admin check is authoritative; map its 401/403 to a plain 403 in
+		// case the layout guard's view of the role is ever out of date.
+		if (err instanceof APIError && (err.statusCode === 401 || err.statusCode === 403)) {
+			error(403, 'Forbidden');
+		}
 		logger.error('Failed to load admin dashboard data', err);
 		return {
 			users: [],

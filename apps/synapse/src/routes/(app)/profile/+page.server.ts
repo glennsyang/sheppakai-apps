@@ -1,3 +1,4 @@
+import { getBetterAuthErrorMessage } from '@sheppakai/shared/better-auth-errors';
 import { createProfileActions } from '@sheppakai/shared/profile-actions';
 import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
@@ -27,7 +28,6 @@ import {
 import { sendPasswordChangedEmail } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
-import { getBetterAuthErrorMessage } from '#lib/utils/auth.js';
 import { DEFAULT_DASHBOARD_GOALS, normalizeDashboardGoals } from '#lib/utils/dashboard-goals.js';
 import {
 	convertVisitThresholdToDays,

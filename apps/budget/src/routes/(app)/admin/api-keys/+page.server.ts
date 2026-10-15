@@ -5,8 +5,9 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 import { scopesToPermissions, type ApiScope } from '#lib/api-scopes.js';
 import { createApiKeySchema } from '#lib/formSchemas/index.js';
 import { isAdminUser } from '#lib/server/actions/auth-guard.js';
+import { assertAdmin } from '#lib/server/actions/auth-guard.js';
 import { apiKeyStore } from '#lib/server/api/api-key-store.js';
-import { assertAdmin, auth } from '#lib/server/auth.js';
+import { auth } from '#lib/server/auth.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { Actions, PageServerLoad } from './$types';

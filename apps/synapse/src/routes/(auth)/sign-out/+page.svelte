@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 
+	import { POST_LOGIN_ROUTE } from '#lib/auth-routes.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 </script>
+
+<svelte:head><title>Sign Out - Synapse</title></svelte:head>
 
 <div class="bg-muted flex min-h-screen items-center justify-center">
 	<div
@@ -15,6 +18,6 @@
 
 		<form method="POST" use:enhance><Button type="submit" class="w-full">Sign Out</Button></form>
 
-		<div class="text-center"><a href="/dashboard" class="text-sm"> Cancel </a></div>
+		<div class="text-center"><a href={POST_LOGIN_ROUTE} class="text-sm"> Cancel </a></div>
 	</div>
 </div>

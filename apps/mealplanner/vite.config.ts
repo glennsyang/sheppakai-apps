@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 
 // SvelteKit validates env at config time; give Vitest valid values (CI has no .env).
-applyTestEnv();
+applyTestEnv({ ANTHROPIC_API_KEY: 'test_anthropic_key', GEMINI_API_KEY: 'test_gemini_key' });
 
 export default defineConfig({
 	plugins: [

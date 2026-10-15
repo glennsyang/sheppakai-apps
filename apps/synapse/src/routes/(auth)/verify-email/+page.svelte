@@ -2,6 +2,7 @@
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import { superForm } from 'sveltekit-superforms';
 
+	import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
 	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 
@@ -76,7 +77,7 @@
 		</form>
 
 		<div class="text-center">
-			<a href="/sign-in"> <Button variant="outline" class="w-full">Back to Sign In</Button> </a>
+			<Button href={SIGN_IN_ROUTE} variant="outline" class="w-full">Back to Sign In</Button>
 		</div>
 	</div>
 </div>

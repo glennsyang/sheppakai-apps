@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { superForm } from 'sveltekit-superforms';
 
+	import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
 	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
@@ -20,6 +21,10 @@
 	// svelte-ignore state_referenced_locally
 	const { form, errors, message, submitting, enhance } = superForm(data.form);
 </script>
+
+<svelte:head>
+	<title>Forgot Password - Sheppakai Budget</title>
+</svelte:head>
 
 <Card.Root class="w-full">
 	<Card.Header>
@@ -61,7 +66,7 @@
 					</Button>
 					<FieldDescription>
 						Remember your password? <a
-							href="/sign-in"
+							href={SIGN_IN_ROUTE}
 							class="text-primary font-medium hover:underline">Sign in</a
 						>
 					</FieldDescription>

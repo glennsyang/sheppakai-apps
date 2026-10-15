@@ -1,10 +1,9 @@
 import type { Component } from 'svelte';
 
-import type { session, user } from './server/db/schema';
+import type { SessionUser } from './server/auth';
 
-export type User = typeof user.$inferSelect;
-
-export type Session = typeof session.$inferSelect;
+/** The signed-in user, as `locals.user` holds it. */
+export type User = SessionUser;
 
 export type SidebarNav = {
 	navMain: {

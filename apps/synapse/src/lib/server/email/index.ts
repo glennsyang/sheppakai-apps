@@ -7,8 +7,8 @@ import {
 	renderEmailLayout,
 	type EmailLayoutOptions
 } from '@sheppakai/shared/email';
+import type { WelcomeEmailPayload } from '@sheppakai/shared/welcome';
 
-import { FORGOT_PASSWORD_ROUTE } from '#lib/auth-routes.js';
 import {
 	buildTasksDueTodayDigestTitle,
 	buildTasksDueTodayEmailHtml,
@@ -50,40 +50,42 @@ function layout(
 }
 
 /**
- * Sent when an admin creates an account. Links to the forgot-password page rather than
- * embedding a reset token, since reset tokens expire in 10 minutes and this email may sit
- * unread for much longer.
+ * Sent when an admin creates an account, with a 72-hour set-password link. Unlike the other
+ * auth emails this one throws on failure: the admin action awaits it and tells the admin to
+ * resend, since the new user has no other way to learn the account exists.
  */
-export async function sendWelcomeEmail(to: string, name: string, appUrl: string) {
-	const baseUrl = escapeHtml(new URL(appUrl).origin);
-	const forgotPasswordUrl = `${baseUrl}${FORGOT_PASSWORD_ROUTE}`;
-	const profileUrl = `${baseUrl}/profile`;
+export async function sendWelcomeEmail(payload: WelcomeEmailPayload) {
+	const setPasswordUrl = escapeHtml(payload.setPasswordUrl);
+	const signInUrl = escapeHtml(payload.signInUrl);
 
 	await mailer.send({
-		to,
-		name,
+		to: payload.to,
+		name: payload.name,
 		subject: '[Synapse] Your account is ready',
 		label: 'welcome email',
 		html: layout(
 			'Your Synapse account',
 			'Welcome to Synapse',
 			`
-		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(payload.name)},</p>
 		<p style="font-size: 16px; margin-bottom: 20px;">
-			An account has been created for you on Synapse at
-			<a href="${baseUrl}" style="color: #667eea;">${baseUrl}</a>.
+			An account has been created for you on Synapse with the email
+			<strong>${escapeHtml(payload.to)}</strong>. To get started, choose your own password
+			(at least 12 characters):
 		</p>
-		<p style="font-size: 16px; margin-bottom: 10px;"><strong>To sign in for the first time:</strong></p>
-		<ol style="font-size: 16px; margin: 0 0 20px; padding-left: 20px;">
-			<li>Open the <strong>Forgot password</strong> page using the button below.</li>
-			<li>Enter this email address (${escapeHtml(to)}) and follow the link we send you to set your own password (at least 12 characters). No password has been shared with anyone.</li>
-			<li>Sign in. The first time, we'll send you a verification email &mdash; click the link in it to finish setting up your account.</li>
-		</ol>
 		<div style="text-align: center; margin: 30px 0;">
-			<a href="${forgotPasswordUrl}" style="${EMAIL_BUTTON_STYLE}">Set your password</a>
+			<a href="${setPasswordUrl}" style="${EMAIL_BUTTON_STYLE}">Set your password</a>
 		</div>
+		<p style="font-size: 16px; margin-bottom: 10px;"><strong>Then sign in:</strong></p>
+		<ol style="font-size: 16px; margin: 0 0 20px; padding-left: 20px;">
+			<li>Go to <a href="${signInUrl}" style="color: #667eea;">${signInUrl}</a> and sign in with your email and new password.</li>
+			<li>The first time, we'll send you a verification email &mdash; click the link in it to finish setting up your account.</li>
+			<li>You can change your password any time from your profile page.</li>
+		</ol>
 		<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-			You can change your password any time from your <a href="${profileUrl}" style="color: #667eea;">profile page</a>.
+			The set-password link expires in 72 hours. If it has expired, go to the sign-in page and
+			choose <strong>Forgot password</strong> to get a new one. No password has been shared
+			with anyone.
 		</p>
 		<p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
 			If you weren't expecting this, you can safely ignore this email.

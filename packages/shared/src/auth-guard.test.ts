@@ -49,17 +49,17 @@ describe('requireAdmin', () => {
 
 describe('assertAdmin', () => {
 	it('redirects to sign-in when signed out and throws 403 for a non-admin', () => {
-		expect(() => assertAdmin({ user: null })).toThrow(
+		expect(() => assertAdmin({ user: null, session: null })).toThrow(
 			expect.objectContaining({ status: 302, location: '/sign-in' })
 		);
-		expect(() => assertAdmin({ user: { id: 'u1', role: 'user', ...contact } })).toThrow(
-			expect.objectContaining({ status: 403 })
-		);
+		expect(() =>
+			assertAdmin({ user: { id: 'u1', role: 'user', ...contact }, session: null })
+		).toThrow(expect.objectContaining({ status: 403 }));
 	});
 
 	it('returns the user for an admin', () => {
 		const user = { id: 'env-admin-2', role: null, ...contact };
-		expect(assertAdmin({ user })).toBe(user);
+		expect(assertAdmin({ user, session: null })).toBe(user);
 	});
 });
 
@@ -82,11 +82,11 @@ describe('requireAuth', () => {
 describe('getUser', () => {
 	it('returns the user from locals when signed in', () => {
 		const user = { id: 'u1', role: 'user', ...contact };
-		expect(getUser({ user })).toBe(user);
+		expect(getUser({ user, session: null })).toBe(user);
 	});
 
 	it('redirects to sign-in when signed out', () => {
-		expect(() => getUser({ user: null })).toThrow(
+		expect(() => getUser({ user: null, session: null })).toThrow(
 			expect.objectContaining({ status: 302, location: '/sign-in' })
 		);
 	});

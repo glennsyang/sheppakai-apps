@@ -15,9 +15,10 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { Textarea } from '#lib/components/ui/textarea/index.js';
 	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
-	import type { User } from '#lib/types.js';
 
-	let { user, currentUserId }: { user: User; currentUserId: string } = $props();
+	import type { AdminUser } from './types';
+
+	let { user, currentUserId }: { user: AdminUser; currentUserId: string } = $props();
 
 	type RowAction = 'sendWelcomeEmail' | 'setRole' | 'banUser' | 'unbanUser' | 'removeUser';
 

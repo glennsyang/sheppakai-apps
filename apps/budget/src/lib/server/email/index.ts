@@ -6,6 +6,7 @@ import {
 	escapeHtml,
 	renderEmailLayout
 } from '@sheppakai/shared/email';
+import type { WelcomeEmailPayload } from '@sheppakai/shared/welcome';
 
 import { formatCurrency } from '#lib/utils.js';
 
@@ -166,13 +167,6 @@ export async function sendWeeklySummaryEmail(payload: WeeklySummaryEmailPayload)
 		})
 	});
 }
-
-type WelcomeEmailPayload = {
-	to: string;
-	name: string;
-	setPasswordUrl: string;
-	signInUrl: string;
-};
 
 /**
  * Sent when an admin creates an account. Unlike the other auth emails this one throws on
