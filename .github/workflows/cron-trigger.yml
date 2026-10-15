@@ -1,5 +1,6 @@
 # Reusable cron trigger: POSTs to an app's /api/cron/* endpoint with its CRON_SECRET.
 # APP_URL and CRON_SECRET are environment secrets, resolved by the job's `environment`.
+# Callers must pass `secrets: inherit`, or the secrets context is empty here.
 
 name: Cron Trigger
 

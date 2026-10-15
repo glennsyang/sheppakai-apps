@@ -10,6 +10,7 @@ permissions: {}
 jobs:
   trigger-reset:
     uses: ./.github/workflows/cron-trigger.yml
+    secrets: inherit
     with:
       environment: budget
       path: /api/cron/reset-recurring-paid

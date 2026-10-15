@@ -10,6 +10,7 @@ permissions: {}
 jobs:
   trigger-emails:
     uses: ./.github/workflows/cron-trigger.yml
+    secrets: inherit
     with:
       environment: budget
       path: /api/cron/email-weekly-summary
