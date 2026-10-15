@@ -44,7 +44,6 @@
 		"sveltekit-rate-limiter": "catalog:"
 	},
 	"devDependencies": {
-		"@flydotio/dockerfile": "catalog:",
 		"@formkit/auto-animate": "^0.10.0",
 		"@sveltejs/adapter-node": "catalog:",
 		"@sveltejs/kit": "catalog:",
@@ -59,7 +58,6 @@
 		"clsx": "catalog:",
 		"drizzle-kit": "catalog:",
 		"fallow": "catalog:",
-		"lefthook": "catalog:",
 		"lint-staged": "catalog:",
 		"mode-watcher": "catalog:",
 		"oxfmt": "catalog:",

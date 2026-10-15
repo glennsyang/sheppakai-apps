@@ -87,7 +87,7 @@ describe('createAppAuth session allowlist guard', () => {
 	});
 
 	it('refuses a session for a non-allowlisted or missing user', async () => {
-		await expect((await guardFor('b@example.com'))()).rejects.toThrow();
-		await expect((await guardFor(undefined))()).rejects.toThrow();
+		await expect((await guardFor('b@example.com'))()).rejects.toThrow('Invalid email or password');
+		await expect((await guardFor(undefined))()).rejects.toThrow('Invalid email or password');
 	});
 });

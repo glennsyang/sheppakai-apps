@@ -27,7 +27,7 @@ describe('createGetDb', () => {
 		const getDb = createGetDb({
 			url: tempDbUrl(),
 			schema: {},
-			logger: { info: vi.fn() },
+			logger: { info: vi.fn<() => void>() },
 			queryLogging: false
 		});
 

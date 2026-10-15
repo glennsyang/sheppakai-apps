@@ -13,8 +13,8 @@ const entry = {
 
 describe('recordApiWrite', () => {
 	it('inserts the given entry', async () => {
-		const insert = vi.fn(async () => undefined);
-		const recordApiWrite = createRecordApiWrite({ insert, logger: { error: vi.fn() } });
+		const insert = vi.fn<() => Promise<void>>(async () => undefined);
+		const recordApiWrite = createRecordApiWrite({ insert, logger: { error: vi.fn<() => void>() } });
 
 		await recordApiWrite(entry);
 
@@ -23,9 +23,9 @@ describe('recordApiWrite', () => {
 
 	it('logs and swallows a DB failure instead of throwing', async () => {
 		const failure = new Error('db down');
-		const logger = { error: vi.fn() };
+		const logger = { error: vi.fn<() => void>() };
 		const recordApiWrite = createRecordApiWrite({
-			insert: vi.fn(async () => {
+			insert: vi.fn<() => Promise<void>>(async () => {
 				throw failure;
 			}),
 			logger

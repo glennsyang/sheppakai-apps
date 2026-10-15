@@ -6,8 +6,10 @@ import { z } from 'zod';
 
 import { createAuthFormHandler, invalidAuthForm } from './auth-form-handler';
 
-const logger = { error: vi.fn() };
-const getErrorMessage = vi.fn((_error: unknown, fallback: string) => fallback);
+const logger = { error: vi.fn<() => void>() };
+const getErrorMessage = vi.fn<(_error: unknown, fallback: string) => string>(
+	(_error, fallback) => fallback
+);
 const handleAuthFormAction = createAuthFormHandler({ logger, getErrorMessage });
 
 const testSchema = z.object({

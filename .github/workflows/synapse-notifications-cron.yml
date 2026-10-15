@@ -5,19 +5,11 @@ on:
     - cron: '*/10 * * * *' # Every 10 minutes
   workflow_dispatch: # Allow manual trigger
 
-# Only curls the app with CRON_SECRET; needs no GITHUB_TOKEN scopes.
 permissions: {}
 
 jobs:
   trigger-emails:
-    runs-on: ubuntu-latest
-    environment: synapse
-    steps:
-      - name: Trigger scheduled notifications
-        env:
-          APP_URL: ${{ secrets.APP_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          curl -fsS -X POST "$APP_URL/api/cron/email-notifications" \
-            -H "Authorization: Bearer $CRON_SECRET" \
-            -H "Content-Type: application/json"
+    uses: ./.github/workflows/cron-trigger.yml
+    with:
+      environment: synapse
+      path: /api/cron/email-notifications

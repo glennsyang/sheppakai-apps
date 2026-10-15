@@ -68,7 +68,10 @@ function serializeError(error: unknown): unknown {
 			)
 		);
 	} catch {
-		return String(error);
+		// JSON can't represent circular objects, BigInts or symbols.
+		return typeof error === 'bigint' || typeof error === 'symbol'
+			? error.toString()
+			: '[unserializable error]';
 	}
 }
 

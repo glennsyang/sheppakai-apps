@@ -1,0 +1,32 @@
+# dorny/paths-filter list shared by pr-check.yml and fly-deploy.yml. A change to a shared
+# package, the lockfile, root tooling, the image or CI itself re-checks every project.
+shared: &shared
+  - 'packages/**'
+  - 'config/**'
+  - 'scripts/**'
+  - 'Dockerfile'
+  - '.dockerignore'
+  - 'lefthook.yml'
+  - 'package.json'
+  - 'pnpm-lock.yaml'
+  - 'pnpm-workspace.yaml'
+  - '.npmrc'
+  - '.node-version'
+  - '.github/actions/**'
+  - '.github/filters.yml'
+  - '.github/workflows/checks.yml'
+  - '.github/workflows/pr-check.yml'
+  - '.github/workflows/fly-deploy.yml'
+apps/synapse:
+  - *shared
+  - 'apps/synapse/**'
+apps/mealplanner:
+  - *shared
+  - 'apps/mealplanner/**'
+apps/budget:
+  - *shared
+  - 'apps/budget/**'
+packages/logger:
+  - *shared
+packages/shared:
+  - *shared

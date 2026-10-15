@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { createAdminGuards, getUser, requireAuth } from './auth-guard';
 
 type Locals = App.Locals;
+type Handler = (event: unknown, user: unknown) => Promise<string>;
+
 const event = (user: Locals['user']) => ({ locals: { user } }) as never;
 
 const { isAdminUser, requireAdmin, assertAdmin } = createAdminGuards(
@@ -28,20 +30,22 @@ describe('isAdminUser', () => {
 
 describe('requireAdmin', () => {
 	it('returns 401 when signed out', async () => {
-		const handler = vi.fn();
+		const handler = vi.fn<Handler>();
 		const result = await requireAdmin(handler)(event(null));
 		expect(result).toMatchObject({ status: 401 });
 		expect(handler).not.toHaveBeenCalled();
 	});
 
 	it('returns 403 for a non-admin', async () => {
-		const result = await requireAdmin(vi.fn())(event({ id: 'u1', role: 'user', ...contact }));
+		const result = await requireAdmin(vi.fn<Handler>())(
+			event({ id: 'u1', role: 'user', ...contact })
+		);
 		expect(result).toMatchObject({ status: 403 });
 	});
 
 	it('runs the handler for an ADMIN_USER_IDS admin without the admin role', async () => {
 		const user = { id: 'env-admin-1', role: 'user', ...contact };
-		const handler = vi.fn(async () => 'ok');
+		const handler = vi.fn<Handler>(async () => 'ok');
 		await expect(requireAdmin(handler)(event(user))).resolves.toBe('ok');
 		expect(handler).toHaveBeenCalledWith(expect.anything(), user);
 	});
@@ -65,7 +69,7 @@ describe('assertAdmin', () => {
 
 describe('requireAuth', () => {
 	it('returns 401 without calling the handler when signed out', async () => {
-		const handler = vi.fn();
+		const handler = vi.fn<Handler>();
 		const result = await requireAuth(handler)(event(null));
 		expect(result).toMatchObject({ status: 401 });
 		expect(handler).not.toHaveBeenCalled();
@@ -73,7 +77,7 @@ describe('requireAuth', () => {
 
 	it('passes the authenticated user to the handler and returns its result', async () => {
 		const user = { id: 'u1', role: 'user', ...contact };
-		const handler = vi.fn(async () => 'ok');
+		const handler = vi.fn<Handler>(async () => 'ok');
 		await expect(requireAuth(handler)(event(user))).resolves.toBe('ok');
 		expect(handler).toHaveBeenCalledWith(expect.anything(), user);
 	});

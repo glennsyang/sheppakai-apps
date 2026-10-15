@@ -12,7 +12,6 @@
 		"src/lib/styles/*.css"
 	],
 	"ignoreDependencies": [
-		"@flydotio/dockerfile",
 		"@formkit/auto-animate",
 		"@getbrevo/brevo",
 		"@sveltejs/kit",
@@ -26,6 +25,7 @@
 		"sveltekit-superforms",
 		"tailwind-merge",
 		"tailwind-variants",
+		"tailwindcss",
 		"tw-animate-css",
 		"zod"
 	],

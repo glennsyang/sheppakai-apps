@@ -1,0 +1,45 @@
+# Reusable cron trigger: POSTs to an app's /api/cron/* endpoint with its CRON_SECRET.
+# APP_URL and CRON_SECRET are environment secrets, resolved by the job's `environment`.
+
+name: Cron Trigger
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub environment holding the app's APP_URL and CRON_SECRET
+        required: true
+        type: string
+      path:
+        description: Endpoint path, e.g. /api/cron/email-notifications
+        required: true
+        type: string
+      jq-check:
+        description: Optional jq expression the JSON response must satisfy (jq -e)
+        required: false
+        type: string
+        default: ''
+
+# Only curls the app with CRON_SECRET; needs no GITHUB_TOKEN scopes.
+permissions: {}
+
+jobs:
+  trigger:
+    name: POST ${{ inputs.path }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Trigger cron endpoint
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_PATH: ${{ inputs.path }}
+          JQ_CHECK: ${{ inputs.jq-check }}
+        run: |
+          response=$(curl -fsS -X POST "$APP_URL$CRON_PATH" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json")
+          echo "$response"
+          if [ -n "$JQ_CHECK" ]; then
+            jq -e "$JQ_CHECK" <<< "$response"
+          fi

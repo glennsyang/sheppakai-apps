@@ -1,0 +1,85 @@
+# Reusable checks, run by pr-check.yml on every PR and by fly-deploy.yml before a deploy.
+# Jobs inherit the caller's GITHUB_TOKEN permissions; pr-check grants pull-requests: write
+# for the coverage comment.
+
+name: Checks
+
+on:
+  workflow_call:
+    inputs:
+      projects:
+        description: JSON array of project paths to check, e.g. '["apps/budget","packages/shared"]'
+        required: true
+        type: string
+
+jobs:
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: Run pnpm audit
+        run: pnpm audit --prod --audit-level high
+
+  checks:
+    name: Format, Lint, Test, Build (${{ matrix.project }})
+    if: inputs.projects != '[]'
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(inputs.projects) }}
+        exclude:
+          - project: shared
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: Run Ox format check
+        run: pnpm run fmt:check
+
+      - name: Run Ox lint
+        run: pnpm run lint:github
+
+      - name: Check for dead code
+        if: startsWith(matrix.project, 'apps/')
+        run: pnpm run check:dead-code
+
+      - name: Check redirects are thrown
+        if: startsWith(matrix.project, 'apps/')
+        run: pnpm run check:redirect-throws
+
+      - name: Run type check
+        run: pnpm run check
+
+      - name: Run tests
+        run: pnpm run test:ci
+
+      # Catch a broken build here rather than in the Fly remote build. Like the Docker build
+      # (.dockerignore drops every .env), it runs with no .env file.
+      - name: Build
+        if: startsWith(matrix.project, 'apps/')
+        run: pnpm run build
+
+      - name: Report Coverage
+        if: always() && github.event_name == 'pull_request' && startsWith(matrix.project, 'apps/')
+        uses: davelosert/vitest-coverage-report-action@c4bbc33a89b7ace0e63d35f1f7d4bcee31155a73 # v2.13.0
+        with:
+          name: ${{ matrix.project }}
+          working-directory: ${{ matrix.project }}
+          json-summary-path: './coverage/coverage-summary.json'
+          json-final-path: './coverage/coverage-final.json'

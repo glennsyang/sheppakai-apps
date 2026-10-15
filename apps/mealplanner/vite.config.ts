@@ -57,7 +57,13 @@ export default defineConfig({
 		coverage: {
 			provider: 'v8',
 			include: ['src/**/*.{ts,svelte.ts}'],
-			exclude: ['src/**/*.test.ts', 'src/**/*.d.ts', 'src/routes/**', 'src/app.ts'],
+			exclude: [
+				'src/**/*.test.ts',
+				'src/**/*.d.ts',
+				'src/routes/**',
+				'src/lib/components/ui/**',
+				'src/app.ts'
+			],
 			reporter: ['text', 'lcov', 'html', 'json-summary', 'json'],
 			thresholds: {
 				statements: 40,

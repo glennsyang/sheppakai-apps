@@ -11,7 +11,6 @@
 		"src/lib/utils.ts"
 	],
 	"ignoreDependencies": [
-		"@flydotio/dockerfile",
 		"@fontsource/zen-kaku-gothic-new",
 		"@internationalized/date",
 		"@lucide/svelte",

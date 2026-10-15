@@ -4,8 +4,11 @@ import { createHealthzHandler } from './healthz';
 
 describe('createHealthzHandler', () => {
 	it('returns 200 when the database answers', async () => {
-		const run = vi.fn();
-		const GET = createHealthzHandler({ getDb: () => ({ run }), logger: { error: vi.fn() } });
+		const run = vi.fn<(sql: string) => unknown>();
+		const GET = createHealthzHandler({
+			getDb: () => ({ run }),
+			logger: { error: vi.fn<() => void>() }
+		});
 
 		const response = await GET();
 
@@ -17,7 +20,7 @@ describe('createHealthzHandler', () => {
 
 	it('logs and returns 503 when the database is unreachable', async () => {
 		const failure = new Error('volume not mounted');
-		const logger = { error: vi.fn() };
+		const logger = { error: vi.fn<() => void>() };
 		const GET = createHealthzHandler({
 			getDb: () => {
 				throw failure;

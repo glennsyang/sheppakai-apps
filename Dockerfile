@@ -3,9 +3,10 @@
 # One image definition for every app in apps/. Pick the app with the APP build arg
 # (its folder name under apps/), e.g. `docker build --build-arg APP=budget .`
 # The build context is the monorepo root (see .github/workflows/fly-deploy.yml).
+# NODE_VERSION comes from the root .node-version, e.g.
+# `docker build --build-arg APP=budget --build-arg NODE_VERSION="$(cat .node-version)" .`
 
-# Adjust NODE_VERSION as desired
-ARG NODE_VERSION=22.23.3
+ARG NODE_VERSION
 FROM node:${NODE_VERSION}-slim AS base
 
 LABEL fly_launch_runtime="SvelteKit"
