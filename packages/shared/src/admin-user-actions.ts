@@ -4,13 +4,11 @@
 
 import { randomBytes } from 'node:crypto';
 
-import type { RequestEvent } from '@sveltejs/kit';
 import { isRedirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
-import type { Infer } from 'sveltekit-superforms';
-import { zod4, type ZodValidationSchema } from 'sveltekit-superforms/adapters';
-import { message, setError, superValidate, type SuperValidated } from 'sveltekit-superforms/server';
+import { message, setError, type SuperValidated } from 'sveltekit-superforms/server';
 
+import { createAdminFormAction } from './admin-form-action';
 import {
 	adminUserIdSchema,
 	banUserSchema,
@@ -23,7 +21,6 @@ import { invalidAuthForm as invalidForm } from './auth-form-handler';
 import { getBetterAuthErrorCode } from './better-auth-errors';
 
 type MessageStatus = NonNullable<Parameters<typeof message>[2]>['status'];
-type AdminUser = NonNullable<App.Locals['user']>;
 type TargetUser = { id: string; email: string; name: string };
 
 /** The better-auth `admin` plugin endpoints these actions call. */
@@ -82,34 +79,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 		return sendAuthAlerts(text, `${appName} - ${title}`, 3);
 	}
 
-	/**
-	 * Validates against `schema`, rejects non-admins, returns the invalid-form message, and
-	 * only then calls `handler`. Actions don't run layout loads, so each needs its own guard.
-	 */
-	function adminAction<S extends ZodValidationSchema, R>(
-		schema: S,
-		handler: (
-			event: RequestEvent,
-			form: SuperValidated<Infer<S, 'zod4'>>,
-			admin: AdminUser
-		) => Promise<R>,
-		invalidMessage?: string
-	) {
-		return async (event: RequestEvent) => {
-			const form = await superValidate(event.request, zod4(schema));
-			const user = event.locals.user;
-			if (!user) {
-				return message(form, { type: 'error', text: 'Unauthorized' }, { status: 401 });
-			}
-			if (!isAdminUser(user)) {
-				return message(form, { type: 'error', text: 'Forbidden' }, { status: 403 });
-			}
-			if (!form.valid) {
-				return invalidForm(form, invalidMessage);
-			}
-			return handler(event, form, user);
-		};
-	}
+	const adminAction = createAdminFormAction(isAdminUser);
 
 	/**
 	 * Turns a failed `auth.api.*` call into a form message. better-auth raises `APIError` for
@@ -187,7 +157,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 
 				return message(form, { type: 'success', text: `Role changed to ${role}.` });
 			},
-			'Invalid role change request'
+			{ invalidMessage: 'Invalid role change request' }
 		),
 
 		banUser: adminAction(
@@ -223,7 +193,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 
 				return message(form, { type: 'success', text: 'User banned.' });
 			},
-			'Invalid ban request'
+			{ invalidMessage: 'Invalid ban request' }
 		),
 
 		unbanUser: adminAction(
@@ -239,7 +209,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 
 				return message(form, { type: 'success', text: 'User unbanned.' });
 			},
-			'User ID is required'
+			{ invalidMessage: 'User ID is required' }
 		),
 
 		removeUser: adminAction(
@@ -269,7 +239,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 
 				return message(form, { type: 'success', text: 'User removed.' });
 			},
-			'User ID is required'
+			{ invalidMessage: 'User ID is required' }
 		),
 
 		createUser: adminAction(createUserSchema, async ({ request }, form, admin) => {
@@ -353,7 +323,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 					return adminActionError(form, 'Failed to send welcome email', err);
 				}
 			},
-			'User ID is required'
+			{ invalidMessage: 'User ID is required' }
 		)
 	};
 }

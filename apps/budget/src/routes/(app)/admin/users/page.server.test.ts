@@ -45,8 +45,8 @@ vi.mock('#lib/server/db/queries/index.js', () => ({
 	sessionQueries: { findSummariesByUserIds: findSessionSummariesMock }
 }));
 
-vi.mock('#lib/server/db/writes/api-keys.js', () => ({
-	disableApiKeysForUser: disableApiKeysForUserMock
+vi.mock('#lib/server/api/api-key-store.js', () => ({
+	apiKeyStore: { disableForUser: disableApiKeysForUserMock }
 }));
 
 vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));

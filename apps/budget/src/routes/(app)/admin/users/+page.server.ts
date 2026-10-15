@@ -12,10 +12,10 @@ import {
 } from '#lib/formSchemas/index.js';
 import { adminFormAction } from '#lib/server/actions/admin-guard.js';
 import { isAdminUser } from '#lib/server/admin-status.js';
+import { apiKeyStore } from '#lib/server/api/api-key-store.js';
 import { allowedEmails, assertAdmin, auth } from '#lib/server/auth.js';
 import { sendWelcome } from '#lib/server/auth/welcome.js';
 import { sessionQueries } from '#lib/server/db/queries/index.js';
-import { disableApiKeysForUser } from '#lib/server/db/writes/api-keys.js';
 import { logger } from '#lib/server/logger.js';
 import { sendAuthAlerts } from '#lib/server/notifications/index.js';
 import type { UserWithSessions } from '#lib/types.js';
@@ -33,7 +33,7 @@ const adminUserActions = createAdminUserActions({
 	sendWelcome,
 	sendAuthAlerts,
 	logger,
-	disableApiKeysForUser
+	disableApiKeysForUser: (userId) => apiKeyStore.disableForUser(userId)
 });
 
 export const load: PageServerLoad = async ({ request, locals }) => {

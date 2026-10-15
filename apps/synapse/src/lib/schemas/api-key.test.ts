@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createApiKeySchema, revokeApiKeySchema } from './api-key';
+import { createApiKeySchema } from './api-key';
 
 describe('createApiKeySchema', () => {
 	it('accepts a valid key request', () => {
@@ -35,12 +35,5 @@ describe('createApiKeySchema', () => {
 				expiresInDays: 400
 			}).success
 		).toBe(false);
-	});
-});
-
-describe('revokeApiKeySchema', () => {
-	it('requires a non-empty id', () => {
-		expect(revokeApiKeySchema.safeParse({ id: '' }).success).toBe(false);
-		expect(revokeApiKeySchema.safeParse({ id: 'key_abc' }).success).toBe(true);
 	});
 });

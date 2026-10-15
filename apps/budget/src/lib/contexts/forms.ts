@@ -1,3 +1,4 @@
+import type { revokeApiKeySchema } from '@sheppakai/shared/api-key-admin';
 import type { SuperValidated } from 'sveltekit-superforms';
 import type { z } from 'zod';
 
@@ -5,7 +6,6 @@ import type {
 	banUserSchema,
 	categorySchema,
 	contributionSchema,
-	idSchema,
 	incomeSchema,
 	recurringSchema,
 	restoreCustomerSchema,
@@ -54,4 +54,4 @@ export const banUserFormContext = createFormContext<z.infer<typeof banUserSchema
 export const unArchiveFormContext =
 	createFormContext<z.infer<typeof unArchiveSchema>>('unArchiveForm');
 export const revokeApiKeyFormContext =
-	createFormContext<z.infer<typeof idSchema>>('revokeApiKeyForm');
+	createFormContext<z.infer<typeof revokeApiKeySchema>>('revokeApiKeyForm');

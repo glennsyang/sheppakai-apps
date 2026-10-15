@@ -1,32 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-vi.mock('#lib/server/auth.js', () => ({
-	assertAdmin: (locals: App.Locals) => {
-		if (!locals.user) throw new Error('Unauthorized');
-		if (locals.user.role !== 'admin') throw new Error('Forbidden');
-	}
-}));
+import { createAdminFormAction } from './admin-form-action';
 
-vi.mock('#lib/server/logger.js', () => ({
-	logger: {
-		error: vi.fn<() => void>(),
-		warn: vi.fn<() => void>(),
-		info: vi.fn<() => void>(),
-		debug: vi.fn<() => void>()
-	}
-}));
-
-import { adminFormAction } from './admin-guard';
+const adminFormAction = createAdminFormAction((user) => user.role === 'admin');
 
 const schema = z.object({ id: z.string().min(1, 'ID is required') });
 
-const admin = { id: 'admin-1', role: 'admin' };
+const admin = { id: 'admin-1', role: 'admin', email: 'admin@example.com', name: 'Admin' };
 
 function event(user: unknown, body: Record<string, string>) {
 	return {
 		locals: { user },
-		request: new Request('https://budget.example.com/admin?/act', {
+		request: new Request('https://app.example.com/admin?/act', {
 			method: 'POST',
 			body: new URLSearchParams(body)
 		})

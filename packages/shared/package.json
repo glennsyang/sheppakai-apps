@@ -5,10 +5,12 @@
 	"type": "module",
 	"exports": {
 		"./action-message": "./src/action-message.ts",
+		"./admin-form-action": "./src/admin-form-action.ts",
 		"./admin-user-actions": "./src/admin-user-actions.ts",
 		"./admin-user-schemas": "./src/admin-user-schemas.ts",
 		"./api-audit-log": "./src/api-audit-log.ts",
 		"./api-key": "./src/api-key.ts",
+		"./api-key-admin": "./src/api-key-admin.ts",
 		"./api-key-plugin": "./src/api-key-plugin.ts",
 		"./api-response": "./src/api-response.ts",
 		"./api-scopes": "./src/api-scopes.ts",

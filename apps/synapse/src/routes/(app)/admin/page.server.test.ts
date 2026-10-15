@@ -64,8 +64,12 @@ const mockDisableApiKeysForUser = vi.hoisted(() =>
 	vi.fn<(userId: string) => Promise<number>>(async () => 0)
 );
 
-vi.mock('#lib/server/db/writes/api-keys.js', () => ({
-	disableApiKeysForUser: mockDisableApiKeysForUser
+vi.mock('#lib/server/api/api-key-store.js', () => ({
+	apiKeyStore: {
+		disableForUser: mockDisableApiKeysForUser,
+		listAllWithOwner: async () => [],
+		deleteById: async () => true
+	}
 }));
 
 const { load, actions } = await import('./+page.server');
