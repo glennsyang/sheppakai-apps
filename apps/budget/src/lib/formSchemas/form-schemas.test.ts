@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-	banUserSchema,
 	budgetSchema,
 	categorySchema,
 	changePasswordSchema,
-	createUserSchema,
 	contributionSchema,
 	incomeSchema,
 	passwordSchema,
@@ -16,7 +14,6 @@ import {
 	signInSchema,
 	transactionSchema,
 	unArchiveSchema,
-	userIdSchema,
 	windowCleaningCustomerSchema,
 	windowCleaningJobSchema
 } from './index';
@@ -179,15 +176,6 @@ describe('form schemas', () => {
 				confirmPassword: 'differentpassword'
 			}).success
 		).toBe(false);
-
-		expect(banUserSchema.safeParse({ userId: 'user-1', banReason: 'spam' }).success).toBe(true);
-		expect(banUserSchema.safeParse({ userId: '', banReason: 'spam' }).success).toBe(false);
-	});
-
-	it('validates userIdSchema requires a non-empty id', () => {
-		expect(userIdSchema.safeParse({ id: 'user-1' }).success).toBe(true);
-		expect(userIdSchema.safeParse({ id: '' }).success).toBe(false);
-		expect(userIdSchema.safeParse({}).success).toBe(false);
 	});
 
 	it('validates windowCleaningCustomerSchema required fields and lengths', () => {
@@ -275,16 +263,5 @@ describe('form schemas', () => {
 				tip: -5
 			}).success
 		).toBe(false);
-	});
-
-	it('validates create-user schema', () => {
-		const valid = { name: 'New Person', email: 'new@example.com', role: 'admin' };
-		expect(createUserSchema.safeParse(valid).success).toBe(true);
-		expect(createUserSchema.safeParse({ ...valid, name: '  ' }).success).toBe(false);
-		expect(createUserSchema.safeParse({ ...valid, email: 'not-an-email' }).success).toBe(false);
-		expect(createUserSchema.safeParse({ ...valid, role: 'owner' }).success).toBe(false);
-		expect(createUserSchema.parse({ name: 'New Person', email: 'new@example.com' }).role).toBe(
-			'user'
-		);
 	});
 });

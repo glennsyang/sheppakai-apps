@@ -95,7 +95,12 @@
 			<p class="text-muted-foreground mt-1 text-sm">The name shown around the app.</p>
 		</div>
 
-		<form method="POST" action="?/update" use:profileEnhance class="flex max-w-lg flex-col gap-4">
+		<form
+			method="POST"
+			action="?/updateName"
+			use:profileEnhance
+			class="flex max-w-lg flex-col gap-4"
+		>
 			{#if $profileMessage}
 				<FormMessage type={$profileMessage.type} text={$profileMessage.text} />
 			{/if}

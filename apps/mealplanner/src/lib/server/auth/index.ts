@@ -8,7 +8,6 @@ import {
 import { getRequestEvent } from '$app/server';
 import { parseAllowedEmails } from '@sheppakai/shared/auth-allowlist';
 import { createAppAuth } from '@sheppakai/shared/auth-config';
-import { eq } from 'drizzle-orm';
 
 import { getDb } from '../db';
 import * as schema from '../db/schema';
@@ -40,14 +39,6 @@ export const auth = createAppAuth({
 		account: schema.account,
 		verification: schema.verification,
 		rateLimit: schema.rateLimit
-	},
-	findUserEmail: async (userId) => {
-		const [row] = await getDb()
-			.select({ email: schema.user.email })
-			.from(schema.user)
-			.where(eq(schema.user.id, userId))
-			.limit(1);
-		return row?.email;
 	},
 	email: {
 		sendPasswordResetEmail,

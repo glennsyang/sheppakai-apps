@@ -17,9 +17,12 @@ function selectChain(): unknown {
 vi.mock('#lib/server/db/index.js', () => ({ getDb: mockGetDb }));
 
 const mockCreateUser = vi.hoisted(() =>
-	vi.fn<(args: { body: Record<string, string> }) => Promise<{ user: { id: string } }>>()
+	vi.fn<
+		(args: {
+			body: Record<string, string>;
+		}) => Promise<{ user: { id: string; email: string; name: string } }>
+	>()
 );
-const mockFindFirst = vi.hoisted(() => vi.fn<(args: unknown) => Promise<unknown>>());
 const mockSendWelcomeEmail = vi.hoisted(() =>
 	vi.fn<(to: string, name: string, appUrl: string) => Promise<void>>()
 );
@@ -35,7 +38,8 @@ const mockAdminApi = vi.hoisted(() => ({
 	setRole: vi.fn<(args: unknown) => Promise<unknown>>(),
 	banUser: vi.fn<(args: unknown) => Promise<unknown>>(),
 	unbanUser: vi.fn<(args: unknown) => Promise<unknown>>(),
-	removeUser: vi.fn<(args: unknown) => Promise<unknown>>()
+	removeUser: vi.fn<(args: unknown) => Promise<unknown>>(),
+	getUser: vi.fn<(args: unknown) => Promise<unknown>>()
 }));
 
 vi.mock('#lib/server/auth.js', () => ({
@@ -60,8 +64,12 @@ const mockDisableApiKeysForUser = vi.hoisted(() =>
 	vi.fn<(userId: string) => Promise<number>>(async () => 0)
 );
 
-vi.mock('#lib/server/db/writes/api-keys.js', () => ({
-	disableApiKeysForUser: mockDisableApiKeysForUser
+vi.mock('#lib/server/api/api-key-store.js', () => ({
+	apiKeyStore: {
+		disableForUser: mockDisableApiKeysForUser,
+		listAllWithOwner: async () => [],
+		deleteById: async () => true
+	}
 }));
 
 const { load, actions } = await import('./+page.server');
@@ -115,6 +123,7 @@ describe('admin page load — role check', () => {
 });
 
 const ADMIN = { id: 'admin-a', role: 'admin', email: 'admin@example.com' };
+const TARGET = { id: 'user-b', email: 'allowed@example.com', name: 'Target' };
 
 type ActionResult = { status?: number; data?: Record<string, unknown> } & Record<string, unknown>;
 
@@ -129,359 +138,56 @@ async function runAction(
 	return (await actions[name]({ locals, url, request } as never)) as ActionResult;
 }
 
-describe('admin createUser action', () => {
-	beforeEach(() => {
-		mockCreateUser.mockReset();
-		mockCreateUser.mockResolvedValue({ user: { id: 'new-user' } });
-		mockSendWelcomeEmail.mockReset();
-		mockSendWelcomeEmail.mockResolvedValue(undefined);
-		mockSendAuthAlerts.mockReset();
-		mockSendAuthAlerts.mockResolvedValue(true);
-	});
-
-	it('returns 403 for a non-admin without creating a user', async () => {
-		const result = await runAction(
-			'createUser',
-			{ name: 'Ada', email: 'allowed@example.com' },
-			{ id: 'user-a', role: 'user', email: 'u@example.com' }
-		);
-
-		expect(result.status).toBe(403);
-		expect(mockCreateUser).not.toHaveBeenCalled();
-	});
-
-	it('returns 401 when signed out', async () => {
-		const result = await runAction('createUser', { name: 'Ada', email: 'a@example.com' }, null);
-
-		expect(result.status).toBe(401);
-		expect(mockCreateUser).not.toHaveBeenCalled();
-	});
-
-	it('returns 400 for invalid input', async () => {
-		const result = await runAction('createUser', { name: '', email: 'nope' });
-
-		expect(result.status).toBe(400);
-		expect(mockCreateUser).not.toHaveBeenCalled();
-	});
-
-	it('creates an allowlisted user with a generated password and sends the welcome email', async () => {
-		const result = await runAction('createUser', {
-			name: 'Ada',
-			email: 'Allowed@Example.com',
-			role: 'admin'
-		});
-
-		const body = mockCreateUser.mock.calls[0][0].body;
-		expect(body).toMatchObject({ name: 'Ada', email: 'allowed@example.com', role: 'admin' });
-		expect(body.password.length).toBeGreaterThanOrEqual(32);
-		expect(mockSendWelcomeEmail).toHaveBeenCalledWith(
-			'allowed@example.com',
-			'Ada',
-			'https://synapse.example.com'
-		);
-		expect(mockSendAuthAlerts).toHaveBeenCalledOnce();
-		expect(mockSendAuthAlerts.mock.calls[0][0]).not.toContain(body.password);
-		expect(result.form).toMatchObject({ message: { type: 'success' } });
-		expect(result).not.toHaveProperty('allowlistCommand');
-	});
-
-	it('skips the welcome email and returns the allowlist command for a non-allowlisted email', async () => {
-		const result = await runAction('createUser', { name: 'Bob', email: 'bob@example.com' });
-
-		expect(mockCreateUser).toHaveBeenCalledOnce();
-		expect(mockSendWelcomeEmail).not.toHaveBeenCalled();
-		expect(result.allowlistCommand).toBe(
-			'fly secrets set ALLOWED_EMAILS="admin@example.com,allowed@example.com,bob@example.com" -a synapse-test'
-		);
-	});
-
-	it('reports a welcome email failure without failing the request', async () => {
-		mockSendWelcomeEmail.mockRejectedValue(new Error('Brevo down'));
-
-		const result = await runAction('createUser', { name: 'Ada', email: 'allowed@example.com' });
-
-		expect(result.form).toMatchObject({ message: { type: 'error' } });
-		expect(result.status).toBeUndefined();
-	});
-
-	it('returns a field error for a duplicate email', async () => {
-		mockCreateUser.mockRejectedValue({
-			body: { code: 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL' }
-		});
-
-		const result = await runAction('createUser', { name: 'Ada', email: 'allowed@example.com' });
-
-		expect(result.status).toBe(400);
-		expect(result.data?.form).toMatchObject({
-			errors: { email: ['A user with this email already exists.'] }
-		});
-		expect(mockSendWelcomeEmail).not.toHaveBeenCalled();
-	});
-
-	it('returns 500 when user creation fails unexpectedly', async () => {
-		mockCreateUser.mockRejectedValue(new Error('db locked'));
-
-		const result = await runAction('createUser', { name: 'Ada', email: 'allowed@example.com' });
-
-		expect(result.status).toBe(500);
-	});
-});
-
-describe('admin sendWelcomeEmail action', () => {
-	beforeEach(() => {
-		mockFindFirst.mockReset();
-		mockSendWelcomeEmail.mockReset();
-		mockSendWelcomeEmail.mockResolvedValue(undefined);
-		mockSendAuthAlerts.mockReset();
-		mockGetDb.mockReset();
-		mockGetDb.mockImplementation(() => ({ query: { user: { findFirst: mockFindFirst } } }));
-	});
-
-	it('returns 403 for a non-admin', async () => {
-		const result = await runAction(
-			'sendWelcomeEmail',
-			{ userId: 'u1' },
-			{ id: 'user-a', role: 'user', email: 'u@example.com' }
-		);
-
-		expect(result.status).toBe(403);
-		expect(mockSendWelcomeEmail).not.toHaveBeenCalled();
-	});
-
-	it('returns 404 for an unknown user', async () => {
-		mockFindFirst.mockResolvedValue(undefined);
-
-		const result = await runAction('sendWelcomeEmail', { userId: 'missing' });
-
-		expect(result.status).toBe(404);
-	});
-
-	it('refuses a user who is not allowlisted yet', async () => {
-		mockFindFirst.mockResolvedValue({ id: 'u1', email: 'bob@example.com', name: 'Bob' });
-
-		const result = await runAction('sendWelcomeEmail', { userId: 'u1' });
-
-		expect(result.status).toBe(400);
-		expect(mockSendWelcomeEmail).not.toHaveBeenCalled();
-	});
-
-	it('sends the welcome email to an allowlisted user', async () => {
-		mockFindFirst.mockResolvedValue({ id: 'u1', email: 'allowed@example.com', name: 'Ada' });
-
-		const result = await runAction('sendWelcomeEmail', { userId: 'u1' });
-
-		expect(result).toMatchObject({
-			form: { message: { type: 'success', text: 'Welcome email sent to allowed@example.com.' } }
-		});
-		expect(mockSendWelcomeEmail).toHaveBeenCalledWith(
-			'allowed@example.com',
-			'Ada',
-			'https://synapse.example.com'
-		);
-		expect(mockSendAuthAlerts).toHaveBeenCalledOnce();
-	});
-});
-
-const TARGET = { id: 'user-b', email: 'target@example.com' };
-
-describe.each([
-	['setRole', { userId: TARGET.id, role: 'admin' }],
-	['banUser', { userId: TARGET.id }],
-	['unbanUser', { userId: TARGET.id }],
-	['removeUser', { userId: TARGET.id }]
-] as const)('admin %s action — authorization', (name, fields) => {
-	beforeEach(() => {
-		mockAdminApi[name].mockReset();
-	});
-
-	it('returns 401 when signed out', async () => {
-		const result = await runAction(name, fields, null);
-
-		expect(result.status).toBe(401);
-		expect(mockAdminApi[name]).not.toHaveBeenCalled();
-	});
-
-	it('returns 403 for a non-admin', async () => {
-		const result = await runAction(name, fields, {
-			id: 'user-a',
-			role: 'user',
-			email: 'u@example.com'
-		});
-
-		expect(result.status).toBe(403);
-		expect(mockAdminApi[name]).not.toHaveBeenCalled();
-	});
-});
-
-describe('admin user-management actions', () => {
+// The user-management behaviour itself is tested in @sheppakai/shared/admin-user-actions;
+// these check this app's wiring (guard, API-key hook, welcome email, Fly app name).
+describe('admin user-management actions — wiring', () => {
 	beforeEach(() => {
 		for (const fn of Object.values(mockAdminApi)) fn.mockReset();
-		mockAdminApi.setRole.mockResolvedValue({ user: TARGET });
 		mockAdminApi.banUser.mockResolvedValue({ user: TARGET });
-		mockAdminApi.unbanUser.mockResolvedValue({ user: TARGET });
-		mockAdminApi.removeUser.mockResolvedValue({ success: true });
-		mockFindFirst.mockReset();
-		mockFindFirst.mockResolvedValue(TARGET);
-		mockGetDb.mockReset();
-		mockGetDb.mockImplementation(() => ({ query: { user: { findFirst: mockFindFirst } } }));
+		mockAdminApi.getUser.mockResolvedValue(TARGET);
+		mockCreateUser.mockReset();
+		mockCreateUser.mockResolvedValue({ user: { ...TARGET, email: 'new@example.com' } });
+		mockSendWelcomeEmail.mockReset();
+		mockSendWelcomeEmail.mockResolvedValue(undefined);
 		mockSendAuthAlerts.mockReset();
 		mockSendAuthAlerts.mockResolvedValue(true);
-		mockLogger.warn.mockClear();
-		mockLogger.error.mockClear();
 		mockDisableApiKeysForUser.mockReset();
-		mockDisableApiKeysForUser.mockResolvedValue(2);
-	});
-
-	it("banUser disables the banned user's API keys", async () => {
-		const result = await runAction('banUser', { userId: TARGET.id });
-
-		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
-		expect(mockDisableApiKeysForUser).toHaveBeenCalledWith(TARGET.id);
-	});
-
-	it('banUser leaves keys alone when the ban itself fails', async () => {
-		mockAdminApi.banUser.mockRejectedValue(new Error('network'));
-
-		await runAction('banUser', { userId: TARGET.id });
-
-		expect(mockDisableApiKeysForUser).not.toHaveBeenCalled();
-	});
-
-	it('banUser reports an error when disabling keys fails', async () => {
-		mockDisableApiKeysForUser.mockRejectedValue(new Error('db down'));
-
-		const result = await runAction('banUser', { userId: TARGET.id });
-
-		expect(result.status).toBe(500);
-		expect(result).toMatchObject({
-			data: {
-				form: {
-					message: { type: 'error', text: 'User banned, but failed to disable their API keys' }
-				}
-			}
-		});
-	});
-
-	it("setRole disables the user's API keys on demotion to user", async () => {
-		await runAction('setRole', { userId: TARGET.id, role: 'user' });
-
-		expect(mockDisableApiKeysForUser).toHaveBeenCalledWith(TARGET.id);
-	});
-
-	it('setRole leaves keys alone on promotion to admin', async () => {
-		await runAction('setRole', { userId: TARGET.id, role: 'admin' });
-
-		expect(mockDisableApiKeysForUser).not.toHaveBeenCalled();
-	});
-
-	it('setRole calls auth.api.setRole with the parsed body and the request headers', async () => {
-		const result = await runAction('setRole', { userId: TARGET.id, role: 'admin' });
-
-		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
-		expect(mockAdminApi.setRole).toHaveBeenCalledWith(
-			expect.objectContaining({
-				body: { userId: TARGET.id, role: 'admin' },
-				headers: expect.any(Headers)
-			})
-		);
-		expect(mockSendAuthAlerts).toHaveBeenCalledOnce();
-	});
-
-	it('banUser forwards an optional reason', async () => {
-		await runAction('banUser', { userId: TARGET.id, banReason: 'spam' });
-
-		expect(mockAdminApi.banUser).toHaveBeenCalledWith(
-			expect.objectContaining({ body: { userId: TARGET.id, banReason: 'spam' } })
-		);
-		expect(mockSendAuthAlerts).toHaveBeenCalledOnce();
-	});
-
-	it('banUser omits an empty reason', async () => {
-		await runAction('banUser', { userId: TARGET.id, banReason: '' });
-
-		expect(mockAdminApi.banUser).toHaveBeenCalledWith(
-			expect.objectContaining({ body: { userId: TARGET.id } })
-		);
-	});
-
-	it('unbanUser calls auth.api.unbanUser', async () => {
-		const result = await runAction('unbanUser', { userId: TARGET.id });
-
-		expect(result).toMatchObject({
-			form: { message: { type: 'success', text: 'User unbanned.' } }
-		});
-		expect(mockAdminApi.unbanUser).toHaveBeenCalledWith(
-			expect.objectContaining({ body: { userId: TARGET.id } })
-		);
-	});
-
-	it('removeUser calls auth.api.removeUser and alerts with the removed email', async () => {
-		const result = await runAction('removeUser', { userId: TARGET.id });
-
-		expect(result).toMatchObject({ form: { message: { type: 'success', text: 'User removed.' } } });
-		expect(mockAdminApi.removeUser).toHaveBeenCalledWith(
-			expect.objectContaining({ body: { userId: TARGET.id } })
-		);
-		expect(mockSendAuthAlerts.mock.calls[0][0]).toContain('target@example.com');
-	});
-
-	it('removeUser returns 404 for an unknown user without calling the API', async () => {
-		mockFindFirst.mockResolvedValue(undefined);
-
-		const result = await runAction('removeUser', { userId: 'missing' });
-
-		expect(result.status).toBe(404);
-		expect(mockAdminApi.removeUser).not.toHaveBeenCalled();
+		mockDisableApiKeysForUser.mockResolvedValue(1);
 	});
 
 	it.each([
-		['setRole', { userId: ADMIN.id, role: 'user' }],
-		['banUser', { userId: ADMIN.id }],
-		['removeUser', { userId: ADMIN.id }]
-	] as const)('%s refuses to target the acting admin', async (name, fields) => {
-		const result = await runAction(name, fields);
+		'setRole',
+		'banUser',
+		'unbanUser',
+		'removeUser',
+		'createUser',
+		'sendWelcomeEmail'
+	] as const)('%s is admin-only', async (name) => {
+		const result = await runAction(name, { userId: TARGET.id }, { id: 'user-a', role: 'user' });
 
-		expect(result.status).toBe(400);
-		expect(mockAdminApi[name]).not.toHaveBeenCalled();
+		expect(result.status).toBe(403);
 	});
 
-	it('setRole rejects an unknown role', async () => {
-		const result = await runAction('setRole', { userId: TARGET.id, role: 'superuser' });
+	it("banUser disables the user's API keys", async () => {
+		await runAction('banUser', { userId: TARGET.id });
 
-		expect(result.status).toBe(400);
-		expect(mockAdminApi.setRole).not.toHaveBeenCalled();
+		expect(mockDisableApiKeysForUser).toHaveBeenCalledWith(TARGET.id);
 	});
 
-	it('removeUser rejects a missing userId', async () => {
-		const result = await runAction('removeUser', {});
+	it('sendWelcomeEmail sends the app welcome email with the base URL', async () => {
+		await runAction('sendWelcomeEmail', { userId: TARGET.id });
 
-		expect(result.status).toBe(400);
-		expect(mockAdminApi.removeUser).not.toHaveBeenCalled();
-	});
-
-	it('returns 500 and logs at error for an unexpected throw', async () => {
-		mockAdminApi.setRole.mockRejectedValue(new Error('network'));
-
-		const result = await runAction('setRole', { userId: TARGET.id, role: 'admin' });
-
-		expect(result.status).toBe(500);
-		expect(mockLogger.error).toHaveBeenCalled();
-	});
-
-	it('surfaces a better-auth APIError with its status and message and logs at warn', async () => {
-		const { APIError } = await import('better-auth/api');
-		mockAdminApi.banUser.mockRejectedValue(
-			new APIError('FORBIDDEN', { message: 'You cannot ban an admin' })
+		expect(mockSendWelcomeEmail).toHaveBeenCalledWith(
+			'allowed@example.com',
+			'Target',
+			'https://synapse.example.com'
 		);
+	});
 
-		const result = await runAction('banUser', { userId: TARGET.id });
+	it('createUser points the allowlist hint at this Fly app', async () => {
+		const result = await runAction('createUser', { name: 'New', email: 'new@example.com' });
 
-		expect(result).toMatchObject({
-			status: 403,
-			data: { form: { message: { type: 'error', text: 'You cannot ban an admin' } } }
-		});
-		expect(mockLogger.warn).toHaveBeenCalled();
-		expect(mockLogger.error).not.toHaveBeenCalled();
-		expect(mockSendAuthAlerts).not.toHaveBeenCalled();
+		expect(result.allowlistCommand).toMatch(/-a synapse-test$/);
+		expect(mockSendWelcomeEmail).not.toHaveBeenCalled();
 	});
 });

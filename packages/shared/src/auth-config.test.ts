@@ -16,7 +16,6 @@ function buildAuth(overrides: { nodeEnv?: string; plugins?: BetterAuthPlugin[] }
 		allowedEmails: new Set(['a@example.com']),
 		db: drizzle(new Database(':memory:')),
 		tables: {},
-		findUserEmail: async () => undefined,
 		email: {
 			sendPasswordResetEmail: vi.fn<() => Promise<void>>(),
 			sendVerificationEmail: vi.fn<() => Promise<void>>(),
@@ -67,5 +66,28 @@ describe('createAppAuth', () => {
 		const extra = { id: 'extra-plugin' } satisfies BetterAuthPlugin;
 		const ids = buildAuth({ plugins: [extra] }).options.plugins?.map((p) => p.id);
 		expect(ids).toEqual(['admin', 'have-i-been-pwned', 'extra-plugin', 'sveltekit-cookies']);
+	});
+});
+
+describe('createAppAuth session allowlist guard', () => {
+	async function guardFor(email: string | undefined) {
+		const auth = buildAuth();
+		const { internalAdapter } = await auth.$context;
+		vi.spyOn(internalAdapter, 'findUserById').mockResolvedValue(
+			email === undefined ? null : ({ email } as never)
+		);
+		const before = auth.options.databaseHooks?.session?.create?.before;
+		if (!before) throw new Error('session guard missing');
+		return () => before({ userId: 'user-1' } as never);
+	}
+
+	it("allows a session for an allowlisted user, looked up through Better Auth's adapter", async () => {
+		const run = await guardFor('A@Example.com');
+		await expect(run()).resolves.toBeUndefined();
+	});
+
+	it('refuses a session for a non-allowlisted or missing user', async () => {
+		await expect((await guardFor('b@example.com'))()).rejects.toThrow();
+		await expect((await guardFor(undefined))()).rejects.toThrow();
 	});
 });

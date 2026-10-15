@@ -12,10 +12,20 @@
 		message: string;
 		confirmButtonText: string;
 		id?: string;
+		/** Name of the hidden field carrying `id`; the admin user actions post `userId`. */
+		idField?: string;
 		actionUrl?: string;
 	}
 
-	let { open = $bindable(), title, message, id, confirmButtonText, actionUrl }: Props = $props();
+	let {
+		open = $bindable(),
+		title,
+		message,
+		id,
+		idField = 'id',
+		confirmButtonText,
+		actionUrl
+	}: Props = $props();
 </script>
 
 <Dialog.Root bind:open>
@@ -45,7 +55,7 @@
 				};
 			}}
 		>
-			<input type="hidden" name="id" value={id} />
+			<input type="hidden" name={idField} value={id} />
 			<input type="hidden" name="status" value="archived" />
 			<Dialog.Footer>
 				<Dialog.Close><Button type="reset" variant="outline">Cancel</Button></Dialog.Close>

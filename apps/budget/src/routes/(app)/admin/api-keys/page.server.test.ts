@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { listAllWithOwnerMock, deleteApiKeyByIdMock, loggerMock } = vi.hoisted(() => ({
+const { listAllWithOwnerMock, deleteByIdMock, loggerMock } = vi.hoisted(() => ({
 	listAllWithOwnerMock: vi.fn<() => Promise<unknown[]>>(),
-	deleteApiKeyByIdMock: vi.fn<(keyId: string) => Promise<boolean>>(),
+	deleteByIdMock: vi.fn<(keyId: string) => Promise<boolean>>(),
 	loggerMock: {
 		error: vi.fn<() => void>(),
 		warn: vi.fn<() => void>(),
@@ -11,6 +11,8 @@ const { listAllWithOwnerMock, deleteApiKeyByIdMock, loggerMock } = vi.hoisted(()
 	}
 }));
 
+vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: '' }));
+
 vi.mock('#lib/server/auth.js', () => ({
 	auth: { api: {} },
 	assertAdmin: (locals: App.Locals) => {
@@ -18,12 +20,9 @@ vi.mock('#lib/server/auth.js', () => ({
 	}
 }));
 
-vi.mock('#lib/server/db/queries/index.js', () => ({
-	apiKeyQueries: { listAllWithOwner: listAllWithOwnerMock }
-}));
-
-vi.mock('#lib/server/db/writes/api-keys.js', () => ({
-	deleteApiKeyById: deleteApiKeyByIdMock
+// The store itself (and the actions' behaviour) is tested in @sheppakai/shared/api-key-admin.
+vi.mock('#lib/server/api/api-key-store.js', () => ({
+	apiKeyStore: { listAllWithOwner: listAllWithOwnerMock, deleteById: deleteByIdMock }
 }));
 
 vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
@@ -43,7 +42,7 @@ function loadEvent(locals: App.Locals) {
 }
 
 function revokeRequest(id: string) {
-	return new Request('https://budget.example.com/admin/api-keys?/revoke', {
+	return new Request('https://budget.example.com/admin/api-keys?/revokeApiKey', {
 		method: 'POST',
 		body: new URLSearchParams({ id })
 	});
@@ -53,7 +52,7 @@ describe('admin api-keys page', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		listAllWithOwnerMock.mockResolvedValue([]);
-		deleteApiKeyByIdMock.mockResolvedValue(true);
+		deleteByIdMock.mockResolvedValue(true);
 	});
 
 	describe('load', () => {
@@ -77,21 +76,21 @@ describe('admin api-keys page', () => {
 		});
 	});
 
-	describe('revoke', () => {
+	describe('revokeApiKey', () => {
 		it('deletes a key by id regardless of who owns it', async () => {
-			const result = await actions.revoke({
+			const result = await actions.revokeApiKey({
 				request: revokeRequest('other-admins-key'),
 				locals: adminLocals
 			} as never);
 
-			expect(deleteApiKeyByIdMock).toHaveBeenCalledWith('other-admins-key');
+			expect(deleteByIdMock).toHaveBeenCalledWith('other-admins-key');
 			expect(result).toMatchObject({ form: { message: { type: 'success' } } });
 		});
 
 		it('returns 404 when the key does not exist', async () => {
-			deleteApiKeyByIdMock.mockResolvedValue(false);
+			deleteByIdMock.mockResolvedValue(false);
 
-			const result = await actions.revoke({
+			const result = await actions.revokeApiKey({
 				request: revokeRequest('missing'),
 				locals: adminLocals
 			} as never);
@@ -103,12 +102,12 @@ describe('admin api-keys page', () => {
 		});
 
 		it('rejects a non-admin caller without deleting anything', async () => {
-			const result = await actions.revoke({
+			const result = await actions.revokeApiKey({
 				request: revokeRequest('k1'),
 				locals: { user: { id: 'u-1', role: 'user' } } as App.Locals
 			} as never);
 
-			expect(deleteApiKeyByIdMock).not.toHaveBeenCalled();
+			expect(deleteByIdMock).not.toHaveBeenCalled();
 			expect(result).toMatchObject({ status: 403 });
 		});
 	});

@@ -1,145 +1,72 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { changePasswordMock, updateUserMock, sendPasswordChangedEmailMock, loggerMock } = vi.hoisted(
-	() => ({
-		changePasswordMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-		updateUserMock: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-		sendPasswordChangedEmailMock: vi.fn<(...args: unknown[]) => Promise<void>>(),
-		loggerMock: {
-			error: vi.fn<() => void>(),
-			warn: vi.fn<() => void>(),
-			info: vi.fn<() => void>(),
-			debug: vi.fn<() => void>()
-		}
-	})
-);
-
-vi.mock('#lib/server/auth.js', () => ({
-	auth: { api: { changePassword: changePasswordMock, updateUser: updateUserMock } }
+const { api, sendPasswordChangedEmail } = vi.hoisted(() => ({
+	api: {
+		updateUser: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		changePassword: vi.fn<(...args: unknown[]) => Promise<unknown>>()
+	},
+	sendPasswordChangedEmail: vi.fn<(...args: unknown[]) => Promise<unknown>>()
 }));
 
-vi.mock('#lib/server/email/index.js', () => ({
-	sendPasswordChangedEmail: sendPasswordChangedEmailMock
+vi.mock('#lib/server/auth.js', () => ({ auth: { api } }));
+vi.mock('#lib/server/email/index.js', () => ({ sendPasswordChangedEmail }));
+vi.mock('#lib/server/logger.js', () => ({
+	logger: {
+		debug: vi.fn<() => void>(),
+		info: vi.fn<() => void>(),
+		warn: vi.fn<() => void>(),
+		error: vi.fn<() => void>()
+	}
 }));
-
-vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
-
 vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => void>() }));
 
 import { actions } from './+page.server';
 
-const currentUser = { id: 'user-1', name: 'Test User', email: 'user@example.com' };
+const USER = { id: 'user-1', name: 'Alice', email: 'alice@example.com', role: 'user' };
 
-function changePasswordRequest(headers: Record<string, string> = {}) {
-	return new Request('https://budget.example.com/profile?/changePassword', {
+function post(fields: Record<string, string>) {
+	return new Request('https://budget.example.com/profile', {
 		method: 'POST',
-		headers,
-		body: new URLSearchParams({
-			currentPassword: 'old-password-123',
-			newPassword: 'new-password-1234',
-			confirmPassword: 'new-password-1234'
-		})
+		body: new URLSearchParams(fields)
 	});
 }
 
-describe('profile changePassword action', () => {
+// The action behaviour itself is tested in @sheppakai/shared/profile-actions; these check
+// this app's wiring (its auth instance and password-changed email).
+describe('profile actions — wiring', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		changePasswordMock.mockResolvedValue({});
-		sendPasswordChangedEmailMock.mockResolvedValue(undefined);
+		api.updateUser.mockResolvedValue({ status: true });
+		api.changePassword.mockResolvedValue({});
+		sendPasswordChangedEmail.mockResolvedValue(undefined);
 	});
 
-	it('reports the getClientAddress() IP, not a client-supplied X-Forwarded-For', async () => {
-		const request = changePasswordRequest({
-			'x-forwarded-for': '1.2.3.4',
-			'x-real-ip': '1.2.3.4',
-			'x-client-ip': '1.2.3.4'
-		});
+	it("updateName goes through this app's better-auth instance", async () => {
+		const result = await actions.updateName({
+			request: post({ name: 'New Name' }),
+			locals: { user: USER }
+		} as never);
 
+		expect(api.updateUser).toHaveBeenCalledWith(
+			expect.objectContaining({ body: { name: 'New Name' } })
+		);
+		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
+	});
+
+	it("changePassword sends this app's password-changed email", async () => {
 		await actions.changePassword({
-			request,
-			getClientAddress: () => '203.0.113.7',
-			locals: { user: currentUser }
-		} as never);
-
-		expect(sendPasswordChangedEmailMock).toHaveBeenCalledWith(
-			expect.objectContaining({ ipAddress: '203.0.113.7' })
-		);
-		expect(loggerMock.info).toHaveBeenCalledWith(
-			'Security event: password changed and other sessions revoked',
-			expect.objectContaining({ ipAddress: '203.0.113.7' })
-		);
-	});
-
-	it('still changes the password and sends the alert when getClientAddress() throws', async () => {
-		const result = await actions.changePassword({
-			request: changePasswordRequest(),
-			getClientAddress: () => {
-				throw new Error('Address header was specified with ADDRESS_HEADER but is absent');
-			},
-			locals: { user: currentUser }
-		} as never);
-
-		expect(changePasswordMock).toHaveBeenCalledOnce();
-		expect(sendPasswordChangedEmailMock).toHaveBeenCalledWith(
-			expect.objectContaining({ ipAddress: undefined })
-		);
-		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
-	});
-
-	it('rate-limits repeated attempts per user', async () => {
-		const user = { ...currentUser, id: 'user-rate-limited' };
-		const attempt = () =>
-			actions.changePassword({
-				request: changePasswordRequest(),
-				getClientAddress: () => '203.0.113.7',
-				locals: { user }
-			} as never);
-
-		for (let i = 0; i < 5; i++) {
-			await attempt();
-		}
-		changePasswordMock.mockClear();
-
-		const result = await attempt();
-
-		expect(changePasswordMock).not.toHaveBeenCalled();
-		expect(result).toMatchObject({ status: 429 });
-	});
-});
-
-describe('profile update action', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		updateUserMock.mockResolvedValue({ status: true });
-	});
-
-	it('updates the name through better-auth so its user-update hooks run', async () => {
-		const request = new Request('https://budget.example.com/profile?/update', {
-			method: 'POST',
-			body: new URLSearchParams({ name: 'New Name' })
-		});
-
-		const result = await actions.update({ request, locals: { user: currentUser } } as never);
-
-		expect(updateUserMock).toHaveBeenCalledWith({
-			body: { name: 'New Name' },
-			headers: request.headers
-		});
-		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
-	});
-
-	it('reports a 500 when better-auth rejects the update', async () => {
-		updateUserMock.mockRejectedValue(new Error('nope'));
-
-		const result = await actions.update({
-			request: new Request('https://budget.example.com/profile?/update', {
-				method: 'POST',
-				body: new URLSearchParams({ name: 'New Name' })
+			request: post({
+				currentPassword: 'old-password-123',
+				newPassword: 'new-password-1234',
+				confirmPassword: 'new-password-1234'
 			}),
-			locals: { user: currentUser }
+			getClientAddress: () => '203.0.113.7',
+			locals: { user: USER }
 		} as never);
 
-		expect(result).toMatchObject({ status: 500 });
+		expect(api.changePassword).toHaveBeenCalledOnce();
+		expect(sendPasswordChangedEmail).toHaveBeenCalledWith(
+			expect.objectContaining({ to: 'alice@example.com', ipAddress: '203.0.113.7' })
+		);
 	});
 });

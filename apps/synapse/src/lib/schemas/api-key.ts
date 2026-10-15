@@ -11,11 +11,3 @@ export const createApiKeySchema = z.object({
 	// Every key expires; there is no "never" option.
 	expiresInDays: z.coerce.number().int().min(1).max(365).default(90)
 });
-
-/**
- * Schema for revoking an API key. Better-auth key ids aren't UUIDs like this app's own
- * table ids, so this is a plain non-empty string rather than `z.uuid()`.
- */
-export const revokeApiKeySchema = z.object({
-	id: z.string().min(1, 'ID is required')
-});

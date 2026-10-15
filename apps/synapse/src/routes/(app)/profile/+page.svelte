@@ -48,11 +48,7 @@
 	}
 
 	function isSuccessMessage(message: FormMessage): boolean {
-		if (message && typeof message === 'object' && message.type === 'success') {
-			return true;
-		}
-
-		return getMessageText(message).toLowerCase().includes('success');
+		return typeof message === 'object' && message?.type === 'success';
 	}
 
 	// Profile form
@@ -243,7 +239,7 @@
 					{/if}
 				</div>
 
-				<form method="POST" action="?/update" use:profileEnhance>
+				<form method="POST" action="?/updateName" use:profileEnhance>
 					<div class="space-y-4">
 						{#if $profileMessage}
 							<div

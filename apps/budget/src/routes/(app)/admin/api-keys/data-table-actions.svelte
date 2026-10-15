@@ -58,7 +58,7 @@
 				immediately lose access, and this cannot be undone.
 			</Dialog.Description>
 		</Dialog.Header>
-		<form method="POST" action="/admin/api-keys?/revoke" use:enhance>
+		<form method="POST" action="/admin/api-keys?/revokeApiKey" use:enhance>
 			<input type="hidden" name="id" bind:value={$form.id} />
 			<div class="flex justify-end gap-2 pt-4">
 				<Button type="button" variant="outline" onclick={() => (openRevokeDialog = false)}>

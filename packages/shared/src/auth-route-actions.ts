@@ -3,8 +3,8 @@
 // `#lib/server/auth-route-actions`, and each `+page.server.ts` just re-exports one entry.
 
 import { redirect, type RequestEvent } from '@sveltejs/kit';
-import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+import { message, superValidate } from 'sveltekit-superforms/server';
 
 import { invalidAuthForm, type createAuthFormHandler } from './auth-form-handler';
 import { createAuthLoadForm, createRedirectIfAuthenticated } from './auth-form-helpers';

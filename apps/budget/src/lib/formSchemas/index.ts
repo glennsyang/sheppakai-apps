@@ -1,14 +1,14 @@
 export {
+	adminUserIdSchema,
 	banUserSchema,
 	changePasswordSchema,
 	createUserSchema,
 	passwordSchema,
 	resendVerificationSchema,
 	setPasswordSchema,
-	setUserRoleSchema,
+	setRoleSchema,
 	signInSchema,
-	updateProfileSchema,
-	userIdSchema
+	updateProfileSchema
 } from './auth';
 export { createApiKeySchema } from './apiKeys';
 export { budgetSchema } from './budget';

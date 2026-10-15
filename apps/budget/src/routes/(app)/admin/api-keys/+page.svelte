@@ -107,7 +107,7 @@
 		<h3 class="text-base font-semibold tracking-tight">New key</h3>
 		<p class="text-muted-foreground mt-1 text-sm">Give it only the scopes the tool needs.</p>
 	</div>
-	<form method="POST" action="?/create" use:enhance class="flex max-w-2xl flex-col gap-5">
+	<form method="POST" action="?/createApiKey" use:enhance class="flex max-w-2xl flex-col gap-5">
 		<div class="flex flex-col gap-2">
 			<Label for="key-name">Name</Label>
 			<Input

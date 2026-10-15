@@ -5,8 +5,13 @@
 	"type": "module",
 	"exports": {
 		"./action-message": "./src/action-message.ts",
+		"./admin-form-action": "./src/admin-form-action.ts",
+		"./admin-user-actions": "./src/admin-user-actions.ts",
+		"./admin-user-schemas": "./src/admin-user-schemas.ts",
 		"./api-audit-log": "./src/api-audit-log.ts",
 		"./api-key": "./src/api-key.ts",
+		"./api-key-admin": "./src/api-key-admin.ts",
+		"./api-key-plugin": "./src/api-key-plugin.ts",
 		"./api-response": "./src/api-response.ts",
 		"./api-scopes": "./src/api-scopes.ts",
 		"./api-write": "./src/api-write.ts",
@@ -30,6 +35,7 @@
 		"./healthz": "./src/healthz.ts",
 		"./name-guard": "./src/name-guard.ts",
 		"./ntfy": "./src/ntfy.ts",
+		"./profile-actions": "./src/profile-actions.ts",
 		"./rate-limiter": "./src/rate-limiter.ts",
 		"./sentry-client": "./src/sentry-client.ts",
 		"./sentry-data-collection": "./src/sentry-data-collection.ts",
@@ -46,6 +52,7 @@
 		"lint:github": "oxlint --format=github"
 	},
 	"devDependencies": {
+		"@better-auth/api-key": "catalog:",
 		"@getbrevo/brevo": "catalog:",
 		"@sentry/sveltekit": "catalog:",
 		"@sveltejs/kit": "catalog:",
@@ -67,6 +74,7 @@
 		"zod": "catalog:"
 	},
 	"peerDependencies": {
+		"@better-auth/api-key": "^1",
 		"@getbrevo/brevo": "^6",
 		"@sentry/sveltekit": "^11",
 		"@sveltejs/kit": "^3",
@@ -78,5 +86,10 @@
 		"sveltekit-superforms": "^3",
 		"tailwind-merge": "^3",
 		"zod": "^4"
+	},
+	"peerDependenciesMeta": {
+		"@better-auth/api-key": {
+			"optional": true
+		}
 	}
 }

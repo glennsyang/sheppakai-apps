@@ -1,3 +1,5 @@
+import { parseQuery } from '@sheppakai/shared/api-write';
+
 import { requireApiKey } from '#lib/server/api/require-api-key.js';
 import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiDashboardQuerySchema } from '#lib/server/api/schemas/dashboard.js';
@@ -10,10 +12,8 @@ export const GET: RequestHandler = async ({ request, url }) => {
 	const auth = await requireApiKey(request, 'dashboard:read');
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
-	const parsed = apiDashboardQuerySchema.safeParse(Object.fromEntries(url.searchParams));
-	if (!parsed.success) {
-		return apiError('validation_failed', parsed.error.issues.map((i) => i.message).join('; '), 400);
-	}
+	const parsed = parseQuery(url, apiDashboardQuerySchema);
+	if (!parsed.ok) return parsed.response;
 
 	try {
 		const summary = await getDashboardSummary(url);
