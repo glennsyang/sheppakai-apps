@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { TrendingDown, TrendingUp } from '@lucide/svelte/icons';
 	import { scaleUtc } from 'd3-scale';
-	import { curveNatural } from 'd3-shape';
-	import { AreaChart } from 'layerchart';
+	import { curveMonotoneX } from 'd3-shape';
+	import { AnnotationLine, LineChart, Points, Spline } from 'layerchart';
 
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Chart from '#lib/components/ui/chart/index.js';
+	import { toWeightTrendSeries, weightYDomain } from '#lib/utils/weight-trend.js';
 
 	interface Props {
 		title: string;
@@ -24,18 +25,21 @@
 
 	let { title, description, entries, goalWeight }: Props = $props();
 
-	const chartData = $derived(
-		entries.map((entry) => ({
-			date: new Date(`${entry.date}T${entry.time || '00:00:00'}`),
-			weight: entry.weightLbs
-		}))
+	const chartData = $derived(toWeightTrendSeries(entries));
+	const yDomain = $derived(
+		weightYDomain(
+			chartData.map((d) => d.weight),
+			goalWeight
+		)
+	);
+	const showGoalLine = $derived(
+		goalWeight != null && goalWeight >= yDomain[0] && goalWeight <= yDomain[1]
 	);
 
 	const chartConfig = {
-		weight: { label: 'Weight', color: 'var(--chart-2)' }
+		weight: { label: 'Weight', color: 'var(--chart-2)' },
+		trend: { label: '7-entry avg', color: 'var(--chart-1)' }
 	} satisfies Chart.ChartConfig;
-
-	const yAxisTicks = $derived([0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240]);
 </script>
 
 <Card.Root>
@@ -45,33 +49,62 @@
 	</Card.Header>
 	<Card.Content>
 		<Chart.Container config={chartConfig}>
-			<AreaChart
-				points={{ r: 5 }}
+			<LineChart
 				data={chartData}
 				x="date"
 				xScale={scaleUtc()}
-				yDomain={[0, 250]}
-				y="weight"
+				{yDomain}
+				legend
+				tooltipContext={{ mode: 'bisect-x' }}
 				series={[
-					{
-						key: 'weight',
-						label: 'Weight',
-						color: chartConfig.weight.color
-					}
+					{ key: 'trend', label: chartConfig.trend.label, color: chartConfig.trend.color },
+					{ key: 'weight', label: chartConfig.weight.label, color: chartConfig.weight.color }
 				]}
 				props={{
-					area: {
-						curve: curveNatural,
-						fillOpacity: 0.4,
-						line: { class: 'stroke-1' },
-						motion: 'tween'
-					},
+					highlight: { points: { r: 6, motion: 'none' } },
 					xAxis: {
 						format: (v: Date) => v.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-					},
-					yAxis: { ticks: yAxisTicks }
+					}
 				}}
 			>
+				{#snippet marks()}
+					{#if showGoalLine && goalWeight != null}
+						<AnnotationLine
+							y={goalWeight}
+							label="Goal"
+							labelPlacement="top-right"
+							props={{
+								line: {
+									// override the container's `[&_.lc-line]:stroke-border/50` grid styling
+									class: 'stroke-muted-foreground! [stroke-dasharray:6_4]',
+									strokeWidth: 1.5
+								},
+								label: { class: 'fill-muted-foreground text-xs' }
+							}}
+						/>
+					{/if}
+					<Spline
+						seriesKey="weight"
+						curve={curveMonotoneX}
+						strokeWidth={1.5}
+						stroke={chartConfig.weight.color}
+						class="opacity-60"
+						motion="tween"
+					/>
+					<Spline
+						seriesKey="trend"
+						curve={curveMonotoneX}
+						strokeWidth={3}
+						stroke={chartConfig.trend.color}
+						motion="tween"
+					/>
+					<Points
+						seriesKey="weight"
+						r={4}
+						fill={chartConfig.weight.color}
+						class="stroke-card stroke-2"
+					/>
+				{/snippet}
 				{#snippet tooltip()}
 					<Chart.Tooltip
 						labelFormatter={(v: Date) => {
@@ -83,7 +116,7 @@
 						indicator="dot"
 					/>
 				{/snippet}
-			</AreaChart>
+			</LineChart>
 		</Chart.Container>
 	</Card.Content>
 	<Card.Footer>
