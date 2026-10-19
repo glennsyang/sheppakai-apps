@@ -9,6 +9,7 @@ import {
 import type { WelcomeEmailPayload } from '@sheppakai/shared/welcome';
 
 import { formatCurrency } from '#lib/utils.js';
+import { extractDateFromTimestamp } from '#lib/utils/dates.js';
 
 import { logger } from '../logger';
 
@@ -116,7 +117,7 @@ function renderExcludedRows(rows: WeeklySummaryExcludedTransaction[]): string {
 					.map(
 						(row) => `
 							<tr>
-								<td style="padding: 10px 8px; border-bottom: 1px solid #f3f4f6; white-space: nowrap;">${escapeHtml(row.date)}</td>
+								<td style="padding: 10px 8px; border-bottom: 1px solid #f3f4f6; white-space: nowrap;">${escapeHtml(extractDateFromTimestamp(row.date))}</td>
 								<td style="padding: 10px 8px; border-bottom: 1px solid #f3f4f6;">${escapeHtml(row.payee)}</td>
 								<td style="padding: 10px 8px; border-bottom: 1px solid #f3f4f6;">${escapeHtml(row.categoryName)}</td>
 								<td style="padding: 10px 8px; text-align: right; border-bottom: 1px solid #f3f4f6;">${formatCurrency(row.amount)}</td>
