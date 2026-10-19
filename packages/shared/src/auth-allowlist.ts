@@ -68,13 +68,18 @@ export function isUserAccessAllowed(
 type SendAlert = (message: string, title: string, priority: number) => unknown;
 
 const DEFAULT_ALERT_WINDOW_MS = 5 * 60 * 1000;
+// Hashed on every rejection so it costs the same as a real password check. A fixed value,
+// not the submitted password, because before-hooks run ahead of the body's length limits.
+const TIMING_DUMMY_PASSWORD = 'allowlist-timing-dummy-password';
 
 /**
  * `hooks.before` gate for Better Auth: only emails in `allowedEmails` may reach
  * `/sign-in/email` (or `/sign-up/email`, which is also disabled outright via
  * `emailAndPassword.disableSignUp`). Anything else is rejected with the exact
  * error Better Auth throws for a wrong password, so a blocked email can't be told
- * apart from a bad credential, and raises an auth alert.
+ * apart from a bad credential, and raises an auth alert. The rejection also runs one
+ * password hash, matching Better Auth's own unknown-email path, so response time
+ * can't reveal which emails are allowlisted either.
  *
  * Alerts are debounced to one per `alertWindowMs`; attempts inside the window are
  * counted and reported with the next alert, so a flood can't spam the operator.
@@ -112,6 +117,7 @@ export function createAllowlistBeforeHook(
 		} else {
 			suppressed++;
 		}
+		await ctx.context.password.hash(TIMING_DUMMY_PASSWORD);
 		throw APIError.from('UNAUTHORIZED', BASE_ERROR_CODES.INVALID_EMAIL_OR_PASSWORD);
 	});
 }

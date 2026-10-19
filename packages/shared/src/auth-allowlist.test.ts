@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
-	sendAuthAlerts: vi.fn<(message: string, title?: string, priority?: number) => void>()
+	sendAuthAlerts: vi.fn<(message: string, title?: string, priority?: number) => void>(),
+	hashPassword: vi.fn<(password: string) => Promise<string>>(async () => 'hashed')
 }));
 
 vi.mock('better-auth/api', async (importOriginal) => ({
@@ -23,14 +24,27 @@ type FakeCtx = { path: string; body?: { email?: unknown } };
 
 type FakeHook = (ctx: FakeCtx) => Promise<void>;
 
-// A zero-length window disables debouncing so each test sees its own alert.
-const hook = createAllowlistBeforeHook(
-	'Test App',
-	parseAllowedEmails(' Owner@Example.com , partner@example.com,, '),
-	{ sendAlert: mockState.sendAuthAlerts, alertWindowMs: 0 }
-) as unknown as FakeHook;
+/** Gives the hook the slice of Better Auth's context it uses: the password hasher. */
+function withContext(created: ReturnType<typeof createAllowlistBeforeHook>): FakeHook {
+	const raw = created as unknown as (
+		ctx: FakeCtx & { context: { password: { hash: typeof mockState.hashPassword } } }
+	) => Promise<void>;
+	return (ctx) => raw({ ...ctx, context: { password: { hash: mockState.hashPassword } } });
+}
 
-beforeEach(() => mockState.sendAuthAlerts.mockClear());
+// A zero-length window disables debouncing so each test sees its own alert.
+const hook = withContext(
+	createAllowlistBeforeHook(
+		'Test App',
+		parseAllowedEmails(' Owner@Example.com , partner@example.com,, '),
+		{ sendAlert: mockState.sendAuthAlerts, alertWindowMs: 0 }
+	)
+);
+
+beforeEach(() => {
+	mockState.sendAuthAlerts.mockClear();
+	mockState.hashPassword.mockClear();
+});
 
 describe('parseAllowedEmails', () => {
 	it('trims, lowercases and drops empty entries', () => {
@@ -63,6 +77,18 @@ describe('createAllowlistBeforeHook', () => {
 			hook({ path: '/sign-in/email', body: { email: 'stranger@example.com' } })
 		).rejects.toThrow('Invalid email or password');
 		expect(mockState.sendAuthAlerts.mock.calls[0][0]).not.toContain('stranger@example.com');
+	});
+
+	it('hashes a password before rejecting, so timing matches a real credential check', async () => {
+		await expect(
+			hook({ path: '/sign-in/email', body: { email: 'stranger@example.com' } })
+		).rejects.toThrow('Invalid email or password');
+		expect(mockState.hashPassword).toHaveBeenCalledTimes(1);
+	});
+
+	it('skips the hash for an allowlisted email (Better Auth does its own check)', async () => {
+		await hook({ path: '/sign-in/email', body: { email: 'owner@example.com' } });
+		expect(mockState.hashPassword).not.toHaveBeenCalled();
 	});
 
 	it('rejects with the same error Better Auth uses for a wrong password', async () => {
@@ -102,15 +128,13 @@ describe('createAllowlistBeforeHook alert debounce', () => {
 
 	function createDebouncedHook() {
 		let clock = 1_000_000;
-		const debounced = createAllowlistBeforeHook(
-			'Test App',
-			parseAllowedEmails('owner@example.com'),
-			{
+		const debounced = withContext(
+			createAllowlistBeforeHook('Test App', parseAllowedEmails('owner@example.com'), {
 				sendAlert: mockState.sendAuthAlerts,
 				alertWindowMs: WINDOW_MS,
 				now: () => clock
-			}
-		) as unknown as FakeHook;
+			})
+		);
 		return {
 			hook: debounced,
 			advance: (ms: number) => {
