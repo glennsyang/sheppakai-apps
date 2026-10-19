@@ -47,7 +47,7 @@
 		"@fontsource/zen-kaku-gothic-new": "^5.3.1",
 		"@internationalized/date": "catalog:",
 		"@lucide/svelte": "catalog:",
-		"@playwright/test": "^1.64.0",
+		"@playwright/test": "^1.64.1",
 		"@sveltejs/adapter-node": "catalog:",
 		"@sveltejs/kit": "catalog:",
 		"@sveltejs/vite-plugin-svelte": "catalog:",
