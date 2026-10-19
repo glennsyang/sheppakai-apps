@@ -1,4 +1,4 @@
-import { AUTH_ALERTS_TOKEN, AUTH_ALERTS_URL, BUDGET_ALERTS_URL } from '$app/env/private';
+import { AUTH_ALERTS_URL, BUDGET_ALERTS_URL } from '$app/env/private';
 import { sendNtfy } from '@sheppakai/shared/ntfy';
 
 import { logger } from '../logger';
@@ -10,12 +10,7 @@ import { logger } from '../logger';
  * @param priority 1-5 (5 is max/urgent)
  */
 export async function sendAuthAlerts(message: string, title = 'App Alert', priority = 3) {
-	return sendNtfy(AUTH_ALERTS_URL, message, {
-		title,
-		priority,
-		token: AUTH_ALERTS_TOKEN,
-		logger
-	});
+	return sendNtfy(AUTH_ALERTS_URL, message, { title, priority, logger });
 }
 
 /**

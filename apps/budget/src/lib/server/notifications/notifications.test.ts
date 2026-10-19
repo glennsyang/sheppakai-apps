@@ -5,7 +5,6 @@ const mockState = vi.hoisted(() => ({
 	loggerError: vi.fn<() => void>(),
 	env: {
 		AUTH_ALERTS_URL: 'https://alerts.example.com/auth',
-		AUTH_ALERTS_TOKEN: undefined as string | undefined,
 		BUDGET_ALERTS_URL: 'https://alerts.example.com/budget'
 	}
 }));
@@ -47,21 +46,6 @@ describe('sendAuthAlerts', () => {
 			'https://alerts.example.com/auth',
 			expect.objectContaining({ method: 'POST', body: 'message' })
 		);
-	});
-
-	it('sends AUTH_ALERTS_TOKEN as a Bearer token', async () => {
-		mockState.fetch.mockResolvedValue({ ok: true });
-		mockState.env.AUTH_ALERTS_TOKEN = 'tk_secret';
-		try {
-			await sendAuthAlerts('message');
-		} finally {
-			mockState.env.AUTH_ALERTS_TOKEN = undefined;
-		}
-		const [, opts] = mockState.fetch.mock.calls[0] as [
-			string,
-			RequestInit & { headers: Record<string, string> }
-		];
-		expect(opts.headers.Authorization).toBe('Bearer tk_secret');
 	});
 
 	it('sends correct priority and tags headers', async () => {

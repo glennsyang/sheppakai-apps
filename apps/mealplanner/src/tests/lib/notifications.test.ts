@@ -11,8 +11,7 @@ vi.mock('$app/env/private', () => ({
 	// getter so a test can point the module at a different URL mid-suite
 	get AUTH_ALERTS_URL() {
 		return mockState.authAlertsUrl;
-	},
-	AUTH_ALERTS_TOKEN: undefined
+	}
 }));
 
 vi.mock('../../lib/server/logger', () => ({
