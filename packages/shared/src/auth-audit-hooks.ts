@@ -37,7 +37,7 @@ export function createAuthAfterHooks(appName: string, deps: AuthAuditDeps) {
 					(err) => logger.error('New user email failed', err)
 				);
 				void sendAuthAlerts(
-					`New user registered: ${newSession.user.email}`,
+					`New user registered: ${newSession.user.id}`,
 					`${appName} - New User Alert`,
 					4
 				);
@@ -74,7 +74,7 @@ export function logPasswordResetAudit(
 		timestamp: new Date().toISOString()
 	});
 	void deps.sendAuthAlerts(
-		`Password reset completed for ${user.email}`,
+		`Password reset completed for user ${user.id}`,
 		`${appName} - Security Alert`,
 		4
 	);

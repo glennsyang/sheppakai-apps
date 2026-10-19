@@ -107,7 +107,7 @@ export function sharedEnvVars(building: boolean) {
 				'non-resolving .invalid host so alerts are disabled (not sent anywhere) until set.',
 			// RFC 6761 reserved TLD — guaranteed not to resolve. Each app's sendAuthAlerts
 			// skips any `.invalid` host, so an unconfigured deployment fails closed instead of
-			// POSTing alert text (which can include a user's email) to a live third-party domain.
+			// POSTing alert text to a live third-party domain.
 			schema: z.url().default('https://auth-alerts.invalid')
 		},
 		FLY_APP_NAME: {

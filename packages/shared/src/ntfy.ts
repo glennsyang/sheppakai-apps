@@ -16,7 +16,7 @@ export interface NtfyOptions {
  *
  * Fails closed: an unset alerts URL defaults to a non-resolving `.invalid` host (see
  * ./env). That is detected here and the request skipped entirely, since alert bodies
- * can carry a user's email and must never be POSTed to a placeholder domain.
+ * are operator-only and must never be POSTed to a placeholder domain.
  */
 export async function sendNtfy(
 	url: string,

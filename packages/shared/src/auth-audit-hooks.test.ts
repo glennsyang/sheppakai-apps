@@ -29,7 +29,10 @@ beforeEach(() => {
 type FakeCtx = {
 	path: string;
 	context: {
-		newSession: { user: { email: string; name: string }; session: { ipAddress: string } } | null;
+		newSession: {
+			user: { id: string; email: string; name: string };
+			session: { ipAddress: string };
+		} | null;
 	};
 };
 
@@ -48,7 +51,7 @@ describe('createAuthAfterHooks', () => {
 				path: '/sign-up/email',
 				context: {
 					newSession: {
-						user: { email: 'new@example.com', name: 'New User' },
+						user: { id: 'user-new', email: 'new@example.com', name: 'New User' },
 						session: { ipAddress: '1.2.3.4' }
 					}
 				}
@@ -57,7 +60,7 @@ describe('createAuthAfterHooks', () => {
 
 		expect(mockState.sendNewUserEmail).toHaveBeenCalledWith('new@example.com', 'New User');
 		expect(mockState.sendAuthAlerts).toHaveBeenCalledWith(
-			expect.stringContaining('new@example.com'),
+			'New user registered: user-new',
 			'Test App - New User Alert',
 			4
 		);
@@ -73,7 +76,7 @@ describe('createAuthAfterHooks', () => {
 					path: '/sign-up/email',
 					context: {
 						newSession: {
-							user: { email: 'new@example.com', name: 'New User' },
+							user: { id: 'user-new', email: 'new@example.com', name: 'New User' },
 							session: { ipAddress: '1.2.3.4' }
 						}
 					}
@@ -100,7 +103,7 @@ describe('createAuthAfterHooks', () => {
 				path: '/sign-in/email',
 				context: {
 					newSession: {
-						user: { email: 'user@example.com', name: 'User' },
+						user: { id: 'user-1', email: 'user@example.com', name: 'User' },
 						session: { ipAddress: '5.6.7.8' }
 					}
 				}
@@ -140,7 +143,7 @@ describe('logPasswordResetAudit', () => {
 			expect.objectContaining({ userId: 'user-1', email: 'reset@example.com' })
 		);
 		expect(mockState.sendAuthAlerts).toHaveBeenCalledWith(
-			expect.stringContaining('reset@example.com'),
+			'Password reset completed for user user-1',
 			'Test App - Security Alert',
 			4
 		);

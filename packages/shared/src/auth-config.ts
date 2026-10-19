@@ -104,7 +104,7 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 				// logs / Sentry instead of a silent "link sent" with no email.
 				await email.sendPasswordResetEmail(user.email, user.name || user.email, url);
 				void sendAuthAlerts(
-					`Password reset requested for ${user.email}`,
+					`Password reset requested for user ${user.id}`,
 					`${appName} - Password Reset Alert`,
 					4
 				);

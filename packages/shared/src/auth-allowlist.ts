@@ -67,19 +67,7 @@ export function isUserAccessAllowed(
 /** Posts an operator alert (each app's `sendAuthAlerts`). Must not throw. */
 type SendAlert = (message: string, title: string, priority: number) => unknown;
 
-const ALERT_EMAIL_PATTERN = /^[^\s@\p{Cc}\p{Cf}]{1,64}@[^\s@\p{Cc}\p{Cf}]{1,190}$/u;
 const DEFAULT_ALERT_WINDOW_MS = 5 * 60 * 1000;
-
-/**
- * The submitted email is attacker-controlled, so only a single-line, length-bounded
- * address is echoed into an operator alert; anything else is replaced with a placeholder.
- */
-export function formatAlertEmail(email: string): string {
-	if (!email) {
-		return '(none)';
-	}
-	return ALERT_EMAIL_PATTERN.test(email) ? email : '(invalid email)';
-}
 
 /**
  * `hooks.before` gate for Better Auth: only emails in `allowedEmails` may reach
@@ -117,7 +105,7 @@ export function createAllowlistBeforeHook(
 			lastAlertAt = timestamp;
 			suppressed = 0;
 			void sendAlert(
-				`⚠️ Blocked ${ctx.path} attempt for non-allowlisted email: ${formatAlertEmail(email)}${suppressedNote} at ${new Date(timestamp).toISOString()}.`,
+				`⚠️ Blocked ${ctx.path} attempt for a non-allowlisted email${suppressedNote} at ${new Date(timestamp).toISOString()}.`,
 				`${appName} - Security Alert`,
 				3
 			);

@@ -36,7 +36,7 @@ differences.
 | `BREVO_FROM_ADDRESS`   | Sender address. Must be a confirmed Brevo sender.                                                                                                                                      |
 | `ADMIN_USER_IDS` | Comma-separated user ids bootstrapped as admins by the Better Auth `admin` plugin. Required at runtime; the build dummy `dummy_admin_id` is rejected. |
 | `ALLOWED_EMAILS`       | Comma-separated; the only emails that can sign in (exact, case-insensitive). Unset or empty means env validation fails and every request returns 500 (fails closed).                   |
-| `AUTH_ALERTS_URL` | ntfy.sh topic for auth push alerts. Defaults to `https://auth-alerts.invalid`, which every app skips, so alerts (which can include a user's email) are never sent to a placeholder. |
+| `AUTH_ALERTS_URL` | ntfy.sh topic for auth push alerts. Defaults to `https://auth-alerts.invalid`, which every app skips, so alerts are never sent to a placeholder. Alert text names users by id, never by email. |
 | `NODE_ENV`             | `development` \| `production` \| `test`. Set to `production` in the root `Dockerfile`.                                                                                                 |
 | `ADDRESS_HEADER`       | `Fly-Client-IP`, set in each `fly.toml`. Makes `getClientAddress()` return the real client IP so the auth rate limiters key per client. Not in `env.ts`; read by `adapter-node`.       |
 | `SENTRY_DSN`           | Public (sent to the browser). Defaults to the app's Sentry project DSN in `env.ts`, so no config is needed.                                                                            |

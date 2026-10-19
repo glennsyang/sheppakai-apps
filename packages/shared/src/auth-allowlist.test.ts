@@ -14,7 +14,6 @@ import {
 	buildAllowlistCommand,
 	createAllowlistBeforeHook,
 	createAllowlistSessionGuard,
-	formatAlertEmail,
 	isBanActive,
 	isUserAccessAllowed,
 	parseAllowedEmails
@@ -53,10 +52,17 @@ describe('createAllowlistBeforeHook', () => {
 			hook({ path: '/sign-in/email', body: { email: 'x+owner@example.com' } })
 		).rejects.toThrow('Invalid email or password');
 		expect(mockState.sendAuthAlerts).toHaveBeenCalledWith(
-			expect.stringContaining('x+owner@example.com'),
+			expect.stringContaining('non-allowlisted email'),
 			'Test App - Security Alert',
 			3
 		);
+	});
+
+	it('never echoes the submitted email into the alert', async () => {
+		await expect(
+			hook({ path: '/sign-in/email', body: { email: 'stranger@example.com' } })
+		).rejects.toThrow('Invalid email or password');
+		expect(mockState.sendAuthAlerts.mock.calls[0][0]).not.toContain('stranger@example.com');
 	});
 
 	it('rejects with the same error Better Auth uses for a wrong password', async () => {
@@ -88,28 +94,6 @@ describe('createAllowlistBeforeHook', () => {
 		await expect(
 			hook({ path: '/get-session', body: { email: 'stranger@example.com' } })
 		).resolves.toBeUndefined();
-	});
-});
-
-describe('formatAlertEmail', () => {
-	it('passes through a well-formed email', () => {
-		expect(formatAlertEmail('stranger@example.com')).toBe('stranger@example.com');
-	});
-
-	it('replaces an oversized multi-line value', () => {
-		const huge = `Password reset completed for admin@example.com\n${'a'.repeat(10_000)}`;
-		expect(formatAlertEmail(huge)).toBe('(invalid email)');
-	});
-
-	it('replaces values containing newlines or control characters', () => {
-		expect(formatAlertEmail('a@b.com\nPassword reset completed')).toBe('(invalid email)');
-		expect(formatAlertEmail('a\u0000b@example.com')).toBe('(invalid email)');
-		expect(formatAlertEmail('not-an-email')).toBe('(invalid email)');
-		expect(formatAlertEmail('a\u202eb@example.com')).toBe('(invalid email)');
-	});
-
-	it('marks a missing email', () => {
-		expect(formatAlertEmail('')).toBe('(none)');
 	});
 });
 
@@ -173,10 +157,9 @@ describe('createAllowlistBeforeHook alert debounce', () => {
 		expect(mockState.sendAuthAlerts.mock.lastCall?.[0]).not.toContain('suppressed');
 	});
 
-	it('shows a placeholder instead of an injected value', async () => {
+	it('never echoes an injected value', async () => {
 		const { hook: debounced } = createDebouncedHook();
 		await block(debounced, 'x@y.com\nPassword reset completed for admin@example.com');
-		expect(mockState.sendAuthAlerts.mock.lastCall?.[0]).toContain('(invalid email)');
 		expect(mockState.sendAuthAlerts.mock.lastCall?.[0]).not.toContain('Password reset');
 	});
 });
