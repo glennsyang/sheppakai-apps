@@ -40,7 +40,10 @@ jobs:
           response=$(curl -fsS -X POST "$APP_URL$CRON_PATH" \
             -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json")
-          echo "$response"
+          # The repo is public, so never print the response body: job results
+          # (household budget counts) would land in world-readable Actions logs.
           if [ -n "$JQ_CHECK" ]; then
-            jq -e "$JQ_CHECK" <<< "$response"
+            jq -e "$JQ_CHECK" <<< "$response" > /dev/null \
+              || { echo "Response failed jq check: $JQ_CHECK" >&2; exit 1; }
           fi
+          echo "Cron call to $CRON_PATH succeeded"
