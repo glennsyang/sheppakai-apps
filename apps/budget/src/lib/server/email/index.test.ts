@@ -104,6 +104,28 @@ describe('sendWeeklySummaryEmail', () => {
 		expect(html).toContain('&lt;i&gt;Travel&lt;/i&gt;');
 	});
 
+	it('shows only the date for excluded transactions stored with a time', async () => {
+		await sendWeeklySummaryEmail({
+			to: 'user@example.com',
+			name: 'Glenn',
+			monthLabel: 'August 2026',
+			overBudgetCategories: [],
+			nearLimitCategories: [],
+			excludedTransactions: [
+				{
+					date: '2026-08-03 14:22:05',
+					payee: 'Airline',
+					categoryName: 'Travel',
+					amount: 400
+				}
+			]
+		});
+
+		const html = sentHtml();
+		expect(html).toContain('2026-08-03');
+		expect(html).not.toContain('14:22:05');
+	});
+
 	it('shows an empty state when nothing was excluded', async () => {
 		await sendWeeklySummaryEmail({
 			to: 'user@example.com',
