@@ -70,7 +70,7 @@ export function createAuthRouteActions(deps: AuthRouteActionsDeps) {
 			load: async ({ locals, url }: LoadEvent) => {
 				redirectIfAuthenticated(locals.user);
 
-				const form = await createAuthLoadForm(signInSchema, url);
+				const form = await createAuthLoadForm(signInSchema);
 				// Whitelisted flags only — reset-password redirects here with ?reset=success and
 				// verify-email with ?verify=invalid. No query text is reflected.
 				const resetComplete = url.searchParams.get('reset') === 'success';
@@ -148,9 +148,9 @@ export function createAuthRouteActions(deps: AuthRouteActionsDeps) {
 		const limiter = deps.createAuthRateLimiter();
 
 		return {
-			load: async ({ locals, url }: LoadEvent) => {
+			load: async ({ locals }: LoadEvent) => {
 				redirectIfAuthenticated(locals.user);
-				const form = await createAuthLoadForm(forgotPasswordSchema, url);
+				const form = await createAuthLoadForm(forgotPasswordSchema);
 
 				return { form };
 			},
@@ -202,9 +202,7 @@ export function createAuthRouteActions(deps: AuthRouteActionsDeps) {
 				// when the emailed link is expired or malformed, and with `?token=...` when valid.
 				const invalid = !token || url.searchParams.has('error');
 
-				const form = await createAuthLoadForm(resetPasswordSchema, url, {
-					includeQueryMessage: false
-				});
+				const form = await createAuthLoadForm(resetPasswordSchema);
 
 				return { token, invalid, form };
 			},
