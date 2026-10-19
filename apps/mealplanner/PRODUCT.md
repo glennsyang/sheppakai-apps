@@ -8,21 +8,28 @@ web
 
 ## Users
 
-Exactly two people in one household (the owner and their partner), sharing one pantry, one recipe collection, and one weekly dinner plan. Accounts are created by an admin; there is no public sign-up.
+Exactly two people in one household (the owner and their partner), sharing one pantry, one recipe
+collection, and one weekly dinner plan. Accounts are created by an admin; there is no public
+sign-up.
 
 They use it in three situations, all of which matter:
 
-- **Phone, in the kitchen** — reading tonight's recipe while cooking, often at arm's length with busy hands.
+- **Phone, in the kitchen** — reading tonight's recipe while cooking, often at arm's length with
+  busy hands.
 - **Laptop, weekly planning** — sitting down to fill the Monday–Sunday week.
 - **Quick "what's for dinner?"** — late afternoon, low energy, wanting a usable suggestion fast.
 
 ## Product Purpose
 
-A dinner-focused meal planner. The household records what's in the pantry, gets AI-generated dinner suggestions with full recipes based on those ingredients, generates variations of a dish, and slots recipes into a Monday–Sunday weekly planner. Success: dinner is decided without friction, and the plan for the week is visible at a glance.
+A dinner-focused meal planner. The household records what's in the pantry, gets AI-generated dinner
+suggestions with full recipes based on those ingredients, generates variations of a dish, and slots
+recipes into a Monday–Sunday weekly planner. Success: dinner is decided without friction, and the
+plan for the week is visible at a glance.
 
 ## Positioning
 
-A private, two-person household tool, not a recipe platform. Suggestions start from what is actually in this kitchen's pantry, and the plan is shared by both people by design.
+A private, two-person household tool, not a recipe platform. Suggestions start from what is actually
+in this kitchen's pantry, and the plan is shared by both people by design.
 
 ## Operating Context
 
@@ -34,7 +41,8 @@ A private, two-person household tool, not a recipe platform. Suggestions start f
 
 ## Capabilities and Constraints
 
-- SvelteKit + Svelte 5 runes, Skeleton UI v5 + Tailwind CSS v4 — **binding: stay on Skeleton + Tailwind**.
+- SvelteKit + Svelte 5 runes, Skeleton UI v5 + Tailwind CSS v4 — **binding: stay on Skeleton +
+  Tailwind**.
 - Light and dark mode via `mode-watcher` toggle — **binding: both modes must stay**.
 - Data is shared across both users (pantry, recipes, meal plans); not a bug.
 - Deployed on fly.io; CSP set in `hooks.server.ts` (affects any external font or asset origins).
@@ -42,11 +50,13 @@ A private, two-person household tool, not a recipe platform. Suggestions start f
 
 ## Brand Commitments
 
-Product name "Meal Planner" is used in the app header and page titles. No other brand assets, logos, or voice guidelines exist.
+Product name "Meal Planner" is used in the app header and page titles. No other brand assets, logos,
+or voice guidelines exist.
 
 ## Evidence on Hand
 
-No photography, testimonials, or illustration assets exist. Recipe content is AI-generated at runtime; no food imagery is available and none should be fabricated.
+No photography, testimonials, or illustration assets exist. Recipe content is AI-generated at
+runtime; no food imagery is available and none should be fabricated.
 
 ## Product Principles
 

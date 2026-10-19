@@ -1,9 +1,9 @@
 # Environment Variables (mealplanner)
 
-Every runtime variable this app reads. Shared conventions, the meaning of the variables all
-apps share, the "adding a user" steps, and the GitHub Actions secrets are in
-[docs/ENVIRONMENT.md](../../../docs/ENVIRONMENT.md). `.env.example` is the local template.
-If it and this doc ever disagree, this doc and `src/env.ts` win: update `.env.example`.
+Every runtime variable this app reads. Shared conventions, the meaning of the variables all apps
+share, the "adding a user" steps, and the GitHub Actions secrets are in
+[docs/ENVIRONMENT.md](../../../docs/ENVIRONMENT.md). `.env.example` is the local template. If it and
+this doc ever disagree, this doc and `src/env.ts` win: update `.env.example`.
 
 Fly app: `sheppakai-mealplanner`. Validated in [`src/env.ts`](../src/env.ts) unless noted.
 
@@ -28,13 +28,13 @@ Fly app: `sheppakai-mealplanner`. Validated in [`src/env.ts`](../src/env.ts) unl
 
 ## GitHub Actions secrets
 
-Environment `mealplanner`: `FLY_API_TOKEN`, `BACKUP_ENCRYPTION_PASSPHRASE`,
-`SENTRY_AUTH_TOKEN`. There are no cron jobs, so no `CRON_SECRET` or `APP_URL`. See the
+Environment `mealplanner`: `FLY_API_TOKEN`, `BACKUP_ENCRYPTION_PASSPHRASE`, `SENTRY_AUTH_TOKEN`.
+There are no cron jobs, so no `CRON_SECRET` or `APP_URL`. See the
 [root doc](../../../docs/ENVIRONMENT.md#github-actions-secrets).
 
 ## Verification
 
 - [ ] `fly secrets list -a sheppakai-mealplanner` matches the "Fly secret" rows above.
 - [ ] `gh secret list --env mealplanner` lists the three secrets above.
-- [ ] A fresh `cp .env.example .env` with real values boots the app locally with no
-      missing-variable errors, including the AI (Claude/Gemini) and Brevo email paths.
+- [ ] A fresh `cp .env.example .env` with real values boots the app locally with no missing-variable
+      errors, including the AI (Claude/Gemini) and Brevo email paths.

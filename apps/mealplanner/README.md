@@ -1,12 +1,14 @@
 # Meal Planner
 
-A dinner-focused meal planning app. Add your pantry ingredients, get AI-generated recipe suggestions, and slot meals into a Monday–Sunday weekly planner.
+A dinner-focused meal planning app. Add your pantry ingredients, get AI-generated recipe
+suggestions, and slot meals into a Monday–Sunday weekly planner.
 
 ---
 
 ## Features
 
-- **AI meal suggestions** — Claude (Anthropic) and Gemini (Google) suggest practical dinner recipes based on what's in your pantry
+- **AI meal suggestions** — Claude (Anthropic) and Gemini (Google) suggest practical dinner recipes
+  based on what's in your pantry
 - **Recipe variations** — Generate alternative versions of any dish
 - **Pantry management** — Track ingredients with optional quantities and units
 - **Weekly planner** — Assign recipes to specific days of the week
@@ -169,21 +171,26 @@ fly secrets set \
 fly deploy
 ```
 
-`DATABASE_URL` is a Fly secret, and `NODE_ENV` is set in the repo-root `Dockerfile`. See [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) for the full variable
-reference, including build-time and CI-only vars.
+`DATABASE_URL` is a Fly secret, and `NODE_ENV` is set in the repo-root `Dockerfile`. See
+[`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) for the full variable reference, including build-time
+and CI-only vars.
 
-SQLite is stored on a persistent volume mounted at `/data/db.sqlite`. Migrations run
-automatically on boot — `scripts/start.sh` applies any committed, unapplied migrations via
-`scripts/migrate.js` before the server starts, so a normal `fly deploy` is enough.
+SQLite is stored on a persistent volume mounted at `/data/db.sqlite`. Migrations run automatically
+on boot — `scripts/start.sh` applies any committed, unapplied migrations via `scripts/migrate.js`
+before the server starts, so a normal `fly deploy` is enough.
 
 ---
 
 ## Known Quirks
 
-1. **Superforms + Zod v4 email inputs** — Never spread `{...$constraints}` on `type="email"` inputs. Zod v4's email regex is incompatible with the browser's HTML `pattern` attribute `v` flag.
+1. **Superforms + Zod v4 email inputs** — Never spread `{...$constraints}` on `type="email"` inputs.
+   Zod v4's email regex is incompatible with the browser's HTML `pattern` attribute `v` flag.
 
-2. **`getMondayOfCurrentWeek()`** — Uses local date components instead of `.toISOString()` to avoid UTC offset shifting the date across midnight.
+2. **`getMondayOfCurrentWeek()`** — Uses local date components instead of `.toISOString()` to avoid
+   UTC offset shifting the date across midnight.
 
-3. **Auth redirects** — `auth.api.signInEmail` / `signUpEmail` may internally throw SvelteKit redirects. Always `if (isRedirect(err)) throw err` inside auth catch blocks.
+3. **Auth redirects** — `auth.api.signInEmail` / `signUpEmail` may internally throw SvelteKit
+   redirects. Always `if (isRedirect(err)) throw err` inside auth catch blocks.
 
-4. **Secure cookies** — `useSecureCookies: true` is set. Cookies require HTTPS in production. better-auth auto-allows non-secure cookies on `localhost` in dev.
+4. **Secure cookies** — `useSecureCookies: true` is set. Cookies require HTTPS in production.
+   better-auth auto-allows non-secure cookies on `localhost` in dev.
