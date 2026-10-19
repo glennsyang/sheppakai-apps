@@ -1,7 +1,7 @@
 # Environment Variables (synapse)
 
-Every runtime variable this app reads. Shared conventions, the meaning of the variables all
-apps share, the "adding a user" steps, and the GitHub Actions secrets are in
+Every runtime variable this app reads. Shared conventions, the meaning of the variables all apps
+share, the "adding a user" steps, and the GitHub Actions secrets are in
 [docs/ENVIRONMENT.md](../../../docs/ENVIRONMENT.md). `.env.example` is the local template.
 
 Fly app: `synapse-dev`. Validated in [`src/env.ts`](../src/env.ts) unless noted.

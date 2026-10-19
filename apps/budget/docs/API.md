@@ -1,9 +1,9 @@
 # External API (`/api/v1`)
 
-A small JSON API for driving sheppakai-budget from outside the web UI. Authentication,
-the response envelope, error codes, CORS and what's out of scope are shared with synapse and
-documented in [docs/API_CONVENTIONS.md](../../../docs/API_CONVENTIONS.md). This file covers
-what's specific to budget.
+A small JSON API for driving sheppakai-budget from outside the web UI. Authentication, the response
+envelope, error codes, CORS and what's out of scope are shared with synapse and documented in
+[docs/API_CONVENTIONS.md](../../../docs/API_CONVENTIONS.md). This file covers what's specific to
+budget.
 
 ## Keys
 
@@ -60,9 +60,9 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
   "https://budget.example.com/api/v1/transactions"
 ```
 
-Returns `201` with the created transaction (including its resolved category and owner) on
-success. Every write — successful or failed — is recorded in an internal audit log with the
-key that made it, so activity from an external tool is traceable if something looks wrong.
+Returns `201` with the created transaction (including its resolved category and owner) on success.
+Every write — successful or failed — is recorded in an internal audit log with the key that made it,
+so activity from an external tool is traceable if something looks wrong.
 
 ### `GET /api/v1/budgets`
 
@@ -86,8 +86,8 @@ curl -H "Authorization: Bearer sk_live_xxx" "https://budget.example.com/api/v1/c
 
 ### `GET /api/v1/dashboard`
 
-Requires `dashboard:read`. The same summary numbers the Dashboard page computes (totals,
-budget progress, spending trends, savings goals). Query parameters:
+Requires `dashboard:read`. The same summary numbers the Dashboard page computes (totals, budget
+progress, spending trends, savings goals). Query parameters:
 
 - `mode` — `monthly` (default) or `yearly`
 - `month` / `year` — for `mode=monthly`
@@ -136,8 +136,8 @@ curl -H "Authorization: Bearer sk_live_xxx" "https://budget.example.com/api/v1/r
 
 ### `PATCH /api/v1/recurring/:id`
 
-Requires `recurring:markPaid` — a narrower scope than a general write, so a key can be
-issued that only toggles paid status. Body:
+Requires `recurring:markPaid` — a narrower scope than a general write, so a key can be issued that
+only toggles paid status. Body:
 
 ```bash
 curl -X PATCH -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: application/json" \
@@ -173,9 +173,8 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
 
 ### `PATCH /api/v1/window-cleaning/customers/:id`
 
-Requires `windowCleaningCustomers:write`. A full replace of the editable fields (matches
-the UI's update behavior), not a partial patch. Returns `404` (`not_found`) if the id
-doesn't exist.
+Requires `windowCleaningCustomers:write`. A full replace of the editable fields (matches the UI's
+update behavior), not a partial patch. Returns `404` (`not_found`) if the id doesn't exist.
 
 ```bash
 curl -X PATCH -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: application/json" \
@@ -189,8 +188,7 @@ curl -X PATCH -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicati
 
 ### `GET /api/v1/window-cleaning/jobs`
 
-Requires `windowCleaningJobs:read`. Query parameters (all optional, applied in this
-priority order):
+Requires `windowCleaningJobs:read`. Query parameters (all optional, applied in this priority order):
 
 - `customerId` — jobs for one customer
 - `month` / `year` — `year` is required when `month` is given

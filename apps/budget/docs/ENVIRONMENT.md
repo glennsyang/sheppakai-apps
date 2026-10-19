@@ -1,8 +1,8 @@
 # Environment Variables (budget)
 
-Every runtime variable this app reads. Shared conventions, the meaning of the variables all
-apps share, and the GitHub Actions secrets are in
-[docs/ENVIRONMENT.md](../../../docs/ENVIRONMENT.md). `.env.example` is the local template.
+Every runtime variable this app reads. Shared conventions, the meaning of the variables all apps
+share, and the GitHub Actions secrets are in [docs/ENVIRONMENT.md](../../../docs/ENVIRONMENT.md).
+`.env.example` is the local template.
 
 Fly app: `sheppakai-budget`. Validated in [`src/env.ts`](../src/env.ts) unless noted.
 

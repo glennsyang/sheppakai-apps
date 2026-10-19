@@ -1,10 +1,12 @@
 # Synapse
 
-Synapse is a full-stack personal productivity app built to showcase product thinking, modern web engineering, and polished user experience.
+Synapse is a full-stack personal productivity app built to showcase product thinking, modern web
+engineering, and polished user experience.
 
 ## What It Is
 
-Synapse brings together daily planning and personal tracking in one place. The app is designed for people who want a focused space to write, organize, and reflect without juggling multiple tools.
+Synapse brings together daily planning and personal tracking in one place. The app is designed for
+people who want a focused space to write, organize, and reflect without juggling multiple tools.
 
 ## Features
 
@@ -66,4 +68,5 @@ For setup specifics, see repository files and scripts.
 
 ## Status
 
-This is an active side project and portfolio application. Ongoing improvements focus on UX polish, performance, and feature depth.
+This is an active side project and portfolio application. Ongoing improvements focus on UX polish,
+performance, and feature depth.

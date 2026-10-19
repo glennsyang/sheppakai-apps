@@ -1,17 +1,17 @@
 # External API (`/api/v1`)
 
-A small JSON API for driving Synapse from outside the web UI. Authentication, the response
-envelope, error codes, CORS and what's out of scope are shared with budget and documented in
-[docs/API_CONVENTIONS.md](../../../docs/API_CONVENTIONS.md). This file covers what's specific
-to synapse.
+A small JSON API for driving Synapse from outside the web UI. Authentication, the response envelope,
+error codes, CORS and what's out of scope are shared with budget and documented in
+[docs/API_CONVENTIONS.md](../../../docs/API_CONVENTIONS.md). This file covers what's specific to
+synapse.
 
 ## Keys
 
 - Created and revoked by an admin from **Admin → API Keys** (`/admin`).
-- **Admin → API Logs** (`/admin`) shows the audit trail (who made each write, with which key,
-  and what happened), so you can review external activity in the UI.
-- Records are per user: a key only sees and changes its own user's records. Any other id
-  returns `404`.
+- **Admin → API Logs** (`/admin`) shows the audit trail (who made each write, with which key, and
+  what happened), so you can review external activity in the UI.
+- Records are per user: a key only sees and changes its own user's records. Any other id returns
+  `404`.
 
 ## Scopes
 
@@ -31,8 +31,8 @@ to synapse.
 | `journal:read`   | `GET /api/v1/journal`, `GET /api/v1/journal/{id}`      |
 | `journal:write`  | `POST /api/v1/journal`, `PATCH /api/v1/journal/{id}`   |
 
-`people:read` exists mainly to resolve a `personId` for the
-visits endpoints — a visit is tied to an existing person record, not a free-text name.
+`people:read` exists mainly to resolve a `personId` for the visits endpoints — a visit is tied to an
+existing person record, not a free-text name.
 
 ## Endpoints
 
@@ -58,16 +58,16 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
   "https://synapse.example.com/api/v1/tasks"
 ```
 
-`PATCH /api/v1/tasks/{id}` — requires `tasks:write`. Body is a partial update (any subset of
-the `POST` fields). Returns `200` with the updated task.
+`PATCH /api/v1/tasks/{id}` — requires `tasks:write`. Body is a partial update (any subset of the
+`POST` fields). Returns `200` with the updated task.
 
 ### Mood
 
-`GET /api/v1/mood` — requires `mood:read`. Query params: `startDate`/`endDate`
-(`YYYY-MM-DD`, must be given together).
+`GET /api/v1/mood` — requires `mood:read`. Query params: `startDate`/`endDate` (`YYYY-MM-DD`, must
+be given together).
 
-`POST /api/v1/mood` — requires `mood:write`. There's at most one mood log per day, so this
-always creates-or-updates the entry for `date`:
+`POST /api/v1/mood` — requires `mood:write`. There's at most one mood log per day, so this always
+creates-or-updates the entry for `date`:
 
 ```bash
 curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: application/json" \
@@ -77,11 +77,11 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
 
 ### Workouts
 
-`GET /api/v1/workouts` — requires `workouts:read`. Query params: `startDate`/`endDate`,
-`type`, `limit` (1-200, default 50).
+`GET /api/v1/workouts` — requires `workouts:read`. Query params: `startDate`/`endDate`, `type`,
+`limit` (1-200, default 50).
 
-`GET /api/v1/workouts/{id}` — requires `workouts:read`. Returns the workout with its
-`exercises` array.
+`GET /api/v1/workouts/{id}` — requires `workouts:read`. Returns the workout with its `exercises`
+array.
 
 `POST /api/v1/workouts` — requires `workouts:write`. Body:
 
@@ -102,8 +102,8 @@ workout's full exercise list.
 
 ### Meals
 
-`GET /api/v1/meals` — requires `meals:read`. Query params: `startDate`/`endDate`,
-`timeOfDay` (`breakfast`/`lunch`/`dinner`/`snack`), `limit` (1-200, default 50).
+`GET /api/v1/meals` — requires `meals:read`. Query params: `startDate`/`endDate`, `timeOfDay`
+(`breakfast`/`lunch`/`dinner`/`snack`), `limit` (1-200, default 50).
 
 `GET /api/v1/meals/{id}` — requires `meals:read`.
 
@@ -120,8 +120,8 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
 ### People
 
 `GET /api/v1/people` — requires `people:read`. Query params: `includeArchived` (`true`/`false`,
-default `false`). Returns `{ id, name, isArchived, scheduledVisitDate }` for each person — use
-the `id` as `personId` when creating a visit.
+default `false`). Returns `{ id, name, isArchived, scheduledVisitDate }` for each person — use the
+`id` as `personId` when creating a visit.
 
 ```bash
 curl -H "Authorization: Bearer sk_live_xxx" "https://synapse.example.com/api/v1/people"
@@ -129,8 +129,8 @@ curl -H "Authorization: Bearer sk_live_xxx" "https://synapse.example.com/api/v1/
 
 ### Visits
 
-`GET /api/v1/visits` — requires `visits:read`. Query params: `personId` (optional), `limit`
-(1-200, default 50).
+`GET /api/v1/visits` — requires `visits:read`. Query params: `personId` (optional), `limit` (1-200,
+default 50).
 
 `GET /api/v1/visits/{id}` — requires `visits:read`.
 
@@ -152,14 +152,13 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
 
 ### Journal
 
-`GET /api/v1/journal` — requires `journal:read`. Query params: `startDate`/`endDate`
-(`YYYY-MM-DD`, must be given together), `content` (substring match), `limit` (1-200,
-default 50).
+`GET /api/v1/journal` — requires `journal:read`. Query params: `startDate`/`endDate` (`YYYY-MM-DD`,
+must be given together), `content` (substring match), `limit` (1-200, default 50).
 
 `GET /api/v1/journal/{id}` — requires `journal:read`.
 
-`POST /api/v1/journal` — requires `journal:write`. Multiple entries per day are allowed
-(unlike `/mood`, this always creates a new entry rather than upserting). Body:
+`POST /api/v1/journal` — requires `journal:write`. Multiple entries per day are allowed (unlike
+`/mood`, this always creates a new entry rather than upserting). Body:
 
 ```bash
 curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: application/json" \

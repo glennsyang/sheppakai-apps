@@ -1,10 +1,14 @@
 # Sheppakai Budget
 
-Sheppakai Budget is a full-stack personal finance and small business management app built as a portfolio project. It combines household budgeting with business workflows in one clean interface: track spending, monitor goals, manage recurring items, and stay on top of day-to-day financial decisions.
+Sheppakai Budget is a full-stack personal finance and small business management app built as a
+portfolio project. It combines household budgeting with business workflows in one clean interface:
+track spending, monitor goals, manage recurring items, and stay on top of day-to-day financial
+decisions.
 
 ## Features ✨
 
-- **Authentication** — Invite-only (admin-created accounts, `ALLOWED_EMAILS` allowlist), sign in, sign out, email verification, and password reset
+- **Authentication** — Invite-only (admin-created accounts, `ALLOWED_EMAILS` allowlist), sign in,
+  sign out, email verification, and password reset
 - **Dashboard** — Visual overview of income, expenses, and budget progress
 - **Budget Management** — Set monthly budgets per category, see over-budget alerts
 - **Transactions** — Filterable expense/income table by date and category
@@ -14,8 +18,10 @@ Sheppakai Budget is a full-stack personal finance and small business management 
 - **Receipts** — Separate tracking for fuel and business receipts
 - **Window Cleaning** — Customer management and job tracking for a window cleaning business
 - **Weekly Email Summaries** — Automated weekly financial summary emails
-- **Admin Dashboard** — User management, archived goals, deleted customer recovery, API key management
-- **External API** — Scoped, revocable API keys for driving the app from external tools (see [API.md](./docs/API.md))
+- **Admin Dashboard** — User management, archived goals, deleted customer recovery, API key
+  management
+- **External API** — Scoped, revocable API keys for driving the app from external tools (see
+  [API.md](./docs/API.md))
 - **Dark Mode** — Full light/dark theme support
 - **PWA** — Installable as a standalone app with offline support
 - **Error Monitoring** — Sentry integration
@@ -102,5 +108,5 @@ pnpm test             # Run unit tests
 
 - [API.md](./docs/API.md) for the external `/api/v1` JSON API
 - [ENVIRONMENT.md](./docs/ENVIRONMENT.md) for every environment variable the app uses
-- Repo-wide docs in [`docs/`](../../docs/) at the repo root: backup and restore, CSP, Sentry,
-  error handling, API conventions and shared environment variables
+- Repo-wide docs in [`docs/`](../../docs/) at the repo root: backup and restore, CSP, Sentry, error
+  handling, API conventions and shared environment variables
