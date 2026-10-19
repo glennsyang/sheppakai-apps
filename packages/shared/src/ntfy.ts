@@ -4,6 +4,8 @@ export interface NtfyOptions {
 	priority?: number;
 	/** Comma-separated ntfy emoji tags. */
 	tags?: string;
+	/** ntfy access token, sent as `Authorization: Bearer`. Required for a protected topic. */
+	token?: string;
 	logger: {
 		info(message: string, meta?: Record<string, unknown>): void;
 		error(message: string, error?: unknown): void;
@@ -16,12 +18,12 @@ export interface NtfyOptions {
  *
  * Fails closed: an unset alerts URL defaults to a non-resolving `.invalid` host (see
  * ./env). That is detected here and the request skipped entirely, since alert bodies
- * can carry a user's email and must never be POSTed to a placeholder domain.
+ * are operator-only and must never be POSTed to a placeholder domain.
  */
 export async function sendNtfy(
 	url: string,
 	message: string,
-	{ title, priority = 3, tags = 'rotating_light', logger }: NtfyOptions
+	{ title, priority = 3, tags = 'rotating_light', token, logger }: NtfyOptions
 ): Promise<boolean> {
 	let target: URL;
 	try {
@@ -42,7 +44,8 @@ export async function sendNtfy(
 			headers: {
 				Title: title,
 				Priority: priority.toString(),
-				Tags: tags
+				Tags: tags,
+				...(token ? { Authorization: `Bearer ${token}` } : {})
 			}
 		});
 

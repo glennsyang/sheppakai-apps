@@ -132,7 +132,7 @@ describe('setRole', () => {
 			headers: expect.any(Headers)
 		});
 		expect(sendAuthAlerts).toHaveBeenCalledWith(
-			expect.stringContaining('target@example.com'),
+			expect.stringContaining(`user ${TARGET.id}'s role`),
 			'TestApp - Role Changed Alert',
 			3
 		);
@@ -231,13 +231,14 @@ describe('unbanUser and removeUser', () => {
 		expect(messageOf(result)).toEqual({ type: 'success', text: 'User unbanned.' });
 	});
 
-	it('looks the user up, removes them and alerts with their email', async () => {
+	it('looks the user up, removes them and alerts with their id, not their email', async () => {
 		const result = await run(makeActions(), 'removeUser', { userId: TARGET.id });
 
 		expect(api.removeUser).toHaveBeenCalledWith(
 			expect.objectContaining({ body: { userId: TARGET.id } })
 		);
-		expect(sendAuthAlerts.mock.calls[0][0]).toContain('target@example.com');
+		expect(sendAuthAlerts.mock.calls[0][0]).toContain(TARGET.id);
+		expect(sendAuthAlerts.mock.calls[0][0]).not.toContain('target@example.com');
 		expect(messageOf(result)).toEqual({ type: 'success', text: 'User removed.' });
 	});
 

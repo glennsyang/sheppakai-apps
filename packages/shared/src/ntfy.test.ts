@@ -44,6 +44,24 @@ describe('sendNtfy', () => {
 		expect(init?.headers).toEqual({ Title: 'Alert', Priority: '3', Tags: 'rotating_light' });
 	});
 
+	it('sends the token as a Bearer Authorization header when given', async () => {
+		fetchMock.mockResolvedValue({ ok: true });
+
+		await sendNtfy('https://ntfy.example.com/topic', 'hello', {
+			title: 'Alert',
+			token: 'tk_secret',
+			logger
+		});
+
+		const [, init] = fetchMock.mock.calls[0];
+		expect(init?.headers).toEqual({
+			Title: 'Alert',
+			Priority: '3',
+			Tags: 'rotating_light',
+			Authorization: 'Bearer tk_secret'
+		});
+	});
+
 	it.each(['https://invalid/topic', 'https://alerts.invalid/topic'])(
 		'skips an unset (.invalid) URL without fetching: %s',
 		async (url) => {

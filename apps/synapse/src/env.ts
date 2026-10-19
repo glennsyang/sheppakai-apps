@@ -4,7 +4,7 @@ import { defineEnvVars } from '@sveltejs/kit/env';
 import { z } from 'zod';
 
 export const variables = defineEnvVars({
-	// DATABASE_URL, BETTER_AUTH_*, BREVO_*, ADMIN_USER_IDS, ALLOWED_EMAILS, AUTH_ALERTS_URL,
+	// DATABASE_URL, BETTER_AUTH_*, BREVO_*, ADMIN_USER_IDS, ALLOWED_EMAILS, AUTH_ALERTS_*,
 	// NODE_ENV and LOG_LEVEL, with the build-time placeholder guards.
 	...sharedEnvVars(building),
 	...cronSecretEnvVar(building),

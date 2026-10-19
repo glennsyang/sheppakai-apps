@@ -16,7 +16,7 @@ import {
 	setRoleSchema,
 	type UserRole
 } from './admin-user-schemas';
-import { buildAllowlistCommand, formatAlertEmail, isEmailAllowed } from './auth-allowlist';
+import { buildAllowlistCommand, isEmailAllowed } from './auth-allowlist';
 import { invalidAuthForm as invalidForm } from './auth-form-handler';
 import { getBetterAuthErrorCode } from './better-auth-errors';
 
@@ -135,13 +135,13 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 				}
 
 				try {
-					const { user: target } = await auth.api.setRole({
+					await auth.api.setRole({
 						body: { userId, role },
 						headers: request.headers
 					});
 					logger.info('User role changed by admin', { adminId: admin.id, userId, role });
 					await alert(
-						`🔑 Admin ${formatAlertEmail(admin.email)} set ${formatAlertEmail(target.email)}'s role to ${role}.`,
+						`🔑 Admin ${admin.id} set user ${userId}'s role to ${role}.`,
 						'Role Changed Alert'
 					);
 				} catch (err) {
@@ -173,15 +173,12 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 
 				try {
 					// better-auth also revokes the user's sessions, so a ban takes effect immediately.
-					const { user: target } = await auth.api.banUser({
+					await auth.api.banUser({
 						body: { userId, ...(banReason ? { banReason } : {}) },
 						headers: request.headers
 					});
 					logger.info('User banned by admin', { adminId: admin.id, userId });
-					await alert(
-						`🚫 Admin ${formatAlertEmail(admin.email)} banned ${formatAlertEmail(target.email)}.`,
-						'User Banned Alert'
-					);
+					await alert(`🚫 Admin ${admin.id} banned user ${userId}.`, 'User Banned Alert');
 				} catch (err) {
 					return adminActionError(form, 'Failed to ban user', err);
 				}
@@ -224,18 +221,14 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 				}
 
 				try {
-					// removeUser returns only { success }, so look the email up first for the alert.
-					// A missing user surfaces as better-auth's 404 APIError.
-					const target = await auth.api.getUser({
+					// Look the user up first so a missing user surfaces as better-auth's 404 APIError.
+					await auth.api.getUser({
 						query: { id: userId },
 						headers: request.headers
 					});
 					await auth.api.removeUser({ body: { userId }, headers: request.headers });
 					logger.info('User removed by admin', { adminId: admin.id, userId });
-					await alert(
-						`🗑️ Admin ${formatAlertEmail(admin.email)} removed ${formatAlertEmail(target.email)}.`,
-						'User Removed Alert'
-					);
+					await alert(`🗑️ Admin ${admin.id} removed user ${userId}.`, 'User Removed Alert');
 				} catch (err) {
 					return adminActionError(form, 'Failed to remove user', err);
 				}
@@ -266,7 +259,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 
 			logger.info('User created by admin', { adminId: admin.id, userId: created.id, role });
 			await alert(
-				`👤 Admin ${formatAlertEmail(admin.email)} created ${role} account for ${formatAlertEmail(email)}.`,
+				`👤 Admin ${admin.id} created ${role} account ${created.id}.`,
 				'User Created Alert'
 			);
 
@@ -317,7 +310,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 					await deps.sendWelcome(target);
 					logger.info('Welcome email sent by admin', { adminId: admin.id, userId: target.id });
 					await alert(
-						`✉️ Admin ${formatAlertEmail(admin.email)} sent a welcome email to ${formatAlertEmail(target.email)}.`,
+						`✉️ Admin ${admin.id} sent a welcome email to user ${target.id}.`,
 						'Welcome Email Alert'
 					);
 
