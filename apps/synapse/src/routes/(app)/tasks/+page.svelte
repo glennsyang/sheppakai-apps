@@ -187,22 +187,25 @@
 					</Button>
 					<Tooltip.Root>
 						<Tooltip.Trigger>
-							<Button
-								type="button"
-								variant="outline"
-								size="icon"
-								onclick={() => (filtersOpen = !filtersOpen)}
-								aria-label="Toggle task filters"
-								aria-controls="tasks-filter-bar"
-								aria-expanded={filtersOpen}
-								class={[
-									'shrink-0',
-									(filtersOpen || hasActiveFilters) &&
-										'border-pen-tasks bg-pen-tasks/12 text-pen-tasks hover:bg-pen-tasks/12 hover:text-pen-tasks dark:border-pen-tasks/40 dark:bg-pen-tasks/10 dark:text-pen-tasks dark:hover:bg-pen-tasks/15 dark:hover:text-pen-tasks'
-								]}
-							>
-								<ListFilter class="size-4" />
-							</Button>
+							{#snippet child({ props })}
+								<Button
+									{...props}
+									type="button"
+									variant="outline"
+									size="icon"
+									onclick={() => (filtersOpen = !filtersOpen)}
+									aria-label="Toggle task filters"
+									aria-controls="tasks-filter-bar"
+									aria-expanded={filtersOpen}
+									class={[
+										'shrink-0',
+										(filtersOpen || hasActiveFilters) &&
+											'border-pen-tasks bg-pen-tasks/12 text-pen-tasks hover:bg-pen-tasks/12 hover:text-pen-tasks dark:border-pen-tasks/40 dark:bg-pen-tasks/10 dark:text-pen-tasks dark:hover:bg-pen-tasks/15 dark:hover:text-pen-tasks'
+									]}
+								>
+									<ListFilter class="size-4" />
+								</Button>
+							{/snippet}
 						</Tooltip.Trigger>
 						<Tooltip.Content>Filter tasks</Tooltip.Content>
 					</Tooltip.Root>

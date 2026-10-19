@@ -49,3 +49,6 @@ data
 # OS
 .DS_Store
 Thumbs.db
+
+# Playwright saved session (tests/e2e/auth.setup.ts)
+apps/synapse/tests/e2e/.auth/

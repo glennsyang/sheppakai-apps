@@ -1,9 +1,8 @@
-import { expect, type Page, test } from '@playwright/test';
+import { type APIResponse, expect, type Page, test } from '@playwright/test';
 
 const testUserEmail = process.env.E2E_USER_EMAIL;
 const testUserPassword = process.env.E2E_USER_PASSWORD;
 
-const boardTaskTitle = 'Prepare Treasures Talk';
 const primaryLane = 'In Progress tasks';
 const secondaryLane = 'New tasks';
 const laneLabels = [primaryLane, secondaryLane, 'On Hold tasks', 'Blocked tasks', 'Done tasks'];
@@ -21,17 +20,36 @@ type DragAttempt = {
 	targetPosition: DragPosition;
 };
 
+type SeededTask = {
+	id: string;
+	title: string;
+};
+
 test.describe('tasks kanban drag and drop', () => {
 	test.skip(
 		!testUserEmail || !testUserPassword,
 		'Set E2E_USER_EMAIL and E2E_USER_PASSWORD in .env.test to run this spec.'
 	);
 
+	let seededTask: SeededTask | null = null;
+
+	test.beforeEach(async ({ page }) => {
+		seededTask = await createTask(page, `E2E drag ${Date.now()}`, 'in_progress');
+	});
+
+	test.afterEach(async ({ page }) => {
+		if (seededTask) {
+			await deleteTask(page, seededTask.id);
+			seededTask = null;
+		}
+	});
+
 	test('moves a task across lanes without client-side errors and restores the board', async ({
 		page
 	}) => {
 		test.slow();
 
+		const boardTaskTitle = seededTask?.title ?? '';
 		const pageErrors: string[] = [];
 		const consoleErrors: string[] = [];
 
@@ -45,13 +63,12 @@ test.describe('tasks kanban drag and drop', () => {
 			}
 		});
 
-		await signIn(page, testUserEmail ?? '', testUserPassword ?? '');
-		await page.goto('/tasks');
+		await page.goto('/tasks', { waitUntil: 'networkidle' });
 		await expect(page.getByRole('heading', { name: 'Tasks' }).first()).toBeVisible();
 		await expect(page.locator(`[aria-label="${primaryLane}"]`)).toBeVisible();
 
 		const startingLane = await findLaneForTask(page, boardTaskTitle);
-		expect(startingLane).not.toBeNull();
+		expect(startingLane).toBe(primaryLane);
 
 		const sourceLane = startingLane ?? primaryLane;
 		const destinationLane = sourceLane === secondaryLane ? primaryLane : secondaryLane;
@@ -70,15 +87,39 @@ test.describe('tasks kanban drag and drop', () => {
 	});
 });
 
-async function signIn(page: Page, email: string, password: string) {
-	await page.goto('/sign-in');
-	await page.getByLabel('Email').fill(email);
-	await page.getByLabel('Password').fill(password);
+/** Posts to a SvelteKit form action the way `use:enhance` does, so the result comes back as JSON. */
+function postFormAction(page: Page, path: string, form: Record<string, string>) {
+	const baseURL = test.info().project.use.baseURL ?? '';
+	return page.request.post(path, {
+		form,
+		headers: { origin: new URL(baseURL).origin, 'x-sveltekit-action': 'true' },
+		maxRedirects: 0
+	});
+}
 
-	await Promise.all([
-		page.waitForURL('**/dashboard'),
-		page.getByRole('button', { name: 'Sign in' }).click()
-	]);
+async function expectActionRedirect(response: APIResponse) {
+	expect(response.ok()).toBe(true);
+	const result = (await response.json()) as { type?: string };
+	expect(result.type).toBe('redirect');
+}
+
+async function createTask(page: Page, title: string, state: string): Promise<SeededTask> {
+	await expectActionRedirect(
+		await postFormAction(page, '/tasks/new', { title, priority: '2', state })
+	);
+
+	await page.goto('/tasks');
+	const href = await page.getByRole('link', { name: title, exact: true }).getAttribute('href');
+	const id = href?.match(/^\/tasks\/([^/]+)\/edit$/)?.[1];
+	if (!id) {
+		throw new Error(`Could not find the id of the seeded task "${title}"`);
+	}
+
+	return { id, title };
+}
+
+async function deleteTask(page: Page, id: string) {
+	await expectActionRedirect(await postFormAction(page, '/tasks?/delete', { id }));
 }
 
 function laneLocator(page: Page, laneLabel: string) {
