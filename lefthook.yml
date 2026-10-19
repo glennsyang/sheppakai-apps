@@ -28,3 +28,9 @@ pre-push:
     # `test` script is `pnpm -r test`, which would run every suite a second time.
     test:
       run: pnpm --filter '...[origin/main]' --filter '!sheppakai-apps' test
+    # Synapse Playwright specs. Needs E2E_USER_EMAIL / E2E_USER_PASSWORD in apps/synapse/.env.test
+    # (the specs skip without them) and reuses a running dev server on the base URL if one is up.
+    e2e-synapse:
+      root: apps/synapse/
+      glob: 'apps/synapse/**'
+      run: pnpm test:e2e
