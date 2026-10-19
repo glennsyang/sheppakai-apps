@@ -77,6 +77,13 @@ describe('signIn', () => {
 		expect(result).toMatchObject({ resetComplete: true, invalidVerificationLink: true });
 	});
 
+	it('never reflects ?message= text into the banner', async () => {
+		const result = await routes.signIn.load(
+			loadEvent('https://app.example.com/sign-in?message=Account%20locked%2C%20call%20555-0100')
+		);
+		expect(result.form.message).toBeUndefined();
+	});
+
 	it('signs in and redirects to the post-login route', async () => {
 		api.signInEmail.mockResolvedValueOnce({});
 		const request = post('/sign-in', fields);
@@ -152,6 +159,13 @@ describe('forgotPassword', () => {
 		routes.forgotPassword.actions.default({
 			request: post('/forgot-password', { email })
 		} as never);
+
+	it('never reflects ?message= text into the banner', async () => {
+		const result = await routes.forgotPassword.load(
+			loadEvent('https://app.example.com/forgot-password?message=Account%20locked')
+		);
+		expect(result.form.message).toBeUndefined();
+	});
 
 	it('asks Better Auth to send a reset link for a valid email', async () => {
 		api.requestPasswordReset.mockResolvedValueOnce({ status: true });
