@@ -32,7 +32,7 @@
 		"db:studio": "drizzle-kit studio"
 	},
 	"dependencies": {
-		"@anthropic-ai/sdk": "^0.133.0",
+		"@anthropic-ai/sdk": "^0.135.0",
 		"@getbrevo/brevo": "catalog:",
 		"@google/genai": "^2.29.1",
 		"@sentry/sveltekit": "catalog:",
