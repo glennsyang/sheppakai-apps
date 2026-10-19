@@ -40,7 +40,7 @@
 		"better-auth": "catalog:",
 		"better-sqlite3": "catalog:",
 		"drizzle-orm": "catalog:",
-		"markdown-it": "^15.0.2",
+		"markdown-it": "^15.0.3",
 		"sveltekit-rate-limiter": "catalog:"
 	},
 	"devDependencies": {
