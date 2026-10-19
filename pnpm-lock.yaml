@@ -331,8 +331,8 @@ importers:
         specifier: 'catalog:'
         version: 6.1.0
       '@google/genai':
-        specifier: ^2.29.1
-        version: 2.29.1
+        specifier: ^2.30.0
+        version: 2.30.0
       '@sentry/sveltekit':
         specifier: 'catalog:'
         version: 11.7.0(@sveltejs/kit@3.0.1(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.2)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(rollup@4.64.0)(svelte@5.57.2)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -1366,8 +1366,8 @@ packages:
     resolution: {integrity: sha512-QLJLqxI0A6+umc1hqZ0TY5bvrAJxNkjSCfzLA56/o5gyiJvaMwYzoFG6V21ajzVA0gKFEtyYjGjzrR2kx+/dvQ==}
     engines: {node: '>=18.0.0'}
 
-  '@google/genai@2.29.1':
-    resolution: {integrity: sha512-keU+JsY11fT4ykdFA6Q8iQHBgOAAVssFLxPtXRjCIEr5Zt2GzE75c22bBmq87XbhgtpuKaObnSgsrG60rj0ZMA==}
+  '@google/genai@2.30.0':
+    resolution: {integrity: sha512-Gkv1ix8iZey/V3WF4lHaRS8C71P533jenDT/lA+fdPTCfXYfmCVHvo+0H5jTgzonqsmROQG7QpzLJkpoP/x7bg==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       '@modelcontextprotocol/sdk': ^1.25.2
@@ -4460,7 +4460,7 @@ snapshots:
 
   '@getbrevo/brevo@6.1.0': {}
 
-  '@google/genai@2.29.1':
+  '@google/genai@2.30.0':
     dependencies:
       google-auth-library: 10.9.1
       p-retry: 4.6.2
