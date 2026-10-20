@@ -50,7 +50,7 @@ export function rowToRecipe(row: typeof recipes.$inferSelect): Recipe {
 		...parseStoredRecipeJson(row),
 		prepTimeMinutes: row.prepTimeMinutes,
 		servings: row.servings,
-		source: row.source as RecipeSource,
+		source: row.source,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt
 	};
