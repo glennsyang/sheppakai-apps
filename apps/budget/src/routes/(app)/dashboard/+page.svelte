@@ -534,9 +534,9 @@
 
 	let categoryChartDescription = $derived.by(() => {
 		if (yearlyView !== 'current') return selectedYear;
-		const months = data.timeRangeData ?? [];
-		if (months.length === 0) return selectedYear;
-		return `${months[0].month} - ${months[months.length - 1].month} ${selectedYear}`;
+		const range = data.timeRangeData ?? [];
+		if (range.length === 0) return selectedYear;
+		return `${range[0].month} - ${range[range.length - 1].month} ${selectedYear}`;
 	});
 </script>
 

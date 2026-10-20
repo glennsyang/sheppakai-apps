@@ -58,7 +58,7 @@ describe('createWindowCleaningCustomer', () => {
 	it('inserts without createdBy/updatedBy', async () => {
 		await createWindowCleaningCustomer(input, 'user-1');
 
-		const insertedValues = mockInsertValues.mock.calls[0][0] as Record<string, unknown>;
+		const insertedValues = mockInsertValues.mock.calls[0][0];
 		expect(insertedValues.userId).toBe('user-1');
 		expect(insertedValues).not.toHaveProperty('createdBy');
 		expect(insertedValues).not.toHaveProperty('updatedBy');
@@ -92,7 +92,7 @@ describe('updateWindowCleaningCustomer', () => {
 	it('sets fields with updatedAt stamped', async () => {
 		await updateWindowCleaningCustomer('cust-1', input);
 
-		const setValues = mockUpdateSet.mock.calls[0][0] as Record<string, unknown>;
+		const setValues = mockUpdateSet.mock.calls[0][0];
 		expect(setValues.name).toBe('Jane Doe');
 		expect(setValues.updatedAt).toBeInstanceOf(Date);
 	});

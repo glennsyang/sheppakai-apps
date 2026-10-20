@@ -218,21 +218,18 @@ function createUpdateAction<
 			// Transform data if transformer provided
 			let dataToUpdate: Partial<InferInsertType<TTable>> = config.transformUpdate
 				? config.transformUpdate(form.data as InferSchemaType<TSchema>, userId)
-				: ({ ...form.data } as Partial<InferInsertType<TTable>>);
+				: { ...form.data };
 
 			// Remove id field from update data
 			const dataRecord = dataToUpdate as Record<string, unknown>;
 			delete dataRecord.id;
 
 			// Stamp updatedAt
-			dataToUpdate = withUpdatedAt(dataToUpdate) as Partial<InferInsertType<TTable>>;
+			dataToUpdate = withUpdatedAt(dataToUpdate);
 
 			// Update in database
 			const columns = getTableColumns(config.table);
-			await getDb()
-				.update(config.table)
-				.set(dataToUpdate as InferInsertType<TTable>)
-				.where(eq(columns.id, recordId));
+			await getDb().update(config.table).set(dataToUpdate).where(eq(columns.id, recordId));
 
 			logger.info(`${config.entityName} updated successfully`, {
 				id: recordId

@@ -1,7 +1,6 @@
 // This module runs in the browser (geolocation + fetch from a client-side dialog), so it
-// cannot import the canonical logger — that logger lives under `#lib/server/` specifically so
-// SvelteKit's server-only import guard keeps it (and the Sentry SDK it pulls in) out of client
-// bundles. A plain console.error is the deliberate exception to the "no console.*" convention.
+// cannot import the canonical logger under `#lib/server/`. Failures are rethrown with the
+// original error as `cause`, and the caller shows the message in a toast.
 const weatherMap: Record<number, { label: string; icon: string }> = {
 	0: { label: 'Clear sky', icon: '☀️' },
 	1: { label: 'Mainly clear', icon: '🌤️' },
@@ -69,7 +68,8 @@ export async function getCurrentWeather(): Promise<JournalWeather> {
 			condition
 		};
 	} catch (error) {
-		console.error('Failed to get weather', error);
-		throw new TypeError('Unable to retrieve your location for weather information.');
+		throw new TypeError('Unable to retrieve your location for weather information.', {
+			cause: error
+		});
 	}
 }

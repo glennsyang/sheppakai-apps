@@ -135,7 +135,7 @@ export async function suggestMeals(pantryItems: string[]): Promise<MealSuggestio
 		parsed = JSON.parse(text) as { suggestions?: unknown } | null;
 	} catch (err) {
 		logger.error('Gemini returned non-JSON response', err);
-		throw new Error('Invalid response structure from AI');
+		throw new Error('Invalid response structure from AI', { cause: err });
 	}
 
 	const { suggestions, rejected } = pickValidSuggestions(parsed?.suggestions);

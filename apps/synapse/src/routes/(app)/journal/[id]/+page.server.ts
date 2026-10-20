@@ -68,8 +68,8 @@ export const actions = {
 				.where(and(eq(journalEntries.id, entryId), eq(journalEntries.userId, user.id)));
 
 			logger.info('Journal entry updated', { entryId, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to update journal entry', error);
+		} catch (err) {
+			logger.error('Failed to update journal entry', err);
 			return message(
 				form,
 				{ type: 'error', text: 'Failed to update journal entry' },
@@ -102,8 +102,8 @@ export const actions = {
 				.where(and(eq(journalEntries.id, entryId), eq(journalEntries.userId, user.id)));
 
 			logger.info('Journal entry deleted', { entryId, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to delete journal entry', error, { entryId });
+		} catch (err) {
+			logger.error('Failed to delete journal entry', err, { entryId });
 			return message(
 				form,
 				{ type: 'error', text: 'Failed to delete journal entry' },

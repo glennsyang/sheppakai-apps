@@ -222,8 +222,8 @@ export const actions = {
 				type: 'success',
 				text: 'Schedule saved successfully!'
 			});
-		} catch (error) {
-			logger.error('Failed to create/update schedule', error);
+		} catch (err) {
+			logger.error('Failed to create/update schedule', err);
 			return message(
 				form,
 				{
@@ -258,8 +258,8 @@ export const actions = {
 				userId: user.id
 			});
 			return message(form, { type: 'success', text: 'Schedule deleted.' });
-		} catch (error) {
-			logger.error('Failed to delete schedule', error);
+		} catch (err) {
+			logger.error('Failed to delete schedule', err);
 			return message(form, { type: 'error', text: 'Failed to delete schedule' }, { status: 500 });
 		}
 	}),
@@ -309,8 +309,8 @@ export const actions = {
 				type: 'success',
 				text: 'Session logged successfully!'
 			});
-		} catch (error) {
-			logger.error('Failed to complete session', error);
+		} catch (err) {
+			logger.error('Failed to complete session', err);
 			return message(
 				form,
 				{
@@ -370,8 +370,8 @@ export const actions = {
 				type: 'success',
 				text: 'Routine updated successfully!'
 			});
-		} catch (error) {
-			logger.error('Failed to update routine', error);
+		} catch (err) {
+			logger.error('Failed to update routine', err);
 			return message(
 				form,
 				{
@@ -425,8 +425,8 @@ export const actions = {
 				routineId: routineId,
 				userId: user.id
 			});
-		} catch (error) {
-			logger.error('Failed to delete routine', error);
+		} catch (err) {
+			logger.error('Failed to delete routine', err);
 			return message(form, { type: 'error', text: 'Failed to delete routine' }, { status: 500 });
 		}
 
