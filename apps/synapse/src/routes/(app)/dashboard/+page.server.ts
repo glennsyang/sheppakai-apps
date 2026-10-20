@@ -686,11 +686,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 				ranges.thisWeekDates,
 				ranges.lastWeekDates
 			),
-			dueSoonTasks: data.dueSoonTasksRaw.map((t) => ({
-				id: t.id,
-				title: t.title,
-				dueDate: t.dueDate as string
-			})),
+			// The query filters on dueDate, so it is never null here.
+			dueSoonTasks: data.dueSoonTasksRaw.flatMap((t) =>
+				t.dueDate ? [{ id: t.id, title: t.title, dueDate: t.dueDate }] : []
+			),
 			agendaCompletionTrend: buildAgendaCompletionTrend(
 				data.agendaEntriesForTrend,
 				ranges.startOfThisWeekDate

@@ -10,7 +10,7 @@ import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import { scopesToPermissions, type ApiScope } from '#lib/api-scopes.js';
+import { scopesToPermissions } from '#lib/api-scopes.js';
 import type { AdminApiLogEntry } from '#lib/components/admin/api-logs-columns.js';
 import { createUserSchema } from '#lib/schemas/admin-user.js';
 import { createApiKeySchema } from '#lib/schemas/api-key.js';
@@ -48,7 +48,7 @@ const apiKeyActions = createApiKeyAdminActions({
 	isAdminUser,
 	logger,
 	createSchema: createApiKeySchema,
-	toPermissions: (scopes) => scopesToPermissions(scopes as ApiScope[])
+	toPermissions: scopesToPermissions
 });
 
 export const load: PageServerLoad = async ({ request, locals }) => {

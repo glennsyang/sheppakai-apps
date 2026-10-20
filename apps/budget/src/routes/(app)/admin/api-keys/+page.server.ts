@@ -2,7 +2,7 @@ import { createApiKeyAdminActions, revokeApiKeySchema } from '@sheppakai/shared/
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import { scopesToPermissions, type ApiScope } from '#lib/api-scopes.js';
+import { scopesToPermissions } from '#lib/api-scopes.js';
 import { createApiKeySchema } from '#lib/formSchemas/index.js';
 import { isAdminUser } from '#lib/server/actions/auth-guard.js';
 import { assertAdmin } from '#lib/server/actions/auth-guard.js';
@@ -41,5 +41,5 @@ export const actions: Actions = createApiKeyAdminActions({
 	isAdminUser,
 	logger,
 	createSchema: createApiKeySchema,
-	toPermissions: (scopes) => scopesToPermissions(scopes as ApiScope[])
+	toPermissions: scopesToPermissions
 });

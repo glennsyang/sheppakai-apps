@@ -123,7 +123,7 @@ function mapEntryRecord(entry: DailyAgendaEntryRecord): DailyAgendaEntry {
 		templateGroupId: entry.templateGroupId ?? null,
 		date: entry.date,
 		title: entry.title,
-		sourceType: entry.sourceType as DailyAgendaEntry['sourceType'],
+		sourceType: entry.sourceType,
 		sortOrder: entry.sortOrder,
 		completed: entry.completed,
 		completedAt: entry.completedAt ?? null

@@ -21,6 +21,7 @@
 	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
 	import PageSkeleton from '#lib/components/skeletons/PageSkeleton.svelte';
 	import * as Accordion from '#lib/components/ui/accordion/index.js';
+	import type { WorkoutType } from '#lib/schemas/fitness.js';
 	import { getTodayString, parseLocalDateString } from '#lib/utils/date.js';
 
 	import type { PageData } from './$types.js';
@@ -63,7 +64,7 @@
 		id: string;
 		date: string;
 		time: string;
-		type: string;
+		type: WorkoutType;
 		durationMinutes: number;
 		steps: number | null;
 		notes: string | null;

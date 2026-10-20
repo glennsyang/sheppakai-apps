@@ -59,7 +59,9 @@ export const dailyAgendaEntries = sqliteTable(
 		templateGroupId: text('template_group_id'),
 		date: text('date').notNull(), // YYYY-MM-DD
 		title: text('title').notNull(),
-		sourceType: text('source_type').notNull().default('default'), // 'default' | 'custom'
+		sourceType: text('source_type', { enum: ['default', 'custom'] })
+			.notNull()
+			.default('default'),
 		sortOrder: integer('sort_order').notNull().default(0),
 		completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
 		completedAt: integer('completed_at', { mode: 'timestamp' }),

@@ -52,10 +52,12 @@ export const workoutTypeOptions = [
 ] as const;
 
 // Optimized lookup following mood.ts pattern
-const workoutOptionsByValue = new Map(workoutTypeOptions.map((option) => [option.value, option]));
+const workoutOptionsByValue = new Map<string, (typeof workoutTypeOptions)[number]>(
+	workoutTypeOptions.map((option) => [option.value, option])
+);
 
 function getWorkoutOption(type: string) {
-	return workoutOptionsByValue.get(type as WorkoutType);
+	return workoutOptionsByValue.get(type);
 }
 
 export function getWorkoutLabel(type: string): string {

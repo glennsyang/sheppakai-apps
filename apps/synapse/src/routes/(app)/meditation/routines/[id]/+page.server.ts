@@ -92,7 +92,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		const scheduleForm = schedule
 			? await superValidate(
 					{
-						cadence: schedule.cadence as 'daily' | 'weekly' | 'custom',
+						cadence: schedule.cadence,
 						days_of_week: schedule.daysOfWeek || '',
 						time: schedule.time
 					},

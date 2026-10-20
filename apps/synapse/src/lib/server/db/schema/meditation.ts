@@ -52,7 +52,7 @@ export const meditationSchedules = sqliteTable(
 		routineId: text('routine_id')
 			.notNull()
 			.references(() => meditationRoutines.id, { onDelete: 'cascade' }),
-		cadence: text('cadence').notNull(), // 'daily' | 'weekly' | 'custom'
+		cadence: text('cadence', { enum: ['daily', 'weekly', 'custom'] }).notNull(),
 		daysOfWeek: text('days_of_week'), // JSON array of day numbers (0-6, 0=Sunday)
 		time: text('time').notNull(), // HH:MM
 		enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),

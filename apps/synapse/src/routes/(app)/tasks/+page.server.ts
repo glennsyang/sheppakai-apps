@@ -61,7 +61,7 @@ import {
 	getStartOfWeek,
 	getTodayString
 } from '#lib/utils/date.js';
-import { normalizeOptionalMoodText } from '#lib/utils/mood.js';
+import { isMoodValue, normalizeOptionalMoodText } from '#lib/utils/mood.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -453,6 +453,12 @@ export const actions = {
 			return setError(form, 'date', 'You cannot log a mood in the future');
 		}
 
+		// The schema already rejects unknown moods; this narrows the type for the insert.
+		const { mood } = form.data;
+		if (!isMoodValue(mood)) {
+			return setError(form, 'mood', 'Choose a valid mood');
+		}
+
 		try {
 			const db = getDb();
 			const existingMoodLog = await db.query.moodLogs.findFirst({
@@ -467,7 +473,7 @@ export const actions = {
 				await db
 					.update(moodLogs)
 					.set({
-						mood: form.data.mood,
+						mood,
 						customMood,
 						notes,
 						...withTimestampsForUpdate()
@@ -483,7 +489,7 @@ export const actions = {
 				id: moodLogId,
 				userId: user.id,
 				date: form.data.date,
-				mood: form.data.mood,
+				mood,
 				customMood,
 				notes,
 				...withTimestampsForCreate()

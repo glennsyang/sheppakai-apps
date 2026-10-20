@@ -29,7 +29,7 @@
 		id: string;
 		date: string;
 		time: string;
-		type: string;
+		type: WorkoutType;
 		durationMinutes: number;
 		steps: number | null;
 		notes: string | null;
@@ -99,7 +99,7 @@
 		if (editEntry) {
 			$form.date = editEntry.date;
 			$form.time = editEntry.time;
-			$form.type = editEntry.type as WorkoutType;
+			$form.type = editEntry.type;
 			$form.durationMinutes = editEntry.durationMinutes;
 			$form.steps = editEntry.steps;
 			$form.notes = editEntry.notes;

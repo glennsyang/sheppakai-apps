@@ -7,8 +7,6 @@ import { isValidAppDateTime } from '#lib/utils/date.js';
  */
 export const MOOD_TAGS = ['Anxious', 'Low Energy', 'Focused', 'Pre-Sleep', 'General'] as const;
 
-export type MoodTag = (typeof MOOD_TAGS)[number];
-
 /**
  * Schema for creating a meditation routine
  */

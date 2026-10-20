@@ -3,12 +3,7 @@ import { and, eq, ne, sql } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import {
-	deleteTaskSchema,
-	type TaskState,
-	type UpdateTaskInput,
-	updateTaskSchema
-} from '#lib/schemas/task.js';
+import { deleteTaskSchema, type UpdateTaskInput, updateTaskSchema } from '#lib/schemas/task.js';
 import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
 import {
 	getOwnedEntityOrNull,
@@ -68,7 +63,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			description: task.description ?? undefined,
 			priority: task.priority,
 			dueDate: task.dueDate ?? undefined,
-			state: task.state as TaskState,
+			state: task.state,
 			tags: tagsString
 		},
 		zod4(updateTaskSchema)
@@ -114,7 +109,7 @@ export const actions = {
 				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
 			}
 
-			const nextState = (form.data.state ?? existing.state) as TaskState;
+			const nextState = form.data.state ?? existing.state;
 
 			if (nextState === existing.state) {
 				const updateData = buildTaskUpdateData(form.data, existing.state);
@@ -141,7 +136,7 @@ export const actions = {
 
 					const sourceRows = tx.query.tasks
 						.findMany({
-							where: and(eq(tasks.userId, user.id), eq(tasks.state, existing.state as TaskState)),
+							where: and(eq(tasks.userId, user.id), eq(tasks.state, existing.state)),
 							columns: { id: true },
 							orderBy: [tasks.sortOrder, tasks.taskNumber]
 						})

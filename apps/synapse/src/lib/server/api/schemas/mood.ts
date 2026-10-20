@@ -1,21 +1,20 @@
 import { z } from 'zod';
 
-import { isMoodValue } from '#lib/utils/mood.js';
+import { isMoodValue, type MoodValue } from '#lib/utils/mood.js';
 
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (use YYYY-MM-DD)');
 
 export const apiUpsertMoodSchema = z
 	.object({
 		date: dateString,
-		mood: z.string().min(1, 'Choose a mood'),
+		mood: z.custom<MoodValue>(
+			(value) => typeof value === 'string' && isMoodValue(value),
+			'Choose a valid mood'
+		),
 		customMood: z.string().trim().max(40, 'Custom mood must be 40 characters or fewer').optional(),
 		notes: z.string().trim().max(280, 'Notes must be 280 characters or fewer').optional()
 	})
 	.superRefine((data, ctx) => {
-		if (!isMoodValue(data.mood)) {
-			ctx.addIssue({ code: 'custom', message: 'Choose a valid mood', path: ['mood'] });
-		}
-
 		if (data.mood === 'custom' && !data.customMood?.trim()) {
 			ctx.addIssue({
 				code: 'custom',
