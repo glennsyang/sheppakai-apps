@@ -75,7 +75,9 @@ export const workoutLogs = sqliteTable(
 			.references(() => user.id, { onDelete: 'cascade' }),
 		date: text('date').notNull(), // YYYY-MM-DD
 		time: text('time'), // Optional HH:MM
-		type: text('type').notNull(), // 'strength' | 'cardio' | 'hiit' | 'walk' | 'stretch' | 'other'
+		type: text('type', {
+			enum: ['strength', 'cardio', 'hiit', 'walk', 'stretch', 'other']
+		}).notNull(),
 		durationMinutes: integer('duration_minutes'),
 		steps: integer('steps'), // For walk workouts
 		notes: text('notes'),
@@ -200,7 +202,7 @@ export const workoutReminders = sqliteTable(
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
 		workoutType: text('workout_type').notNull(), // 'strength' | 'cardio' | 'hiit' | 'walk' | 'stretch' | 'other'
-		cadence: text('cadence').notNull(), // 'daily' | 'weekly'
+		cadence: text('cadence', { enum: ['daily', 'weekly'] }).notNull(),
 		daysOfWeek: text('days_of_week'), // JSON array of day numbers (0-6, 0=Sunday)
 		time: text('time').notNull(), // HH:MM
 		enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),

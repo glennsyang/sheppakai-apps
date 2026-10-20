@@ -19,7 +19,9 @@ export const tasks = sqliteTable(
 		title: text('title').notNull(),
 		description: text('description'),
 		dueDate: text('due_date'), // Optional YYYY-MM-DD
-		state: text('state').notNull().default('new'), // 'new' | 'in_progress' | 'on_hold' | 'blocked' | 'done'
+		state: text('state', { enum: ['new', 'in_progress', 'on_hold', 'blocked', 'done'] })
+			.notNull()
+			.default('new'),
 		sortOrder: integer('sort_order').notNull().default(0),
 		priority: integer('priority').notNull(), // 1-4 (1=highest, required)
 		tags: text('tags'), // JSON array of strings

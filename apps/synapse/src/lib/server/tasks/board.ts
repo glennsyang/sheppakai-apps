@@ -113,7 +113,7 @@ export function moveTaskWithinBoard(
 		return null;
 	}
 
-	const fromState = existing.state as TaskState;
+	const fromState = existing.state;
 
 	if (fromState === toState) {
 		const columnTaskIds = loadTaskIdsByState(db, userId, toState);
@@ -211,7 +211,7 @@ export async function loadTaskBoardData(
 	return taskRows.map((task) => ({
 		...task,
 		taskNumber: task.taskNumber,
-		state: task.state as TaskState,
+		state: task.state,
 		tags: parseTaskTags(task.tags)
 	}));
 }

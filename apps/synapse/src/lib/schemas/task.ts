@@ -21,6 +21,11 @@ const commaSeparatedQueryParamSchema = z
 
 const uniqueValues = <T>(values: T[]): T[] => Array.from(new Set(values));
 
+const DUE_DATE_FILTERS = ['overdue', 'today', 'upcoming'] as const;
+type DueDateFilter = (typeof DUE_DATE_FILTERS)[number];
+const dueDateFilterSet = new Set<string>(DUE_DATE_FILTERS);
+const isDueDateFilter = (value: string): value is DueDateFilter => dueDateFilterSet.has(value);
+
 /**
  * Schema for creating a new task item
  */
@@ -99,26 +104,23 @@ export const taskFilterSchema = z.object({
 	}),
 	tag: commaSeparatedQueryParamSchema.transform((values): string[] => uniqueValues(values)),
 	state: TaskStateEnum.optional(),
-	dueDate: commaSeparatedQueryParamSchema.transform(
-		(values, ctx): ('overdue' | 'today' | 'upcoming')[] => {
-			const validValues = ['overdue', 'today', 'upcoming'];
-			const parsedValues: ('overdue' | 'today' | 'upcoming')[] = [];
+	dueDate: commaSeparatedQueryParamSchema.transform((values, ctx): DueDateFilter[] => {
+		const parsedValues: DueDateFilter[] = [];
 
-			for (const value of values) {
-				if (!validValues.includes(value)) {
-					ctx.addIssue({
-						code: 'custom',
-						message: 'Due date filters must be one of: overdue, today, upcoming'
-					});
-					return z.NEVER;
-				}
-
-				parsedValues.push(value as 'overdue' | 'today' | 'upcoming');
+		for (const value of values) {
+			if (!isDueDateFilter(value)) {
+				ctx.addIssue({
+					code: 'custom',
+					message: 'Due date filters must be one of: overdue, today, upcoming'
+				});
+				return z.NEVER;
 			}
 
-			return uniqueValues(parsedValues);
+			parsedValues.push(value);
 		}
-	)
+
+		return uniqueValues(parsedValues);
+	})
 });
 
 export type TaskState = z.infer<typeof TaskStateEnum>;

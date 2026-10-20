@@ -2,7 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import { createRoutineSchema, MOOD_TAGS, type MoodTag } from '#lib/schemas/meditation.js';
+import { createRoutineSchema, MOOD_TAGS } from '#lib/schemas/meditation.js';
 import { requireAuth } from '#lib/server/actions/auth-guard.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { splitCommaSeparated } from '#lib/server/actions/string-parsers.js';
@@ -33,7 +33,8 @@ export const actions = {
 			const moodTagsArray = splitCommaSeparated(form.data.mood_tags);
 
 			// Validate each mood tag
-			const invalidTags = moodTagsArray.filter((tag) => !MOOD_TAGS.includes(tag as MoodTag));
+			const allowedTags = new Set<string>(MOOD_TAGS);
+			const invalidTags = moodTagsArray.filter((tag) => !allowedTags.has(tag));
 			if (invalidTags.length > 0) {
 				logger.warn('Invalid mood tags provided', { invalidTags });
 				return message(

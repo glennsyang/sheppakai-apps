@@ -1,7 +1,6 @@
 import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { and, eq, ne, sql } from 'drizzle-orm';
 
-import type { TaskState } from '#lib/schemas/task.js';
 import type { ApiCreateTaskInput, ApiUpdateTaskInput } from '#lib/server/api/schemas/tasks.js';
 import { getDb } from '#lib/server/db/index.js';
 import { tasks } from '#lib/server/db/schema/index.js';
@@ -114,7 +113,7 @@ export async function updateTask(userId: string, taskId: string, input: ApiUpdat
 		throw new ApiWriteError('not_found', 'Task not found.', 404);
 	}
 
-	const nextState = (input.state ?? existing.state) as TaskState;
+	const nextState = input.state ?? existing.state;
 
 	const buildUpdateData = (existingState: string) => {
 		const updateData: Partial<typeof tasks.$inferInsert> = {
@@ -163,7 +162,7 @@ export async function updateTask(userId: string, taskId: string, input: ApiUpdat
 
 			const sourceRows = tx.query.tasks
 				.findMany({
-					where: and(eq(tasks.userId, userId), eq(tasks.state, existing.state as TaskState)),
+					where: and(eq(tasks.userId, userId), eq(tasks.state, existing.state)),
 					columns: { id: true },
 					orderBy: [tasks.sortOrder, tasks.taskNumber]
 				})

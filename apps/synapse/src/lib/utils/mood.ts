@@ -68,16 +68,18 @@ export const moodPeriods = ['week', 'month', 'quarter'] as const;
 
 export type MoodPeriod = (typeof moodPeriods)[number];
 
-type MoodValue = (typeof moodOptions)[number]['value'];
+export type MoodValue = (typeof moodOptions)[number]['value'];
 
-const moodOptionsByValue = new Map(moodOptions.map((option) => [option.value, option]));
+const moodOptionsByValue = new Map<string, (typeof moodOptions)[number]>(
+	moodOptions.map((option) => [option.value, option])
+);
 
 export function isMoodValue(value: string): value is MoodValue {
-	return moodOptionsByValue.has(value as MoodValue);
+	return moodOptionsByValue.has(value);
 }
 
 function getMoodOption(value: string) {
-	return moodOptionsByValue.get(value as MoodValue);
+	return moodOptionsByValue.get(value);
 }
 
 function getMoodLabel(value: string): string {

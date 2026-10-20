@@ -1,5 +1,6 @@
 import type { Component } from 'svelte';
 
+import type { WorkoutType } from './schemas/fitness';
 import type { SessionUser } from './server/auth';
 
 /** The signed-in user, as `locals.user` holds it. */
@@ -45,7 +46,7 @@ export type Workout = {
 	id: string;
 	date: string;
 	time: string | null;
-	type: string;
+	type: WorkoutType;
 	durationMinutes: number | null;
 	steps: number | null;
 	notes: string | null;

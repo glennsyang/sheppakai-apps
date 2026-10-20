@@ -16,7 +16,19 @@ export const moodLogs = sqliteTable(
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
 		date: text('date').notNull(),
-		mood: text('mood').notNull(),
+		mood: text('mood', {
+			enum: [
+				'sad',
+				'anxious',
+				'overwhelmed',
+				'tired',
+				'calm',
+				'focused',
+				'content',
+				'happy',
+				'custom'
+			]
+		}).notNull(),
 		customMood: text('custom_mood'),
 		notes: text('notes'),
 		createdAt: integer('created_at', { mode: 'timestamp' })
