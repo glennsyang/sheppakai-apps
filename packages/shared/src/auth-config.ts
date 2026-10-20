@@ -214,6 +214,9 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 			// server. Fails closed: an HIBP outage blocks the password change rather than
 			// silently skipping the check.
 			haveIBeenPwned(),
+			// Keeps the `Extra` tuple in betterAuth's inferred plugin list; `[]` only stands in when
+			// `Extra` is its `[]` default.
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- `?? []` widens away from Extra
 			...((config.plugins ?? []) as Extra),
 			sveltekitCookies(config.getRequestEvent) // must stay the last plugin
 		]

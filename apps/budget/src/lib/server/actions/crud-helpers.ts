@@ -31,6 +31,12 @@ type InferSelectType<TTable extends AnySQLiteTable> = TTable['$inferSelect'];
  */
 type HookError = { error: string };
 
+/** The `CrudConfig` fields a delete uses; none depend on the schema or update context. */
+type DeleteConfig<TTable extends AnySQLiteTable> = Pick<
+	CrudConfig<AnyZodSchema, TTable>,
+	'table' | 'entityName' | 'messages' | 'beforeDelete' | 'afterDelete'
+>;
+
 function isHookError(value: unknown): value is HookError {
 	return (
 		typeof value === 'object' &&
@@ -122,11 +128,15 @@ function createCreateAction<
 		}
 
 		const userId = user.id;
+		// superforms types `form.data` as its own Infer<TSchema>, which TypeScript can't relate
+		// to z.infer<TSchema> while TSchema is generic. Both name the same parsed output.
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic Infer<TSchema>, see above
+		const data = form.data as InferSchemaType<TSchema>;
 
 		try {
 			// Run beforeCreate hook if provided
 			if (config.beforeCreate) {
-				const result = await config.beforeCreate(form.data as InferSchemaType<TSchema>, userId);
+				const result = await config.beforeCreate(data, userId);
 				if (isHookError(result)) {
 					return hookRejected(form, result);
 				}
@@ -134,7 +144,7 @@ function createCreateAction<
 
 			// Transform data if transformer provided
 			const dataToInsert: Partial<InferInsertType<TTable>> = config.transformCreate
-				? config.transformCreate(form.data as InferSchemaType<TSchema>, userId)
+				? config.transformCreate(data, userId)
 				: { ...form.data };
 
 			// Remove id field if present (it's auto-generated)
@@ -157,7 +167,7 @@ function createCreateAction<
 			// Run afterCreate hook if provided
 			if (config.afterCreate && result[0]) {
 				const record = result[0] as InferSelectType<TTable>;
-				await config.afterCreate((record as Record<string, unknown> & { id: string }).id, record);
+				await config.afterCreate(record.id, record);
 			}
 		} catch (error) {
 			logger.error(`Failed to create ${config.entityName.toLowerCase()}`, error);
@@ -199,25 +209,26 @@ function createUpdateAction<
 		}
 
 		const userId = user.id;
+		// See createCreateAction: superforms' Infer<TSchema> vs z.infer<TSchema>.
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic Infer<TSchema>, see createCreateAction
+		const data = form.data as InferSchemaType<TSchema>;
 		let updateContext: TUpdateContext | undefined;
 
 		try {
 			// Run beforeUpdate hook if provided
 			if (config.beforeUpdate) {
-				const result = await config.beforeUpdate(
-					recordId,
-					form.data as InferSchemaType<TSchema>,
-					userId
-				);
+				const result = await config.beforeUpdate(recordId, data, userId);
 				if (isHookError(result)) {
 					return hookRejected(form, result);
 				}
+				// `!isHookError` can't remove HookError from a generic TUpdateContext.
+				// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- narrowing a generic union, see above
 				updateContext = result as TUpdateContext | undefined;
 			}
 
 			// Transform data if transformer provided
 			let dataToUpdate: Partial<InferInsertType<TTable>> = config.transformUpdate
-				? config.transformUpdate(form.data as InferSchemaType<TSchema>, userId)
+				? config.transformUpdate(data, userId)
 				: { ...form.data };
 
 			// Remove id field from update data
@@ -266,9 +277,7 @@ function createUpdateAction<
  * contract in `docs/ERROR_HANDLING_POLICY.md` — the raw-FormData variant it replaced could only
  * answer with a bare `fail(...)`, which no page could render.
  */
-function createDeleteAction<TTable extends AnySQLiteTable>(
-	config: Omit<CrudConfig<AnyZodSchema, TTable, unknown>, 'schema'>
-) {
+function createDeleteAction<TTable extends AnySQLiteTable>(config: DeleteConfig<TTable>) {
 	return requireAuth(async (event: RequestEvent, user) => {
 		const form = await superValidate(event.request, zod4(idSchema));
 
@@ -350,7 +359,7 @@ export function createCrudActions<
 	return {
 		create: createCreateAction(config),
 		update: createUpdateAction(config),
-		delete: createDeleteAction(config as Omit<CrudConfig<AnyZodSchema, TTable, unknown>, 'schema'>)
+		delete: createDeleteAction(config)
 	};
 }
 
@@ -373,8 +382,6 @@ export function updateAction<
 	return createUpdateAction(config);
 }
 
-export function deleteAction<TTable extends AnySQLiteTable>(
-	config: Omit<CrudConfig<AnyZodSchema, TTable, unknown>, 'schema'>
-) {
+export function deleteAction<TTable extends AnySQLiteTable>(config: DeleteConfig<TTable>) {
 	return createDeleteAction(config);
 }

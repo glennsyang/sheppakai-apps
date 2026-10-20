@@ -96,7 +96,9 @@ export function createServerHandle(options: ServerHandleOptions): Handle {
 			// better-auth types optional DB fields with `?:` while the Drizzle schemas use
 			// `| null`; runtime values are always string | null (never undefined), so the
 			// cast is safe.
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- `?:` vs `| null`, see above
 			event.locals.session = session.session as NonNullable<typeof event.locals.session>;
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- `?:` vs `| null`, see above
 			event.locals.user = session.user as NonNullable<typeof event.locals.user>;
 
 			requestLogger = requestLogger.child({ userId: session.user.id });
