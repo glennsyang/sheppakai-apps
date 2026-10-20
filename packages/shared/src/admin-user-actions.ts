@@ -26,6 +26,11 @@ export const ADMIN_USER_LIST_LIMIT = 500;
 type MessageStatus = NonNullable<Parameters<typeof message>[2]>['status'];
 type TargetUser = { id: string; email: string; name: string };
 
+/** `message()` only accepts 4xx/5xx statuses. */
+function isErrorStatus(code: number): code is NonNullable<MessageStatus> {
+	return Number.isInteger(code) && code >= 400 && code <= 599;
+}
+
 /** The better-auth `admin` plugin endpoints these actions call. */
 interface AdminAuthApi {
 	setRole(ctx: {
@@ -100,7 +105,7 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 			return message(
 				form,
 				{ type: 'error', text: err.body?.message || fallback },
-				{ status: (err.statusCode || 400) as MessageStatus }
+				{ status: isErrorStatus(err.statusCode) ? err.statusCode : 400 }
 			);
 		}
 		logger.error(fallback, err);

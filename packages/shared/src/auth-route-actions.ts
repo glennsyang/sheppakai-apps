@@ -15,6 +15,7 @@ import {
 	resetPasswordSchema,
 	signInSchema
 } from './auth-schemas';
+import { getBetterAuthErrorCode } from './better-auth-errors';
 import { FORGOT_PASSWORD_RESPONSE } from './forgot-password-response';
 import { rateLimitedMessage, type createAuthRateLimiter } from './rate-limiter';
 
@@ -56,7 +57,7 @@ const GENERIC_RESEND_RESULT =
 type LoadEvent = Pick<RequestEvent, 'locals' | 'url'>;
 
 function isEmailNotVerified(error: unknown): boolean {
-	return (error as { body?: { code?: string } } | null)?.body?.code === 'EMAIL_NOT_VERIFIED';
+	return getBetterAuthErrorCode(error) === 'EMAIL_NOT_VERIFIED';
 }
 
 export function createAuthRouteActions(deps: AuthRouteActionsDeps) {

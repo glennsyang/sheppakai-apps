@@ -1,3 +1,5 @@
+import { isRecord } from './guards';
+
 // Better Auth error code -> user-facing message map, shared by every app's auth actions.
 // Every app sets `minPasswordLength: 12`; PASSWORD_TOO_SHORT matches that.
 
@@ -8,7 +10,8 @@
  * @returns The error code string if it exists, undefined otherwise
  */
 export function getBetterAuthErrorCode(error: unknown): string | undefined {
-	return (error as { body?: { code?: string } })?.body?.code;
+	if (!isRecord(error) || !isRecord(error.body)) return undefined;
+	return typeof error.body.code === 'string' ? error.body.code : undefined;
 }
 
 /**
