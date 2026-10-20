@@ -32,6 +32,7 @@
 		"./email": "./src/email.ts",
 		"./env": "./src/env.ts",
 		"./forgot-password-response": "./src/forgot-password-response.ts",
+		"./guards": "./src/guards.ts",
 		"./healthz": "./src/healthz.ts",
 		"./name-guard": "./src/name-guard.ts",
 		"./ntfy": "./src/ntfy.ts",

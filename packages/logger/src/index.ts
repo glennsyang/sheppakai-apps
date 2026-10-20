@@ -4,8 +4,15 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 const LEVEL_RANK: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3 };
 const IS_DEV = process.env.NODE_ENV !== 'production';
-const MIN_LEVEL: LogLevel =
-	(process.env.LOG_LEVEL as LogLevel | undefined) ?? (IS_DEV ? 'debug' : 'info');
+const MIN_LEVEL: LogLevel = isLogLevel(process.env.LOG_LEVEL)
+	? process.env.LOG_LEVEL
+	: IS_DEV
+		? 'debug'
+		: 'info';
+
+function isLogLevel(value: string | undefined): value is LogLevel {
+	return value !== undefined && Object.hasOwn(LEVEL_RANK, value);
+}
 
 interface LogContext {
 	requestId?: string;
@@ -42,9 +49,13 @@ function sanitize(value: unknown): unknown {
 	if (typeof value === 'string') return redactString(value);
 	if (typeof value !== 'object') return value;
 	if (Array.isArray(value)) return value.map(sanitize);
+	return sanitizeRecord(value);
+}
 
+function sanitizeRecord(value: object): Record<string, unknown> {
+	if (IS_DEV) return { ...value };
 	const out: Record<string, unknown> = {};
-	for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+	for (const [key, val] of Object.entries(value)) {
 		if (PII_FIELDS.has(key)) continue;
 		out[key] = sanitize(val);
 	}
@@ -102,8 +113,8 @@ class Logger {
 			timestamp: new Date().toISOString(),
 			level,
 			message: redactString(message),
-			...(sanitize(this.context) as Record<string, unknown>),
-			...(extra !== undefined ? (sanitize(extra) as Record<string, unknown>) : {})
+			...sanitizeRecord(this.context),
+			...(extra !== undefined ? sanitizeRecord(extra) : {})
 		};
 		const line = JSON.stringify(entry);
 		if (level === 'debug') console.debug(line);
@@ -114,8 +125,8 @@ class Logger {
 
 	private sentryExtra(meta?: Record<string, unknown>): Record<string, unknown> {
 		return {
-			...(sanitize(this.context) as Record<string, unknown>),
-			...(meta !== undefined ? (sanitize(meta) as Record<string, unknown>) : {})
+			...sanitizeRecord(this.context),
+			...(meta !== undefined ? sanitizeRecord(meta) : {})
 		};
 	}
 

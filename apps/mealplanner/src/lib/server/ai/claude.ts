@@ -1,5 +1,6 @@
 import { ANTHROPIC_API_KEY } from '$app/env/private';
 import Anthropic from '@anthropic-ai/sdk';
+import { isRecord } from '@sheppakai/shared/guards';
 
 import { pickValidSuggestions } from '#lib/schemas/mealPlan.js';
 import { logger } from '#lib/server/logger.js';
@@ -102,14 +103,14 @@ export async function suggestVariations(mealName: string): Promise<MealSuggestio
 		throw new Error('No variations returned from AI');
 	}
 
-	const input = toolUse.input as { variations?: unknown } | null;
-	const { suggestions, rejected } = pickValidSuggestions(input?.variations);
+	const input = isRecord(toolUse.input) ? toolUse.input : {};
+	const { suggestions, rejected } = pickValidSuggestions(input.variations);
 	if (rejected > 0) {
 		logger.warn('Dropped malformed AI variations', { rejected, kept: suggestions.length });
 	}
 	if (suggestions.length === 0) {
 		logger.error('Claude returned no valid variations', undefined, {
-			keys: Object.keys(input ?? {})
+			keys: Object.keys(input)
 		});
 		throw new Error('Invalid response structure from AI');
 	}

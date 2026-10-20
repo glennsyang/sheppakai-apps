@@ -21,11 +21,7 @@ function parseStoredRecipeJson(row: typeof recipes.$inferSelect): {
 	};
 }
 
-function parseStoredList<S extends z.ZodType<unknown[]>>(
-	recipeId: string,
-	raw: string,
-	schema: S
-): z.output<S> {
+function parseStoredList<T>(recipeId: string, raw: string, schema: z.ZodType<T[]>): T[] {
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(raw);
@@ -35,7 +31,7 @@ function parseStoredList<S extends z.ZodType<unknown[]>>(
 	const result = schema.safeParse(parsed);
 	if (!result.success) {
 		logger.warn('Malformed stored recipe JSON', { recipeId });
-		return [] as z.output<S>;
+		return [];
 	}
 	return result.data;
 }
@@ -50,7 +46,7 @@ export function rowToRecipe(row: typeof recipes.$inferSelect): Recipe {
 		...parseStoredRecipeJson(row),
 		prepTimeMinutes: row.prepTimeMinutes,
 		servings: row.servings,
-		source: row.source as RecipeSource,
+		source: row.source,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt
 	};

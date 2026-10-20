@@ -1,3 +1,4 @@
+import { isRecord } from '@sheppakai/shared/guards';
 import type { RequestEvent } from '@sveltejs/kit';
 import { and, eq, getTableColumns } from 'drizzle-orm';
 import type { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
@@ -71,7 +72,10 @@ function notFound<S extends Record<string, unknown>>(form: SuperValidated<S>, en
 }
 
 /** The `id` field of a schema that has one (update and default delete schemas do). */
-const idOf = (data: unknown) => (data as { id: string }).id;
+function idOf(data: unknown): string {
+	if (isRecord(data) && typeof data.id === 'string') return data.id;
+	throw new TypeError('Expected the validated form to carry a string `id`');
+}
 
 function ownedBy(table: UserOwnedTable, id: string, userId: string) {
 	const columns = getTableColumns(table);
@@ -107,7 +111,8 @@ export function createAction<
 
 		return config.onSuccess
 			? config.onSuccess(form, id)
-			: ({ success: true, create: true, form } as R);
+			: // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the default `R` is this shape; a caller that overrides `R` passes `onSuccess`
+				({ success: true, create: true, form } as R);
 	});
 }
 
@@ -139,7 +144,8 @@ export function updateAction<
 
 		return config.onSuccess
 			? config.onSuccess(form, id)
-			: ({ success: true, update: true, form } as R);
+			: // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the default `R` is this shape; a caller that overrides `R` passes `onSuccess`
+				({ success: true, update: true, form } as R);
 	});
 }
 
@@ -168,6 +174,7 @@ export function deleteAction<
 			return serverError(form, `Failed to delete ${lower(config.entityName)}. Please try again.`);
 		}
 
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the default `R` is this shape; a caller that overrides `R` passes `onSuccess`
 		return config.onSuccess ? config.onSuccess(form, id) : ({ success: true } as R);
 	});
 }

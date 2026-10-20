@@ -166,7 +166,10 @@ export const revokeApiKeySchema = z.object({
 
 type CreateApiKeyInput = { name: string; scopes: string[]; expiresInDays?: number };
 
-export interface ApiKeyAdminActionsDeps<S extends ZodValidationSchema> {
+/** Any app's create-key schema: its scopes enum differs, but every one parses to this shape. */
+type CreateApiKeySchema = ZodValidationSchema & z.ZodType<CreateApiKeyInput>;
+
+export interface ApiKeyAdminActionsDeps<S extends CreateApiKeySchema> {
 	auth: Pick<ApiKeyAuth, 'api'>;
 	/** The app's `createApiKeyStore(auth)`. */
 	store: Pick<ReturnType<typeof createApiKeyStore>, 'deleteById'>;
@@ -182,7 +185,7 @@ export interface ApiKeyAdminActionsDeps<S extends ZodValidationSchema> {
 }
 
 /** Returns the `createApiKey` / `revokeApiKey` admin actions. */
-export function createApiKeyAdminActions<S extends ZodValidationSchema>(
+export function createApiKeyAdminActions<S extends CreateApiKeySchema>(
 	deps: ApiKeyAdminActionsDeps<S>
 ) {
 	const { auth, store, logger } = deps;
@@ -190,6 +193,9 @@ export function createApiKeyAdminActions<S extends ZodValidationSchema>(
 
 	return {
 		createApiKey: adminAction(deps.createSchema, async (_event, form, user) => {
+			// `S` is constrained to parse to CreateApiKeyInput, but superforms' Infer<S> can't be
+			// resolved while S is generic, so TypeScript sees `{}`.
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic Infer<S>, see above
 			const data = form.data as unknown as CreateApiKeyInput;
 			try {
 				// Deliberately not passing `headers`: the plugin only accepts server-only fields like

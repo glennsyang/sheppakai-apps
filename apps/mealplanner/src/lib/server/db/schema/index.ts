@@ -108,7 +108,9 @@ export const recipes = sqliteTable('recipes', {
 	instructionsJson: text('instructions_json').notNull(),
 	prepTimeMinutes: integer('prep_time_minutes').notNull(),
 	servings: integer('servings').notNull(),
-	source: text('source').notNull().default('ai'),
+	source: text('source', { enum: ['ai', 'custom'] })
+		.notNull()
+		.default('ai'),
 	createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 });

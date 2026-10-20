@@ -1,14 +1,12 @@
 import type { ActionResult } from '$app/forms';
 
-function isMessage(value: unknown): value is App.Superforms.Message {
-	if (typeof value !== 'object' || value === null) {
-		return false;
-	}
+import { isRecord } from './guards';
 
-	const candidate = value as Record<string, unknown>;
+function isMessage(value: unknown): value is App.Superforms.Message {
 	return (
-		(candidate.type === 'error' || candidate.type === 'success') &&
-		typeof candidate.text === 'string'
+		isRecord(value) &&
+		(value.type === 'error' || value.type === 'success') &&
+		typeof value.text === 'string'
 	);
 }
 

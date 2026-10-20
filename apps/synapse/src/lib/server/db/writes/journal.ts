@@ -1,7 +1,7 @@
 import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { and, eq } from 'drizzle-orm';
 
-import { buildWeatherJson } from '#lib/schemas/journal.js';
+import { buildWeatherJson, storedWeatherSchema } from '#lib/schemas/journal.js';
 import type {
 	ApiCreateJournalInput,
 	ApiUpdateJournalInput
@@ -13,6 +13,7 @@ import {
 	withTimestampsForCreate,
 	withTimestampsForUpdate
 } from '#lib/server/db/utils.js';
+import { safeParse } from '#lib/utils/json.js';
 
 /**
  * Recomputes the `weather` JSON column for a partial update. Since temp/condition are
@@ -24,9 +25,7 @@ function updatedWeatherJson(existing: string | null, input: ApiUpdateJournalInpu
 		return existing;
 	}
 
-	const existingWeather = existing
-		? (JSON.parse(existing) as { temp?: number; condition?: string })
-		: {};
+	const existingWeather = safeParse(existing, storedWeatherSchema, {});
 
 	const temp =
 		input.weatherTemp !== undefined ? (input.weatherTemp ?? undefined) : existingWeather.temp;

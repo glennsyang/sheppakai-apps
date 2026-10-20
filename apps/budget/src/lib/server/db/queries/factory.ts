@@ -41,8 +41,10 @@ export function createQueryBuilder<
 	// TypeScript can't evaluate Drizzle's result type while `T` is still generic, so the
 	// raw query result is narrowed to the `QueryRow` Drizzle computes for the concrete
 	// table. Every caller passes a literal `tableName`, so that type is fully checked there.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Drizzle result type, see above
 	const rows = <R>(result: Promise<unknown>) => result as Promise<R>;
 	// `T extends IdTableName` guarantees an `id` column; generic `T` just hides it.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- `id` guaranteed by IdTableName
 	const idColumn = (fields: object) => (fields as { id: Column }).id;
 
 	return {
@@ -66,6 +68,8 @@ export function createQueryBuilder<
 		// Find by ID with relations
 		findById: async <R extends boolean = true>(
 			id: string,
+			// A default can't be typed against a generic `R`; `true` matches R's own default.
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- default for a generic boolean param
 			withRelations: R = true as R
 		): Promise<(R extends true ? QueryRow<T, W> : QueryRow<T>) | undefined> => {
 			return rows(
