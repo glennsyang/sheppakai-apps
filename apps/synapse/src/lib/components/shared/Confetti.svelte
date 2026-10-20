@@ -39,7 +39,7 @@
 		return confettiLauncherPromise;
 	}
 
-	async function launchConfetti(options: ConfettiOptions): Promise<void> {
+	async function launchConfetti(burstOptions: ConfettiOptions): Promise<void> {
 		if (!browser) {
 			return;
 		}
@@ -48,7 +48,7 @@
 		const launchResult = confettiLauncher({
 			disableForReducedMotion: true,
 			...defaultConfettiOptions,
-			...options
+			...burstOptions
 		});
 
 		if (launchResult) {

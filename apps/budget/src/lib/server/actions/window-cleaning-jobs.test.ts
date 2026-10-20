@@ -13,7 +13,7 @@ const mockState: MockState = vi.hoisted((): MockState => {
 	return {
 		updateAction: vi.fn<() => ReturnType<typeof vi.fn<() => void>>>(() => vi.fn<() => void>()),
 		deleteAction: vi.fn<() => ReturnType<typeof vi.fn<() => void>>>(() => vi.fn<() => void>())
-	} as unknown as MockState;
+	};
 });
 
 vi.mock('./crud-helpers', () => ({

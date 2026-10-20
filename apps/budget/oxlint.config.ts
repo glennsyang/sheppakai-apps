@@ -5,6 +5,7 @@ import { oxlintBase } from '../../config/oxlint.base.ts';
 export default defineConfig({
 	...oxlintBase,
 	overrides: [
+		...(oxlintBase.overrides ?? []),
 		{
 			// Non-null assertions are legitimate in test fixtures, where the setup guarantees the value.
 			files: ['**/*.test.ts'],

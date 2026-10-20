@@ -7,7 +7,6 @@
 		"**/*.config.ts",
 		"src/lib/components/ui/**",
 		"src/env.ts",
-		"src/instrumentation.server.ts",
 		"src/lib/hooks/is-mobile.svelte.ts"
 	],
 	"ignoreDependencies": [

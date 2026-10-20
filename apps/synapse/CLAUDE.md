@@ -58,11 +58,11 @@ result through `actionMessage()` (`@sheppakai/shared/action-message`).
 
 Never use `console.log`/`console.error`/etc. directly — import `logger` from `#lib/server/logger` (a
 server-only module; SvelteKit's import guard blocks it from client bundles, so client-side code
-can't reach it — see `src/lib/utils/journal-context.ts` for the one deliberate exception). In
-production (`NODE_ENV === 'production'`) it strips `userId`, `id`, `email`, `password`, `token`,
-`createdBy`, and `updatedBy` from log output and from what's sent to Sentry — `requestId` is the
-only supported cross-log correlation key in prod. The `LOG_LEVEL` env var sets the minimum level
-logged (`debug`/`info`/`warn`/`error`); defaults to `debug` in dev, `info` in prod.
+can't reach it — rethrow with `{ cause }` and surface the error in the UI instead). In production
+(`NODE_ENV === 'production'`) it strips `userId`, `id`, `email`, `password`, `token`, `createdBy`,
+and `updatedBy` from log output and from what's sent to Sentry — `requestId` is the only supported
+cross-log correlation key in prod. The `LOG_LEVEL` env var sets the minimum level logged
+(`debug`/`info`/`warn`/`error`); defaults to `debug` in dev, `info` in prod.
 
 ### Custom static checks
 

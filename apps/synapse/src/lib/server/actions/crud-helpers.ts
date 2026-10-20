@@ -125,7 +125,7 @@ export function updateAction<
 		try {
 			const updated = await getDb()
 				.update(config.table)
-				.set({ ...config.toRow(form.data), ...withTimestampsForUpdate() } as Partial<Row<T>>)
+				.set({ ...config.toRow(form.data), ...withTimestampsForUpdate() })
 				.where(ownedBy(config.table, id, user.id))
 				.returning({ id: getTableColumns(config.table).id });
 

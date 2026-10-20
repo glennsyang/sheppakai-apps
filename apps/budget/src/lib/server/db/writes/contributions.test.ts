@@ -45,7 +45,7 @@ describe('createContribution', () => {
 	it('inserts with the goalId from the path param', async () => {
 		await createContribution('goal-1', input, 'user-1');
 
-		const insertedValues = mockInsertValues.mock.calls[0][0] as Record<string, unknown>;
+		const insertedValues = mockInsertValues.mock.calls[0][0];
 		expect(insertedValues.goalId).toBe('goal-1');
 		expect(insertedValues.userId).toBe('user-1');
 		expect(insertedValues).not.toHaveProperty('createdBy');

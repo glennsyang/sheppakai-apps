@@ -36,7 +36,7 @@ describe('markRecurringPaid', () => {
 	it('sets paid and updatedAt', async () => {
 		await markRecurringPaid('rec-1', true);
 
-		const setValues = mockUpdateSet.mock.calls[0][0] as Record<string, unknown>;
+		const setValues = mockUpdateSet.mock.calls[0][0];
 		expect(setValues.paid).toBe(true);
 		expect(setValues.updatedAt).toBeInstanceOf(Date);
 	});

@@ -61,7 +61,7 @@ describe('createIncome', () => {
 			'user-1'
 		);
 
-		const insertedValues = mockInsertValues.mock.calls[0][0] as Record<string, unknown>;
+		const insertedValues = mockInsertValues.mock.calls[0][0];
 		expect(insertedValues.userId).toBe('user-1');
 		expect(insertedValues).not.toHaveProperty('createdBy');
 		expect(insertedValues).not.toHaveProperty('updatedBy');

@@ -64,7 +64,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	try {
 		// Chart-window history plus the selected month's budget and the recurring list.
-		const [historicalBudgets, historicalTransactions, budget, recurring] = await Promise.all([
+		const [historicalBudgets, historicalTransactions, monthBudget, recurring] = await Promise.all([
 			budgetQueries.findHistory(earliestMonth, latestMonth),
 			transactionQueries.sumByCategoryMonth(startDate, endDateStr),
 			budgetQueries.findByMonthYear(month, year),
@@ -72,7 +72,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		]);
 
 		return {
-			budget,
+			budget: monthBudget,
 			historicalBudgets,
 			historicalTransactions,
 			last12Months,

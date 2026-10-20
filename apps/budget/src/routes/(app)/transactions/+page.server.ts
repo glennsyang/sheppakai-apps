@@ -38,6 +38,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			return {
 				transactions,
 				budgets: [],
+				// oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- widens the inferred load type the page indexes with a string
 				categorySpending: {} as Record<string, number>,
 				excludedFromBudgetTotal: 0,
 				yearlyTransactions: [],
@@ -84,6 +85,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		return {
 			transactions: [],
 			budgets: [],
+			// oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- widens the inferred load type the page indexes with a string
 			categorySpending: {} as Record<string, number>,
 			excludedFromBudgetTotal: 0,
 			yearlyTransactions: [],

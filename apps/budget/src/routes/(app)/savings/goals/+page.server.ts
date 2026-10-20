@@ -65,7 +65,7 @@ export const actions = {
 			description: data.description || null,
 			targetAmount: data.targetAmount,
 			targetDate: data.targetDate ? formatDateForStorage(data.targetDate) : null,
-			status: (data.status as 'active' | 'completed' | 'paused') || 'active',
+			status: data.status,
 			userId
 		})
 	}),
