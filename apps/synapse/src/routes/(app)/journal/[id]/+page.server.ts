@@ -4,7 +4,7 @@ import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { idSchema } from '#lib/schemas/common.js';
-import { buildWeatherJson, journalEntrySchema } from '#lib/schemas/journal.js';
+import { buildWeatherJson, journalEntrySchema, storedWeatherSchema } from '#lib/schemas/journal.js';
 import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { getDb } from '#lib/server/db/index.js';
@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw error(404, 'Entry not found');
 	}
 
-	const weather = safeParse<{ temp?: number; condition?: string } | null>(entry.weather, null);
+	const weather = safeParse(entry.weather, storedWeatherSchema, null);
 
 	const form = await superValidate(
 		{

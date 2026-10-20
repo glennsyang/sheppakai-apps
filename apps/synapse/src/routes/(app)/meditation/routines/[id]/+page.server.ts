@@ -30,7 +30,7 @@ import {
 } from '#lib/server/db/utils.js';
 import { logger } from '#lib/server/logger.js';
 import { parseAppDateTime } from '#lib/utils/date.js';
-import { safeParse } from '#lib/utils/json.js';
+import { numberListSchema, stringListSchema, safeParse } from '#lib/utils/json.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -78,13 +78,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		// Parse JSON fields
 		const parsedRoutine = {
 			...routine,
-			moodTags: safeParse<string[]>(routine.moodTags, [])
+			moodTags: safeParse(routine.moodTags, stringListSchema, [])
 		};
 
 		const parsedSchedule = schedule
 			? {
 					...schedule,
-					daysOfWeek: safeParse<number[] | null>(schedule.daysOfWeek, null)
+					daysOfWeek: safeParse(schedule.daysOfWeek, numberListSchema, null)
 				}
 			: null;
 
@@ -166,7 +166,7 @@ export const actions = {
 			// Parse days_of_week if provided (stored as JSON array string e.g. "[0,1,6]")
 			const daysOfWeekJson = form.data.days_of_week
 				? JSON.stringify(
-						safeParse<number[]>(form.data.days_of_week, [])
+						safeParse(form.data.days_of_week, numberListSchema, [])
 							.filter((d) => !Number.isNaN(d) && d >= 0 && d <= 6)
 							.sort((a, b) => a - b)
 					)

@@ -130,15 +130,17 @@ export async function suggestMeals(pantryItems: string[]): Promise<MealSuggestio
 		throw new Error('No meal suggestions returned from AI');
 	}
 
-	let parsed: { suggestions?: unknown } | null;
+	let parsed: unknown;
 	try {
-		parsed = JSON.parse(text) as { suggestions?: unknown } | null;
+		parsed = JSON.parse(text);
 	} catch (err) {
 		logger.error('Gemini returned non-JSON response', err);
 		throw new Error('Invalid response structure from AI', { cause: err });
 	}
 
-	const { suggestions, rejected } = pickValidSuggestions(parsed?.suggestions);
+	const { suggestions, rejected } = pickValidSuggestions(
+		isRecord(parsed) ? parsed.suggestions : undefined
+	);
 	if (rejected > 0) {
 		logger.warn('Dropped malformed AI suggestions', { rejected, kept: suggestions.length });
 	}

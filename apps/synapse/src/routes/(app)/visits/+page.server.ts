@@ -6,7 +6,7 @@ import { people, visits } from '#lib/server/db/schema/index.js';
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
 import { getTodayString } from '#lib/utils/date.js';
-import { safeParse } from '#lib/utils/json.js';
+import { stringListSchema, safeParse } from '#lib/utils/json.js';
 import {
 	calculatePersonVisitStatus,
 	getEffectiveFollowUpDate,
@@ -76,7 +76,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				lastVisit: latestVisit
 					? {
 							date: latestVisit.date,
-							companions: safeParse<string[] | null>(latestVisit.companions, null)
+							companions: safeParse(latestVisit.companions, stringListSchema, null)
 						}
 					: null,
 				status: statusInfo.status,

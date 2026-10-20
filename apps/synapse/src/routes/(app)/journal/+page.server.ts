@@ -1,6 +1,6 @@
 import { and, desc, eq, like } from 'drizzle-orm';
 
-import { journalFilterSchema } from '#lib/schemas/journal.js';
+import { journalFilterSchema, storedWeatherSchema } from '#lib/schemas/journal.js';
 import { getUser } from '#lib/server/actions/auth-guard.js';
 import { getDb } from '#lib/server/db/index.js';
 import { journalEntries } from '#lib/server/db/schema/index.js';
@@ -45,7 +45,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 		const parsedEntries = entries.map((entry: typeof journalEntries.$inferSelect) => ({
 			...entry,
-			weather: safeParse<Record<string, unknown> | null>(entry.weather, null)
+			weather: safeParse(entry.weather, storedWeatherSchema, null)
 		}));
 
 		return {

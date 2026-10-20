@@ -15,7 +15,7 @@ import {
 	meditationSessions
 } from '#lib/server/db/schema/index.js';
 import { logger } from '#lib/server/logger.js';
-import { safeParse } from '#lib/utils/json.js';
+import { numberListSchema, stringListSchema, safeParse } from '#lib/utils/json.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -84,7 +84,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		// Parse moodTags JSON for each routine
 		const parsedRoutines = routines.map((routine) => ({
 			...routine,
-			moodTags: safeParse<string[]>(routine.moodTags, [])
+			moodTags: safeParse(routine.moodTags, stringListSchema, [])
 		}));
 
 		// Fetch all schedules for user
@@ -98,7 +98,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		// Parse daysOfWeek JSON for each schedule
 		const parsedSchedules = schedules.map((schedule) => ({
 			...schedule,
-			daysOfWeek: safeParse<number[] | null>(schedule.daysOfWeek, null)
+			daysOfWeek: safeParse(schedule.daysOfWeek, numberListSchema, null)
 		}));
 
 		// Fetch recent sessions for history

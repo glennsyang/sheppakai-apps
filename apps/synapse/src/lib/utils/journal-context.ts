@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 // This module runs in the browser (geolocation + fetch from a client-side dialog), so it
 // cannot import the canonical logger under `#lib/server/`. Failures are rethrown with the
 // original error as `cause`, and the caller shows the message in a toast.
@@ -17,12 +19,12 @@ const weatherMap: Record<number, { label: string; icon: string }> = {
 	// Add more codes as needed from WMO standards
 };
 
-type CurrentWeatherResponse = {
-	current_weather?: {
-		temperature?: number;
-		weathercode?: number;
-	};
-};
+const currentWeatherResponseSchema = z.object({
+	current_weather: z.object({
+		temperature: z.number(),
+		weathercode: z.number()
+	})
+});
 
 type JournalWeather = {
 	temperature: number;
@@ -52,13 +54,11 @@ export async function getCurrentWeather(): Promise<JournalWeather> {
 			throw new TypeError('Unable to retrieve weather information.');
 		}
 
-		const weatherData = (await weatherResponse.json()) as CurrentWeatherResponse;
-		const temperature = weatherData.current_weather?.temperature;
-		const weatherCode = weatherData.current_weather?.weathercode;
-
-		if (typeof temperature !== 'number' || typeof weatherCode !== 'number') {
+		const weatherData = currentWeatherResponseSchema.safeParse(await weatherResponse.json());
+		if (!weatherData.success) {
 			throw new TypeError('Unable to retrieve weather information.');
 		}
+		const { temperature, weathercode: weatherCode } = weatherData.data.current_weather;
 
 		const weatherEntry = weatherMap[weatherCode];
 		const condition = weatherEntry ? `${weatherEntry.label} ${weatherEntry.icon}` : 'Unknown';

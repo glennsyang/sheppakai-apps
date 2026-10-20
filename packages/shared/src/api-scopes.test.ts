@@ -40,4 +40,10 @@ describe('parsePermissions', () => {
 		expect(parsePermissions('"a string"')).toBeNull();
 		expect(parsePermissions('null')).toBeNull();
 	});
+
+	it('returns null when a resource does not map to a list of actions', () => {
+		expect(parsePermissions('{"transactions":"read"}')).toBeNull();
+		expect(parsePermissions('{"transactions":[1]}')).toBeNull();
+		expect(parsePermissions('["read"]')).toBeNull();
+	});
 });

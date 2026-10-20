@@ -5,6 +5,10 @@
  * better-auth API key plugin expects.
  */
 
+import { z } from 'zod';
+
+const permissionsSchema = z.record(z.string(), z.array(z.string()));
+
 /** Groups flat scope strings into the `{ resource: [action, ...] }` shape better-auth expects. */
 export function scopesToPermissions(scopes: readonly string[]): Record<string, string[]> {
 	const permissions: Record<string, string[]> = {};
@@ -25,8 +29,8 @@ export function permissionsForScope(scope: string): Record<string, string[]> {
 export function parsePermissions(raw: string | null): Record<string, string[]> | null {
 	if (!raw) return null;
 	try {
-		const parsed: unknown = JSON.parse(raw);
-		return parsed && typeof parsed === 'object' ? (parsed as Record<string, string[]>) : null;
+		const parsed = permissionsSchema.safeParse(JSON.parse(raw));
+		return parsed.success ? parsed.data : null;
 	} catch {
 		return null;
 	}
