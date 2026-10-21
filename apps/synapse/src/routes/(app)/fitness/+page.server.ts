@@ -373,6 +373,8 @@ export const actions = {
 				{ status: 500 }
 			);
 		}
+
+		return { success: true, create: true, form };
 	}),
 
 	createReminder: createAction({

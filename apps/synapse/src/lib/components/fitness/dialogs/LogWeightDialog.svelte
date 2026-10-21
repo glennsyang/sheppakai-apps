@@ -23,7 +23,7 @@
 		formData,
 		editEntry = null,
 		onClose,
-		open = $bindable(false),
+		open = $bindable(),
 		instanceId = 'default'
 	}: {
 		formData: SuperValidated<LogWeightData>;
@@ -54,9 +54,7 @@
 		resetForm: !isEditing,
 		onUpdate: ({ form }) => {
 			if (form.valid) {
-				if (open !== undefined) {
-					onClose?.();
-				} else {
+				if (open === undefined) {
 					internalOpen = false;
 				}
 				toast.success(isEditing ? 'Weight updated successfully!' : 'Weight logged successfully!');

@@ -18,7 +18,7 @@
 	let {
 		formData,
 		onClose,
-		open = $bindable(false)
+		open = $bindable()
 	}: {
 		formData: SuperValidated<WorkoutReminderData>;
 		onClose?: () => void;
@@ -34,9 +34,7 @@
 		resetForm: true,
 		onUpdate: ({ form }) => {
 			if (form.valid) {
-				if (open !== undefined) {
-					onClose?.();
-				} else {
+				if (open === undefined) {
 					internalOpen = false;
 				}
 				toast.success('Reminder created successfully!');
