@@ -2,6 +2,7 @@ import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 
 import { isUserAccessAllowed } from './auth-allowlist';
+import { redactSensitivePath } from './sensitive-path';
 
 /** The slice of `@sheppakai/logger` the request pipeline uses. */
 export interface RequestLogger {
@@ -61,7 +62,7 @@ export function createServerHandle(options: ServerHandleOptions): Handle {
 		let requestLogger = logger.child({
 			requestId,
 			method: event.request.method,
-			url: event.url.pathname
+			url: redactSensitivePath(event.url.pathname)
 		});
 
 		const startTime = Date.now();
@@ -161,7 +162,7 @@ export function createHandleError(options: {
 		logger.error('Unhandled server error', error, {
 			requestId,
 			userId: event.locals.user?.id ?? 'anonymous',
-			url: event.url.pathname,
+			url: redactSensitivePath(event.url.pathname),
 			method: event.request.method,
 			status: 500,
 			userAgent: event.request.headers.get('user-agent')

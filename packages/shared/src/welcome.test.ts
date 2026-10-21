@@ -29,7 +29,7 @@ describe('createWelcomeSender', () => {
 		vi.useRealTimers();
 	});
 
-	it('writes a reset-password verification row that expires in 72 hours', async () => {
+	it('writes a reset-password verification row that expires in 24 hours', async () => {
 		const { sendWelcome, createVerificationValue } = setup();
 
 		await sendWelcome(user);

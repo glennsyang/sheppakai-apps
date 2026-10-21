@@ -50,7 +50,7 @@ function layout(
 }
 
 /**
- * Sent when an admin creates an account, with a 72-hour set-password link. Unlike the other
+ * Sent when an admin creates an account, with a 24-hour set-password link. Unlike the other
  * auth emails this one throws on failure: the admin action awaits it and tells the admin to
  * resend, since the new user has no other way to learn the account exists.
  */
@@ -83,7 +83,7 @@ export async function sendWelcomeEmail(payload: WelcomeEmailPayload) {
 			<li>You can change your password any time from your profile page.</li>
 		</ol>
 		<p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-			The set-password link expires in 72 hours. If it has expired, go to the sign-in page and
+			The set-password link expires in 24 hours. If it has expired, go to the sign-in page and
 			choose <strong>Forgot password</strong> to get a new one. No password has been shared
 			with anyone.
 		</p>

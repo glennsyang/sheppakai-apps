@@ -4,7 +4,11 @@ import * as Sentry from '@sentry/sveltekit';
 import { createHandleError, createServerHandle } from '@sheppakai/shared/server-handle';
 import { sequence } from '@sveltejs/kit/hooks';
 
-import { sentryDataCollection } from '#lib/sentry-data-collection.js';
+import {
+	scrubSensitivePathsFromEvent,
+	scrubSensitivePathsFromSpan,
+	sentryDataCollection
+} from '#lib/sentry-data-collection.js';
 import { allowedEmails, auth } from '#lib/server/auth.js';
 import { logger } from '#lib/server/logger.js';
 
@@ -18,6 +22,9 @@ Sentry.init({
 	// createHandleError (requestId, userId, url, method, status) via the structured logger, so Sentry's own PII
 	// capture isn't needed here.
 	dataCollection: sentryDataCollection,
+	// Masks reset-password tokens carried in URL paths; see sensitive-path.ts in @sheppakai/shared.
+	beforeSend: scrubSensitivePathsFromEvent,
+	beforeSendSpan: scrubSensitivePathsFromSpan,
 	// logger.warn()/logger.error() report via captureMessage; without this every call would get
 	// a synthetic call-site stack trace and regroup existing issues.
 	attachStacktrace: false

@@ -48,7 +48,7 @@ describe('sendWelcomeEmail', () => {
 			'href="https://app.example.com/api/auth/reset-password/tok?callbackURL=%2Freset-password"'
 		);
 		expect(sent.htmlContent).toContain('href="https://app.example.com/sign-in"');
-		expect(sent.htmlContent).toContain('72 hours');
+		expect(sent.htmlContent).toContain('24 hours');
 		expect(sent.htmlContent).toContain('12 characters');
 		expect(sent.htmlContent).toContain('verification email');
 		expect(loggerMock.info).toHaveBeenCalledWith('Welcome email sent', {

@@ -5,8 +5,9 @@ import { randomBytes } from 'node:crypto';
 
 import { RESET_PASSWORD_ROUTE, SIGN_IN_ROUTE } from './auth-routes';
 
-// Far longer than the 10-minute reset link: a welcome email may sit unread for a day or two.
-export const WELCOME_LINK_TTL_MS = 72 * 60 * 60 * 1000;
+// Longer than the 10-minute reset link so a welcome email can sit unread for a day, but
+// short because clicking the link does not consume the token.
+export const WELCOME_LINK_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** What every app's welcome-email template receives. */
 export interface WelcomeEmailPayload {
