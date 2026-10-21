@@ -123,7 +123,7 @@ export async function processDailyAgendaDigests(
 
 	for (const userData of allUsers) {
 		if (await alreadySentDailyAgendaDigest(userData.id, todayPacific)) {
-			logger.debug(`   ⏭️  Already sent daily digest to ${userData.email} for ${todayPacific}`);
+			logger.debug('   ⏭️  Already sent daily digest', { userId: userData.id, date: todayPacific });
 			continue;
 		}
 
@@ -131,9 +131,10 @@ export async function processDailyAgendaDigests(
 		const title = buildDailyAgendaDigestTitle(todayPacific);
 		const message = buildDailyAgendaDigestMessage(entries, todayPacific);
 
-		logger.debug(
-			`   📲 Sending daily agenda digest to ${userData.email} (${entries.length} tasks)`
-		);
+		logger.debug('   📲 Sending daily agenda digest', {
+			userId: userData.id,
+			taskCount: entries.length
+		});
 
 		try {
 			await sendReminderNotification(message, title, DAILY_AGENDA_DIGEST_TAGS);
@@ -183,24 +184,26 @@ export async function processTasksDueTodayDigests(
 
 	for (const userData of allUsers) {
 		if (await alreadySentTasksDueTodayDigest(userData.id, todayPacific)) {
-			logger.debug(
-				`   ⏭️  Already sent Tasks due-today digest to ${userData.email} for ${todayPacific}`
-			);
+			logger.debug('   ⏭️  Already sent Tasks due-today digest', {
+				userId: userData.id,
+				date: todayPacific
+			});
 			continue;
 		}
 
 		const dueTodayTasks = await loadTasksDueToday(userData.id, todayPacific);
 		if (dueTodayTasks.length === 0) {
-			logger.debug(`   ⏭️  No Tasks due today for ${userData.email}`);
+			logger.debug('   ⏭️  No Tasks due today', { userId: userData.id });
 			continue;
 		}
 
 		const title = buildTasksDueTodayDigestTitle(todayPacific);
 		const message = buildTasksDueTodayDigestMessage(dueTodayTasks, todayPacific);
 
-		logger.debug(
-			`   📧 Sending Tasks due-today digest to ${userData.email} (${dueTodayTasks.length} tasks)`
-		);
+		logger.debug('   📧 Sending Tasks due-today digest', {
+			userId: userData.id,
+			taskCount: dueTodayTasks.length
+		});
 
 		try {
 			await sendTasksDueTodayEmail(userData.email, userData.name, dueTodayTasks, todayPacific);

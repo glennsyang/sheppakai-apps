@@ -42,7 +42,7 @@ export async function processVisitWarnings(): Promise<void> {
 
 	for (const { person, user: userData } of allPeople) {
 		if (person.isExempt) {
-			logger.debug(`   ⏭️  Skipping exempt person ${person.name}`);
+			logger.debug('   ⏭️  Skipping exempt person', { personId: person.id });
 			continue;
 		}
 
@@ -90,16 +90,17 @@ export async function processVisitWarnings(): Promise<void> {
 			.get();
 
 		if (recentWarning) {
-			logger.debug(
-				`   ⏭️  Already sent ${warningStatus} warning for ${person.name} in last 7 days`
-			);
+			logger.debug(`   ⏭️  Already sent ${warningStatus} warning in last 7 days`, {
+				personId: person.id
+			});
 			continue;
 		}
 
 		// Send warning email
-		logger.debug(
-			`   📧 Sending ${warningStatus} visit warning to ${userData.email} (${person.name})`
-		);
+		logger.debug(`   📧 Sending ${warningStatus} visit warning`, {
+			userId: userData.id,
+			personId: person.id
+		});
 
 		try {
 			await sendVisitWarningEmail(

@@ -61,14 +61,16 @@ export async function processMeditationReminders(
 
 		// Check if already sent today
 		if (await alreadySentToday(userData.id, 'meditation_reminder', schedule.id)) {
-			logger.debug(`   ⏭️  Already sent to ${userData.email} today`);
+			logger.debug('   ⏭️  Already sent today', { userId: userData.id, scheduleId: schedule.id });
 			continue;
 		}
 
 		// Send email
-		logger.debug(
-			`   📧 Sending meditation reminder to ${userData.email} (${routine.title} at ${schedule.time})`
-		);
+		logger.debug('   📧 Sending meditation reminder', {
+			userId: userData.id,
+			scheduleId: schedule.id,
+			time: schedule.time
+		});
 
 		try {
 			await sendMeditationReminderEmail(

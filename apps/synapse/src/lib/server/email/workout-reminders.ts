@@ -60,14 +60,17 @@ export async function processWorkoutReminders(
 
 		// Check if already sent today
 		if (await alreadySentToday(userData.id, 'workout_reminder', reminder.id)) {
-			logger.debug(`   ⏭️  Already sent to ${userData.email} today`);
+			logger.debug('   ⏭️  Already sent today', { userId: userData.id, reminderId: reminder.id });
 			continue;
 		}
 
 		// Send email
-		logger.debug(
-			`   📧 Sending workout reminder to ${userData.email} (${reminder.workoutType} at ${reminder.time})`
-		);
+		logger.debug('   📧 Sending workout reminder', {
+			userId: userData.id,
+			reminderId: reminder.id,
+			workoutType: reminder.workoutType,
+			time: reminder.time
+		});
 
 		try {
 			await sendWorkoutReminderEmail(
