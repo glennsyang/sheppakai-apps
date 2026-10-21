@@ -84,7 +84,10 @@ const LISTED_FIELDS: (keyof ApiKeyRow)[] = [
  * session's own keys; an admin has to see and revoke keys that belong to other users too (a
  * banned or demoted admin can't be trusted to revoke their own).
  */
-export function createApiKeyStore(auth: Pick<ApiKeyAuth, '$context'>) {
+export function createApiKeyStore(
+	auth: Pick<ApiKeyAuth, '$context'>,
+	logger: { warn(message: string, meta?: Record<string, unknown>): void }
+) {
 	const adapter = async () => (await auth.$context).adapter;
 
 	return {
@@ -113,13 +116,17 @@ export function createApiKeyStore(auth: Pick<ApiKeyAuth, '$context'>) {
 			return keys.flatMap((key) => {
 				const owner = ownersById.get(key.referenceId);
 				if (!owner) return [];
+				const permissions = parsePermissions(key.permissions);
+				if (key.permissions && !permissions) {
+					logger.warn('API key has unreadable stored permissions', { keyId: key.id });
+				}
 				return [
 					{
 						id: key.id,
 						name: key.name,
 						start: key.start,
 						enabled: key.enabled,
-						permissions: parsePermissions(key.permissions),
+						permissions,
 						expiresAt: key.expiresAt,
 						createdAt: key.createdAt,
 						lastRequest: key.lastRequest,
@@ -171,7 +178,7 @@ type CreateApiKeySchema = ZodValidationSchema & z.ZodType<CreateApiKeyInput>;
 
 export interface ApiKeyAdminActionsDeps<S extends CreateApiKeySchema> {
 	auth: Pick<ApiKeyAuth, 'api'>;
-	/** The app's `createApiKeyStore(auth)`. */
+	/** The app's `createApiKeyStore(auth, logger)`. */
 	store: Pick<ReturnType<typeof createApiKeyStore>, 'deleteById'>;
 	isAdminUser: (user: { id: string; role?: string | null }) => boolean;
 	logger: {

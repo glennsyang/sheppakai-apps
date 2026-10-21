@@ -28,9 +28,9 @@ import {
 	withTimestampsForCreate,
 	withTimestampsForUpdate
 } from '#lib/server/db/utils.js';
+import { numberListSchema, stringListSchema, safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
 import { parseAppDateTime } from '#lib/utils/date.js';
-import { numberListSchema, stringListSchema, safeParse } from '#lib/utils/json.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -78,13 +78,18 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		// Parse JSON fields
 		const parsedRoutine = {
 			...routine,
-			moodTags: safeParse(routine.moodTags, stringListSchema, [])
+			moodTags: safeParse(routine.moodTags, stringListSchema, [], 'meditationRoutine.moodTags')
 		};
 
 		const parsedSchedule = schedule
 			? {
 					...schedule,
-					daysOfWeek: safeParse(schedule.daysOfWeek, numberListSchema, null)
+					daysOfWeek: safeParse(
+						schedule.daysOfWeek,
+						numberListSchema,
+						null,
+						'meditationSchedule.daysOfWeek'
+					)
 				}
 			: null;
 
@@ -166,7 +171,7 @@ export const actions = {
 			// Parse days_of_week if provided (stored as JSON array string e.g. "[0,1,6]")
 			const daysOfWeekJson = form.data.days_of_week
 				? JSON.stringify(
-						safeParse(form.data.days_of_week, numberListSchema, [])
+						safeParse(form.data.days_of_week, numberListSchema, [], 'form.days_of_week')
 							.filter((d) => !Number.isNaN(d) && d >= 0 && d <= 6)
 							.sort((a, b) => a - b)
 					)

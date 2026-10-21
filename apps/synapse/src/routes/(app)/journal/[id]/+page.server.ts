@@ -10,8 +10,8 @@ import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { getDb } from '#lib/server/db/index.js';
 import { journalEntries } from '#lib/server/db/schema/index.js';
 import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
+import { safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
-import { safeParse } from '#lib/utils/json.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw error(404, 'Entry not found');
 	}
 
-	const weather = safeParse(entry.weather, storedWeatherSchema, null);
+	const weather = safeParse(entry.weather, storedWeatherSchema, null, 'journal.weather');
 
 	const form = await superValidate(
 		{

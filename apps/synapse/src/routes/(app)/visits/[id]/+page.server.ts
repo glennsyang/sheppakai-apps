@@ -25,10 +25,10 @@ import {
 	withTimestampsForCreate,
 	withTimestampsForUpdate
 } from '#lib/server/db/utils.js';
+import { stringListSchema, safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
 import { getTodayString } from '#lib/utils/date.js';
-import { stringListSchema, safeParse } from '#lib/utils/json.js';
 import { calculatePersonVisitStatus, getEffectiveFollowUpDate } from '#lib/utils/visit-status.js';
 
 import type { Actions, PageServerLoad } from './$types';
@@ -59,7 +59,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 		const parsedVisits = personVisits.map((visit) => ({
 			...visit,
-			companions: safeParse(visit.companions, stringListSchema, null)
+			companions: safeParse(visit.companions, stringListSchema, null, 'visit.companions')
 		}));
 		const visitStatusThresholds = await getVisitStatusThresholdsForUser(userId, db);
 
