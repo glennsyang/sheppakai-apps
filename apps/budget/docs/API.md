@@ -9,6 +9,15 @@ budget.
 
 Created and revoked by an admin from **Admin → API Keys** (`/admin/api-keys`).
 
+## Data visibility model (important)
+
+Budget's API is intentionally **shared-household**, not user-isolated:
+
+- A valid authorized API key can access shared budget data across household users.
+- Endpoints are not designed to hide one household member's records from another household member.
+
+This is intentional for the budget app's collaborative household model.
+
 ## Scopes
 
 | Scope                           | Grants                                                                                  |

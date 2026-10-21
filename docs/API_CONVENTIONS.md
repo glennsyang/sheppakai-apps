@@ -30,6 +30,15 @@ Authorization: Bearer <key>
 - Every write, successful or failed, is recorded in an internal audit log with the key that
   made it, so you can trace what an external tool did.
 
+## Data visibility model
+
+Visibility/ownership semantics are **app-specific** and are documented in each app's `docs/API.md`.
+
+- Some apps may expose user-isolated records.
+- Some apps may intentionally expose shared records to any authorized key.
+
+Do not assume per-user isolation unless the app-specific API docs explicitly say so.
+
 ## Response shape
 
 Every response is one of exactly two shapes:
@@ -69,7 +78,6 @@ another site.
 
 ## Out of scope
 
-- OAuth2/third-party app authorization. API keys are enough for a single-user "give my own
-  tool a key" setup.
+- OAuth2/third-party app authorization. API keys are the only supported external auth mechanism.
 - Write access to user/auth-management endpoints.
 - Webhooks.
