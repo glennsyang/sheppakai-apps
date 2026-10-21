@@ -118,7 +118,7 @@ let {
   formData,             // SuperValidated<Infer<typeof someSchema>>
   editEntry = null,     // non-null → editing an existing row
   onClose,
-  open = $bindable(false),
+  open = $bindable(),   // no default: unset → self-open mode (renders its own trigger)
   instanceId = 'default'
 }: { ... } = $props();
 
@@ -140,6 +140,10 @@ const { form, errors, enhance, message, submitting } = superForm(formData, {
 
 // populate fields from editEntry via a second $effect
 ```
+
+Leave `open` unset to place a self-contained dialog that renders its own trigger button; pass
+`bind:open` (plus `onClose`) to control it from the parent. On success, `onUpdate` resets
+`internalOpen` only in self-open mode and calls `onClose` exactly once.
 
 Server actions are named `?/log<Thing>` and `?/update<Thing>` on the same route.
 

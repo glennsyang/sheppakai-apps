@@ -16,7 +16,7 @@
 	let {
 		formData,
 		onClose,
-		open = $bindable(false)
+		open = $bindable()
 	}: {
 		formData: SuperValidated<SetCalorieTargetData>;
 		onClose?: () => void;
@@ -30,9 +30,7 @@
 	const { form, errors, enhance } = superForm(formData, {
 		onUpdate: ({ form }) => {
 			if (form.valid) {
-				if (open !== undefined) {
-					onClose?.();
-				} else {
+				if (open === undefined) {
 					internalOpen = false;
 				}
 				toast.success('Calorie target set successfully!');

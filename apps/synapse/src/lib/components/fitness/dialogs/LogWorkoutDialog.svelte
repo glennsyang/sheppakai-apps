@@ -40,7 +40,7 @@
 		formData,
 		editEntry = null,
 		onClose,
-		open = $bindable(false),
+		open = $bindable(),
 		instanceId = 'default'
 	}: {
 		formData: SuperValidated<LogWorkoutData>;
@@ -72,9 +72,7 @@
 		resetForm: !isEditing,
 		onUpdate: ({ form }) => {
 			if (form.valid) {
-				if (open !== undefined) {
-					onClose?.();
-				} else {
+				if (open === undefined) {
 					internalOpen = false;
 				}
 				workoutExercises = [];

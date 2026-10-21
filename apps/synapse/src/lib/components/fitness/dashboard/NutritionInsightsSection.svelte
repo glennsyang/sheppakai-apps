@@ -3,10 +3,9 @@
 	import type { Infer, SuperValidated } from 'sveltekit-superforms';
 
 	import LogMealDialog from '#lib/components/fitness/dialogs/LogMealDialog.svelte';
-	import SetCalorieTargetDialog from '#lib/components/fitness/dialogs/SetCalorieTargetDialog.svelte';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Chart from '#lib/components/ui/chart/index.js';
-	import type { logMealSchema, setCalorieTargetSchema } from '#lib/schemas/fitness.js';
+	import type { logMealSchema } from '#lib/schemas/fitness.js';
 	import { getTodayString, parseLocalDateString } from '#lib/utils/date.js';
 
 	import FitnessStatusCard from './FitnessStatusCard.svelte';
@@ -27,10 +26,9 @@
 		meals: Meal[];
 		calorieTarget: CalorieTarget | null | undefined;
 		mealForm: SuperValidated<Infer<typeof logMealSchema>>;
-		calorieForm: SuperValidated<Infer<typeof setCalorieTargetSchema>>;
 	}
 
-	let { meals, calorieTarget, mealForm, calorieForm }: Props = $props();
+	let { meals, calorieTarget, mealForm }: Props = $props();
 
 	const target = $derived(calorieTarget?.targetCalories ?? null);
 
@@ -98,7 +96,6 @@
 <section class="mb-2 space-y-4">
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-2">
-			<SetCalorieTargetDialog formData={calorieForm} />
 			<LogMealDialog formData={mealForm} instanceId="nutrition" />
 		</div>
 	</div>
