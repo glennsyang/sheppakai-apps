@@ -3,10 +3,10 @@ import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { getUser } from '#lib/server/actions/auth-guard.js';
 import { getDb } from '#lib/server/db/index.js';
 import { people, visits } from '#lib/server/db/schema/index.js';
+import { stringListSchema, safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
 import { getTodayString } from '#lib/utils/date.js';
-import { stringListSchema, safeParse } from '#lib/utils/json.js';
 import {
 	calculatePersonVisitStatus,
 	getEffectiveFollowUpDate,
@@ -76,7 +76,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 				lastVisit: latestVisit
 					? {
 							date: latestVisit.date,
-							companions: safeParse(latestVisit.companions, stringListSchema, null)
+							companions: safeParse(
+								latestVisit.companions,
+								stringListSchema,
+								null,
+								'visit.companions'
+							)
 						}
 					: null,
 				status: statusInfo.status,

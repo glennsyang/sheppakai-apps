@@ -4,8 +4,8 @@ import { journalFilterSchema, storedWeatherSchema } from '#lib/schemas/journal.j
 import { getUser } from '#lib/server/actions/auth-guard.js';
 import { getDb } from '#lib/server/db/index.js';
 import { journalEntries } from '#lib/server/db/schema/index.js';
+import { safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
-import { safeParse } from '#lib/utils/json.js';
 
 import type { PageServerLoad } from './$types';
 
@@ -45,7 +45,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 		const parsedEntries = entries.map((entry: typeof journalEntries.$inferSelect) => ({
 			...entry,
-			weather: safeParse(entry.weather, storedWeatherSchema, null)
+			weather: safeParse(entry.weather, storedWeatherSchema, null, 'journal.weather')
 		}));
 
 		return {

@@ -24,6 +24,8 @@ function buildAuth() {
 
 type Auth = ReturnType<typeof buildAuth>;
 
+const storeLogger = { warn: vi.fn<(message: string, meta?: Record<string, unknown>) => void>() };
+
 async function seedUser(auth: Auth, email: string) {
 	const { adapter } = await auth.$context;
 	const now = new Date();
@@ -52,7 +54,7 @@ describe('createApiKeyStore (against a real Better Auth instance)', () => {
 		await seedKey(auth, ada.id, 'ada-key');
 		await seedKey(auth, bob.id, 'bob-key');
 
-		const keys = await createApiKeyStore(auth).listAllWithOwner();
+		const keys = await createApiKeyStore(auth, storeLogger).listAllWithOwner();
 
 		expect(
 			keys.map((key) => `${key.name} ${key.ownerEmail}`).sort((a, b) => a.localeCompare(b))
@@ -62,10 +64,29 @@ describe('createApiKeyStore (against a real Better Auth instance)', () => {
 		expect(keys[0]).not.toHaveProperty('referenceId');
 	});
 
+	it('logs and returns null permissions when the stored JSON is the wrong shape', async () => {
+		const ada = await seedUser(auth, 'ada@example.com');
+		const created = await seedKey(auth, ada.id, 'ada-key');
+		const { adapter } = await auth.$context;
+		await adapter.update({
+			model: 'apikey',
+			where: [{ field: 'id', value: created.id }],
+			update: { permissions: '{"tasks":"read"}' }
+		});
+		const logger = { warn: vi.fn<(message: string, meta?: Record<string, unknown>) => void>() };
+
+		const [key] = await createApiKeyStore(auth, logger).listAllWithOwner();
+
+		expect(key.permissions).toBeNull();
+		expect(logger.warn).toHaveBeenCalledWith('API key has unreadable stored permissions', {
+			keyId: created.id
+		});
+	});
+
 	it('deletes any key by id and reports whether one was deleted', async () => {
 		const ada = await seedUser(auth, 'ada@example.com');
 		const created = await seedKey(auth, ada.id, 'ada-key');
-		const store = createApiKeyStore(auth);
+		const store = createApiKeyStore(auth, storeLogger);
 
 		expect(await store.deleteById(created.id)).toBe(true);
 		expect(await store.deleteById(created.id)).toBe(false);
@@ -78,7 +99,7 @@ describe('createApiKeyStore (against a real Better Auth instance)', () => {
 		await seedKey(auth, ada.id, 'ada-1');
 		await seedKey(auth, ada.id, 'ada-2');
 		await seedKey(auth, bob.id, 'bob-1');
-		const store = createApiKeyStore(auth);
+		const store = createApiKeyStore(auth, storeLogger);
 
 		expect(await store.disableForUser(ada.id)).toBe(2);
 		expect(await store.disableForUser(ada.id)).toBe(0);
@@ -109,7 +130,7 @@ describe('createApiKeyAdminActions', () => {
 		const user = await seedUser(auth, 'admin@example.com');
 		const actions = createApiKeyAdminActions({
 			auth,
-			store: createApiKeyStore(auth),
+			store: createApiKeyStore(auth, storeLogger),
 			isAdminUser: (u) => u.role === 'admin',
 			logger,
 			createSchema,
@@ -127,7 +148,7 @@ describe('createApiKeyAdminActions', () => {
 
 		expect(result.apiKey).toEqual(expect.any(String));
 		expect(result.form.message.type).toBe('success');
-		const [key] = await createApiKeyStore(auth).listAllWithOwner();
+		const [key] = await createApiKeyStore(auth, storeLogger).listAllWithOwner();
 		expect(key).toMatchObject({ name: 'ci', ownerId: user.id, permissions: { tasks: ['read'] } });
 		expect(key.expiresAt).toBeInstanceOf(Date);
 	});
@@ -138,7 +159,7 @@ describe('createApiKeyAdminActions', () => {
 		const created = await seedKey(auth, user.id, 'old');
 		const actions = createApiKeyAdminActions({
 			auth,
-			store: createApiKeyStore(auth),
+			store: createApiKeyStore(auth, storeLogger),
 			isAdminUser: (u) => u.role === 'admin',
 			logger,
 			createSchema,
@@ -160,7 +181,7 @@ describe('createApiKeyAdminActions', () => {
 		const auth = buildAuth();
 		const actions = createApiKeyAdminActions({
 			auth,
-			store: createApiKeyStore(auth),
+			store: createApiKeyStore(auth, storeLogger),
 			isAdminUser: () => false,
 			logger,
 			createSchema,

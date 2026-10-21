@@ -9,7 +9,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import * as schema from '../db/schema';
 
@@ -59,7 +59,7 @@ describe('shared API-key store on this app schema', () => {
 		const auth = buildAuth();
 		const ada = await seed(auth, 'ada@example.com', ['ada-1', 'ada-2']);
 		await seed(auth, 'bob@example.com', ['bob-1']);
-		const store = createApiKeyStore(auth);
+		const store = createApiKeyStore(auth, { warn: vi.fn<() => void>() });
 
 		const listed = await store.listAllWithOwner();
 		expect(

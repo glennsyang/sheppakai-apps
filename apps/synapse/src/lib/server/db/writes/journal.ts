@@ -13,7 +13,7 @@ import {
 	withTimestampsForCreate,
 	withTimestampsForUpdate
 } from '#lib/server/db/utils.js';
-import { safeParse } from '#lib/utils/json.js';
+import { safeParse } from '#lib/server/json.js';
 
 /**
  * Recomputes the `weather` JSON column for a partial update. Since temp/condition are
@@ -25,7 +25,7 @@ function updatedWeatherJson(existing: string | null, input: ApiUpdateJournalInpu
 		return existing;
 	}
 
-	const existingWeather = safeParse(existing, storedWeatherSchema, {});
+	const existingWeather = safeParse(existing, storedWeatherSchema, {}, 'journal.weather');
 
 	const temp =
 		input.weatherTemp !== undefined ? (input.weatherTemp ?? undefined) : existingWeather.temp;
