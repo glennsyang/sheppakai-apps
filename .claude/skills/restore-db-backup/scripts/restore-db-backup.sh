@@ -135,8 +135,10 @@ fi
 
 GZ_FILE="$WORKDIR/$(basename "$GPG_FILE" .gpg)"
 echo "Decrypting $(basename "$GPG_FILE")..."
-gpg --batch --yes --pinentry-mode loopback \
-  --passphrase "$PASSPHRASE" \
+# Feed the passphrase on stdin (fd 0) rather than as an argument, so it never
+# appears in the process list. printf is a bash builtin, so no process gets it in argv.
+printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+  --passphrase-fd 0 \
   --decrypt --output "$GZ_FILE" "$GPG_FILE" 2>/dev/null
 
 SQL_FILE="${GZ_FILE%.gz}"
