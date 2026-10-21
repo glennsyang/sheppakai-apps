@@ -273,7 +273,6 @@
 						weightStats={data.weightStats}
 						goalWeight={data.goalWeight}
 						weightForm={data.weightForm}
-						goalForm={data.goalForm}
 					/>
 				</Accordion.Content>
 			</Accordion.Item>
@@ -291,7 +290,6 @@
 						meals={data.meals}
 						calorieTarget={data.calorieTarget}
 						mealForm={data.mealForm}
-						calorieForm={data.calorieForm}
 					/>
 				</Accordion.Content>
 			</Accordion.Item>

@@ -3,9 +3,8 @@
 	import type { Infer, SuperValidated } from 'sveltekit-superforms';
 
 	import LogWeightDialog from '#lib/components/fitness/dialogs/LogWeightDialog.svelte';
-	import SetGoalWeightDialog from '#lib/components/fitness/dialogs/SetGoalWeightDialog.svelte';
 	import WeightChart from '#lib/components/fitness/WeightChart.svelte';
-	import type { logWeightSchema, setGoalWeightSchema } from '#lib/schemas/fitness.js';
+	import type { logWeightSchema } from '#lib/schemas/fitness.js';
 	import { parseLocalDateString } from '#lib/utils/date.js';
 
 	import FitnessStatusCard from './FitnessStatusCard.svelte';
@@ -34,10 +33,9 @@
 		weightStats: WeightStats;
 		goalWeight: GoalWeight | null | undefined;
 		weightForm: SuperValidated<Infer<typeof logWeightSchema>>;
-		goalForm: SuperValidated<Infer<typeof setGoalWeightSchema>>;
 	}
 
-	let { weightEntries, weightStats, goalWeight, weightForm, goalForm }: Props = $props();
+	let { weightEntries, weightStats, goalWeight, weightForm }: Props = $props();
 
 	// Weekly rate of change (lbs/week)
 	const weeklyRate = $derived.by(() => {
@@ -79,7 +77,6 @@
 <section class="mb-2 space-y-4">
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-2">
-			<SetGoalWeightDialog formData={goalForm} />
 			<LogWeightDialog formData={weightForm} instanceId="weight" />
 		</div>
 	</div>
