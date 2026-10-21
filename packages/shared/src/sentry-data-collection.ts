@@ -1,6 +1,11 @@
 import type * as Sentry from '@sentry/sveltekit';
 
-type DataCollection = NonNullable<NonNullable<Parameters<typeof Sentry.init>[0]>['dataCollection']>;
+import { redactSensitivePath } from './sensitive-path';
+
+type SentryOptions = NonNullable<Parameters<typeof Sentry.init>[0]>;
+type DataCollection = NonNullable<SentryOptions['dataCollection']>;
+type BeforeSend = NonNullable<SentryOptions['beforeSend']>;
+type BeforeSendSpan = NonNullable<SentryOptions['beforeSendSpan']>;
 
 const piiHeaderDenylist = ['forwarded', '-ip', 'remote-', 'via', '-user'];
 
@@ -20,4 +25,21 @@ export const sentryDataCollection: DataCollection = {
 	genAI: { inputs: false, outputs: false },
 	databaseQueryData: false,
 	graphQL: { document: false, variables: false }
+};
+
+// dataCollection filters `?token=` query params but not path segments, so reset-password
+// tokens in /api/auth/reset-password/<token> would otherwise reach Sentry in the request
+// URL, transaction names and span attributes. Server-only: set both in hooks.server.ts.
+export const scrubSensitivePathsFromEvent: BeforeSend = (event) => {
+	if (event.transaction) event.transaction = redactSensitivePath(event.transaction);
+	if (event.request?.url) event.request.url = redactSensitivePath(event.request.url);
+	return event;
+};
+
+export const scrubSensitivePathsFromSpan: BeforeSendSpan = (span) => {
+	span.name = redactSensitivePath(span.name);
+	for (const [key, value] of Object.entries(span.attributes)) {
+		if (typeof value === 'string') span.attributes[key] = redactSensitivePath(value);
+	}
+	return span;
 };

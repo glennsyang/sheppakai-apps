@@ -86,6 +86,24 @@ describe('createServerHandle', () => {
 		expect(response.headers.get('Content-Security-Policy')).toBeNull();
 	});
 
+	it('masks the reset-password token in the request log context', async () => {
+		const logger = fakeLogger();
+		const handle = createServerHandle({
+			auth: fakeAuth(null),
+			logger,
+			allowedEmails,
+			dev: false,
+			building: false
+		});
+
+		await handle({ event: fakeEvent('/api/auth/reset-password/s3cr3tT0ken'), resolve });
+
+		expect(logger.child).toHaveBeenCalledWith(
+			expect.objectContaining({ url: '/api/auth/reset-password/[redacted]' })
+		);
+		expect(JSON.stringify(logger.child.mock.calls)).not.toContain('s3cr3tT0ken');
+	});
+
 	it('leaves HSTS off in dev', async () => {
 		const handle = createServerHandle({
 			auth: fakeAuth(),
@@ -200,6 +218,20 @@ describe('createHandleError', () => {
 			'Unhandled server error',
 			expect.any(Error),
 			expect.objectContaining({ requestId: 'req-1', userId: 'user-1', status: 500 })
+		);
+	});
+
+	it('masks the reset-password token in the logged url', () => {
+		const logger = fakeLogger();
+
+		void createHandleError({ logger, dev: false })(
+			unknownInput(fakeEvent('/api/auth/reset-password/s3cr3tT0ken'))
+		);
+
+		expect(logger.error).toHaveBeenCalledWith(
+			'Unhandled server error',
+			expect.any(Error),
+			expect.objectContaining({ url: '/api/auth/reset-password/[redacted]' })
 		);
 	});
 

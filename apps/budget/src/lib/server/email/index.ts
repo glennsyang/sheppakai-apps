@@ -201,7 +201,7 @@ export async function sendWelcomeEmail(payload: WelcomeEmailPayload) {
 			<li>You can change your password any time from your Profile page.</li>
 		</ol>
 		<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
-			The set-password link expires in 72 hours. If it has expired, go to the sign-in page and choose <strong>Forgot password</strong> to get a new one. No password has been shared with anyone: you are the only one who will know it.
+			The set-password link expires in 24 hours. If it has expired, go to the sign-in page and choose <strong>Forgot password</strong> to get a new one. No password has been shared with anyone: you are the only one who will know it.
 		</p>`
 		)
 	});
