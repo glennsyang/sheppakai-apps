@@ -28,8 +28,8 @@ import {
 import { stringListSchema, safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
+import { getPersonVisitStatus } from '#lib/server/visits.js';
 import { getTodayString } from '#lib/utils/date.js';
-import { calculatePersonVisitStatus, getEffectiveFollowUpDate } from '#lib/utils/visit-status.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -64,16 +64,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		const visitStatusThresholds = await getVisitStatusThresholdsForUser(userId, db);
 
 		// Calculate status
-		const latestVisit = personVisits[0];
-		const effectiveFollowUpDate = getEffectiveFollowUpDate(
-			personVisits.length > 0,
-			latestVisit?.followUpDate,
-			person.scheduledVisitDate
-		);
-		const statusInfo = calculatePersonVisitStatus(
-			latestVisit?.date ?? null,
-			person.isExempt,
-			effectiveFollowUpDate,
+		const statusInfo = getPersonVisitStatus(
+			person,
+			personVisits[0],
 			getTodayString(),
 			visitStatusThresholds
 		);

@@ -14,6 +14,7 @@ import {
 } from '#lib/server/db/schema/index.js';
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
+import { getPersonVisitStatus } from '#lib/server/visits.js';
 import { DEFAULT_DASHBOARD_GOALS } from '#lib/utils/dashboard-goals.js';
 import {
 	addDaysToDateString,
@@ -28,11 +29,7 @@ import {
 	getTodayString
 } from '#lib/utils/date.js';
 import { createMarkdownExcerpt } from '#lib/utils/markdown.js';
-import {
-	calculatePersonVisitStatus,
-	getEffectiveFollowUpDate,
-	type VisitStatusThresholds
-} from '#lib/utils/visit-status.js';
+import type { VisitStatusThresholds } from '#lib/utils/visit-status.js';
 import { getWorkoutLabel } from '#lib/utils/workout.js';
 
 import type { PageServerLoad } from './$types';
@@ -134,16 +131,9 @@ function buildVisitHealth(
 		noVisits: []
 	};
 	for (const person of peopleRaw) {
-		const latestVisit = visitsMap.get(person.id);
-		const effectiveFollowUpDate = getEffectiveFollowUpDate(
-			latestVisit !== undefined,
-			latestVisit?.followUpDate,
-			person.scheduledVisitDate
-		);
-		const { status } = calculatePersonVisitStatus(
-			latestVisit?.date ?? null,
-			person.isExempt,
-			effectiveFollowUpDate,
+		const { status } = getPersonVisitStatus(
+			person,
+			visitsMap.get(person.id),
 			today,
 			visitStatusThresholds
 		);

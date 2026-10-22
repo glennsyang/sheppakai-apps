@@ -6,7 +6,7 @@ import {
 import { createApiKeyAdminActions } from '@sheppakai/shared/api-key-admin';
 import { error } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
-import { asc, desc, eq, inArray } from 'drizzle-orm';
+import { desc, eq, inArray } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
@@ -21,10 +21,11 @@ import { apiKeyStore } from '#lib/server/api/api-key-store.js';
 import { allowedEmails, auth } from '#lib/server/auth.js';
 import { sendWelcome } from '#lib/server/auth/welcome.js';
 import { getDb } from '#lib/server/db/index.js';
-import { apiAuditLog, apiKey, people, user, visits } from '#lib/server/db/schema/index.js';
+import { apiAuditLog, apiKey, people, user } from '#lib/server/db/schema/index.js';
 import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
 import { logger } from '#lib/server/logger.js';
 import { sendAuthAlerts } from '#lib/server/notifications/index.js';
+import { getLatestVisitsByPersonId } from '#lib/server/visits.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -106,23 +107,11 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 				: [];
 		const ownerEmailById = new Map(owners.map((owner) => [owner.id, owner.email]));
 
-		const latestVisitsByPersonId = new Map<string, typeof visits.$inferSelect>();
-
-		if (archivedPeople.length > 0) {
-			const orderedVisits = await db.query.visits.findMany({
-				where: inArray(
-					visits.personId,
-					archivedPeople.map((person) => person.id)
-				),
-				orderBy: [asc(visits.personId), desc(visits.date), desc(visits.createdAt)]
-			});
-
-			for (const visit of orderedVisits) {
-				if (!latestVisitsByPersonId.has(visit.personId)) {
-					latestVisitsByPersonId.set(visit.personId, visit);
-				}
-			}
-		}
+		const latestVisitsByPersonId = await getLatestVisitsByPersonId(
+			archivedPeople.map((person) => person.id),
+			undefined,
+			db
+		);
 
 		return {
 			users,
