@@ -46,13 +46,17 @@ export type AdminApiLogEntry = {
 
 type ApiAuditLogRow = Omit<AdminApiLogEntry, 'apiKeyName' | 'apiKeyExists'>;
 
+/** How many of the newest audit-log rows the admin API-logs table loads. */
+export const API_AUDIT_LOG_LIMIT = 500;
+
 /**
- * Returns `listApiAuditEntries()`, which reads the app's audit log and resolves each entry's
- * API key name. Errors propagate so each load keeps its own error handling.
+ * Returns `listApiAuditEntries()`, which reads the newest `API_AUDIT_LOG_LIMIT` audit-log rows
+ * and resolves each entry's API key name. Errors propagate so each load keeps its own error
+ * handling.
  */
 export function createListApiAuditEntries<Row extends ApiAuditLogRow>(deps: {
-	/** Every audit-log row, newest first, with its `user`. */
-	findEntries: () => Promise<Row[]>;
+	/** The newest `limit` audit-log rows, newest first, with their `user`. */
+	findEntries: (limit: number) => Promise<Row[]>;
 	/** The `apiKey` rows (id and name) matching the given ids. */
 	findKeyNames: (ids: string[]) => Promise<{ id: string; name: string | null }[]>;
 }) {
@@ -61,7 +65,7 @@ export function createListApiAuditEntries<Row extends ApiAuditLogRow>(deps: {
 	return async function listApiAuditEntries(): Promise<
 		(Row & Pick<AdminApiLogEntry, 'apiKeyName' | 'apiKeyExists'>)[]
 	> {
-		const entries = await findEntries();
+		const entries = await findEntries(API_AUDIT_LOG_LIMIT);
 
 		// apiKeyId has no FK to apiKey.id (by design, so the trail survives key revocation), so
 		// resolve names via a separate lookup rather than a join, and tolerate ids with no match.

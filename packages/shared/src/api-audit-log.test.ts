@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createListApiAuditEntries, createRecordApiWrite } from './api-audit-log';
+import {
+	API_AUDIT_LOG_LIMIT,
+	createListApiAuditEntries,
+	createRecordApiWrite
+} from './api-audit-log';
 
 const entry = {
 	apiKeyId: 'key-1',
@@ -78,6 +82,18 @@ describe('listApiAuditEntries', () => {
 			{ id: 'd', apiKeyName: null, apiKeyExists: true }
 		]);
 		expect(entries[0]).toMatchObject(row('a', 'key-1'));
+	});
+
+	it('reads at most API_AUDIT_LOG_LIMIT entries', async () => {
+		const findEntries = vi.fn<(limit: number) => Promise<ReturnType<typeof row>[]>>(async () => []);
+		const listApiAuditEntries = createListApiAuditEntries({
+			findEntries,
+			findKeyNames: async () => []
+		});
+
+		await listApiAuditEntries();
+
+		expect(findEntries).toHaveBeenCalledWith(API_AUDIT_LOG_LIMIT);
 	});
 
 	it('skips the key lookup when there are no entries', async () => {

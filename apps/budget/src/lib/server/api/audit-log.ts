@@ -12,10 +12,11 @@ export const recordApiWrite = createRecordApiWrite({
 });
 
 export const listApiAuditEntries = createListApiAuditEntries({
-	findEntries: () =>
+	findEntries: (limit) =>
 		getDb().query.apiAuditLog.findMany({
 			with: { user: true },
-			orderBy: [desc(apiAuditLog.createdAt)]
+			orderBy: [desc(apiAuditLog.createdAt)],
+			limit
 		}),
 	findKeyNames: (ids) =>
 		getDb().select({ id: apiKey.id, name: apiKey.name }).from(apiKey).where(inArray(apiKey.id, ids))
