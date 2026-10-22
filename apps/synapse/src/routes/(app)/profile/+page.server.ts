@@ -20,11 +20,7 @@ import {
 	user,
 	visitStatusSettings
 } from '#lib/server/db/schema/index.js';
-import {
-	generateId,
-	withTimestampsForCreate,
-	withTimestampsForUpdate
-} from '#lib/server/db/utils.js';
+import { upsertUserSettings } from '#lib/server/db/writes/user-settings.js';
 import { sendPasswordChangedEmail } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
@@ -118,7 +114,6 @@ export const actions = {
 		}
 
 		try {
-			const db = getDb();
 			const rawRecentDays = convertVisitThresholdToDays(
 				form.data.recentToOverdueValue,
 				form.data.thresholdUnit
@@ -133,28 +128,10 @@ export const actions = {
 				overdueToCriticalDays: rawCriticalDays
 			});
 
-			const existing = await db.query.visitStatusSettings.findFirst({
-				where: eq(visitStatusSettings.userId, currentUser.id)
+			await upsertUserSettings(visitStatusSettings, currentUser.id, {
+				recentToOverdueDays: normalizedThresholds.recentToOverdueDays,
+				overdueToCriticalDays: normalizedThresholds.overdueToCriticalDays
 			});
-
-			if (existing) {
-				await db
-					.update(visitStatusSettings)
-					.set({
-						recentToOverdueDays: normalizedThresholds.recentToOverdueDays,
-						overdueToCriticalDays: normalizedThresholds.overdueToCriticalDays,
-						...withTimestampsForUpdate()
-					})
-					.where(eq(visitStatusSettings.userId, currentUser.id));
-			} else {
-				await db.insert(visitStatusSettings).values({
-					id: generateId(),
-					userId: currentUser.id,
-					recentToOverdueDays: normalizedThresholds.recentToOverdueDays,
-					overdueToCriticalDays: normalizedThresholds.overdueToCriticalDays,
-					...withTimestampsForCreate()
-				});
-			}
 
 			logger.info('Visit status settings updated', {
 				userId: currentUser.id,
@@ -188,29 +165,9 @@ export const actions = {
 		}
 
 		try {
-			const db = getDb();
 			const normalizedGoals = normalizeDashboardGoals(form.data);
 
-			const existing = await db.query.dashboardGoalSettings.findFirst({
-				where: eq(dashboardGoalSettings.userId, currentUser.id)
-			});
-
-			if (existing) {
-				await db
-					.update(dashboardGoalSettings)
-					.set({
-						...normalizedGoals,
-						...withTimestampsForUpdate()
-					})
-					.where(eq(dashboardGoalSettings.userId, currentUser.id));
-			} else {
-				await db.insert(dashboardGoalSettings).values({
-					id: generateId(),
-					userId: currentUser.id,
-					...normalizedGoals,
-					...withTimestampsForCreate()
-				});
-			}
+			await upsertUserSettings(dashboardGoalSettings, currentUser.id, normalizedGoals);
 
 			logger.info('Dashboard goal settings updated', {
 				userId: currentUser.id,

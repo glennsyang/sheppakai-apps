@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockCalorieFindFirst, mockInsertValues, mockUpdateWhere } = vi.hoisted(() => ({
-	mockCalorieFindFirst: vi.fn<(args: unknown) => Promise<unknown>>(async () => undefined),
-	mockInsertValues: vi.fn<(values: unknown) => Promise<void>>(async () => undefined),
-	mockUpdateWhere: vi.fn<(where: unknown) => Promise<void>>(async () => undefined)
-}));
+const { mockInsertValues, mockOnConflictDoUpdate } = vi.hoisted(() => {
+	const onConflictDoUpdate = vi.fn<(config: unknown) => Promise<void>>(async () => undefined);
+	return {
+		mockOnConflictDoUpdate: onConflictDoUpdate,
+		mockInsertValues: vi.fn<(values: unknown) => unknown>(() => ({ onConflictDoUpdate }))
+	};
+});
 
 vi.mock('#lib/server/db/index.js', () => ({
 	getDb: () => ({
-		query: { dailyCalorieTargets: { findFirst: mockCalorieFindFirst } },
-		insert: () => ({ values: mockInsertValues }),
-		update: () => ({ set: () => ({ where: mockUpdateWhere }) })
+		insert: () => ({ values: mockInsertValues })
 	})
 }));
 vi.mock('#lib/server/logger.js', () => ({
@@ -39,34 +39,32 @@ describe('fitness setCalorieTarget action', () => {
 		vi.clearAllMocks();
 	});
 
-	it('returns the form on success when inserting a new target', async () => {
-		mockCalorieFindFirst.mockResolvedValueOnce(undefined);
-
+	it('upserts the target in a single statement and returns the form', async () => {
 		const result = await actions.setCalorieTarget({
 			request: post({ targetCalories: '2200' }),
 			locals: { user: USER }
 		} as never);
 
-		expect(mockInsertValues).toHaveBeenCalledOnce();
+		expect(mockInsertValues).toHaveBeenCalledWith(
+			expect.objectContaining({ userId: USER.id, targetCalories: 2200 })
+		);
+		expect(mockOnConflictDoUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({ set: expect.objectContaining({ targetCalories: 2200 }) })
+		);
 		expect(result).toMatchObject({
 			success: true,
 			form: { valid: true, data: { targetCalories: 2200 } }
 		});
 	});
 
-	it('returns the form on success when replacing an existing target', async () => {
-		mockCalorieFindFirst.mockResolvedValueOnce({ id: 'target-1', userId: USER.id });
+	it('returns a 500 message when the upsert fails', async () => {
+		mockOnConflictDoUpdate.mockRejectedValueOnce(new Error('db down'));
 
 		const result = await actions.setCalorieTarget({
 			request: post({ targetCalories: '1800' }),
 			locals: { user: USER }
 		} as never);
 
-		expect(mockUpdateWhere).toHaveBeenCalledOnce();
-		expect(mockInsertValues).not.toHaveBeenCalled();
-		expect(result).toMatchObject({
-			success: true,
-			form: { valid: true, data: { targetCalories: 1800 } }
-		});
+		expect(result).toMatchObject({ status: 500, data: { form: { message: { type: 'error' } } } });
 	});
 });
