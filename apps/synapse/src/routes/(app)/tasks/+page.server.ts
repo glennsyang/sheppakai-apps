@@ -35,11 +35,7 @@ import {
 } from '#lib/server/daily-agenda.js';
 import { getDb } from '#lib/server/db/index.js';
 import { moodLogs, tasks } from '#lib/server/db/schema/index.js';
-import {
-	generateId,
-	withTimestampsForCreate,
-	withTimestampsForUpdate
-} from '#lib/server/db/utils.js';
+import { upsertMood } from '#lib/server/db/writes/mood.js';
 import { logger } from '#lib/server/logger.js';
 import {
 	buildAgendaActionPayload,
@@ -61,7 +57,7 @@ import {
 	getStartOfWeek,
 	getTodayString
 } from '#lib/utils/date.js';
-import { isMoodValue, normalizeOptionalMoodText } from '#lib/utils/mood.js';
+import { isMoodValue } from '#lib/utils/mood.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -460,43 +456,16 @@ export const actions = {
 		}
 
 		try {
-			const db = getDb();
-			const existingMoodLog = await db.query.moodLogs.findFirst({
-				where: and(eq(moodLogs.userId, user.id), eq(moodLogs.date, form.data.date))
+			const { moodLog, created } = await upsertMood(user.id, { ...form.data, mood });
+
+			logger.info(created ? 'Mood log created' : 'Mood log updated', {
+				moodLogId: moodLog.id,
+				userId: user.id
 			});
-
-			const customMood =
-				form.data.mood === 'custom' ? normalizeOptionalMoodText(form.data.customMood) : null;
-			const notes = normalizeOptionalMoodText(form.data.notes);
-
-			if (existingMoodLog) {
-				await db
-					.update(moodLogs)
-					.set({
-						mood,
-						customMood,
-						notes,
-						...withTimestampsForUpdate()
-					})
-					.where(and(eq(moodLogs.id, existingMoodLog.id), eq(moodLogs.userId, user.id)));
-
-				logger.info('Mood log updated', { moodLogId: existingMoodLog.id, userId: user.id });
-				return message(form, { type: 'success', text: "Today's mood was updated." });
-			}
-
-			const moodLogId = generateId();
-			await db.insert(moodLogs).values({
-				id: moodLogId,
-				userId: user.id,
-				date: form.data.date,
-				mood,
-				customMood,
-				notes,
-				...withTimestampsForCreate()
+			return message(form, {
+				type: 'success',
+				text: created ? "Today's mood was logged." : "Today's mood was updated."
 			});
-
-			logger.info('Mood log created', { moodLogId, userId: user.id });
-			return message(form, { type: 'success', text: "Today's mood was logged." });
 		} catch (error) {
 			logger.error('Failed to upsert mood log', error, { userId: user.id });
 			return message(

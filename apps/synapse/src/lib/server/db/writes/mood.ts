@@ -1,6 +1,3 @@
-import { and, eq } from 'drizzle-orm';
-
-import type { ApiUpsertMoodInput } from '#lib/server/api/schemas/mood.js';
 import { getDb } from '#lib/server/db/index.js';
 import { moodLogs } from '#lib/server/db/schema/index.js';
 import {
@@ -8,52 +5,38 @@ import {
 	withTimestampsForCreate,
 	withTimestampsForUpdate
 } from '#lib/server/db/utils.js';
+import { normalizeOptionalMoodText } from '#lib/utils/mood.js';
+import type { MoodValue } from '#lib/utils/mood.js';
 
-function normalizeOptionalText(value: string | undefined): string | null {
-	if (!value) return null;
-	const trimmed = value.trim();
-	return trimmed.length > 0 ? trimmed : null;
+export interface MoodLogInput {
+	date: string;
+	mood: MoodValue;
+	customMood?: string | null;
+	notes?: string | null;
 }
 
 /**
- * Create-or-update path for API-key-driven mood logging. Mirrors the `upsertMood`
- * action in src/routes/(app)/tasks/+page.server.ts — one mood log per user per day,
- * kept as its own standalone function rather than sharing code with that UI action.
+ * Create-or-update the user's mood log for `input.date` in one atomic statement. Shared by
+ * the `upsertMood` action in src/routes/(app)/tasks/+page.server.ts and `POST /api/v1/mood`.
+ * Concurrent saves for the same day can't race into the unique `(userId, date)` index; on
+ * conflict the existing row keeps its `id` and `createdAt`. `created` tells the two apart.
  */
-export async function upsertMood(userId: string, input: ApiUpsertMoodInput) {
-	const db = getDb();
-
-	const existing = await db.query.moodLogs.findFirst({
-		where: and(eq(moodLogs.userId, userId), eq(moodLogs.date, input.date))
-	});
-
-	const customMood = input.mood === 'custom' ? normalizeOptionalText(input.customMood) : null;
-	const notes = normalizeOptionalText(input.notes);
-
-	if (existing) {
-		await db
-			.update(moodLogs)
-			.set({
-				mood: input.mood,
-				customMood,
-				notes,
-				...withTimestampsForUpdate()
-			})
-			.where(and(eq(moodLogs.id, existing.id), eq(moodLogs.userId, userId)));
-
-		return db.query.moodLogs.findFirst({ where: eq(moodLogs.id, existing.id) });
-	}
-
-	const moodLogId = generateId();
-	await db.insert(moodLogs).values({
-		id: moodLogId,
-		userId,
-		date: input.date,
+export async function upsertMood(userId: string, input: MoodLogInput, db = getDb()) {
+	const values = {
 		mood: input.mood,
-		customMood,
-		notes,
-		...withTimestampsForCreate()
-	});
+		customMood: input.mood === 'custom' ? normalizeOptionalMoodText(input.customMood) : null,
+		notes: normalizeOptionalMoodText(input.notes)
+	};
 
-	return db.query.moodLogs.findFirst({ where: eq(moodLogs.id, moodLogId) });
+	const id = generateId();
+	const [moodLog] = await db
+		.insert(moodLogs)
+		.values({ id, userId, date: input.date, ...values, ...withTimestampsForCreate() })
+		.onConflictDoUpdate({
+			target: [moodLogs.userId, moodLogs.date],
+			set: { ...values, ...withTimestampsForUpdate() }
+		})
+		.returning();
+
+	return { moodLog, created: moodLog.id === id };
 }
