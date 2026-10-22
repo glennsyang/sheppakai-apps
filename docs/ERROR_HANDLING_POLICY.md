@@ -205,7 +205,10 @@ soft-deletes and so cannot use `deleteAction`.
 - **Detail-page loads throw `error()`**: synapse's `journal/[id]`, `tasks/[id]/edit`, `visits/[id]`
   and `meditation/routines/[id]` loads throw `error(404)` for a missing entity and `error(500)` for
   a failed query, rather than returning a `loadError`. The page cannot render anything useful
-  without its entity, so the error page is the honest answer.
+  without its entity, so the error page is the honest answer. Each wraps its whole body (including
+  `getDb()`) in one try/catch that rethrows `isHttpError` / `isRedirect`, logs the cause, and
+  throws `error(500)`. `tasks/[id]/edit` redirects to `/tasks` for a missing task instead of a 404.
+  `apps/synapse/src/routes/(app)/detail-load-errors.test.ts` pins this down.
 - **synapse Daily Agenda actions**: `failAgendaValidation` / `failAgendaMutation` in
   `apps/synapse/src/routes/(app)/tasks/+page.server.ts` answer with a structured `agendaAction`
   payload (scope, entity id, field errors, values) that `DailyAgendaView` reads to drive its inline

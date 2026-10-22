@@ -34,10 +34,11 @@ import { getTodayString } from '#lib/utils/date.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-	const db = getDb();
 	const userId = getUser(locals).id;
 
 	try {
+		const db = getDb();
+
 		// Load person
 		const person = await getOwnedEntityOrThrow(
 			() =>
