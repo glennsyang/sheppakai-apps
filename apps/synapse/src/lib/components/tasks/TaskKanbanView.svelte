@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { deserialize, type ActionResult } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import { ChevronLeft, ChevronRight, Plus } from '@lucide/svelte/icons';
 	import type { DndEvent } from 'svelte-dnd-action';
@@ -153,31 +154,42 @@
 		};
 	}
 
-	async function submitBoardMove(payload: MoveBoardTaskPayload): Promise<Response> {
+	// With the `x-sveltekit-action` header SvelteKit answers with a serialized ActionResult
+	// instead of re-rendering the page, so a redirect (e.g. expired session) is not mistaken
+	// for a successful save.
+	async function postAction(action: string, formData: FormData): Promise<ActionResult> {
+		const response = await fetch(`?/${action}`, {
+			method: 'POST',
+			headers: { 'x-sveltekit-action': 'true' },
+			body: formData
+		});
+		return deserialize(await response.text());
+	}
+
+	async function submitBoardMove(payload: MoveBoardTaskPayload): Promise<ActionResult> {
 		const formData = new FormData();
 		formData.set('id', payload.id);
 		formData.set('fromState', payload.fromState);
 		formData.set('toState', payload.toState);
 		formData.set('toIndex', String(payload.toIndex));
 
-		return fetch('?/moveBoardTask', {
-			method: 'POST',
-			body: formData
-		});
+		return postAction('moveBoardTask', formData);
 	}
 
 	async function persistBoardMove(payload: MoveBoardTaskPayload, snapshot: BoardTasksByState) {
 		isSavingMove = true;
 
 		try {
-			const response = await submitBoardMove(payload);
-			if (!response.ok) {
+			const result = await submitBoardMove(payload);
+			if (result.type !== 'success') {
 				throw new Error('move-failed');
 			}
 
 			if (payload.fromState !== 'done' && payload.toState === 'done') {
 				makeConfettiBurst();
 			}
+
+			await refreshAll();
 		} catch {
 			boardTasks = cloneBoardTasksByState(snapshot);
 			toast.error('Could not save task move. The board was restored.');
@@ -240,15 +252,12 @@
 		dragSnapshot = null;
 	}
 
-	async function submitStateChange(taskId: string, newState: TaskState): Promise<Response> {
+	async function submitStateChange(taskId: string, newState: TaskState): Promise<ActionResult> {
 		const formData = new FormData();
 		formData.set('id', taskId);
 		formData.set('state', newState);
 
-		return fetch('?/updateState', {
-			method: 'POST',
-			body: formData
-		});
+		return postAction('updateState', formData);
 	}
 
 	async function handleStateChange(taskId: string, newState: TaskState, previousState: TaskState) {
@@ -259,8 +268,8 @@
 		isSavingMove = true;
 
 		try {
-			const response = await submitStateChange(taskId, newState);
-			if (!response.ok) {
+			const result = await submitStateChange(taskId, newState);
+			if (result.type !== 'success') {
 				throw new Error('update-failed');
 			}
 
