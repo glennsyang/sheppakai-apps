@@ -33,5 +33,3 @@ export const apiMoodListQuerySchema = z
 		message: 'startDate and endDate must be given together',
 		path: ['startDate']
 	});
-
-export type ApiUpsertMoodInput = z.infer<typeof apiUpsertMoodSchema>;

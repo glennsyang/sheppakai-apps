@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildAgendaItemStats, buildDateRanges } from './dashboard-utils';
+import { buildAgendaItemStats, buildDateRanges } from './agenda-stats';
 
 type AgendaEntry = {
 	id: string;

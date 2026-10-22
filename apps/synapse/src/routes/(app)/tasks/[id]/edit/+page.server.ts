@@ -1,4 +1,4 @@
-import { redirect } from '@sveltejs/kit';
+import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -45,34 +45,42 @@ function buildTaskUpdateData(
 }
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-	const task = await getOwnedEntityOrThrow(
-		() =>
-			getDb().query.tasks.findFirst({
-				where: and(eq(tasks.id, params.id), eq(tasks.userId, getUser(locals).id))
-			}),
-		{ type: 'redirect', to: '/tasks' }
-	);
+	const userId = getUser(locals).id;
 
-	// Parse JSON fields for form
-	const tagsString = (parseTaskTags(task.tags) ?? []).join(', ');
+	try {
+		const task = await getOwnedEntityOrThrow(
+			() =>
+				getDb().query.tasks.findFirst({
+					where: and(eq(tasks.id, params.id), eq(tasks.userId, userId))
+				}),
+			{ type: 'redirect', to: '/tasks' }
+		);
 
-	// Prepare form data
-	const form = await superValidate(
-		{
-			title: task.title,
-			description: task.description ?? undefined,
-			priority: task.priority,
-			dueDate: task.dueDate ?? undefined,
-			state: task.state,
-			tags: tagsString
-		},
-		zod4(updateTaskSchema)
-	);
+		// Parse JSON fields for form
+		const tagsString = (parseTaskTags(task.tags) ?? []).join(', ');
 
-	return {
-		task,
-		form
-	};
+		// Prepare form data
+		const form = await superValidate(
+			{
+				title: task.title,
+				description: task.description ?? undefined,
+				priority: task.priority,
+				dueDate: task.dueDate ?? undefined,
+				state: task.state,
+				tags: tagsString
+			},
+			zod4(updateTaskSchema)
+		);
+
+		return {
+			task,
+			form
+		};
+	} catch (err) {
+		if (isHttpError(err) || isRedirect(err)) throw err;
+		logger.error('Failed to load task for editing', err, { taskId: params.id, userId });
+		throw error(500, 'Failed to load task');
+	}
 };
 
 export const actions = {
@@ -176,8 +184,8 @@ export const actions = {
 			}
 
 			logger.info('Task updated', { taskId, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to update task', error, { taskId });
+		} catch (err) {
+			logger.error('Failed to update task', err, { taskId });
 			return message(form, { type: 'error', text: 'Failed to update task' }, { status: 500 });
 		}
 
@@ -208,8 +216,8 @@ export const actions = {
 				.where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
 
 			logger.info('Task deleted', { taskId, taskNumber: existing.taskNumber, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to delete task', error, { taskId });
+		} catch (err) {
+			logger.error('Failed to delete task', err, { taskId });
 			return message(form, { type: 'error', text: 'Failed to delete task' }, { status: 500 });
 		}
 

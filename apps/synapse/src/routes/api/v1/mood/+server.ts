@@ -54,7 +54,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 			path: url.pathname,
 			action: 'mood:write'
 		},
-		() => upsertMood(auth.userId, parsed.data),
+		async () => (await upsertMood(auth.userId, parsed.data)).moodLog,
 		{ successStatus: 200, failureMessage: 'Failed to save mood log' }
 	);
 };
