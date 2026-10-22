@@ -1,7 +1,12 @@
+import { isHttpError } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createAdminUserActions, type AdminUserActionsDeps } from './admin-user-actions';
+import {
+	createAdminUserActions,
+	listAdminUsers,
+	type AdminUserActionsDeps
+} from './admin-user-actions';
 
 const ADMIN = { id: 'admin-1', role: 'admin', email: 'admin@example.com' };
 const TARGET = { id: 'user-2', email: 'target@example.com', name: 'Target' };
@@ -348,4 +353,41 @@ describe('sendWelcomeEmail', () => {
 
 		expect(result.status).toBe(500);
 	});
+});
+
+describe('listAdminUsers', () => {
+	const listUsers = vi.fn<(ctx: unknown) => Promise<{ users: (typeof TARGET)[] }>>();
+	const auth = { api: { listUsers } };
+	const headers = new Headers({ cookie: 'session=abc' });
+	const sort = { sortBy: 'createdAt', sortDirection: 'desc' } as const;
+
+	it('lists users with the shared page size, the sort and the request headers', async () => {
+		listUsers.mockResolvedValueOnce({ users: [TARGET] });
+
+		await expect(listAdminUsers(auth, headers, sort)).resolves.toEqual([TARGET]);
+		expect(listUsers).toHaveBeenCalledWith({
+			query: { limit: 500, sortBy: 'createdAt', sortDirection: 'desc' },
+			headers
+		});
+	});
+
+	it.each(['UNAUTHORIZED', 'FORBIDDEN'] as const)(
+		"maps the admin plugin's %s to a 403",
+		async (status) => {
+			listUsers.mockRejectedValueOnce(new APIError(status));
+
+			const err = await listAdminUsers(auth, headers, sort).catch((e: unknown) => e);
+
+			expect(isHttpError(err, 403)).toBe(true);
+		}
+	);
+
+	it.each([new APIError('INTERNAL_SERVER_ERROR'), new Error('boom')])(
+		'rethrows other errors unchanged (%s)',
+		async (failure) => {
+			listUsers.mockRejectedValueOnce(failure);
+
+			await expect(listAdminUsers(auth, headers, sort)).rejects.toBe(failure);
+		}
+	);
 });

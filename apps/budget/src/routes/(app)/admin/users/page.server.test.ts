@@ -1,3 +1,5 @@
+import { isHttpError } from '@sveltejs/kit';
+import { APIError } from 'better-auth/api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
@@ -171,6 +173,18 @@ describe('admin users load: sessions', () => {
 			['u2', []]
 		]);
 	});
+
+	it.each(['UNAUTHORIZED', 'FORBIDDEN'] as const)(
+		'throws 403 when the admin plugin rejects listUsers with %s (#141)',
+		async (status) => {
+			api.listUsers.mockRejectedValueOnce(new APIError(status));
+
+			const err = await Promise.resolve(load(loadEvent)).catch((e: unknown) => e);
+
+			expect(isHttpError(err, 403)).toBe(true);
+			expect(findSessionSummariesMock).not.toHaveBeenCalled();
+		}
+	);
 
 	it('returns the load-error fallback when the session query fails', async () => {
 		findSessionSummariesMock.mockRejectedValueOnce(new Error('db down'));

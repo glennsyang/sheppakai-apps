@@ -1,11 +1,7 @@
 import { FLY_APP_NAME } from '$app/env/private';
-import {
-	ADMIN_USER_LIST_LIMIT,
-	createAdminUserActions
-} from '@sheppakai/shared/admin-user-actions';
+import { createAdminUserActions, listAdminUsers } from '@sheppakai/shared/admin-user-actions';
 import { createApiKeyAdminActions } from '@sheppakai/shared/api-key-admin';
-import { error } from '@sveltejs/kit';
-import { APIError } from 'better-auth/api';
+import { isHttpError } from '@sveltejs/kit';
 import { desc, eq, inArray } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -64,12 +60,9 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 	try {
 		const db = getDb();
 
-		const [{ users }, archivedPeople, apiKeys, auditEntries] = await Promise.all([
+		const [users, archivedPeople, apiKeys, auditEntries] = await Promise.all([
 			// Through the admin plugin, not the db, so better-auth's own admin check runs.
-			auth.api.listUsers({
-				query: { limit: ADMIN_USER_LIST_LIMIT, sortBy: 'createdAt', sortDirection: 'desc' },
-				headers: request.headers
-			}),
+			listAdminUsers(auth, request.headers, { sortBy: 'createdAt', sortDirection: 'desc' }),
 			db.query.people.findMany({
 				where: eq(people.isArchived, true),
 				orderBy: [desc(people.updatedAt)]
@@ -126,11 +119,8 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 			createUserForm
 		};
 	} catch (err) {
-		// The plugin's own admin check is authoritative; map its 401/403 to a plain 403 in
-		// case the layout guard's view of the role is ever out of date.
-		if (err instanceof APIError && (err.statusCode === 401 || err.statusCode === 403)) {
-			error(403, 'Forbidden');
-		}
+		// listAdminUsers maps the plugin's 401/403 to a 403.
+		if (isHttpError(err)) throw err;
 		logger.error('Failed to load admin dashboard data', err);
 		return {
 			users: [],

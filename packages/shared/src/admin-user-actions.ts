@@ -4,7 +4,7 @@
 
 import { randomBytes } from 'node:crypto';
 
-import { isRedirect } from '@sveltejs/kit';
+import { error, isRedirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import { message, setError, type SuperValidated } from 'sveltekit-superforms/server';
 
@@ -21,7 +21,40 @@ import { invalidAuthForm as invalidForm } from './auth-form-handler';
 import { getBetterAuthErrorCode } from './better-auth-errors';
 
 /** Page size for every app's admin user list (`auth.api.listUsers`). */
-export const ADMIN_USER_LIST_LIMIT = 500;
+const ADMIN_USER_LIST_LIMIT = 500;
+
+/** The better-auth `admin` plugin's `listUsers` endpoint, as the admin pages call it. */
+interface ListUsersApi<U> {
+	listUsers(ctx: {
+		query: { limit: number; sortBy: string; sortDirection: 'asc' | 'desc' };
+		headers: Headers;
+	}): Promise<{ users: U[] }>;
+}
+
+/**
+ * Lists users for an admin page through the `admin` plugin (not the db), so better-auth's own
+ * admin check runs. That check is authoritative: its 401/403 becomes a plain `error(403)` in
+ * case the layout guard's view of the role is ever out of date. Anything else is rethrown, so
+ * callers that catch must rethrow `HttpError` first.
+ */
+export async function listAdminUsers<U>(
+	auth: { api: ListUsersApi<U> },
+	headers: Headers,
+	sort: { sortBy: string; sortDirection: 'asc' | 'desc' }
+): Promise<U[]> {
+	try {
+		const { users } = await auth.api.listUsers({
+			query: { limit: ADMIN_USER_LIST_LIMIT, ...sort },
+			headers
+		});
+		return users;
+	} catch (err) {
+		if (err instanceof APIError && (err.statusCode === 401 || err.statusCode === 403)) {
+			error(403, 'Forbidden');
+		}
+		throw err;
+	}
+}
 
 type MessageStatus = NonNullable<Parameters<typeof message>[2]>['status'];
 type TargetUser = { id: string; email: string; name: string };
@@ -121,8 +154,8 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 				logger.info(`Disabled API keys after ${action}`, { userId, count });
 			}
 			return true;
-		} catch (error) {
-			logger.error(`Failed to disable API keys after ${action}`, { userId, error });
+		} catch (err) {
+			logger.error(`Failed to disable API keys after ${action}`, { userId, error: err });
 			return false;
 		}
 	}
