@@ -38,6 +38,7 @@ import {
 	withTimestampsForCreate,
 	withTimestampsForUpdate
 } from '#lib/server/db/utils.js';
+import { upsertUserSettings } from '#lib/server/db/writes/user-settings.js';
 import { logger } from '#lib/server/logger.js';
 import { getTodayString } from '#lib/utils/date.js';
 
@@ -201,32 +202,10 @@ export const actions = {
 		}
 
 		try {
-			const db = getDb();
-			const today = getTodayString();
-
-			// Upsert goal weight (replace existing)
-			const existing = await db.query.goalWeights.findFirst({
-				where: eq(goalWeights.userId, user.id)
+			await upsertUserSettings(goalWeights, user.id, {
+				targetWeightLbs: form.data.targetWeightLbs,
+				setDate: getTodayString()
 			});
-
-			if (existing) {
-				await db
-					.update(goalWeights)
-					.set({
-						targetWeightLbs: form.data.targetWeightLbs,
-						setDate: today,
-						...withTimestampsForUpdate()
-					})
-					.where(eq(goalWeights.userId, user.id));
-			} else {
-				await db.insert(goalWeights).values({
-					id: generateId(),
-					userId: user.id,
-					targetWeightLbs: form.data.targetWeightLbs,
-					setDate: today,
-					...withTimestampsForCreate()
-				});
-			}
 
 			logger.info('Goal weight set', { userId: user.id });
 		} catch (error) {
@@ -334,32 +313,10 @@ export const actions = {
 		}
 
 		try {
-			const db = getDb();
-			const today = getTodayString();
-
-			// Upsert calorie target (replace existing)
-			const existing = await db.query.dailyCalorieTargets.findFirst({
-				where: eq(dailyCalorieTargets.userId, user.id)
+			await upsertUserSettings(dailyCalorieTargets, user.id, {
+				targetCalories: form.data.targetCalories,
+				setDate: getTodayString()
 			});
-
-			if (existing) {
-				await db
-					.update(dailyCalorieTargets)
-					.set({
-						targetCalories: form.data.targetCalories,
-						setDate: today,
-						...withTimestampsForUpdate()
-					})
-					.where(eq(dailyCalorieTargets.userId, user.id));
-			} else {
-				await db.insert(dailyCalorieTargets).values({
-					id: generateId(),
-					userId: user.id,
-					targetCalories: form.data.targetCalories,
-					setDate: today,
-					...withTimestampsForCreate()
-				});
-			}
 
 			logger.info('Calorie target set', { userId: user.id });
 		} catch (error) {
