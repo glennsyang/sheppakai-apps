@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import CopyIcon from '@lucide/svelte/icons/copy';
+	import { API_AUDIT_LOG_LIMIT } from '@sheppakai/shared/api-audit-log';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 
@@ -294,7 +295,7 @@
 
 		<Tabs.Content value="api-logs" class="mt-0 w-full space-y-4">
 			<p class="text-muted-foreground text-sm">
-				Audit trail of write actions taken via the external API.
+				Audit trail of the latest {API_AUDIT_LOG_LIMIT} write actions taken via the external API.
 			</p>
 			<AdminApiLogsTable entries={data.apiLogs} />
 		</Tabs.Content>
