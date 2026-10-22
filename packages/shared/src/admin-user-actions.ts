@@ -154,8 +154,8 @@ export function createAdminUserActions(deps: AdminUserActionsDeps) {
 				logger.info(`Disabled API keys after ${action}`, { userId, count });
 			}
 			return true;
-		} catch (error) {
-			logger.error(`Failed to disable API keys after ${action}`, { userId, error });
+		} catch (err) {
+			logger.error(`Failed to disable API keys after ${action}`, { userId, error: err });
 			return false;
 		}
 	}
