@@ -19,8 +19,8 @@ import { invalidForm } from './form-responses';
 /**
  * Ported from budget's `createCrudActions`, adapted for synapse: every row belongs to a user, so
  * update and delete are scoped to `id` AND `userId`, and a miss is a 404 rather than a silent
- * no-op. Pages here answer with `{ success, create | update, form }` or a redirect rather than
- * a success banner, so the success response is the caller's to choose via `onSuccess`.
+ * no-op. Success defaults to `message(form, { type: 'success', text })` per
+ * docs/ERROR_HANDLING_POLICY.md; pass `onSuccess` for a redirect or a different text.
  */
 
 // SQLiteTableWithColumns requires `any` in its constraint due to Drizzle's type system.
@@ -67,6 +67,10 @@ function serverError<S extends Record<string, unknown>>(form: SuperValidated<S>,
 	return message(form, { type: 'error', text }, { status: 500 });
 }
 
+function success<S extends Record<string, unknown>>(form: SuperValidated<S>, text: string) {
+	return message(form, { type: 'success', text });
+}
+
 function notFound<S extends Record<string, unknown>>(form: SuperValidated<S>, entityName: string) {
 	return message(form, { type: 'error', text: `${entityName} not found.` }, { status: 404 });
 }
@@ -82,11 +86,13 @@ function ownedBy(table: UserOwnedTable, id: string, userId: string) {
 	return and(eq(columns.id, id), eq(columns.userId, userId));
 }
 
-/** Insert a row owned by the signed-in user. Success defaults to `{ success, create, form }`. */
+type SuccessResponse<S extends ZodValidationSchema> = ReturnType<typeof success<Data<S>>>;
+
+/** Insert a row owned by the signed-in user. Success defaults to "<Entity> created." */
 export function createAction<
 	S extends ZodValidationSchema,
 	T extends UserOwnedTable,
-	R = { success: true; create: true; form: SuperValidated<Data<S>> }
+	R = SuccessResponse<S>
 >(config: WriteConfig<S, T, R>) {
 	return requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(config.schema));
@@ -111,16 +117,15 @@ export function createAction<
 
 		return config.onSuccess
 			? config.onSuccess(form, id)
-			: // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the default `R` is this shape; a caller that overrides `R` passes `onSuccess`
-				({ success: true, create: true, form } as R);
+			: success(form, `${config.entityName} created.`);
 	});
 }
 
-/** Update the user's own row by `form.data.id`. Success defaults to `{ success, update, form }`. */
+/** Update the user's own row by `form.data.id`. Success defaults to "<Entity> updated." */
 export function updateAction<
 	S extends ZodValidationSchema,
 	T extends UserOwnedTable,
-	R = { success: true; update: true; form: SuperValidated<Data<S>> }
+	R = SuccessResponse<S>
 >(config: WriteConfig<S, T, R>) {
 	return requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(config.schema));
@@ -144,16 +149,15 @@ export function updateAction<
 
 		return config.onSuccess
 			? config.onSuccess(form, id)
-			: // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the default `R` is this shape; a caller that overrides `R` passes `onSuccess`
-				({ success: true, update: true, form } as R);
+			: success(form, `${config.entityName} updated.`);
 	});
 }
 
-/** Delete the user's own row. Success defaults to `{ success: true }`. */
+/** Delete the user's own row. Success defaults to "<Entity> deleted." */
 export function deleteAction<
 	S extends ZodValidationSchema,
 	T extends UserOwnedTable,
-	R = { success: true }
+	R = SuccessResponse<S>
 >(config: DeleteConfig<S, T, R>) {
 	return requireAuth(async (event, user) => {
 		const form = await superValidate(event.request, zod4(config.schema));
@@ -174,7 +178,8 @@ export function deleteAction<
 			return serverError(form, `Failed to delete ${lower(config.entityName)}. Please try again.`);
 		}
 
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the default `R` is this shape; a caller that overrides `R` passes `onSuccess`
-		return config.onSuccess ? config.onSuccess(form, id) : ({ success: true } as R);
+		return config.onSuccess
+			? config.onSuccess(form, id)
+			: success(form, `${config.entityName} deleted.`);
 	});
 }

@@ -82,10 +82,12 @@ describe('createAction', () => {
 		expect(rows()).toHaveLength(0);
 	});
 
-	it('inserts a row owned by the caller and returns { success, create, form }', async () => {
+	it('inserts a row owned by the caller and answers with a success message', async () => {
 		const result = await create(event(OWNER, { body: 'hi' }));
 
-		expect(result).toMatchObject({ success: true, create: true, form: { valid: true } });
+		expect(result).toMatchObject({
+			form: { valid: true, message: { type: 'success', text: 'Note created.' } }
+		});
 		expect(rows()).toEqual([expect.objectContaining({ userId: 'owner', body: 'hi' })]);
 	});
 });
@@ -103,7 +105,9 @@ describe('updateAction', () => {
 
 		const result = await update(event(OWNER, { id: 'n1', body: 'edited' }));
 
-		expect(result).toMatchObject({ success: true, update: true });
+		expect(result).toMatchObject({
+			form: { message: { type: 'success', text: 'Note updated.' } }
+		});
 		expect(rows()[0].body).toBe('edited');
 	});
 
@@ -136,11 +140,13 @@ describe('updateAction', () => {
 });
 
 describe('deleteAction', () => {
-	it("deletes the caller's own row and returns { success: true }", async () => {
+	it("deletes the caller's own row and answers with a success message", async () => {
 		seed('n1', 'owner');
 		const remove = deleteAction({ schema: idSchema, table: notes, entityName: 'Note' });
 
-		expect(await remove(event(OWNER, { id: 'n1' }))).toEqual({ success: true });
+		expect(await remove(event(OWNER, { id: 'n1' }))).toMatchObject({
+			form: { message: { type: 'success', text: 'Note deleted.' } }
+		});
 		expect(rows()).toHaveLength(0);
 	});
 

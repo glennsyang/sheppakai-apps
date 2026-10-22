@@ -220,7 +220,7 @@ export const actions = {
 			);
 		}
 
-		return { success: true, create: true, form };
+		return message(form, { type: 'success', text: 'Goal weight set.' });
 	}),
 
 	logWorkout: requireAuth(async ({ request }, user) => {
@@ -294,7 +294,7 @@ export const actions = {
 			);
 		}
 
-		return { success: true, create: true, form };
+		return message(form, { type: 'success', text: 'Workout logged.' });
 	}),
 
 	logMeal: createAction({
@@ -331,7 +331,7 @@ export const actions = {
 			);
 		}
 
-		return { success: true, create: true, form };
+		return message(form, { type: 'success', text: 'Calorie target set.' });
 	}),
 
 	createReminder: createAction({
@@ -452,7 +452,7 @@ export const actions = {
 			);
 		}
 
-		return { success: true, update: true, form };
+		return message(form, { type: 'success', text: 'Workout updated.' });
 	}),
 
 	deleteWorkout: deleteAction({

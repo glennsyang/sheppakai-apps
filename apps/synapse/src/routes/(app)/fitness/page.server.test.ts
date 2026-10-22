@@ -39,7 +39,7 @@ describe('fitness setCalorieTarget action', () => {
 		vi.clearAllMocks();
 	});
 
-	it('upserts the target in a single statement and returns the form', async () => {
+	it('upserts the target in a single statement and answers with a success message', async () => {
 		const result = await actions.setCalorieTarget({
 			request: post({ targetCalories: '2200' }),
 			locals: { user: USER }
@@ -52,8 +52,11 @@ describe('fitness setCalorieTarget action', () => {
 			expect.objectContaining({ set: expect.objectContaining({ targetCalories: 2200 }) })
 		);
 		expect(result).toMatchObject({
-			success: true,
-			form: { valid: true, data: { targetCalories: 2200 } }
+			form: {
+				valid: true,
+				data: { targetCalories: 2200 },
+				message: { type: 'success', text: 'Calorie target set.' }
+			}
 		});
 	});
 
