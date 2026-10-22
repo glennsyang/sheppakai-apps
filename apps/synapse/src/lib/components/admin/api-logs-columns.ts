@@ -1,3 +1,4 @@
+import type { AdminApiLogEntry } from '@sheppakai/shared/api-audit-log';
 import type { ColumnDef } from '@tanstack/table-core';
 import { createRawSnippet } from 'svelte';
 
@@ -8,20 +9,6 @@ import {
 } from '#lib/components/ui/data-table/index.js';
 
 import DataTableSortButton from './DataTableSortButton.svelte';
-
-export type AdminApiLogEntry = {
-	id: string;
-	apiKeyId: string;
-	apiKeyName: string | null;
-	apiKeyExists: boolean;
-	userId: string;
-	user: { name: string | null; email: string };
-	method: string;
-	path: string;
-	action: string;
-	statusCode: number;
-	createdAt: Date;
-};
 
 export const columns: ColumnDef<Features, AdminApiLogEntry>[] = [
 	{

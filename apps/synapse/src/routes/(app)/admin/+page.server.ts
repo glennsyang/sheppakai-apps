@@ -7,17 +7,17 @@ import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { scopesToPermissions } from '#lib/api-scopes.js';
-import type { AdminApiLogEntry } from '#lib/components/admin/api-logs-columns.js';
 import { createUserSchema } from '#lib/schemas/admin-user.js';
 import { createApiKeySchema } from '#lib/schemas/api-key.js';
 import { unarchivePersonSchema } from '#lib/schemas/visits.js';
 import { assertAdmin, isAdminUser, requireAdmin } from '#lib/server/actions/auth-guard.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { apiKeyStore } from '#lib/server/api/api-key-store.js';
+import { listApiAuditEntries } from '#lib/server/api/audit-log.js';
 import { allowedEmails, auth } from '#lib/server/auth.js';
 import { sendWelcome } from '#lib/server/auth/welcome.js';
 import { getDb } from '#lib/server/db/index.js';
-import { apiAuditLog, apiKey, people, user } from '#lib/server/db/schema/index.js';
+import { people, user } from '#lib/server/db/schema/index.js';
 import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
 import { logger } from '#lib/server/logger.js';
 import { sendAuthAlerts } from '#lib/server/notifications/index.js';
@@ -60,7 +60,7 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 	try {
 		const db = getDb();
 
-		const [users, archivedPeople, apiKeys, auditEntries] = await Promise.all([
+		const [users, archivedPeople, apiKeys, apiLogs] = await Promise.all([
 			// Through the admin plugin, not the db, so better-auth's own admin check runs.
 			listAdminUsers(auth, request.headers, { sortBy: 'createdAt', sortDirection: 'desc' }),
 			db.query.people.findMany({
@@ -69,29 +69,8 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 			}),
 			// Every user's keys, not just the signed-in admin's, so any admin can revoke anyone's.
 			apiKeyStore.listAllWithOwner(),
-			db.query.apiAuditLog.findMany({
-				with: { user: true },
-				orderBy: [desc(apiAuditLog.createdAt)]
-			})
+			listApiAuditEntries()
 		]);
-
-		// apiKeyId has no FK to apiKey.id (by design, so the trail survives key revocation),
-		// so resolve names via a separate lookup rather than a join, tolerating ids with no match.
-		const apiKeyIds = [...new Set(auditEntries.map((entry) => entry.apiKeyId))];
-		const apiKeyRows =
-			apiKeyIds.length > 0
-				? await db
-						.select({ id: apiKey.id, name: apiKey.name })
-						.from(apiKey)
-						.where(inArray(apiKey.id, apiKeyIds))
-				: [];
-		const apiKeyNamesById = new Map(apiKeyRows.map((row) => [row.id, row.name]));
-
-		const apiLogs: AdminApiLogEntry[] = auditEntries.map((entry) => ({
-			...entry,
-			apiKeyName: apiKeyNamesById.get(entry.apiKeyId) ?? null,
-			apiKeyExists: apiKeyNamesById.has(entry.apiKeyId)
-		}));
 
 		const ownerIds = [...new Set(archivedPeople.map((person) => person.userId))];
 		const owners =

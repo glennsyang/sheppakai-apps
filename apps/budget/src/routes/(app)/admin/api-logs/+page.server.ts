@@ -1,41 +1,14 @@
-import { inArray } from 'drizzle-orm';
-
 import { assertAdmin } from '#lib/server/actions/auth-guard.js';
-import { getDb } from '#lib/server/db/index.js';
-import { apiKey } from '#lib/server/db/schema/index.js';
+import { listApiAuditEntries } from '#lib/server/api/audit-log.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { PageServerLoad } from './$types';
-import type { AdminApiLogEntry } from './columns';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	assertAdmin(locals);
 
-	const db = getDb();
-
 	try {
-		const auditEntries = await db.query.apiAuditLog.findMany({
-			with: { user: true },
-			orderBy: (table, { desc }) => [desc(table.createdAt)]
-		});
-
-		// apiKeyId has no FK to apiKey.id (by design, so the trail survives key revocation), so
-		// resolve names via a separate lookup rather than a join, and tolerate ids with no match.
-		const apiKeyIds = [...new Set(auditEntries.map((entry) => entry.apiKeyId))];
-		const apiKeys =
-			apiKeyIds.length > 0
-				? await db
-						.select({ id: apiKey.id, name: apiKey.name })
-						.from(apiKey)
-						.where(inArray(apiKey.id, apiKeyIds))
-				: [];
-		const apiKeyNamesById = new Map(apiKeys.map((key) => [key.id, key.name]));
-
-		const entries: AdminApiLogEntry[] = auditEntries.map((entry) => ({
-			...entry,
-			apiKeyName: apiKeyNamesById.get(entry.apiKeyId) ?? null,
-			apiKeyExists: apiKeyNamesById.has(entry.apiKeyId)
-		}));
+		const entries = await listApiAuditEntries();
 
 		return { entries };
 	} catch (error) {

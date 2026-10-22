@@ -1,22 +1,9 @@
+import type { AdminApiLogEntry } from '@sheppakai/shared/api-audit-log';
 import type { ColumnDef } from '@tanstack/table-core';
 
 import DataTableSortButton from '#lib/components/DataTableSortButton.svelte';
 import { badgeCell, stackCell } from '#lib/components/table/cells.js';
 import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
-
-export type AdminApiLogEntry = {
-	id: string;
-	apiKeyId: string;
-	apiKeyName: string | null;
-	apiKeyExists: boolean;
-	userId: string;
-	user: { name: string | null; email: string };
-	method: string;
-	path: string;
-	action: string;
-	statusCode: number;
-	createdAt: Date;
-};
 
 function formatAuditTimestamp(createdAt: Date): string {
 	return createdAt.toLocaleString('en-US', {
