@@ -1,18 +1,14 @@
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
 import { getUser } from '#lib/server/actions/auth-guard.js';
 import { getDb } from '#lib/server/db/index.js';
-import { people, visits } from '#lib/server/db/schema/index.js';
+import { people } from '#lib/server/db/schema/index.js';
 import { stringListSchema, safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
+import { getLatestVisitsByPersonId, getPersonVisitStatus } from '#lib/server/visits.js';
 import { getTodayString } from '#lib/utils/date.js';
-import {
-	calculatePersonVisitStatus,
-	getEffectiveFollowUpDate,
-	getStatusPriority,
-	type PersonWithStatus
-} from '#lib/utils/visit-status.js';
+import { getStatusPriority, type PersonWithStatus } from '#lib/utils/visit-status.js';
 
 import type { PageServerLoad } from './$types';
 
@@ -29,44 +25,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 			orderBy: [desc(people.createdAt)]
 		});
 
-		const latestVisitsByPersonId = new Map<string, typeof visits.$inferSelect>();
-
-		if (userPeople.length > 0) {
-			const orderedVisits = await db.query.visits.findMany({
-				where: and(
-					eq(visits.userId, userId),
-					inArray(
-						visits.personId,
-						userPeople.map((person) => person.id)
-					)
-				),
-				orderBy: [asc(visits.personId), desc(visits.date), desc(visits.createdAt)]
-			});
-
-			for (const visit of orderedVisits) {
-				if (!latestVisitsByPersonId.has(visit.personId)) {
-					latestVisitsByPersonId.set(visit.personId, visit);
-				}
-			}
-		}
+		const latestVisitsByPersonId = await getLatestVisitsByPersonId(
+			userPeople.map((person) => person.id),
+			userId,
+			db
+		);
 
 		const peopleWithStatus: PersonWithStatus[] = userPeople.map((person) => {
 			const latestVisit = latestVisitsByPersonId.get(person.id);
-			const effectiveFollowUpDate = getEffectiveFollowUpDate(
-				latestVisit !== undefined,
-				latestVisit?.followUpDate,
-				person.scheduledVisitDate
-			);
+			const statusInfo = getPersonVisitStatus(person, latestVisit, today, visitStatusThresholds);
+			const { effectiveFollowUpDate } = statusInfo;
 			const nextFollowUpDate =
 				effectiveFollowUpDate && effectiveFollowUpDate >= today ? effectiveFollowUpDate : null;
-
-			const statusInfo = calculatePersonVisitStatus(
-				latestVisit?.date ?? null,
-				person.isExempt,
-				effectiveFollowUpDate,
-				today,
-				visitStatusThresholds
-			);
 
 			return {
 				id: person.id,
