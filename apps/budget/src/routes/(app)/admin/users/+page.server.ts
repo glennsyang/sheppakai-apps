@@ -1,9 +1,7 @@
 import { FLY_APP_NAME } from '$app/env/private';
-import {
-	ADMIN_USER_LIST_LIMIT,
-	createAdminUserActions
-} from '@sheppakai/shared/admin-user-actions';
+import { createAdminUserActions, listAdminUsers } from '@sheppakai/shared/admin-user-actions';
 import { getBetterAuthErrorMessage } from '@sheppakai/shared/better-auth-errors';
+import { isHttpError } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
@@ -57,35 +55,17 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 	});
 
 	try {
-		// List all users using better-auth admin API
-		const result = await auth.api.listUsers({
-			query: {
-				limit: ADMIN_USER_LIST_LIMIT,
-				sortBy: 'name',
-				sortDirection: 'desc'
-			},
-			// This endpoint requires session cookies.
-			headers: request.headers
+		// Through the admin plugin (it needs the session cookies), so better-auth's own admin check runs.
+		const users = await listAdminUsers(auth, request.headers, {
+			sortBy: 'name',
+			sortDirection: 'desc'
 		});
 
-		if (!result?.users) {
-			return {
-				usersWithSessions: [],
-				loadError: 'Failed to retrieve user list from the auth provider.',
-				setRoleForm,
-				setPasswordForm,
-				banUserForm,
-				createUserForm
-			};
-		}
-
 		// One query for every listed user's sessions, grouped by user below.
-		const sessions = await sessionQueries.findSummariesByUserIds(
-			result.users.map((user) => user.id)
-		);
+		const sessions = await sessionQueries.findSummariesByUserIds(users.map((user) => user.id));
 		const sessionsByUser = Map.groupBy(sessions, (session) => session.userId);
 
-		const usersWithSessions: UserWithSessions[] = result.users.map((user) => ({
+		const usersWithSessions: UserWithSessions[] = users.map((user) => ({
 			...user,
 			sessions: sessionsByUser.get(user.id) ?? []
 		}));
@@ -98,6 +78,8 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 			createUserForm
 		};
 	} catch (error) {
+		// listAdminUsers maps the plugin's 401/403 to a 403.
+		if (isHttpError(error)) throw error;
 		logger.error('Failed to load users:', error);
 		return {
 			usersWithSessions: [],
