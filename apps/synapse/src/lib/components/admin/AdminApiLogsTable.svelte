@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { AdminApiLogEntry } from './api-logs-columns';
+	import type { AdminApiLogEntry } from '@sheppakai/shared/api-audit-log';
+
 	import { columns } from './api-logs-columns';
 	import DataTable from './DataTable.svelte';
 
