@@ -11,6 +11,7 @@ import {
 	updateVisitStatusSettingsSchema
 } from '#lib/schemas/auth.js';
 import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { auth } from '#lib/server/auth.js';
 import { getDashboardGoalsForUser } from '#lib/server/dashboard-goal-settings.js';
 import { getDb } from '#lib/server/db/index.js';
@@ -105,13 +106,7 @@ export const actions = {
 	updateVisitSettings: requireAuth(async ({ request }, currentUser) => {
 		const form = await superValidate(request, zod4(updateVisitStatusSettingsSchema));
 
-		if (!form.valid) {
-			return message(
-				form,
-				{ type: 'error', text: 'Please correct the errors in the form.' },
-				{ status: 400 }
-			);
-		}
+		if (!form.valid) return invalidForm(form);
 
 		try {
 			const rawRecentDays = convertVisitThresholdToDays(
@@ -156,13 +151,7 @@ export const actions = {
 	updateDashboardGoalSettings: requireAuth(async ({ request }, currentUser) => {
 		const form = await superValidate(request, zod4(updateDashboardGoalSettingsSchema));
 
-		if (!form.valid) {
-			return message(
-				form,
-				{ type: 'error', text: 'Please correct the errors in the form.' },
-				{ status: 400 }
-			);
-		}
+		if (!form.valid) return invalidForm(form);
 
 		try {
 			const normalizedGoals = normalizeDashboardGoals(form.data);

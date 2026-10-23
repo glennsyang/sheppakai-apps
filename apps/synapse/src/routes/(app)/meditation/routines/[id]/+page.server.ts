@@ -48,13 +48,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			)
 		});
 
+		// The query only matches the user's own or predefined routines, so anything else is a 404.
 		if (!routine) {
 			throw error(404, 'Routine not found');
-		}
-
-		// Check permissions for user-created routines
-		if (!routine.isPredefined && routine.userId !== userId) {
-			throw error(403, 'Unauthorized to view this routine');
 		}
 
 		// Fetch schedule for this routine (if exists)
