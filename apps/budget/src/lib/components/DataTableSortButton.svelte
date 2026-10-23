@@ -4,16 +4,9 @@
 
 	interface DataTableSortButtonProps extends HTMLButtonAttributes {
 		columnName: string;
-		/** Kept for call-site compatibility; the icon always trails the label. */
-		iconPosition?: 'left' | 'right';
 	}
 
-	let {
-		columnName,
-		iconPosition: _iconPosition,
-		class: className,
-		...restProps
-	}: DataTableSortButtonProps = $props();
+	let { columnName, class: className, ...restProps }: DataTableSortButtonProps = $props();
 </script>
 
 <button
