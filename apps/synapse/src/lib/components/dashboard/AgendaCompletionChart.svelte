@@ -67,7 +67,7 @@
 					xAxis: { format: (v: string) => v }
 				}}
 			>
-				{#snippet marks({ context }: { context: any })}
+				{#snippet marks({ context })}
 					{#each context.series.visibleSeries as s (s.key)}
 						<Area seriesKey={s.key} fillOpacity={0.2} line={{ strokeWidth: 2 }} />
 					{/each}
