@@ -13,7 +13,7 @@ import {
 	getTodayString
 } from '#lib/utils/date.js';
 import { createMarkdownExcerpt } from '#lib/utils/markdown.js';
-import type { VisitStatusThresholds } from '#lib/utils/visit-status.js';
+import type { VisitStatus, VisitStatusThresholds } from '#lib/utils/visit-status.js';
 import { getWorkoutLabel } from '#lib/utils/workout.js';
 
 import type { QueryData } from './queries';
@@ -36,7 +36,9 @@ type VisitHealthResult = {
 	names: Record<VisitHealthBucket, string[]>;
 };
 
-const STATUS_KEY_MAP: Record<string, VisitHealthBucket> = {
+// Keyed by every non-exempt status so adding a VisitStatus fails to compile until it
+// is assigned a bucket.
+const STATUS_KEY_MAP: Record<Exclude<VisitStatus, 'exempt'>, VisitHealthBucket> = {
 	red: 'critical',
 	yellow: 'overdue',
 	green: 'healthy',
@@ -122,12 +124,11 @@ export function buildVisitHealth(
 			today,
 			visitStatusThresholds
 		);
+		if (status === 'exempt') continue;
 		const key = STATUS_KEY_MAP[status];
-		if (key) {
-			counts[key]++;
-			counts.total++;
-			names[key].push(person.name);
-		}
+		counts[key]++;
+		counts.total++;
+		names[key].push(person.name);
 	}
 	return { counts, names };
 }

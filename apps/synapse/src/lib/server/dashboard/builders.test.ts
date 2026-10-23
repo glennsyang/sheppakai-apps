@@ -65,7 +65,7 @@ describe('buildUpcomingVisits', () => {
 });
 
 describe('buildVisitHealth', () => {
-	it('buckets people by visit status, counting scheduled as healthy', () => {
+	it('buckets people by visit status, counting scheduled as healthy and skipping exempt', () => {
 		const person = (id: string, name: string) => ({
 			id,
 			name,
@@ -79,7 +79,7 @@ describe('buildVisitHealth', () => {
 				person('yellow-1', 'Bo'),
 				person('scheduled-1', 'Cy'),
 				person('none-1', 'Di'),
-				person('unknown-1', 'Ed')
+				person('exempt-1', 'Ed')
 			],
 			new Map(),
 			TODAY,
