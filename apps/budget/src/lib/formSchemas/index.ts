@@ -17,6 +17,7 @@ export { idSchema } from './common';
 export { dashboardVisibilitySchema } from './dashboard';
 export {
 	incomeSchema,
+	receiptScanResultSchema,
 	recurringSchema,
 	togglePaidSchema,
 	toRecurringFormData,

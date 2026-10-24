@@ -3,11 +3,13 @@
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import XIcon from '@lucide/svelte/icons/x';
+	import type { z } from 'zod';
 
 	import type { Budget, Transaction } from '#lib';
 	import CategoryBudgetProgress from '#lib/components/CategoryBudgetProgress.svelte';
 	import type { Stat } from '#lib/components/DashboardStatStrip.svelte';
 	import MonthlyTablePageShell from '#lib/components/MonthlyTablePageShell.svelte';
+	import ReceiptScanButton from '#lib/components/ReceiptScanButton.svelte';
 	import TransactionModal from '#lib/components/TransactionModal.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { DataTable } from '#lib/components/ui/data-table/index.js';
@@ -31,6 +33,8 @@
 	}
 
 	let openModal = $state<boolean>(false);
+	// Set by a receipt scan so the modal opens prefilled; cleared for a blank "Add".
+	let scanInitialData = $state<Partial<z.infer<typeof transactionSchema>>>();
 
 	// svelte-ignore state_referenced_locally
 	let searchInput = $state(data.searchQuery ?? '');
@@ -148,10 +152,32 @@
 	skeletonColumns={columns.length}
 >
 	{#snippet primaryAction()}
-		<Button onclick={() => (openModal = true)}>
-			<PlusIcon />
-			Add transaction
-		</Button>
+		<div class="flex gap-2">
+			{#if data.receiptScanEnabled}
+				<ReceiptScanButton
+					onScanned={(scan) => {
+						scanInitialData = {
+							amount: scan.total,
+							gstAmount: scan.gstAmount ?? undefined,
+							payee: scan.payee,
+							notes: scan.notes,
+							date: scan.date,
+							categoryId: scan.categoryId ?? ''
+						};
+						openModal = true;
+					}}
+				/>
+			{/if}
+			<Button
+				onclick={() => {
+					scanInitialData = undefined;
+					openModal = true;
+				}}
+			>
+				<PlusIcon />
+				Add transaction
+			</Button>
+		</div>
 	{/snippet}
 
 	{#snippet tableContent()}
@@ -224,4 +250,9 @@
 	{/snippet}
 </MonthlyTablePageShell>
 
-<TransactionModal bind:open={openModal} transactionForm={data.form} categories={categories()} />
+<TransactionModal
+	bind:open={openModal}
+	initialData={scanInitialData}
+	transactionForm={data.form}
+	categories={categories()}
+/>

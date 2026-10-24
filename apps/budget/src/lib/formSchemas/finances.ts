@@ -17,6 +17,19 @@ export const transactionSchema = z.object({
 	categoryId: z.string().min(1, 'Category is required')
 });
 
+/**
+ * What a receipt scan returns: the AI provider's extraction, used to prefill the transaction
+ * form. Both providers (src/lib/server/receipt-scan) must produce this shape.
+ */
+export const receiptScanResultSchema = z.object({
+	payee: z.string().trim().min(1).max(100),
+	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+	total: z.number().positive(),
+	gstAmount: z.number().min(0).nullable(),
+	notes: z.string().trim().min(1).max(800),
+	categoryId: z.string().nullable()
+});
+
 export const incomeSchema = z.object({
 	id: z.string().optional(),
 	name: z.string().min(1, 'Name is required').max(100, 'Name must be at most 100 characters'),
