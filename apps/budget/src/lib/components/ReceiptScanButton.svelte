@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import CameraIcon from '@lucide/svelte/icons/camera';
+	import ImageIcon from '@lucide/svelte/icons/image';
 	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { isRecord } from '@sheppakai/shared/guards';
 	import { toast } from 'svelte-sonner';
@@ -20,7 +21,8 @@
 	let { onScanned, class: className }: Props = $props();
 
 	let formEl = $state<HTMLFormElement>();
-	let fileInput = $state<HTMLInputElement>();
+	let cameraInput = $state<HTMLInputElement>();
+	let galleryInput = $state<HTMLInputElement>();
 	let photo: Blob | undefined;
 	let scanning = $state(false);
 
@@ -63,7 +65,8 @@
 		return async ({ result }) => {
 			scanning = false;
 			photo = undefined;
-			if (fileInput) fileInput.value = '';
+			if (cameraInput) cameraInput.value = '';
+			if (galleryInput) galleryInput.value = '';
 
 			const { type, text } = actionMessage(result, {
 				success: 'Receipt scanned.',
@@ -78,22 +81,44 @@
 		};
 	}}
 >
+	<!-- On phones `capture` opens the rear camera; desktop browsers ignore it and show a file picker. -->
 	<input
-		bind:this={fileInput}
+		bind:this={cameraInput}
 		class="hidden"
 		type="file"
-		name="receipt"
+		accept="image/*"
+		capture="environment"
+		onchange={onPhotoChosen}
+	/>
+	<input
+		bind:this={galleryInput}
+		class="hidden"
+		type="file"
 		accept="image/*"
 		onchange={onPhotoChosen}
 	/>
-	<Button
-		type="button"
-		variant="outline"
-		class="w-full"
-		disabled={scanning}
-		onclick={() => fileInput?.click()}
-	>
-		<CameraIcon />
-		{scanning ? 'Scanning…' : 'Scan receipt'}
-	</Button>
+	<div class="flex">
+		<Button
+			type="button"
+			variant="outline"
+			class="min-w-0 flex-1 pointer-coarse:rounded-r-none"
+			disabled={scanning}
+			onclick={() => cameraInput?.click()}
+		>
+			<CameraIcon />
+			{scanning ? 'Scanning…' : 'Scan receipt'}
+		</Button>
+		<!-- Touch only: camera capture replaces the photo picker there, so keep a way to pick a saved photo. -->
+		<Button
+			type="button"
+			variant="outline"
+			size="icon"
+			class="hidden rounded-l-none border-l-0 pointer-coarse:inline-flex"
+			aria-label="Choose a saved receipt photo"
+			disabled={scanning}
+			onclick={() => galleryInput?.click()}
+		>
+			<ImageIcon />
+		</Button>
+	</div>
 </form>
