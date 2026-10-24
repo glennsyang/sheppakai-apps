@@ -1,31 +1,29 @@
 // Receipt photo → transaction fields. The provider is picked by RECEIPT_SCAN_PROVIDER, so
 // switching between Gemini and Claude is a config change; both are held to the same
 // `receiptScanResultSchema`.
-import { ANTHROPIC_API_KEY, GEMINI_API_KEY, RECEIPT_SCAN_PROVIDER } from '$app/env/private';
+import {
+	ANTHROPIC_API_KEY,
+	CLAUDE_RECEIPT_MODEL,
+	GEMINI_API_KEY,
+	GEMINI_RECEIPT_MODEL,
+	RECEIPT_SCAN_PROVIDER
+} from '$app/env/private';
+import { type AiImage, extractJson } from '@sheppakai/shared/ai-vision';
 import type { z } from 'zod';
 
 import { receiptScanResultSchema } from '#lib/formSchemas/index.js';
 import { logger } from '#lib/server/logger.js';
 
-import { extractWithClaude } from './claude';
-import { extractWithGemini } from './gemini';
-import {
-	RECEIPT_IMAGE_TYPES,
-	type ReceiptExtractor,
-	type ReceiptImage,
-	type ScanCategory
-} from './prompt';
+import { buildReceiptPrompt, receiptOutputSchemas, type ScanCategory } from './prompt';
 
 export type ReceiptScanResult = z.infer<typeof receiptScanResultSchema>;
 
-export const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
-
 const providers: Record<
 	typeof RECEIPT_SCAN_PROVIDER,
-	{ extract: ReceiptExtractor; apiKey: () => string | undefined }
+	{ model: () => string; apiKey: () => string | undefined }
 > = {
-	gemini: { extract: extractWithGemini, apiKey: () => GEMINI_API_KEY },
-	claude: { extract: extractWithClaude, apiKey: () => ANTHROPIC_API_KEY }
+	gemini: { model: () => GEMINI_RECEIPT_MODEL, apiKey: () => GEMINI_API_KEY },
+	claude: { model: () => CLAUDE_RECEIPT_MODEL, apiKey: () => ANTHROPIC_API_KEY }
 };
 
 /** The provider answered, but not with usable receipt fields (not a receipt, too blurry). */
@@ -36,18 +34,8 @@ export function isReceiptScanEnabled(): boolean {
 	return Boolean(providers[RECEIPT_SCAN_PROVIDER].apiKey());
 }
 
-/** The uploaded form value as a provider-ready image, or null if it isn't an allowed image. */
-export async function toReceiptImage(
-	value: FormDataEntryValue | null
-): Promise<ReceiptImage | null> {
-	if (!(value instanceof File) || value.size === 0 || value.size > MAX_RECEIPT_BYTES) return null;
-	const mimeType = RECEIPT_IMAGE_TYPES.find((type) => type === value.type);
-	if (!mimeType) return null;
-	return { mimeType, base64: Buffer.from(await value.arrayBuffer()).toString('base64') };
-}
-
 export async function scanReceipt(
-	image: ReceiptImage,
+	image: AiImage,
 	categories: ScanCategory[]
 ): Promise<ReceiptScanResult> {
 	const provider = RECEIPT_SCAN_PROVIDER;
@@ -55,7 +43,14 @@ export async function scanReceipt(
 
 	let raw: unknown;
 	try {
-		raw = await providers[provider].extract(image, categories);
+		raw = await extractJson({
+			provider,
+			apiKey: providers[provider].apiKey(),
+			model: providers[provider].model(),
+			prompt: buildReceiptPrompt(categories),
+			image,
+			schemas: receiptOutputSchemas
+		});
 	} catch (err) {
 		if (err instanceof SyntaxError)
 			throw new UnreadableReceiptError('Malformed JSON', { cause: err });

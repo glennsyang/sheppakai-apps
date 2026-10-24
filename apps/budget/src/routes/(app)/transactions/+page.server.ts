@@ -1,3 +1,4 @@
+import { toAiImage } from '@sheppakai/shared/ai-vision';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
@@ -17,7 +18,6 @@ import { createUserRateLimiter } from '#lib/server/rate-limiter.js';
 import {
 	isReceiptScanEnabled,
 	scanReceipt,
-	toReceiptImage,
 	UnreadableReceiptError
 } from '#lib/server/receipt-scan/index.js';
 import {
@@ -144,12 +144,12 @@ export const actions = {
 		try {
 			receipt = (await event.request.formData()).get('receipt');
 		} catch (err) {
-			// Bodies over adapter-node's BODY_SIZE_LIMIT (fly.toml) fail here, not in toReceiptImage.
+			// Bodies over adapter-node's BODY_SIZE_LIMIT (fly.toml) fail here, not in toAiImage.
 			logger.warn('Receipt upload unreadable', { userId: user.id, reason: String(err) });
 			return fail('That photo is too large to upload. Try a smaller one.', 413);
 		}
 
-		const image = await toReceiptImage(receipt);
+		const image = await toAiImage(receipt);
 		if (!image) return fail('Upload a JPEG, PNG or WebP photo under 5 MB.', 400);
 
 		try {

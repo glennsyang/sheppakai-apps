@@ -30,16 +30,11 @@ vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn<() => void>(), warn: vi.fn<() => void>(), error: vi.fn<() => void>() }
 }));
 
-import {
-	isReceiptScanEnabled,
-	MAX_RECEIPT_BYTES,
-	scanReceipt,
-	toReceiptImage,
-	UnreadableReceiptError
-} from './index';
-import type { ReceiptImage } from './prompt';
+import type { AiImage } from '@sheppakai/shared/ai-vision';
 
-const image: ReceiptImage = { mimeType: 'image/jpeg', base64: 'aW1hZ2U=' };
+import { isReceiptScanEnabled, scanReceipt, UnreadableReceiptError } from './index';
+
+const image: AiImage = { mimeType: 'image/jpeg', base64: 'aW1hZ2U=' };
 const categories = [
 	{ id: 'cat-gas', name: 'Gas' },
 	{ id: 'cat-food', name: 'Groceries' }
@@ -68,9 +63,9 @@ function geminiResponse(payload: unknown) {
 	});
 }
 
-function claudeResponse(payload: unknown, stopReason = 'end_turn') {
+function claudeResponse(payload: unknown) {
 	return Response.json({
-		stop_reason: stopReason,
+		stop_reason: 'end_turn',
 		content: [{ type: 'text', text: JSON.stringify(payload) }]
 	});
 }
@@ -110,22 +105,6 @@ describe('isReceiptScanEnabled', () => {
 	});
 });
 
-describe('toReceiptImage', () => {
-	it('base64-encodes an allowed image', async () => {
-		const file = new File(['image'], 'r.jpg', { type: 'image/jpeg' });
-		expect(await toReceiptImage(file)).toEqual({ mimeType: 'image/jpeg', base64: 'aW1hZ2U=' });
-	});
-
-	it('rejects a missing value, a string, an empty file, a non-image and an oversized file', async () => {
-		expect(await toReceiptImage(null)).toBeNull();
-		expect(await toReceiptImage('not a file')).toBeNull();
-		expect(await toReceiptImage(new File([], 'r.jpg', { type: 'image/jpeg' }))).toBeNull();
-		expect(await toReceiptImage(new File(['x'], 'r.pdf', { type: 'application/pdf' }))).toBeNull();
-		const big = new File([new Uint8Array(MAX_RECEIPT_BYTES + 1)], 'r.jpg', { type: 'image/jpeg' });
-		expect(await toReceiptImage(big)).toBeNull();
-	});
-});
-
 describe('scanReceipt with Gemini', () => {
 	it('sends the image and categories, and returns the validated extraction', async () => {
 		fetchMock.mockResolvedValue(geminiResponse(extraction));
@@ -141,11 +120,6 @@ describe('scanReceipt with Gemini', () => {
 		expect(body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: 'low' });
 	});
 
-	it('throws on a non-2xx response', async () => {
-		fetchMock.mockResolvedValue(new Response('quota', { status: 429 }));
-		await expect(scanReceipt(image, categories)).rejects.toThrow('status 429');
-	});
-
 	it('treats malformed JSON as an unreadable receipt', async () => {
 		fetchMock.mockResolvedValue(geminiResponse('{not json'));
 		await expect(scanReceipt(image, categories)).rejects.toBeInstanceOf(UnreadableReceiptError);
@@ -157,27 +131,17 @@ describe('scanReceipt with Claude', () => {
 		env.RECEIPT_SCAN_PROVIDER = 'claude';
 	});
 
-	it('sends a base64 image with a JSON schema output format', async () => {
+	// The wire format is tested in @sheppakai/shared/ai-vision; this covers the budget's inputs.
+	it('sends the configured model, the receipt image and the receipt schema', async () => {
 		fetchMock.mockResolvedValue(claudeResponse(extraction));
 
 		expect(await scanReceipt(image, categories)).toEqual(extraction);
 
-		const { url, headers, body } = sentRequest();
-		expect(url).toBe('https://api.anthropic.com/v1/messages');
+		const { headers, body } = sentRequest();
 		expect(headers['x-api-key']).toBe('test-anthropic-key');
-		expect(headers['anthropic-version']).toBe('2026-10-21');
 		expect(body.model).toBe('claude-test');
-		expect(body.output_config.format.type).toBe('json_schema');
-		expect(body.messages[0].content[0].source).toEqual({
-			type: 'base64',
-			media_type: 'image/jpeg',
-			data: 'aW1hZ2U='
-		});
-	});
-
-	it('throws when Claude stops for any reason but end_turn', async () => {
-		fetchMock.mockResolvedValue(claudeResponse(extraction, 'refusal'));
-		await expect(scanReceipt(image, categories)).rejects.toThrow('refusal');
+		expect(body.output_config.format.schema.required).toContain('gstAmount');
+		expect(body.messages[0].content[0].source.data).toBe('aW1hZ2U=');
 	});
 });
 

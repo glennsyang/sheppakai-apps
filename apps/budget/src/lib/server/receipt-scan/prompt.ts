@@ -1,26 +1,37 @@
-// Provider-neutral pieces of a receipt scan: the image and category inputs, the extractor
-// contract every provider implements, and the instruction text they all send.
-
-export const RECEIPT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
-
-export type ReceiptImage = {
-	base64: string;
-	mimeType: (typeof RECEIPT_IMAGE_TYPES)[number];
-};
+// The receipt-specific half of a scan: the instruction text and the output shape in each
+// provider's schema dialect. The provider calls live in @sheppakai/shared/ai-vision.
 
 export type ScanCategory = { id: string; name: string };
 
-/**
- * Sends the image to one AI provider and returns its parsed JSON, unvalidated. `scanReceipt`
- * in ./index.ts validates it against `receiptScanResultSchema`, so every provider is held to
- * the same shape.
- */
-export type ReceiptExtractor = (
-	image: ReceiptImage,
-	categories: ScanCategory[]
-) => Promise<unknown>;
+const FIELDS = ['payee', 'date', 'total', 'gstAmount', 'notes', 'categoryId'];
 
-export const REQUEST_TIMEOUT_MS = 30_000;
+export const receiptOutputSchemas = {
+	claude: {
+		type: 'object',
+		additionalProperties: false,
+		required: FIELDS,
+		properties: {
+			payee: { type: 'string' },
+			date: { type: 'string', format: 'date' },
+			total: { type: 'number' },
+			gstAmount: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+			notes: { type: 'string' },
+			categoryId: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+		}
+	},
+	gemini: {
+		type: 'OBJECT',
+		required: FIELDS,
+		properties: {
+			payee: { type: 'STRING' },
+			date: { type: 'STRING' },
+			total: { type: 'NUMBER' },
+			gstAmount: { type: 'NUMBER', nullable: true },
+			notes: { type: 'STRING' },
+			categoryId: { type: 'STRING', nullable: true }
+		}
+	}
+};
 
 /** Category names are user-entered; keep them to one plain line inside the tags. */
 function sanitizeCategoryName(name: string): string {
