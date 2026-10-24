@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getFrequentMeals } from './meal';
+import { getFrequentMeals, mealTypeForNow } from './meal';
 
 const meal = (
 	date: string,
@@ -88,5 +88,17 @@ describe('getFrequentMeals', () => {
 
 		expect(getFrequentMeals(meals)).toHaveLength(5);
 		expect(getFrequentMeals(meals, 2)).toHaveLength(2);
+	});
+});
+
+describe('mealTypeForNow', () => {
+	// Pacific is UTC-7 in October.
+	it.each([
+		['2026-10-24T14:00:00Z', 'breakfast'], // 07:00
+		['2026-10-24T18:00:00Z', 'lunch'], // 11:00
+		['2026-10-25T00:30:00Z', 'dinner'], // 17:30
+		['2026-10-25T05:00:00Z', 'snack'] // 22:00
+	])('maps %s to %s in Pacific time', (iso, expected) => {
+		expect(mealTypeForNow(new Date(iso))).toBe(expected);
 	});
 });

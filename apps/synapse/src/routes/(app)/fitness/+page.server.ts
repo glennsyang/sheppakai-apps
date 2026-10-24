@@ -1,3 +1,4 @@
+import { toAiImage } from '@sheppakai/shared/ai-vision';
 import { redirect } from '@sveltejs/kit';
 import { and, desc, eq } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
@@ -8,6 +9,7 @@ import {
 	deleteEntrySchema,
 	logMealSchema,
 	logWeightSchema,
+	mealEstimateResultSchema,
 	logWorkoutSchema,
 	MAX_WORKOUT_EXERCISES,
 	parseWorkoutExercises,
@@ -40,9 +42,18 @@ import {
 } from '#lib/server/db/utils.js';
 import { upsertUserSettings } from '#lib/server/db/writes/user-settings.js';
 import { logger } from '#lib/server/logger.js';
+import {
+	estimateMeal,
+	isMealEstimateEnabled,
+	MAX_MEAL_NOTE_LENGTH,
+	UnreadableMealError
+} from '#lib/server/meal-estimate/index.js';
+import { createUserRateLimiter } from '#lib/server/rate-limiter.js';
 import { getTodayString } from '#lib/utils/date.js';
 
 import type { Actions, PageServerLoad } from './$types';
+
+const estimateLimiter = createUserRateLimiter([30, 'h']);
 
 const INVALID_EXERCISES_MESSAGE = `Exercises are invalid. Each needs a name (max 100 characters) and positive whole numbers, up to ${MAX_WORKOUT_EXERCISES} exercises.`;
 
@@ -139,6 +150,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 		return {
 			tab,
+			mealEstimateEnabled: isMealEstimateEnabled(),
 			reminders,
 			weightEntries: weights,
 			goalWeight,
@@ -163,6 +175,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		return {
 			tab,
 			loadError: 'Failed to load fitness data. Please try refreshing the page.',
+			mealEstimateEnabled: isMealEstimateEnabled(),
 			reminders: [],
 			weightEntries: [],
 			goalWeight: null,
@@ -302,6 +315,61 @@ export const actions = {
 		table: mealLogs,
 		entityName: 'Meal',
 		toRow: toMealRow
+	}),
+
+	/**
+	 * Estimates a meal from a photo and/or note with the configured AI provider and returns it as
+	 * the form's data. Nothing is saved: Log Meal prefills its fields for review.
+	 */
+	estimateMeal: requireAuth(async (event, user) => {
+		const emptyForm = await superValidate(zod4(mealEstimateResultSchema));
+		const fail = (text: string, status: 400 | 413 | 422 | 429 | 502 | 503) =>
+			message(emptyForm, { type: 'error', text }, { status });
+
+		if (!isMealEstimateEnabled()) return fail('Meal estimates are not set up.', 503);
+
+		const limit = await estimateLimiter.check(event, { userId: user.id });
+		if (limit.limited) {
+			return fail(`Too many estimates. Try again in ${limit.retryAfter} seconds.`, 429);
+		}
+
+		let body: FormData;
+		try {
+			body = await event.request.formData();
+		} catch (err) {
+			// Bodies over adapter-node's BODY_SIZE_LIMIT (fly.toml) fail here, not in toAiImage.
+			logger.warn('Meal photo upload unreadable', { userId: user.id, reason: String(err) });
+			return fail('That photo is too large to upload. Try a smaller one.', 413);
+		}
+
+		const photo = body.get('photo');
+		const noteValue = body.get('note');
+		const note = typeof noteValue === 'string' ? noteValue.trim() : '';
+		const hasPhoto = photo instanceof File && photo.size > 0;
+
+		if (!hasPhoto && !note) return fail('Add a photo or describe the meal first.', 400);
+		if (note.length > MAX_MEAL_NOTE_LENGTH) {
+			return fail(`Keep the description under ${MAX_MEAL_NOTE_LENGTH} characters.`, 400);
+		}
+
+		const image = hasPhoto ? await toAiImage(photo) : null;
+		if (hasPhoto && !image) return fail('Upload a JPEG, PNG or WebP photo under 5 MB.', 400);
+
+		try {
+			const estimate = await estimateMeal({ image, note });
+			const form = await superValidate(estimate, zod4(mealEstimateResultSchema));
+			return message(form, {
+				type: 'success',
+				text: 'Meal estimated. Check the details, then save.'
+			});
+		} catch (err) {
+			if (err instanceof UnreadableMealError) {
+				logger.warn('Meal estimate unreadable', { userId: user.id, reason: err.message });
+				return fail("Couldn't estimate that meal. Try a clearer photo or add a description.", 422);
+			}
+			logger.error('Meal estimate failed', err);
+			return fail('Estimating failed. Try again, or enter the calories yourself.', 502);
+		}
 	}),
 
 	setCalorieTarget: requireAuth(async ({ request }, user) => {

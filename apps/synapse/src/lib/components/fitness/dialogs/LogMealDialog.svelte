@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import { toast } from 'svelte-sonner';
 	import type { Infer, SuperValidated } from 'sveltekit-superforms';
@@ -10,9 +11,13 @@
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as Select from '#lib/components/ui/select/index.js';
-	import type { logMealSchema, MealType } from '#lib/schemas/fitness.js';
+	import type { logMealSchema, mealEstimateResultSchema, MealType } from '#lib/schemas/fitness.js';
+	import { mealTypeForNow } from '#lib/utils/meal.js';
+
+	import MealEstimateButtons from './MealEstimateButtons.svelte';
 
 	type LogMealData = Infer<typeof logMealSchema>;
+	type MealEstimate = Infer<typeof mealEstimateResultSchema>;
 
 	interface EditMeal {
 		id: string;
@@ -37,6 +42,11 @@
 	} = $props();
 
 	const isEditing = $derived(editEntry !== null);
+	// Set by the fitness page load; false until the AI provider's API key is configured.
+	const canEstimate = $derived(!isEditing && page.data.mealEstimateEnabled === true);
+
+	// The last AI estimate's range, shown under the calories field until the meal is saved.
+	let estimateRange = $state<{ low: number; high: number } | null>(null);
 
 	let internalOpen = $state(false);
 	const dialogOpen = $derived(open !== undefined ? open : internalOpen);
@@ -57,6 +67,7 @@
 		resetForm: !isEditing,
 		onUpdate: ({ form }) => {
 			if (form.valid) {
+				estimateRange = null;
 				if (open === undefined) {
 					internalOpen = false;
 				}
@@ -83,6 +94,14 @@
 			$form.caloriesEstimate = editEntry.caloriesEstimate;
 		}
 	});
+
+	function applyEstimate(estimate: MealEstimate) {
+		$form.caloriesEstimate = estimate.caloriesEstimate;
+		// Keep what the user typed; the AI's wording only fills an empty description.
+		if (!$form.description?.trim()) $form.description = estimate.description;
+		if (!$form.timeOfDay) $form.timeOfDay = mealTypeForNow();
+		estimateRange = { low: estimate.caloriesLow, high: estimate.caloriesHigh };
+	}
 
 	function handleOpenChange(isOpen: boolean) {
 		if (open !== undefined) {
@@ -118,6 +137,9 @@
 				{isEditing ? 'Update your meal entry' : 'Record what you ate'}
 			</Dialog.Description>
 		</Dialog.Header>
+		{#if canEstimate}
+			<MealEstimateButtons note={$form.description ?? ''} onEstimated={applyEstimate} />
+		{/if}
 		<form method="POST" action={isEditing ? '?/updateMeal' : '?/logMeal'} use:enhance>
 			{#if isEditing && editEntry}
 				<Input type="hidden" name="id" value={editEntry.id} />
@@ -167,6 +189,10 @@
 						/>
 						{#if $errors.caloriesEstimate}
 							<p class="text-destructive text-sm">{$errors.caloriesEstimate}</p>
+						{:else if estimateRange}
+							<p class="text-muted-foreground text-xs">
+								AI estimate: {estimateRange.low}–{estimateRange.high} cal. Adjust if needed.
+							</p>
 						{/if}
 					</div>
 				</div>

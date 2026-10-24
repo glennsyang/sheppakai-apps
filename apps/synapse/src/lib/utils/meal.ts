@@ -1,4 +1,5 @@
 import type { MealType } from '#lib/schemas/fitness.js';
+import { toAppDatetimeLocal } from '#lib/utils/date.js';
 
 interface LoggedMeal {
 	date: string;
@@ -62,4 +63,13 @@ export function getFrequentMeals(meals: LoggedMeal[], limit = 5): FrequentMeal[]
 		}))
 		.sort((a, b) => b.count - a.count || b.lastDate.localeCompare(a.lastDate))
 		.slice(0, limit);
+}
+
+/** The meal someone is most likely logging at this moment, by the hour in app (Pacific) time. */
+export function mealTypeForNow(now: Date = new Date()): MealType {
+	const hour = Number(toAppDatetimeLocal(now).slice(11, 13));
+	if (hour < 11) return 'breakfast';
+	if (hour < 16) return 'lunch';
+	if (hour < 21) return 'dinner';
+	return 'snack';
 }

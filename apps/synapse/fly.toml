@@ -8,6 +8,9 @@ primary_region = 'yyz'
   # client's. Make getClientAddress() (used by the auth rate limiter) read the
   # real client IP from the header Fly sets on every proxied request.
   ADDRESS_HEADER = 'Fly-Client-IP'
+  # adapter-node rejects request bodies over 512K by default. Meal estimates upload photos up to
+  # MAX_AI_IMAGE_BYTES (5 MB, @sheppakai/shared/ai-vision) plus multipart overhead.
+  BODY_SIZE_LIMIT = '6M'
 
 [[mounts]]
   source = 'data'
