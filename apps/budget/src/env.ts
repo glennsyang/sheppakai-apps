@@ -14,6 +14,28 @@ export const variables = defineEnvVars({
 			'non-resolving .invalid host so alerts are disabled until set.',
 		schema: z.url().default('https://budget-alerts.invalid')
 	},
+	RECEIPT_SCAN_PROVIDER: {
+		description:
+			'AI provider that reads receipt photos on the transactions page: gemini or claude. ' +
+			"Scanning is off (button hidden) until the chosen provider's API key is set.",
+		schema: z.enum(['gemini', 'claude']).default('gemini')
+	},
+	GEMINI_API_KEY: {
+		description: 'Google AI Studio API key, used when RECEIPT_SCAN_PROVIDER=gemini.',
+		schema: z.string().optional()
+	},
+	GEMINI_RECEIPT_MODEL: {
+		description: 'Gemini model for receipt scanning.',
+		schema: z.string().min(1).default('gemini-3-flash-preview')
+	},
+	ANTHROPIC_API_KEY: {
+		description: 'Anthropic API key, used when RECEIPT_SCAN_PROVIDER=claude.',
+		schema: z.string().optional()
+	},
+	CLAUDE_RECEIPT_MODEL: {
+		description: 'Claude model for receipt scanning.',
+		schema: z.string().min(1).default('claude-haiku-5-5')
+	},
 	SENTRY_DSN: {
 		description:
 			'Sentry DSN, sent to the browser to initialize error tracking client-side. Not a secret — defaults to the project DSN so no config is required.',
