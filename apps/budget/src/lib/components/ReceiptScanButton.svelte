@@ -14,9 +14,10 @@
 
 	interface Props {
 		onScanned: (scan: ReceiptScan) => void;
+		class?: string;
 	}
 
-	let { onScanned }: Props = $props();
+	let { onScanned, class: className }: Props = $props();
 
 	let formEl = $state<HTMLFormElement>();
 	let fileInput = $state<HTMLInputElement>();
@@ -52,6 +53,7 @@
 
 <form
 	bind:this={formEl}
+	class={className}
 	method="POST"
 	action="?/scanReceipt"
 	enctype="multipart/form-data"
@@ -84,7 +86,13 @@
 		accept="image/*"
 		onchange={onPhotoChosen}
 	/>
-	<Button type="button" variant="outline" disabled={scanning} onclick={() => fileInput?.click()}>
+	<Button
+		type="button"
+		variant="outline"
+		class="w-full"
+		disabled={scanning}
+		onclick={() => fileInput?.click()}
+	>
 		<CameraIcon />
 		{scanning ? 'Scanning…' : 'Scan receipt'}
 	</Button>

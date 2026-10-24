@@ -152,9 +152,10 @@
 	skeletonColumns={columns.length}
 >
 	{#snippet primaryAction()}
-		<div class="flex gap-2">
+		<div class="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:gap-2">
 			{#if data.receiptScanEnabled}
 				<ReceiptScanButton
+					class="w-full sm:w-auto"
 					onScanned={(scan) => {
 						scanInitialData = {
 							amount: scan.total,
@@ -169,6 +170,7 @@
 				/>
 			{/if}
 			<Button
+				class={['w-full sm:w-auto', !data.receiptScanEnabled && 'col-span-2']}
 				onclick={() => {
 					scanInitialData = undefined;
 					openModal = true;
