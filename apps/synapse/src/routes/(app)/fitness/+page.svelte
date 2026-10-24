@@ -10,6 +10,7 @@
 	import FitnessMomentumPanel from '#lib/components/fitness/dashboard/FitnessMomentumPanel.svelte';
 	import FitnessStatusCard from '#lib/components/fitness/dashboard/FitnessStatusCard.svelte';
 	import NutritionInsightsSection from '#lib/components/fitness/dashboard/NutritionInsightsSection.svelte';
+	import QuickRelogMeals from '#lib/components/fitness/dashboard/QuickRelogMeals.svelte';
 	import RecentActivityPreview from '#lib/components/fitness/dashboard/RecentActivityPreview.svelte';
 	import ReminderSummarySection from '#lib/components/fitness/dashboard/ReminderSummarySection.svelte';
 	import WeightInsightsSection from '#lib/components/fitness/dashboard/WeightInsightsSection.svelte';
@@ -235,6 +236,9 @@
 				trendLabel={calorieAdherence != null ? `${calorieAdherence}% of target` : 'No target set'}
 			/>
 		</div>
+
+		<!-- One-tap re-log of frequent meals -->
+		<QuickRelogMeals meals={data.meals} />
 
 		<!-- Momentum Panel: 14-day visual strip -->
 		<FitnessMomentumPanel
