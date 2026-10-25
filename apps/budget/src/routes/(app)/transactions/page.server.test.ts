@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 
+import { MAX_AI_IMAGE_BYTES } from '@sheppakai/shared/ai-vision';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { scanReceiptMock, isEnabledMock, findAllCategoriesMock, loggerMock } = vi.hoisted(() => ({
@@ -29,7 +30,7 @@ vi.mock('#lib/server/receipt-scan/index.js', async (importOriginal) => {
 	return { ...actual, isReceiptScanEnabled: isEnabledMock, scanReceipt: scanReceiptMock };
 });
 
-import { MAX_RECEIPT_BYTES, UnreadableReceiptError } from '#lib/server/receipt-scan/index.js';
+import { UnreadableReceiptError } from '#lib/server/receipt-scan/index.js';
 
 import { actions } from './+page.server';
 
@@ -144,12 +145,12 @@ describe('transactions scanReceipt action', () => {
 // adapter-node rejects bodies over BODY_SIZE_LIMIT (default 512K) before the action reads them,
 // and `vite dev` doesn't enforce it, so a drift here only shows up in production.
 describe('fly.toml BODY_SIZE_LIMIT', () => {
-	it('leaves room for a MAX_RECEIPT_BYTES photo plus multipart overhead', () => {
+	it('leaves room for a MAX_AI_IMAGE_BYTES photo plus multipart overhead', () => {
 		const flyToml = readFileSync(new URL('../../../../fly.toml', import.meta.url), 'utf8');
 		const match = flyToml.match(/^\s*BODY_SIZE_LIMIT\s*=\s*'(\d+)([KMG]?)'/m);
 		expect(match, 'BODY_SIZE_LIMIT must be set in fly.toml [env]').not.toBeNull();
 		const [, amount, unit] = match as RegExpMatchArray;
 		const multiplier = { '': 1, K: 1024, M: 1024 ** 2, G: 1024 ** 3 }[unit] ?? 1;
-		expect(Number(amount) * multiplier).toBeGreaterThan(MAX_RECEIPT_BYTES + 64 * 1024);
+		expect(Number(amount) * multiplier).toBeGreaterThan(MAX_AI_IMAGE_BYTES + 64 * 1024);
 	});
 });

@@ -130,6 +130,22 @@ export const updateMealSchema = logMealSchema.extend({
 });
 
 /**
+ * Schema for an AI meal estimate (from a photo and/or description). Nothing is saved from it
+ * directly: it prefills the Log Meal form for review.
+ */
+export const mealEstimateResultSchema = z
+	.object({
+		description: z.string().trim().min(1).max(300),
+		caloriesEstimate: z.number().int().positive(),
+		caloriesLow: z.number().int().positive(),
+		caloriesHigh: z.number().int().positive()
+	})
+	.refine(
+		(e) => e.caloriesLow <= e.caloriesEstimate && e.caloriesEstimate <= e.caloriesHigh,
+		'The estimate must sit inside its range'
+	);
+
+/**
  * Schema for setting daily calorie target
  */
 export const setCalorieTargetSchema = z.object({

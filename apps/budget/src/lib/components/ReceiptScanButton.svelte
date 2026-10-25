@@ -4,12 +4,12 @@
 	import ImageIcon from '@lucide/svelte/icons/image';
 	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { isRecord } from '@sheppakai/shared/guards';
+	import { resizeImage } from '@sheppakai/shared/image-resize';
 	import { toast } from 'svelte-sonner';
 	import type { z } from 'zod';
 
 	import { Button } from '#lib/components/ui/button/index.js';
 	import type { receiptScanResultSchema } from '#lib/formSchemas/index.js';
-	import { resizeImage } from '#lib/utils/resizeImage.js';
 
 	type ReceiptScan = z.infer<typeof receiptScanResultSchema>;
 
