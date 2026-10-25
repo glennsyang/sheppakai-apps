@@ -20,6 +20,7 @@ import {
 	getStartOfMonth,
 	getStartOfQuarter,
 	getStartOfWeek,
+	getCurrentTimeString,
 	getTodayString,
 	getWeekDates,
 	parseAppDateTime,
@@ -255,6 +256,11 @@ describe('app-timezone datetime-local helpers', () => {
 		expect(toAppDatetimeLocal(new Date('2026-10-10T15:00:00.000Z'))).toBe('2026-10-10T08:00');
 		expect(toAppDatetimeLocal('2026-01-15T16:00:00.000Z')).toBe('2026-01-15T08:00');
 		expect(toAppDatetimeLocal(new Date('2026-01-16T07:30:00.000Z'))).toBe('2026-01-15T23:30');
+	});
+
+	it('gets the current time as HH:mm in Pacific time', () => {
+		expect(getCurrentTimeString(new Date('2026-10-10T15:05:00.000Z'))).toBe('08:05');
+		expect(getCurrentTimeString(new Date('2026-01-16T07:30:00.000Z'))).toBe('23:30');
 	});
 
 	it('round-trips through parse and format', () => {

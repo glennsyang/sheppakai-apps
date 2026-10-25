@@ -209,6 +209,18 @@ export function getTodayString(referenceDate: Date = new Date()): string {
 	return formatDateParts(referenceDate, appDateFormatter);
 }
 
+/**
+ * Get the current time in HH:mm (24-hour) format using the app timezone.
+ *
+ * @returns The current time, suitable for `<input type="time">`
+ *
+ * @example
+ * getCurrentTimeString() // "07:45"
+ */
+export function getCurrentTimeString(referenceDate: Date = new Date()): string {
+	return toAppDatetimeLocal(referenceDate).slice(11, 16);
+}
+
 export function parseLocalDateString(dateString: string): Date {
 	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
 
