@@ -9,6 +9,7 @@
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import type { logWeightSchema } from '#lib/schemas/fitness.js';
+	import { getTodayString } from '#lib/utils/date.js';
 
 	type LogWeightData = Infer<typeof logWeightSchema>;
 
@@ -77,6 +78,13 @@
 			$form.date = editEntry.date;
 			$form.time = editEntry.time;
 			$form.weightLbs = editEntry.weightLbs;
+		}
+	});
+
+	// Default the date to today when opening for new entry
+	$effect(() => {
+		if (dialogOpen && !isEditing && !$form.date) {
+			$form.date = getTodayString();
 		}
 	});
 
