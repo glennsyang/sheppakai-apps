@@ -12,6 +12,7 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as Select from '#lib/components/ui/select/index.js';
 	import type { logMealSchema, mealEstimateResultSchema, MealType } from '#lib/schemas/fitness.js';
+	import { getTodayString } from '#lib/utils/date.js';
 	import { mealTypeForNow } from '#lib/utils/meal.js';
 
 	import MealEstimateButtons from './MealEstimateButtons.svelte';
@@ -95,11 +96,18 @@
 		}
 	});
 
+	// Default a new entry to today, and to the meal usually eaten at this hour
+	$effect(() => {
+		if (dialogOpen && !isEditing) {
+			if (!$form.date) $form.date = getTodayString();
+			if (!$form.timeOfDay) $form.timeOfDay = mealTypeForNow();
+		}
+	});
+
 	function applyEstimate(estimate: MealEstimate) {
 		$form.caloriesEstimate = estimate.caloriesEstimate;
 		// Keep what the user typed; the AI's wording only fills an empty description.
 		if (!$form.description?.trim()) $form.description = estimate.description;
-		if (!$form.timeOfDay) $form.timeOfDay = mealTypeForNow();
 		estimateRange = { low: estimate.caloriesLow, high: estimate.caloriesHigh };
 	}
 
