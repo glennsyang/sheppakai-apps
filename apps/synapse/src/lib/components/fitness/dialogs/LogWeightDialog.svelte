@@ -9,7 +9,7 @@
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import type { logWeightSchema } from '#lib/schemas/fitness.js';
-	import { getTodayString } from '#lib/utils/date.js';
+	import { getCurrentTimeString, getTodayString } from '#lib/utils/date.js';
 
 	type LogWeightData = Infer<typeof logWeightSchema>;
 
@@ -81,10 +81,11 @@
 		}
 	});
 
-	// Default the date to today when opening for new entry
+	// Default a new entry to today and the current time
 	$effect(() => {
-		if (dialogOpen && !isEditing && !$form.date) {
-			$form.date = getTodayString();
+		if (dialogOpen && !isEditing) {
+			if (!$form.date) $form.date = getTodayString();
+			if (!$form.time) $form.time = getCurrentTimeString();
 		}
 	});
 
