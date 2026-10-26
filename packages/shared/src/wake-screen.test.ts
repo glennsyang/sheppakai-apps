@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	AWAKE_GRACE_MS,
 	createAwakeTracker,
+	createWakeScreenHandler,
 	raceWithWakeScreen,
 	shouldIntercept,
 	WAKE_TIMEOUT_MS,
@@ -36,7 +37,7 @@ describe('shouldIntercept', () => {
 
 describe('wakePageResponse', () => {
 	it('serves a self-refreshing, script-free page', async () => {
-		const response = wakePageResponse();
+		const response = wakePageResponse('Synapse');
 		const html = await response.text();
 
 		expect(response.headers.get('Content-Type')).toContain('text/html');
@@ -48,6 +49,12 @@ describe('wakePageResponse', () => {
 		expect(html).toContain('Waking up Synapse');
 		expect(html).not.toContain('<script');
 	});
+
+	it('escapes the app name', async () => {
+		expect(await wakePageResponse('<b>&</b>').text()).toContain(
+			'Waking up &lt;b&gt;&amp;&lt;/b&gt;'
+		);
+	});
 });
 
 describe('raceWithWakeScreen', () => {
@@ -56,14 +63,14 @@ describe('raceWithWakeScreen', () => {
 
 	it('returns the real response when it arrives in time', async () => {
 		const real = new Response('page');
-		const result = raceWithWakeScreen(Promise.resolve(real));
+		const result = raceWithWakeScreen(Promise.resolve(real), 'Synapse');
 
 		await expect(result).resolves.toBe(real);
 	});
 
 	it('returns the wake page when the server is slow', async () => {
 		const slow = new Promise<Response>(() => {});
-		const result = raceWithWakeScreen(slow);
+		const result = raceWithWakeScreen(slow, 'Synapse');
 
 		await vi.advanceTimersByTimeAsync(WAKE_TIMEOUT_MS);
 
@@ -71,7 +78,7 @@ describe('raceWithWakeScreen', () => {
 	});
 
 	it('propagates a fetch error that happens before the timeout', async () => {
-		const result = raceWithWakeScreen(Promise.reject(new TypeError('offline')));
+		const result = raceWithWakeScreen(Promise.reject(new TypeError('offline')), 'Synapse');
 
 		await expect(result).rejects.toThrow('offline');
 	});
@@ -89,5 +96,40 @@ describe('createAwakeTracker', () => {
 
 		now += AWAKE_GRACE_MS;
 		expect(tracker.isRecentlyAwake()).toBe(false);
+	});
+});
+
+describe('createWakeScreenHandler', () => {
+	afterEach(() => vi.unstubAllGlobals());
+
+	function fetchEvent(request: Request) {
+		return {
+			request,
+			waitUntil: vi.fn<(promise: Promise<unknown>) => void>(),
+			respondWith: vi.fn<(response: Promise<Response>) => void>()
+		};
+	}
+
+	it('answers navigations, then stands aside once the server has responded', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(() => Promise.resolve(new Response('page')))
+		);
+		const handle = createWakeScreenHandler('Budget');
+
+		const first = fetchEvent(navigation('/'));
+		expect(handle(first, ORIGIN)).toBe(true);
+		expect(first.respondWith).toHaveBeenCalledOnce();
+		await first.waitUntil.mock.calls[0][0];
+
+		expect(handle(fetchEvent(navigation('/')), ORIGIN)).toBe(false);
+	});
+
+	it('ignores requests it should not intercept', () => {
+		const handle = createWakeScreenHandler('Budget');
+		const event = fetchEvent(navigation('/api/healthz'));
+
+		expect(handle(event, ORIGIN)).toBe(false);
+		expect(event.respondWith).not.toHaveBeenCalled();
 	});
 });

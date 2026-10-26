@@ -1,8 +1,14 @@
 <script lang="ts">
+	import { navigating } from '$app/state';
+
 	import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
 	import BrandMark from '#lib/components/BrandMark.svelte';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
+
+	// The sign-in load can stall on a Fly cold start; show it's working.
+	const signingIn = $derived(navigating.to?.url.pathname === SIGN_IN_ROUTE);
 
 	const areas = [
 		{
@@ -30,7 +36,12 @@
 		<BrandMark />
 		<div class="flex items-center gap-1">
 			<ThemeToggle />
-			<Button href={SIGN_IN_ROUTE} variant="outline">Sign in</Button>
+			<Button href={SIGN_IN_ROUTE} variant="outline" disabled={signingIn} aria-busy={signingIn}>
+				{#if signingIn}
+					<Spinner aria-hidden="true" />
+				{/if}
+				Sign in
+			</Button>
 		</div>
 	</header>
 
@@ -46,7 +57,18 @@
 					Log an expense in seconds on your phone, then sit down at the desk and see where the month
 					went.
 				</p>
-				<Button href={SIGN_IN_ROUTE} size="lg" class="mt-8">Sign in</Button>
+				<Button
+					href={SIGN_IN_ROUTE}
+					size="lg"
+					class="mt-8"
+					disabled={signingIn}
+					aria-busy={signingIn}
+				>
+					{#if signingIn}
+						<Spinner aria-hidden="true" />
+					{/if}
+					Sign in
+				</Button>
 			</div>
 
 			<dl class="bg-card divide-y rounded-xl border shadow-sm">

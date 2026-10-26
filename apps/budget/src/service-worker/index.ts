@@ -1,6 +1,9 @@
 import { version } from '$app/env';
 import { assets, immutable } from '$app/manifest';
 import { self } from '$app/service-worker';
+import { createWakeScreenHandler } from '@sheppakai/shared/wake-screen';
+
+const handleWakeScreen = createWakeScreenHandler('Budget');
 
 const CACHE = `cache-${version}`;
 // Manifest paths are relative to the base path (unset here), so prefix `/` to match `url.pathname`.
@@ -42,6 +45,9 @@ self.addEventListener('fetch', (event) => {
 		event.respondWith(caches.match(event.request).then((cached) => cached ?? fetch(event.request)));
 		return;
 	}
+
+	// Show a "waking up" page when a navigation stalls on a Fly cold start.
+	if (handleWakeScreen(event, self.location.origin)) return;
 
 	// Network-first for navigation and everything else
 	event.respondWith(

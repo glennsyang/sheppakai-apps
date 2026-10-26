@@ -1,5 +1,5 @@
 /**
- * Cold-start "waking up" screen served by the service worker.
+ * Cold-start "waking up" screen served by each app's service worker.
  *
  * Fly stops the machine when idle; the first request after that waits several
  * seconds for it to boot, during which the browser shows a blank tab. When a
@@ -16,16 +16,25 @@ export const WAKE_TIMEOUT_MS = 2500;
  */
 export const AWAKE_GRACE_MS = 60_000;
 
-const WAKE_PAGE_HTML = `<!doctype html>
+function escapeHtml(text: string): string {
+	return text.replace(
+		/[&<>"']/g,
+		(char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!
+	);
+}
+
+function wakePageHtml(appName: string): string {
+	const name = escapeHtml(appName);
+	return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="2">
-<title>Waking up - Synapse</title>
+<title>Waking up - ${name}</title>
 <style>
-	:root { color-scheme: light dark; --bg: oklch(0.34 0.08 263); --fg: oklch(0.93 0.025 255); --muted: oklch(0.74 0.05 258); }
-	@media (prefers-color-scheme: dark) { :root { --bg: oklch(0.17 0.025 263); --fg: oklch(0.9 0.02 255); --muted: oklch(0.66 0.04 258); } }
+	:root { color-scheme: light dark; --bg: #fafafa; --fg: #18181b; --muted: #71717a; }
+	@media (prefers-color-scheme: dark) { :root { --bg: #09090b; --fg: #fafafa; --muted: #a1a1aa; } }
 	body { margin: 0; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 0 16px; background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; text-align: center; }
 	.spinner { width: 2.5rem; height: 2.5rem; border: 3px solid var(--muted); border-top-color: transparent; border-radius: 50%; animation: spin 0.9s linear infinite; }
 	@keyframes spin { to { transform: rotate(360deg); } }
@@ -36,10 +45,11 @@ const WAKE_PAGE_HTML = `<!doctype html>
 </head>
 <body>
 <div class="spinner" role="status" aria-label="Loading"></div>
-<h1>Waking up Synapse…</h1>
+<h1>Waking up ${name}…</h1>
 <p>This can take a few seconds.</p>
 </body>
 </html>`;
+}
 
 /** True for same-origin page navigations; API calls and everything else pass through. */
 export function shouldIntercept(request: Request, origin: string): boolean {
@@ -48,8 +58,8 @@ export function shouldIntercept(request: Request, origin: string): boolean {
 	return url.origin === origin && !url.pathname.startsWith('/api/');
 }
 
-export function wakePageResponse(): Response {
-	return new Response(WAKE_PAGE_HTML, {
+export function wakePageResponse(appName: string): Response {
+	return new Response(wakePageHtml(appName), {
 		headers: {
 			'Content-Type': 'text/html; charset=utf-8',
 			'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
@@ -64,11 +74,12 @@ export function wakePageResponse(): Response {
  */
 export function raceWithWakeScreen(
 	fetchPromise: Promise<Response>,
+	appName: string,
 	timeoutMs: number = WAKE_TIMEOUT_MS
 ): Promise<Response> {
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const timeout = new Promise<Response>((resolve) => {
-		timer = setTimeout(() => resolve(wakePageResponse()), timeoutMs);
+		timer = setTimeout(() => resolve(wakePageResponse(appName)), timeoutMs);
 	});
 	return Promise.race([fetchPromise, timeout]).finally(() => clearTimeout(timer));
 }
@@ -83,5 +94,30 @@ export function createAwakeTracker(now: () => number = Date.now) {
 		isRecentlyAwake() {
 			return lastAwakeAt !== undefined && now() - lastAwakeAt < AWAKE_GRACE_MS;
 		}
+	};
+}
+
+/** The parts of a service worker `FetchEvent` the handler uses. */
+interface WakeFetchEvent {
+	request: Request;
+	waitUntil(promise: Promise<unknown>): void;
+	respondWith(response: Promise<Response>): void;
+}
+
+/**
+ * Wires the wake screen into a service worker's `fetch` event. Returns true when
+ * it answered the event, so the caller's own handling should stop.
+ */
+export function createWakeScreenHandler(appName: string) {
+	const awake = createAwakeTracker();
+
+	return (event: WakeFetchEvent, origin: string): boolean => {
+		if (!shouldIntercept(event.request, origin) || awake.isRecentlyAwake()) return false;
+
+		const fetchPromise = fetch(event.request);
+		// Keep the original request alive so it finishes booting the machine.
+		event.waitUntil(fetchPromise.then(() => awake.markAwake()).catch(() => {}));
+		event.respondWith(raceWithWakeScreen(fetchPromise, appName));
+		return true;
 	};
 }
