@@ -56,8 +56,8 @@ This project is developer-ready and runs locally with a standard Node setup.
 
 ### Prerequisites
 
-- **Node.js 22.23.3** (required for better-sqlite3 compatibility)
-  - Optional with nvm: `nvm use 22.23.3`
+- **Node.js 22.23.4** (required for better-sqlite3 compatibility)
+  - Optional with nvm: `nvm use 22.23.4`
 - **pnpm 10** (this repo is a pnpm workspace; `corepack enable` picks the pinned version)
 
 ### Installation

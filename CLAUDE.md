@@ -17,7 +17,7 @@ pnpm monorepo with three SvelteKit (Svelte 5 runes) apps and two shared workspac
 ## Repo-wide conventions
 
 - **pnpm, never npm.** Run a script in one app with `pnpm --filter <app> <script>` (or `pnpm <script>` from inside the app). From the root: `pnpm check`, `pnpm lint`, `pnpm fmt:check`, `pnpm test`, `pnpm build`.
-- **Node 22.23.3** (pinned in `.node-version`).
+- **Node 22.23.4** (pinned in `.node-version`).
 - **Dependency versions come from the `catalog:`** in `pnpm-workspace.yaml`. Notable majors: sveltekit-superforms **v3**, Zod **v4**, Vitest **v5**, Tailwind CSS v4, better-auth v1.
 - **Lint** (`pnpm lint` in each app) = oxlint + `fallow dead-code`. Format with oxfmt (`pnpm fmt`). `pnpm check:all` = fmt + lint + test.
 - **Redirect throws**: `scripts/check-redirect-throws.mjs` (repo root) enforces `throw redirect(...)` in SvelteKit server files. It is **not** part of `lint`: run it with `pnpm check:redirect-throws` in an app; lint-staged also runs it on staged server files at commit time.
