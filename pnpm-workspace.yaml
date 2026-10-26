@@ -23,7 +23,7 @@ catalog:
   '@vitest/coverage-v8': ^5.0.5
   better-auth: ^1.7.11
   better-sqlite3: ^13.0.3
-  bits-ui: ^2.19.5
+  bits-ui: ^2.20.2
   canvas-confetti: ^1.9.4
   clsx: ^2.1.1
   d3-scale: ^4.0.2
