@@ -89,11 +89,13 @@
 					{/if}
 				</Field>
 				<Field>
-					<Button type="submit" class="w-full" disabled={$submitting}>
+					<Button type="submit" class="w-full" disabled={$submitting} aria-busy={$submitting}>
 						{#if $submitting}
-							<Spinner class="mr-2 size-4" aria-label="Signing in" />
+							<Spinner aria-hidden="true" />
+							Signing in…
+						{:else}
+							Sign in
 						{/if}
-						{$submitting ? 'Signing in...' : 'Sign in'}
 					</Button>
 				</Field>
 			</FieldGroup>

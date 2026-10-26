@@ -1,11 +1,13 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { navigating } from '$app/state';
 
 	import { SIGN_IN_ROUTE } from '#lib/auth-routes.js';
 	import ThemeToggle from '#lib/components/app/ThemeToggle.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 
-	const handleSignIn = () => goto(SIGN_IN_ROUTE);
+	// The sign-in load can stall on a Fly cold start; show it's working.
+	const signingIn = $derived(navigating.to?.url.pathname === SIGN_IN_ROUTE);
 
 	// The index tabs a new planner arrives with, one per section.
 	const tabs = [
@@ -32,8 +34,15 @@
 			<Button
 				variant="outline"
 				class="border-cover-foreground/50 text-cover-foreground hover:bg-cover-deep hover:text-cover-foreground bg-transparent"
-				onclick={handleSignIn}>Sign In</Button
+				href={SIGN_IN_ROUTE}
+				disabled={signingIn}
+				aria-busy={signingIn}
 			>
+				{#if signingIn}
+					<Spinner aria-hidden="true" />
+				{/if}
+				Sign in
+			</Button>
 		</div>
 	</header>
 
@@ -58,7 +67,18 @@
 					Take control of your life with our powerful second brain tools.
 				</p>
 				<div class="mt-8">
-					<Button size="lg" class="px-6" onclick={handleSignIn}>Sign In</Button>
+					<Button
+						href={SIGN_IN_ROUTE}
+						size="lg"
+						class="px-6"
+						disabled={signingIn}
+						aria-busy={signingIn}
+					>
+						{#if signingIn}
+							<Spinner aria-hidden="true" />
+						{/if}
+						Sign in
+					</Button>
 				</div>
 			</div>
 		</div>

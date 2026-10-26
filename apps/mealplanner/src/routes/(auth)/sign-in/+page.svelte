@@ -9,6 +9,7 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 	import { signInSchema } from '#lib/schemas/auth.js';
 
 	import type { PageData } from './$types';
@@ -81,8 +82,18 @@
 			{/if}
 		</Label>
 
-		<Button type="submit" disabled={$submitting} class="mt-2 w-full py-3 text-lg">
-			{$submitting ? 'Signing in…' : 'Sign in'}
+		<Button
+			type="submit"
+			disabled={$submitting}
+			aria-busy={$submitting}
+			class="mt-2 w-full py-3 text-lg"
+		>
+			{#if $submitting}
+				<Spinner aria-hidden="true" />
+				Signing in…
+			{:else}
+				Sign in
+			{/if}
 		</Button>
 	</form>
 </AuthShell>

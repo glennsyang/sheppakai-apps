@@ -211,7 +211,8 @@ with `pickValidSuggestions` (`#lib/schemas/mealPlan.js`).
 - Components live in `src/lib/components/ui/` (added with
   `pnpm dlx shadcn-svelte@latest add <name>`, config in `components.json`) and are owned code —
   restyle them freely. Currently: `alert`, `button`, `dialog`, `input`, `label`, `native-select`,
-  `sheet`, `table`, `textarea`, plus the hand-written `data-table`.
+  `sheet`, `table`, `textarea`, plus the hand-written `data-table` and `spinner` (wraps `Icon`'s
+  `loader`, same API as the other apps' shadcn Spinner).
 - `cn()` and the prop helper types live in `src/lib/utils.ts`. Icons use the local `Icon.svelte`,
   not lucide.
 - Theme: the `fridge` palette and shadcn semantic tokens (`--background`, `--primary`,

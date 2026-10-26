@@ -62,7 +62,8 @@ export default defineConfig({
 				'src/**/*.d.ts',
 				'src/routes/**',
 				'src/lib/components/ui/**',
-				'src/app.ts'
+				'src/app.ts',
+				'src/service-worker/**'
 			],
 			reporter: ['text', 'lcov', 'html', 'json-summary', 'json'],
 			thresholds: {

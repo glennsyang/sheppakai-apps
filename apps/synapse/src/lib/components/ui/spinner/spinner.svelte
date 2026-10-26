@@ -13,6 +13,14 @@
 		"aria-label": ariaLabel = "Loading",
 		...restProps
 	}: SVGAttributes<SVGSVGElement> = $props();
+
+	// Forward only props that are set: @lucide/svelte >=1.61 lets an explicit
+	// `stroke={undefined}` override its currentColor default, hiding the icon.
+	const iconProps = $derived({
+		...(name == null ? {} : { name }),
+		...(color == null ? {} : { color }),
+		...(stroke == null ? {} : { stroke })
+	});
 </script>
 
-<Loader2Icon {role} name={name === null ? undefined : name} color={color === null ? undefined : color} stroke={stroke === null ? undefined : stroke} aria-label={ariaLabel} class={cn("size-4 animate-spin", className)} {...restProps} />
+<Loader2Icon {role} {...iconProps} aria-label={ariaLabel} class={cn("size-4 animate-spin", className)} {...restProps} />
