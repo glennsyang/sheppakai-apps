@@ -42,7 +42,7 @@ suggestions, and slot meals into a Monday–Sunday weekly planner.
 
 ### Prerequisites
 
-- Node.js **22.23.3** (pinned in the root `.node-version`)
+- Node.js **22.23.4** (pinned in the root `.node-version`)
 - pnpm 10 (`corepack enable` picks the version pinned in the root `package.json`)
 
 ### Install
