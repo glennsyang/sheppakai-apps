@@ -67,7 +67,7 @@
 		"clsx": "catalog:",
 		"d3-scale": "catalog:",
 		"d3-shape": "catalog:",
-		"dotenv": "^18.0.8",
+		"dotenv": "^18.0.9",
 		"drizzle-kit": "catalog:",
 		"embla-carousel-svelte": "^8.6.0",
 		"fallow": "catalog:",
