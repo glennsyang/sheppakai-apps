@@ -2,6 +2,7 @@
 	import InfoTooltip from '#lib/components/InfoTooltip.svelte';
 	import SpendPaceChart from '#lib/components/SpendPaceChart.svelte';
 	import * as Card from '#lib/components/ui/card/index.js';
+	import type { ForecastRange } from '#lib/types.js';
 	import { formatCurrency, monthNames } from '#lib/utils.js';
 	import { getMonthProgress } from '#lib/utils/dates.js';
 
@@ -15,6 +16,8 @@
 		discretionaryBudget: number;
 		month: number;
 		year: number;
+		/** Projected month-end discretionary spend (current month only). */
+		forecast?: ForecastRange | null;
 	}
 
 	let {
@@ -26,7 +29,8 @@
 		discretionaryExpenses,
 		discretionaryBudget,
 		month,
-		year
+		year,
+		forecast = null
 	}: Props = $props();
 
 	let monthStatus = $derived(getMonthProgress(month, year).status);
@@ -125,6 +129,7 @@
 				{daysInMonth}
 				{throughDay}
 				complete={monthStatus === 'past'}
+				{forecast}
 			/>
 		</div>
 	</div>

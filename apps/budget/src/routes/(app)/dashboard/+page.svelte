@@ -644,6 +644,7 @@
 					discretionaryBudget={nonRecurringBudgetPlanned}
 					month={Number(selectedMonth)}
 					year={Number(selectedYear)}
+					forecast={data.forecast?.discretionaryEnd}
 				/>
 			</div>
 		{/if}
@@ -692,6 +693,7 @@
 					excludedSpendBreakdown={data.excludedExpensesBreakdown || []}
 					netTrendLabel={netBalanceTrend?.label}
 					showProjection={isSectionVisible('cashFlowProjection')}
+					forecast={data.forecast}
 					month={Number(selectedMonth)}
 					year={Number(selectedYear)}
 				/>
