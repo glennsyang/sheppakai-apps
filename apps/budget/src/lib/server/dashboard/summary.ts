@@ -1,12 +1,19 @@
-import { inArray, sum } from 'drizzle-orm';
+import { inArray, min, sql, sum } from 'drizzle-orm';
 
 import type {
 	CategoryAnomaly,
 	ExcludedSpendCategory,
-	SavingsGoalWithProgress,
+	MonthEndForecast,
+	SavingsGoalWithEta,
 	TimeRangeInOutData,
 	Transaction
 } from '#lib';
+import {
+	computeGoalEta,
+	computeMonthEndForecast,
+	getBaselineRange,
+	getGoalRateWindowStart
+} from '#lib/server/dashboard/forecast.js';
 import { getDb } from '#lib/server/db/index.js';
 import {
 	budgetQueries,
@@ -20,9 +27,12 @@ import { contribution } from '#lib/server/db/schema/index.js';
 import { computeCategoryAnomalies } from '#lib/server/insights/category-anomalies.js';
 import { monthNames } from '#lib/utils.js';
 import {
+	filterByDateRange,
 	getCalendarYearMonthsRange,
 	getMonthDateRange,
+	getMonthProgress,
 	getMonthRangeFromUrl,
+	getPacificTodayDate,
 	getPreviousMonthsRange,
 	getYearDateRange,
 	parseYearParam
@@ -64,31 +74,73 @@ function groupExcludedByCategory(excludedExpenses: Transaction[]): ExcludedSpend
 	return [...totals.values()].sort((a, b) => b.amount - a.amount);
 }
 
-async function getGoalsWithProgress(): Promise<SavingsGoalWithProgress[]> {
+async function getGoalsWithProgress(): Promise<SavingsGoalWithEta[]> {
 	const goals = await savingsGoalQueries.findAll();
 	const includedGoals = goals.filter((g) => g.status !== 'archived');
 
 	if (includedGoals.length === 0) return [];
 
 	const includedGoalIds = includedGoals.map((g) => g.id);
+	const today = getPacificTodayDate();
+	const rateWindowStart = getGoalRateWindowStart(today);
 
 	const totalsRows = await getDb()
-		.select({ goalId: contribution.goalId, total: sum(contribution.amount) })
+		.select({
+			goalId: contribution.goalId,
+			total: sum(contribution.amount),
+			recentTotal: sql<number>`coalesce(sum(case when date(${contribution.date}) >= date(${rateWindowStart}) then ${contribution.amount} else 0 end), 0)`,
+			firstDate: min(contribution.date)
+		})
 		.from(contribution)
 		.where(inArray(contribution.goalId, includedGoalIds))
 		.groupBy(contribution.goalId);
 
-	const totalsMap = new Map(totalsRows.map((r) => [r.goalId, Number(r.total ?? 0)]));
+	const totalsMap = new Map(totalsRows.map((r) => [r.goalId, r]));
 
 	return includedGoals.map((goal) => {
-		const total = totalsMap.get(goal.id) ?? 0;
+		const row = totalsMap.get(goal.id);
+		const total = Number(row?.total ?? 0);
 		const percentage = goal.targetAmount > 0 ? (total / goal.targetAmount) * 100 : 0;
-		return { ...goal, currentAmount: total, percentage: Math.min(percentage, 100) };
+		const eta = computeGoalEta({
+			status: goal.status,
+			currentAmount: total,
+			targetAmount: goal.targetAmount,
+			targetDate: goal.targetDate,
+			recentContributions: Number(row?.recentTotal ?? 0),
+			firstContributionDate: row?.firstDate ?? null,
+			today
+		});
+		return { ...goal, currentAmount: total, percentage: Math.min(percentage, 100), ...eta };
 	});
+}
+
+/** Current-month forecast inputs that `loadMonthlyDashboard` doesn't already load. */
+async function loadForecastHistory(startDate: string, month: number, year: number) {
+	const baseline = getBaselineRange(startDate);
+	const previousMonths = [3, 2, 1].map((back) => {
+		const d = new Date(year, month - 1 - back, 1);
+		return getMonthDateRange(d.getMonth() + 1, d.getFullYear());
+	});
+
+	const [baselineTransactions, previousIncome] = await Promise.all([
+		transactionQueries.findByDateRangeIncludedInBudget(baseline.startDate, baseline.endDate),
+		incomeQueries.findByDateRange(previousMonths[0].startDate, previousMonths[2].endDate)
+	]);
+
+	const previousMonthsIncome = previousMonths.map((range) =>
+		filterByDateRange(previousIncome, range.startDate, range.endDate).reduce(
+			(acc, inc) => acc + inc.amount,
+			0
+		)
+	);
+
+	return { baselineTransactions, previousMonthsIncome };
 }
 
 export async function loadMonthlyDashboard(url: URL) {
 	const { month, year, startDate, endDate } = getMonthRangeFromUrl(url);
+	const monthProgress = getMonthProgress(month, year);
+	const isCurrentMonth = monthProgress.status === 'current';
 
 	const [
 		actualExpenses,
@@ -97,7 +149,8 @@ export async function loadMonthlyDashboard(url: URL) {
 		recurringExpenses,
 		incomeRecords,
 		goalsWithProgress,
-		totalSavings
+		totalSavings,
+		forecastHistory
 	] = await Promise.all([
 		transactionQueries.findByDateRangeIncludedInBudget(startDate, endDate),
 		transactionQueries.findByDateRangeExcludedFromBudget(startDate, endDate),
@@ -105,7 +158,8 @@ export async function loadMonthlyDashboard(url: URL) {
 		recurringQueries.findAll(),
 		incomeQueries.findByDateRange(startDate, endDate),
 		getGoalsWithProgress(),
-		savingsQueries.getTotal()
+		savingsQueries.getTotal(),
+		isCurrentMonth ? loadForecastHistory(startDate, month, year) : null
 	]);
 
 	const recurringMonthlyTotal = calcMonthlyRecurringTotal(recurringExpenses);
@@ -117,6 +171,18 @@ export async function loadMonthlyDashboard(url: URL) {
 		plannedExpenses.reduce((acc, b) => acc + b.amount, 0) + recurringMonthlyTotal;
 	const totalIncome = incomeRecords.reduce((acc, inc) => acc + inc.amount, 0);
 	const remainingBalance = totalIncome - plannedExpensesTotal;
+
+	const forecast: MonthEndForecast | null = forecastHistory
+		? computeMonthEndForecast({
+				...forecastHistory,
+				monthStart: startDate,
+				daysInMonth: monthProgress.totalUnits,
+				currentDay: monthProgress.elapsedUnits,
+				discretionarySpent: actualExpensesTotal - recurringMonthlyTotal,
+				recurringMonthlyTotal,
+				incomeThisMonth: totalIncome
+			})
+		: null;
 
 	const historicalMonths: Array<{
 		targetMonth: number;
@@ -186,6 +252,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		netflowSparkline,
 		spendingSparkline,
 		categoryAnomalies,
+		forecast,
 		goalsWithProgress,
 		totalSavings
 	};

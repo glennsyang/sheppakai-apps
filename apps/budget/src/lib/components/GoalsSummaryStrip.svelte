@@ -2,17 +2,17 @@
 	import { CheckIcon, ChevronRightIcon, PauseIcon, TargetIcon } from '@lucide/svelte/icons';
 
 	import * as Card from '#lib/components/ui/card/index.js';
-	import type { SavingsGoalWithProgress } from '#lib/types.js';
-	import { formatCurrency } from '#lib/utils.js';
+	import type { SavingsGoalWithEta } from '#lib/types.js';
+	import { formatCurrency, monthNames } from '#lib/utils.js';
 	import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
 	interface Props {
-		goals: SavingsGoalWithProgress[];
+		goals: SavingsGoalWithEta[];
 	}
 
 	let { goals }: Props = $props();
 
-	const statusOrder: Record<SavingsGoalWithProgress['status'], number> = {
+	const statusOrder: Record<SavingsGoalWithEta['status'], number> = {
 		active: 0,
 		paused: 1,
 		completed: 2,
@@ -23,7 +23,13 @@
 		[...goals].sort((a, b) => statusOrder[a.status] - statusOrder[b.status])
 	);
 
-	function barColor(goal: SavingsGoalWithProgress) {
+	/** "2027-03-14" → "Mar 2027" */
+	function formatMonthYear(date: string): string {
+		const [year, month] = date.split('-').map(Number);
+		return `${monthNames[month - 1]?.slice(0, 3) ?? ''} ${year}`;
+	}
+
+	function barColor(goal: SavingsGoalWithEta) {
 		if (goal.status === 'completed') return 'bg-positive';
 		if (goal.status === 'paused') return 'bg-muted-foreground/40';
 		return 'bg-positive/80';
@@ -97,6 +103,20 @@
 								>
 								{#if goal.targetDate}<span>by {formatLocalTimestamp(goal.targetDate)}</span>{/if}
 							</span>
+							{#if goal.status === 'active' && goal.percentage < 100}
+								<span class="mt-1 flex justify-between gap-3 text-xs tabular-nums">
+									{#if goal.etaDate}
+										<span class="text-muted-foreground">
+											Done ~{formatMonthYear(goal.etaDate)} at {formatCurrency(goal.monthlyRate)}/mo
+										</span>
+									{:else}
+										<span class="text-muted-foreground">No contributions in 6 months</span>
+									{/if}
+									{#if goal.onTrack === false}
+										<span class="text-destructive font-medium">Behind target</span>
+									{/if}
+								</span>
+							{/if}
 						</a>
 					</li>
 				{/each}

@@ -227,6 +227,12 @@ export function getCurrentPacificMonthYear(date: Date = new Date()): {
 	return { month, year };
 }
 
+/** Today's date (YYYY-MM-DD) as observed in the Pacific timezone. */
+export function getPacificTodayDate(date: Date = new Date()): string {
+	const { year, month, day } = getPacificDateParts(date);
+	return `${year}-${padMonth(month)}-${padMonth(day)}`;
+}
+
 /**
  * Parse a `month` search param, accepting only whole numbers 1-12
  * @param value - Raw search param value (or null when absent)

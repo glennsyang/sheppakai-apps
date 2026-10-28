@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 
+	import type { ForecastRange } from '#lib/types.js';
 	import { formatCurrency, formatCurrencyRounded, monthNames } from '#lib/utils.js';
 
 	interface Props {
@@ -14,9 +15,19 @@
 		throughDay: number;
 		/** Month is over: the hero states the result, so skip the pace caption. */
 		complete?: boolean;
+		/** Projected month-end discretionary spend; drawn from today's point when the month is in progress. */
+		forecast?: ForecastRange | null;
 	}
 
-	let { expenses, budget, month, daysInMonth, throughDay, complete = false }: Props = $props();
+	let {
+		expenses,
+		budget,
+		month,
+		daysInMonth,
+		throughDay,
+		complete = false,
+		forecast = null
+	}: Props = $props();
 
 	const monthShort = $derived(monthNames[month - 1]?.slice(0, 3) ?? '');
 
@@ -39,7 +50,13 @@
 
 	let lastDay = $derived(Math.min(Math.max(throughDay, 0), daysInMonth));
 	let spentToDate = $derived(cumulative[lastDay] ?? 0);
-	let yMax = $derived(Math.max(budget, cumulative[daysInMonth] ?? 0, 1) * 1.1);
+	let showForecast = $derived(
+		forecast !== null && !complete && lastDay >= 1 && lastDay < daysInMonth
+	);
+	let yMax = $derived(
+		Math.max(budget, cumulative[daysInMonth] ?? 0, showForecast ? (forecast?.high ?? 0) : 0, 1) *
+			1.1
+	);
 
 	const pace = (d: number) => (budget * d) / daysInMonth;
 	const x = (d: number) => (d / daysInMonth) * 100;
@@ -57,6 +74,24 @@
 	let areaPath = $derived(actualPath ? `${actualPath} L${x(lastDay)},100 L0,100 Z` : '');
 
 	let paceDelta = $derived(spentToDate - pace(lastDay));
+
+	// Projection from today's point to month end: dashed mid line inside a low–high band
+	let forecastLine = $derived(
+		showForecast && forecast ? `M${x(lastDay)},${y(spentToDate)} L100,${y(forecast.mid)}` : ''
+	);
+	let forecastBand = $derived(
+		showForecast && forecast
+			? `M${x(lastDay)},${y(spentToDate)} L100,${y(forecast.high)} L100,${y(forecast.low)} Z`
+			: ''
+	);
+	let forecastCaption = $derived.by(() => {
+		if (!showForecast || !forecast) return '';
+		const end = `${monthShort} ${daysInMonth}`;
+		if (forecast.high - forecast.low < 1) {
+			return `On track to spend ~${formatCurrencyRounded(forecast.mid)} by ${end}.`;
+		}
+		return `On track to spend ~${formatCurrencyRounded(forecast.mid)} (${formatCurrencyRounded(forecast.low)}–${formatCurrencyRounded(forecast.high)}) by ${end}.`;
+	});
 
 	// Scrub readout
 	let scrubDay = $state<number | null>(null);
@@ -83,7 +118,7 @@
 	let summary = $derived(
 		lastDay < 1
 			? `${monthShort} hasn't started. Discretionary budget ${formatCurrency(budget)}.`
-			: `Spent ${formatCurrency(spentToDate)} through ${monthShort} ${lastDay}, against a pace of ${formatCurrency(pace(lastDay))} toward a ${formatCurrency(budget)} discretionary budget.`
+			: `Spent ${formatCurrency(spentToDate)} through ${monthShort} ${lastDay}, against a pace of ${formatCurrency(pace(lastDay))} toward a ${formatCurrency(budget)} discretionary budget.${forecastCaption ? ` ${forecastCaption}` : ''}`
 	);
 </script>
 
@@ -160,6 +195,17 @@
 				stroke-dasharray="4 4"
 				vector-effect="non-scaling-stroke"
 			></line>
+			{#if forecastBand}
+				<path d={forecastBand} class="fill-primary/10"></path>
+				<path
+					d={forecastLine}
+					fill="none"
+					class="stroke-primary/70"
+					stroke-width="1.5"
+					stroke-dasharray="3 3"
+					vector-effect="non-scaling-stroke"
+				></path>
+			{/if}
 			{#if areaPath}
 				<path d={areaPath} fill="url(#pace-fill)"></path>
 				<path
@@ -212,6 +258,10 @@
 		<span>{monthShort} {Math.ceil(daysInMonth / 2)}</span>
 		<span>{monthShort} {daysInMonth}</span>
 	</div>
+
+	{#if forecastCaption}
+		<p class="text-muted-foreground text-xs" data-testid="spend-forecast">{forecastCaption}</p>
+	{/if}
 
 	{#if complete}
 		<!-- result lives in the hero -->
