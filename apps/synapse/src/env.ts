@@ -12,6 +12,26 @@ export const variables = defineEnvVars({
 		description: 'ntfy.sh topic URL for reminder push notifications',
 		schema: building ? z.string().catch('https://ntfy.sh/placeholder') : z.url()
 	},
+	BUDGET_API_URL: {
+		description:
+			'Budget app base URL (e.g. https://budget.example.com). With BUDGET_API_KEY, the morning digest ' +
+			'lists bills due this week; unset skips that section.',
+		schema: z.url().optional()
+	},
+	BUDGET_API_KEY: {
+		description: 'Budget /api/v1 key with the recurring:read scope, for the morning digest.',
+		schema: z.string().optional()
+	},
+	MEALPLANNER_API_URL: {
+		description:
+			"Mealplanner app base URL. With MEALPLANNER_API_KEY, the morning digest shows tonight's dinner; " +
+			'unset skips that section.',
+		schema: z.url().optional()
+	},
+	MEALPLANNER_API_KEY: {
+		description: 'Mealplanner /api/v1 key with the plans:read scope, for the morning digest.',
+		schema: z.string().optional()
+	},
 	MEAL_ESTIMATE_PROVIDER: {
 		description:
 			'AI provider that estimates meal calories from a photo or description in Log Meal: ' +

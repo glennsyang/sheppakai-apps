@@ -6,6 +6,7 @@
 		Lock,
 		Pencil,
 		Save,
+		Sunrise,
 		SlidersHorizontal,
 		User,
 		X
@@ -14,6 +15,7 @@
 
 	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as Separator from '#lib/components/ui/separator/index.js';
@@ -124,11 +126,30 @@
 		enhance: dashboardGoalSettingsEnhance
 	} = dashboardGoalSettingsFormStore;
 
+	// Morning digest settings form
+	// svelte-ignore state_referenced_locally
+	const morningDigestFormStore = superForm(data.morningDigestForm, {
+		onUpdate: ({ form }) => {
+			if (isSuccessMessage(form.message as FormMessage)) {
+				isEditingMorningDigest = false;
+			}
+		}
+	});
+
+	const {
+		form: morningDigestForm,
+		errors: morningDigestErrors,
+		message: morningDigestMessage,
+		submitting: morningDigestSubmitting,
+		enhance: morningDigestEnhance
+	} = morningDigestFormStore;
+
 	// Profile editing state
 	let isEditingProfile = $state(false);
 	let isEditingPassword = $state(false);
 	let isEditingVisitSettings = $state(false);
 	let isEditingDashboardGoals = $state(false);
+	let isEditingMorningDigest = $state(false);
 
 	// Derived values from data
 	const userEmail = $derived(data.user?.email || '');
@@ -190,6 +211,12 @@
 		$dashboardGoalSettingsForm.workoutGreenThreshold = data.dashboardGoals.workoutGreenThreshold;
 		$dashboardGoalSettingsForm.workoutAmberThreshold = data.dashboardGoals.workoutAmberThreshold;
 		isEditingDashboardGoals = false;
+	}
+
+	function resetMorningDigestForm() {
+		$morningDigestForm.enabled = data.morningDigest.enabled;
+		$morningDigestForm.sendTime = data.morningDigest.sendTime;
+		isEditingMorningDigest = false;
 	}
 
 	const visitThresholdSummary = $derived.by(() => {
@@ -646,6 +673,118 @@
 										{data.dashboardGoals.workoutAmberThreshold}-{data.dashboardGoals
 											.workoutGreenThreshold - 1} amber · below {data.dashboardGoals
 											.workoutAmberThreshold} red
+									</strong>
+								</p>
+							</div>
+						{/if}
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<Separator.Root />
+
+		<!-- Morning Digest Settings Section -->
+		<div class="overflow-hidden rounded-lg border shadow">
+			<div class="p-6">
+				<div class="mb-4 flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<Sunrise class="h-5 w-5" />
+						<h2 class="text-xl font-semibold">Morning Digest</h2>
+					</div>
+					{#if !isEditingMorningDigest}
+						<Button size="sm" variant="outline" onclick={() => (isEditingMorningDigest = true)}>
+							<Pencil class="mr-2 h-4 w-4" />
+							Edit
+						</Button>
+					{/if}
+				</div>
+
+				<form method="POST" action="?/updateMorningDigestSettings" use:morningDigestEnhance>
+					<div class="space-y-4">
+						{#if $morningDigestMessage}
+							<div
+								class="flex items-center gap-2 rounded-md p-3 {isSuccessMessage(
+									$morningDigestMessage
+								)
+									? 'border-pen-fitness/35 bg-pen-fitness/12 text-pen-fitness border'
+									: 'border-destructive/35 bg-destructive/12 text-destructive border'}"
+							>
+								{#if isSuccessMessage($morningDigestMessage)}
+									<CircleCheck class="h-4 w-4" />
+								{:else}
+									<CircleAlert class="h-4 w-4" />
+								{/if}
+								<span class="text-sm">{getMessageText($morningDigestMessage)}</span>
+							</div>
+						{/if}
+
+						{#if isEditingMorningDigest}
+							<div class="space-y-4">
+								<p class="text-muted-foreground text-sm">
+									One push each morning with your agenda, tasks due, tonight's dinner, bills due
+									this week and overdue visits. Empty sections are left out.
+								</p>
+
+								<label class="flex items-center gap-2 text-sm font-medium">
+									<Checkbox
+										id="morningDigestEnabled"
+										name="enabled"
+										bind:checked={$morningDigestForm.enabled}
+									/>
+									Send the morning digest
+								</label>
+
+								<div>
+									<Label for="morningDigestSendTime" class="mb-2 block text-sm font-medium">
+										Send time (Pacific)
+									</Label>
+									<Input
+										id="morningDigestSendTime"
+										name="sendTime"
+										type="time"
+										bind:value={$morningDigestForm.sendTime}
+										class="w-40 {$morningDigestErrors.sendTime ? 'border-destructive' : ''}"
+										required
+									/>
+									{#if $morningDigestErrors.sendTime}
+										<p class="text-destructive mt-1 text-sm">
+											{$morningDigestErrors.sendTime}
+										</p>
+									{/if}
+								</div>
+
+								<div class="flex gap-2 pt-2">
+									<Button type="submit" size="sm" disabled={$morningDigestSubmitting}>
+										{#if $morningDigestSubmitting}
+											<div
+												class="border-primary mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
+											></div>
+										{:else}
+											<Save class="mr-2 h-4 w-4" />
+										{/if}
+										Save
+									</Button>
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										onclick={resetMorningDigestForm}
+										disabled={$morningDigestSubmitting}
+									>
+										<X class="mr-2 h-4 w-4" />
+										Cancel
+									</Button>
+								</div>
+							</div>
+						{:else}
+							<div class="text-muted-foreground space-y-2 text-sm">
+								<p>
+									Status:
+									<strong class="text-foreground ml-1">
+										{data.morningDigest.enabled
+											? `On, sent at ${data.morningDigest.sendTime} Pacific`
+											: 'Off'}
 									</strong>
 								</p>
 							</div>

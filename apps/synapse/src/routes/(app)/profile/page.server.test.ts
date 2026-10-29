@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { api, sendPasswordChangedEmail } = vi.hoisted(() => ({
+const { api, sendPasswordChangedEmail, upsertUserSettings } = vi.hoisted(() => ({
+	upsertUserSettings: vi.fn<(...args: unknown[]) => Promise<void>>(),
 	api: {
 		updateUser: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 		changePassword: vi.fn<(...args: unknown[]) => Promise<unknown>>()
@@ -20,6 +21,7 @@ vi.mock('#lib/server/logger.js', () => ({
 }));
 vi.mock('$app/env/private', () => ({ ADMIN_USER_IDS: '' }));
 vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => void>() }));
+vi.mock('#lib/server/db/writes/user-settings.js', () => ({ upsertUserSettings }));
 
 const { actions } = await import('./+page.server');
 
@@ -69,5 +71,47 @@ describe('profile actions — wiring', () => {
 		expect(sendPasswordChangedEmail).toHaveBeenCalledWith(
 			expect.objectContaining({ to: 'alice@example.com', ipAddress: '203.0.113.7' })
 		);
+	});
+});
+
+describe('updateMorningDigestSettings', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		upsertUserSettings.mockResolvedValue(undefined);
+	});
+
+	it('saves the opt-in and send time for the current user', async () => {
+		const result = await actions.updateMorningDigestSettings({
+			request: post({ enabled: 'on', sendTime: '07:30' }),
+			locals: { user: USER }
+		} as never);
+
+		expect(upsertUserSettings).toHaveBeenCalledWith(expect.anything(), 'user-1', {
+			enabled: true,
+			sendTime: '07:30'
+		});
+		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
+	});
+
+	it('treats an unchecked box as opting out', async () => {
+		await actions.updateMorningDigestSettings({
+			request: post({ sendTime: '06:00' }),
+			locals: { user: USER }
+		} as never);
+
+		expect(upsertUserSettings).toHaveBeenCalledWith(expect.anything(), 'user-1', {
+			enabled: false,
+			sendTime: '06:00'
+		});
+	});
+
+	it('rejects a malformed send time without saving', async () => {
+		const result = await actions.updateMorningDigestSettings({
+			request: post({ enabled: 'on', sendTime: '25:00' }),
+			locals: { user: USER }
+		} as never);
+
+		expect(upsertUserSettings).not.toHaveBeenCalled();
+		expect(result).toMatchObject({ status: 400 });
 	});
 });
