@@ -15,21 +15,22 @@ synapse.
 
 ## Scopes
 
-| Scope            | Grants                                                 |
-| ---------------- | ------------------------------------------------------ |
-| `tasks:read`     | `GET /api/v1/tasks`, `GET /api/v1/tasks/{id}`          |
-| `tasks:write`    | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/{id}`       |
-| `mood:read`      | `GET /api/v1/mood`                                     |
-| `mood:write`     | `POST /api/v1/mood`                                    |
-| `workouts:read`  | `GET /api/v1/workouts`, `GET /api/v1/workouts/{id}`    |
-| `workouts:write` | `POST /api/v1/workouts`, `PATCH /api/v1/workouts/{id}` |
-| `meals:read`     | `GET /api/v1/meals`, `GET /api/v1/meals/{id}`          |
-| `meals:write`    | `POST /api/v1/meals`, `PATCH /api/v1/meals/{id}`       |
-| `visits:read`    | `GET /api/v1/visits`, `GET /api/v1/visits/{id}`        |
-| `visits:write`   | `POST /api/v1/visits`, `PATCH /api/v1/visits/{id}`     |
-| `people:read`    | `GET /api/v1/people`                                   |
-| `journal:read`   | `GET /api/v1/journal`, `GET /api/v1/journal/{id}`      |
-| `journal:write`  | `POST /api/v1/journal`, `PATCH /api/v1/journal/{id}`   |
+| Scope             | Grants                                                 |
+| ----------------- | ------------------------------------------------------ |
+| `tasks:read`      | `GET /api/v1/tasks`, `GET /api/v1/tasks/{id}`          |
+| `tasks:write`     | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/{id}`       |
+| `mood:read`       | `GET /api/v1/mood`                                     |
+| `mood:write`      | `POST /api/v1/mood`                                    |
+| `workouts:read`   | `GET /api/v1/workouts`, `GET /api/v1/workouts/{id}`    |
+| `workouts:write`  | `POST /api/v1/workouts`, `PATCH /api/v1/workouts/{id}` |
+| `meals:read`      | `GET /api/v1/meals`, `GET /api/v1/meals/{id}`          |
+| `meals:write`     | `POST /api/v1/meals`, `PATCH /api/v1/meals/{id}`       |
+| `visits:read`     | `GET /api/v1/visits`, `GET /api/v1/visits/{id}`        |
+| `visits:write`    | `POST /api/v1/visits`, `PATCH /api/v1/visits/{id}`     |
+| `people:read`     | `GET /api/v1/people`                                   |
+| `journal:read`    | `GET /api/v1/journal`, `GET /api/v1/journal/{id}`      |
+| `journal:write`   | `POST /api/v1/journal`, `PATCH /api/v1/journal/{id}`   |
+| `meditation:read` | `GET /api/v1/meditation`                               |
 
 `people:read` exists mainly to resolve a `personId` for the visits endpoints — a visit is tied to an
 existing person record, not a free-text name.
@@ -173,6 +174,26 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
 ```
 
 `PATCH /api/v1/journal/{id}` — requires `journal:write`.
+
+### Meditation
+
+`GET /api/v1/meditation` — requires `meditation:read`. Lists completed sessions, newest first. Query
+params: `startDate`/`endDate` (`YYYY-MM-DD`, must be given together; inclusive Pacific calendar
+days, matched against `completedAt`), `limit` (1-200, default 50). Each session includes its
+routine:
+
+```json
+{
+	"id": "abc123",
+	"completedAt": "2026-08-25T14:30:00.000Z",
+	"preMoodRating": 2,
+	"moodRating": 4,
+	"notes": "Calmer afterwards",
+	"routine": { "title": "Morning breath", "durationMinutes": 10 }
+}
+```
+
+Read-only for now: log sessions from the web UI.
 
 ## Out of scope
 
