@@ -232,6 +232,13 @@
 			"when": 1791734857455,
 			"tag": "0032_synapse_indexes",
 			"breakpoints": true
+		},
+		{
+			"idx": 33,
+			"version": "6",
+			"when": 1793241143865,
+			"tag": "0033_morning_digest_settings",
+			"breakpoints": true
 		}
 	]
 }

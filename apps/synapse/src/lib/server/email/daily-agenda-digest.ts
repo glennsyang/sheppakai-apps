@@ -1,11 +1,6 @@
-import type { DailyAgendaEntry } from '#lib/types.js';
-import { formatDateMedium } from '#lib/utils/date.js';
-
 export const DAILY_AGENDA_DIGEST_TIME = '06:00';
 // Allow delivery any time after 6:00 AM PT through the end of the same day.
 const DAILY_AGENDA_DIGEST_WINDOW_MINUTES = 1079;
-export const DAILY_AGENDA_DIGEST_NOTIFICATION_TYPE = 'daily_agenda_digest';
-export const DAILY_AGENDA_DIGEST_TAGS = 'date,point_right';
 
 export const DAILY_MOTIVATION_PHRASES = [
 	'One focused day can change your whole week!',
@@ -55,33 +50,4 @@ export function getDailyMotivationPhrase(
 	const index = Number.isNaN(numericDate) ? 0 : numericDate % phrases.length;
 
 	return phrases[index] ?? phrases[0] ?? 'Keep moving forward, one task at a time';
-}
-
-export function buildDailyAgendaDigestTitle(dateString: string): string {
-	return `Synapse - Daily Agenda for ${formatDateMedium(dateString)}`;
-}
-
-function toTaskBullet(entry: DailyAgendaEntry): string {
-	const statusEmoji = entry.completed ? '✅' : '⚪';
-	return `${statusEmoji} ${entry.title}`;
-}
-
-export function buildDailyAgendaDigestMessage(
-	entries: DailyAgendaEntry[],
-	dateString: string
-): string {
-	const listLines =
-		entries.length > 0
-			? entries.map(toTaskBullet)
-			: ['🌟 No agenda tasks today - enjoy the momentum and make it count!'];
-
-	const motivationalPhrase = getDailyMotivationPhrase(dateString);
-	const taskList = listLines.join(`
-`);
-
-	return `📝 Today's agenda:
-
-${taskList}
-
-🚀 ${motivationalPhrase}`;
 }

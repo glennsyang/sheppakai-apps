@@ -7,6 +7,7 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 import {
 	changePasswordSchema,
 	updateDashboardGoalSettingsSchema,
+	updateMorningDigestSettingsSchema,
 	updateProfileSchema,
 	updateVisitStatusSettingsSchema
 } from '#lib/schemas/auth.js';
@@ -18,12 +19,17 @@ import { getDb } from '#lib/server/db/index.js';
 import {
 	account,
 	dashboardGoalSettings,
+	morningDigestSettings,
 	user,
 	visitStatusSettings
 } from '#lib/server/db/schema/index.js';
 import { upsertUserSettings } from '#lib/server/db/writes/user-settings.js';
 import { sendPasswordChangedEmail } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';
+import {
+	DEFAULT_MORNING_DIGEST_SETTINGS,
+	getMorningDigestSettingsForUser
+} from '#lib/server/morning-digest-settings.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
 import { DEFAULT_DASHBOARD_GOALS, normalizeDashboardGoals } from '#lib/utils/dashboard-goals.js';
 import {
@@ -39,12 +45,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	try {
 		const db = getDb();
-		const [fullUserData, accountData, visitThresholds, dashboardGoals] = await Promise.all([
-			db.query.user.findFirst({ where: eq(user.id, userId) }),
-			db.query.account.findFirst({ where: eq(account.userId, userId) }),
-			getVisitStatusThresholdsForUser(userId, db),
-			getDashboardGoalsForUser(userId, db)
-		]);
+		const [fullUserData, accountData, visitThresholds, dashboardGoals, morningDigest] =
+			await Promise.all([
+				db.query.user.findFirst({ where: eq(user.id, userId) }),
+				db.query.account.findFirst({ where: eq(account.userId, userId) }),
+				getVisitStatusThresholdsForUser(userId, db),
+				getDashboardGoalsForUser(userId, db),
+				getMorningDigestSettingsForUser(userId, db)
+			]);
 
 		// Initialize profile form with current user data
 		const profileForm = await superValidate(
@@ -64,6 +72,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 			dashboardGoals,
 			zod4(updateDashboardGoalSettingsSchema)
 		);
+		const morningDigestForm = await superValidate(
+			morningDigest,
+			zod4(updateMorningDigestSettingsSchema)
+		);
 
 		return {
 			user: fullUserData || locals.user,
@@ -73,6 +85,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			visitThresholds,
 			dashboardGoalSettingsForm,
 			dashboardGoals,
+			morningDigestForm,
+			morningDigest,
 			passwordUpdatedAt: accountData?.updatedAt || null
 		};
 	} catch (err) {
@@ -86,6 +100,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			visitThresholds: DEFAULT_VISIT_STATUS_THRESHOLDS,
 			dashboardGoalSettingsForm: await superValidate(zod4(updateDashboardGoalSettingsSchema)),
 			dashboardGoals: DEFAULT_DASHBOARD_GOALS,
+			morningDigestForm: await superValidate(zod4(updateMorningDigestSettingsSchema)),
+			morningDigest: DEFAULT_MORNING_DIGEST_SETTINGS,
 			passwordUpdatedAt: null,
 			loadError: 'Failed to load profile data. Please try refreshing the page.'
 		};
@@ -172,6 +188,33 @@ export const actions = {
 			return message(
 				form,
 				{ type: 'error', text: 'Failed to update dashboard goals. Please try again.' },
+				{ status: 500 }
+			);
+		}
+	}),
+
+	updateMorningDigestSettings: requireAuth(async ({ request }, currentUser) => {
+		const form = await superValidate(request, zod4(updateMorningDigestSettingsSchema));
+
+		if (!form.valid) return invalidForm(form);
+
+		try {
+			await upsertUserSettings(morningDigestSettings, currentUser.id, form.data);
+
+			logger.info('Morning digest settings updated', {
+				userId: currentUser.id,
+				...form.data
+			});
+
+			return message(form, {
+				type: 'success',
+				text: 'Morning digest settings updated successfully.'
+			});
+		} catch (error) {
+			logger.error('Failed to update morning digest settings', error);
+			return message(
+				form,
+				{ type: 'error', text: 'Failed to update morning digest settings. Please try again.' },
 				{ status: 500 }
 			);
 		}

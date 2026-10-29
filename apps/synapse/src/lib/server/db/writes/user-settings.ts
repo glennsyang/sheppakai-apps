@@ -5,6 +5,7 @@ import {
 	dailyCalorieTargets,
 	dashboardGoalSettings,
 	goalWeights,
+	morningDigestSettings,
 	visitStatusSettings
 } from '#lib/server/db/schema/index.js';
 import {
@@ -18,6 +19,7 @@ type UserSettingsTable =
 	| typeof dailyCalorieTargets
 	| typeof dashboardGoalSettings
 	| typeof goalWeights
+	| typeof morningDigestSettings
 	| typeof visitStatusSettings;
 
 type UserSettingsValues<T extends UserSettingsTable> = Omit<

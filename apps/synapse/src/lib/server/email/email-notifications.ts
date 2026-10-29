@@ -5,8 +5,9 @@
  * - Workout reminders (based on workout_reminders table)
  * - Meditation reminders (based on meditation_schedules table)
  * - Visit warnings (for people in yellow/red visit status)
- * - Daily agenda digests at 6:00 AM PT (based on daily_agenda_entries)
- * - Tasks due-today digests at 6:00 AM PT (based on tasks.due_date)
+ * - Morning digest push at each user's send time (default 6:00 AM PT): agenda, tasks due,
+ *   tonight's dinner (mealplanner API), bills due this week (budget API) and overdue visits
+ * - Tasks due-today digest emails at 6:00 AM PT (based on tasks.due_date)
  *
  * Logs all sent emails in email_notifications table to prevent duplicates.
  */
@@ -14,7 +15,8 @@
 import { logger } from '#lib/server/logger.js';
 import { APP_TIME_ZONE, getTodayString } from '#lib/utils/date.js';
 
-import { processDailyAgendaDigests, processTasksDueTodayDigests } from './digests';
+import { processMorningDigests } from '../digest/process-morning-digests';
+import { processTasksDueTodayDigests } from './digests';
 import { processMeditationReminders } from './meditation-reminders';
 import { processScheduledVisitReminders, processVisitsTodayReminders } from './visit-reminders';
 import { processVisitWarnings } from './visit-warnings';
@@ -65,7 +67,7 @@ export async function runEmailNotifications(): Promise<{ ok: true } | { ok: fals
 	);
 
 	try {
-		await processDailyAgendaDigests(currentHour, currentMinute, todayPacific);
+		await processMorningDigests(currentHour, currentMinute, todayPacific);
 		await processTasksDueTodayDigests(currentHour, currentMinute, todayPacific);
 		await processWorkoutReminders(currentDay, currentHour, currentMinute);
 		await processMeditationReminders(currentDay, currentHour, currentMinute);

@@ -59,3 +59,8 @@ export const updateDashboardGoalSettingsSchema = z
 		path: ['workoutAmberThreshold'],
 		message: 'Amber threshold must be less than the green threshold'
 	});
+
+export const updateMorningDigestSettingsSchema = z.object({
+	enabled: z.boolean(),
+	sendTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Enter a time as HH:MM (Pacific)')
+});

@@ -14,12 +14,19 @@ import {
 	getVisitWarningStatus
 } from './visit-warning-utils';
 
+type VisitWarningCandidate = {
+	person: typeof people.$inferSelect;
+	user: typeof user.$inferSelect;
+	lastVisitDate: string;
+	warningStatus: 'yellow' | 'critical';
+};
+
 /**
- * Process visit warnings (people in yellow/red visit status)
+ * Non-archived, non-exempt people whose latest visit puts them in yellow/critical status,
+ * using each owner's visit-status thresholds. Shared by the warnings job and the morning digest.
  */
-export async function processVisitWarnings(): Promise<void> {
+export async function loadVisitWarningCandidates(): Promise<VisitWarningCandidate[]> {
 	const db = getDb();
-	logger.debug('\n👥 Processing visit warnings...');
 
 	// Get all people with their last visit date
 	const allPeople = db
@@ -38,7 +45,7 @@ export async function processVisitWarnings(): Promise<void> {
 		db
 	);
 
-	let sentCount = 0;
+	const candidates: VisitWarningCandidate[] = [];
 
 	for (const { person, user: userData } of allPeople) {
 		if (person.isExempt) {
@@ -69,7 +76,25 @@ export async function processVisitWarnings(): Promise<void> {
 			continue;
 		}
 
-		const formattedLastVisitDate = formatVisitWarningDate(lastVisit.date);
+		candidates.push({ person, user: userData, lastVisitDate: lastVisit.date, warningStatus });
+	}
+
+	return candidates;
+}
+
+/**
+ * Process visit warnings (people in yellow/red visit status)
+ */
+export async function processVisitWarnings(): Promise<void> {
+	const db = getDb();
+	logger.debug('\n👥 Processing visit warnings...');
+
+	const candidates = await loadVisitWarningCandidates();
+
+	let sentCount = 0;
+
+	for (const { person, user: userData, lastVisitDate, warningStatus } of candidates) {
+		const formattedLastVisitDate = formatVisitWarningDate(lastVisitDate);
 		const warningEntityId = buildVisitWarningEntityId(person.id, warningStatus);
 
 		// Check if already sent a warning in the last 7 days

@@ -3,7 +3,6 @@ import { escapeHtml, renderEmailLayout } from '@sheppakai/shared/email';
 import { formatDateMedium } from '#lib/utils/date.js';
 
 export const TASKS_DUE_TODAY_NOTIFICATION_TYPE = 'tasks_due_today_digest';
-export const TASKS_DUE_TODAY_DIGEST_TAGS = 'round_pushpin';
 
 export type TasksDueTodayTaskSummary = {
 	id: string;
@@ -27,23 +26,6 @@ function getPriorityLabel(priority: number): string {
 	};
 
 	return labels[priority] ?? 'Priority task';
-}
-
-function toTaskBullet(task: TasksDueTodayTaskSummary): string {
-	return `• ${task.title}`;
-}
-
-export function buildTasksDueTodayDigestMessage(
-	tasks: TasksDueTodayTaskSummary[],
-	dateString: string
-): string {
-	if (tasks.length === 0) {
-		return `🗂️ No tasks are due today for ${formatDateMedium(dateString)}. Keep your momentum steady.`;
-	}
-
-	const taskList = tasks.map(toTaskBullet).join('\n');
-
-	return `🗂️ These tasks are due today:\n\n${taskList}\n\nStay focused and keep your momentum moving.`;
 }
 
 export function buildTasksDueTodayEmailHtml(
