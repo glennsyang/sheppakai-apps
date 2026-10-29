@@ -5,7 +5,7 @@ import type { PantryItem } from '#lib/types.js';
 
 import { getDb } from '../db';
 import { pantryItems } from '../db/schema';
-import { generateId, withTimestampsForCreate } from '../db/utils';
+import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '../db/utils';
 
 function rowToItem(row: typeof pantryItems.$inferSelect): PantryItem {
 	return {
@@ -47,8 +47,34 @@ export async function addPantryItem(
 	return rowToItem(row);
 }
 
-export async function removePantryItem(itemId: string): Promise<void> {
+export async function getPantryItem(itemId: string): Promise<PantryItem | null> {
+	const row = getDb().select().from(pantryItems).where(eq(pantryItems.id, itemId)).get();
+	return row ? rowToItem(row) : null;
+}
+
+/** Updates only the given fields. Returns `null` when the item doesn't exist. */
+export async function updatePantryItem(
+	itemId: string,
+	patch: { name?: string; quantity?: number | null; unit?: string | null }
+): Promise<PantryItem | null> {
+	logger.debug('updatePantryItem', { itemId });
+	const row = getDb()
+		.update(pantryItems)
+		.set({ ...patch, ...withTimestampsForUpdate() })
+		.where(eq(pantryItems.id, itemId))
+		.returning()
+		.get();
+	return row ? rowToItem(row) : null;
+}
+
+/** Returns whether a row was deleted. */
+export async function removePantryItem(itemId: string): Promise<boolean> {
 	logger.debug('removePantryItem', { itemId });
 	const db = getDb();
-	await db.delete(pantryItems).where(eq(pantryItems.id, itemId));
+	const deleted = db
+		.delete(pantryItems)
+		.where(eq(pantryItems.id, itemId))
+		.returning({ id: pantryItems.id })
+		.all();
+	return deleted.length > 0;
 }

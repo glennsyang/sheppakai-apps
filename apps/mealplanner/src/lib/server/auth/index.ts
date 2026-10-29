@@ -6,6 +6,7 @@ import {
 	NODE_ENV
 } from '$app/env/private';
 import { getRequestEvent } from '$app/server';
+import { createApiKeyPlugin } from '@sheppakai/shared/api-key-plugin';
 import { parseAllowedEmails } from '@sheppakai/shared/auth-allowlist';
 import { createAppAuth } from '@sheppakai/shared/auth-config';
 
@@ -23,7 +24,7 @@ import { sendAuthAlerts } from '../notifications';
 export const allowedEmails = parseAllowedEmails(ALLOWED_EMAILS);
 
 // Shared config (invite-only, allowlist gates, hashed tokens, HIBP, rate limits) lives in
-// @sheppakai/shared/auth-config.
+// @sheppakai/shared/auth-config; this app adds the API-key plugin behind /api/v1.
 export const auth = createAppAuth({
 	appName: 'Meal Planner',
 	cookiePrefix: 'mealplanner_auth_',
@@ -38,6 +39,7 @@ export const auth = createAppAuth({
 		session: schema.session,
 		account: schema.account,
 		verification: schema.verification,
+		apikey: schema.apiKey,
 		rateLimit: schema.rateLimit
 	},
 	email: {
@@ -48,7 +50,8 @@ export const auth = createAppAuth({
 	},
 	sendAuthAlerts,
 	logger,
-	getRequestEvent
+	getRequestEvent,
+	plugins: [createApiKeyPlugin()]
 });
 
 // Session shapes with every plugin's additional fields folded in (the `admin` plugin adds

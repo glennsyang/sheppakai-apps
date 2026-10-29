@@ -31,8 +31,8 @@ const ingredientSchema = z.object({
 
 // Bounds for newly saved recipes. Empty arrays are valid: custom meals are stored
 // without ingredients or instructions.
-const ingredientListSchema = z.array(ingredientSchema).max(50);
-const instructionListSchema = z.array(z.string().max(2000)).max(50);
+export const ingredientListSchema = z.array(ingredientSchema).max(50);
+export const instructionListSchema = z.array(z.string().max(2000)).max(50);
 
 // Shape-only checks for rows already in recipes.ingredients_json / instructions_json,
 // which may predate the bounds above.

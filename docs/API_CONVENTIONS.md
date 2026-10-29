@@ -1,11 +1,12 @@
 # External API conventions (`/api/v1`)
 
-Shared rules for the JSON APIs that `budget` and `synapse` expose to tools outside the web UI,
+Shared rules for the JSON APIs that `budget`, `synapse` and `mealplanner` expose to tools outside the web UI,
 such as a personal AI assistant, a script or a future mobile client. Each app's own endpoint
 list and scopes are in its `docs/API.md`:
 
 - [apps/budget/docs/API.md](../apps/budget/docs/API.md)
 - [apps/synapse/docs/API.md](../apps/synapse/docs/API.md)
+- [apps/mealplanner/docs/API.md](../apps/mealplanner/docs/API.md)
 
 The shared code is in `packages/shared`: `bearer-token.ts` parses the header and
 `api-response.ts` builds the response envelope.
