@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import { storedIngredientListSchema, storedInstructionListSchema } from '#lib/schemas/mealPlan.js';
@@ -113,4 +113,32 @@ export async function updateRecipe(
 		.all();
 	if (!row) throw new Error(`Recipe not found: ${id}`);
 	return rowToRecipe(row);
+}
+
+export async function listRecipes(
+	options: { limit: number; source?: RecipeSource } = { limit: 50 }
+): Promise<Recipe[]> {
+	logger.debug('listRecipes', options);
+	const query = getDb().select().from(recipes);
+	const rows = (options.source ? query.where(eq(recipes.source, options.source)) : query)
+		.orderBy(desc(recipes.updatedAt))
+		.limit(options.limit)
+		.all();
+	return rows.map(rowToRecipe);
+}
+
+export async function getRecipe(id: string): Promise<Recipe | null> {
+	const row = getDb().select().from(recipes).where(eq(recipes.id, id)).get();
+	return row ? rowToRecipe(row) : null;
+}
+
+/** Returns whether a row was deleted. Its meal plan entries go with it (FK cascade). */
+export async function deleteRecipe(id: string): Promise<boolean> {
+	logger.debug('deleteRecipe', { id });
+	const deleted = getDb()
+		.delete(recipes)
+		.where(eq(recipes.id, id))
+		.returning({ id: recipes.id })
+		.all();
+	return deleted.length > 0;
 }

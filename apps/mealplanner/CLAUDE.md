@@ -108,6 +108,7 @@ src/
 │       │   └── utils.ts         # generateId(), withTimestampsForCreate/Update()
 │       ├── auth/
 │       │   └── index.ts         # betterAuth instance
+│       ├── api/                 # /api/v1 bindings: requireApiKey, audit log, handleApiWrite, request schemas
 │       ├── ai/
 │       │   ├── gemini.ts        # suggestMeals() — pantry → dinner suggestions
 │       │   ├── claude.ts        # suggestVariations() — variations on a meal
@@ -124,11 +125,12 @@ src/
 │   │   ├── suggest/
 │   │   ├── planner/
 │   │   ├── profile/
-│   │   └── admin/
+│   │   └── admin/               # Users, API keys, API logs
 │   ├── api/auth/[...all]/       # better-auth request handler
 │   ├── api/healthz/
 │   ├── api/suggest/             # Gemini meal suggestions
-│   └── api/variations/          # Claude recipe variations
+│   ├── api/variations/          # Claude recipe variations
+│   └── api/v1/                  # External API (API keys + scopes), see docs/API.md
 └── tests/                       # Vitest suites
     ├── lib/                     # server helpers, AI endpoint, prompt safety, email, …
     ├── routes/                  # load/action tests per route

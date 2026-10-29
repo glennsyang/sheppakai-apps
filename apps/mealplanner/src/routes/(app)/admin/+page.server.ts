@@ -7,6 +7,7 @@ import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { assertAdmin, isAdminUser } from '#lib/server/actions/auth-guard.js';
+import { apiKeyStore } from '#lib/server/api/api-key-store.js';
 import { allowedEmails, auth } from '#lib/server/auth/index.js';
 import { sendWelcome } from '#lib/server/auth/welcome.js';
 import { logger } from '#lib/server/logger.js';
@@ -52,5 +53,6 @@ export const actions: Actions = createAdminUserActions({
 	flyAppName: FLY_APP_NAME,
 	sendWelcome,
 	sendAuthAlerts,
-	logger
+	logger,
+	disableApiKeysForUser: (userId) => apiKeyStore.disableForUser(userId)
 });

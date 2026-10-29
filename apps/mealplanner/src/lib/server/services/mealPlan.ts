@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { getMondayOf } from '#lib/dates.js';
 import { logger } from '#lib/server/logger.js';
@@ -109,6 +109,28 @@ export async function removeMealPlanEntry(entryId: string): Promise<void> {
 	logger.debug('removeMealPlanEntry', { entryId });
 	const db = getDb();
 	await db.delete(mealPlanEntries).where(eq(mealPlanEntries.id, entryId));
+}
+
+export async function getMealPlan(weekStartDate: string): Promise<MealPlan | null> {
+	const row = getDb()
+		.select()
+		.from(mealPlans)
+		.where(eq(mealPlans.weekStartDate, weekStartDate))
+		.get();
+	return row ? rowToMealPlan(row) : null;
+}
+
+/** Clears one day of a week's plan. Returns whether an entry was removed. */
+export async function clearMealPlanDay(weekStartDate: string, dayOfWeek: number): Promise<boolean> {
+	logger.debug('clearMealPlanDay', { weekStartDate, dayOfWeek });
+	const plan = await getMealPlan(weekStartDate);
+	if (!plan) return false;
+	const deleted = getDb()
+		.delete(mealPlanEntries)
+		.where(and(eq(mealPlanEntries.mealPlanId, plan.id), eq(mealPlanEntries.dayOfWeek, dayOfWeek)))
+		.returning({ id: mealPlanEntries.id })
+		.all();
+	return deleted.length > 0;
 }
 
 export function getMondayOfCurrentWeek(): string {
