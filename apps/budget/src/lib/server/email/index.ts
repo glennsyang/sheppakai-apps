@@ -9,7 +9,7 @@ import {
 import type { WelcomeEmailPayload } from '@sheppakai/shared/welcome';
 
 import { formatCurrency } from '#lib/utils.js';
-import { extractDateFromTimestamp } from '#lib/utils/dates.js';
+import { extractDateFromTimestamp, formatLocalTimestamp } from '#lib/utils/dates.js';
 
 import { logger } from '../logger';
 
@@ -165,6 +165,55 @@ export async function sendWeeklySummaryEmail(payload: WeeklySummaryEmailPayload)
 			<p style="margin: 0 0 12px; font-size: 13px; color: #6b7280;">These transactions don't count toward any category budget above.</p>
 			${renderExcludedRows(payload.excludedTransactions)}
 		</section>`
+		})
+	});
+}
+
+// Window-cleaning customers are billed in CAD, unlike the household figures above
+const CAD = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' });
+
+type WindowCleaningInvoicePayload = {
+	to: string;
+	name: string;
+	address: string;
+	jobDate: string;
+	amountCharged: number;
+	notes?: string | null;
+};
+
+/**
+ * One-job invoice for a window-cleaning customer. The tip is left off: it was a gift, not
+ * part of the bill. Throws on a Brevo failure so the action can tell the user.
+ */
+export async function sendWindowCleaningInvoiceEmail(payload: WindowCleaningInvoicePayload) {
+	const date = formatLocalTimestamp(payload.jobDate);
+	const row = (label: string, value: string, bold = false) => `
+				<tr>
+					<td style="padding: 10px 8px; border-bottom: 1px solid #f3f4f6; color: #6b7280;">${label}</td>
+					<td style="padding: 10px 8px; border-bottom: 1px solid #f3f4f6; text-align: right;${bold ? ' font-weight: 600;' : ''}">${value}</td>
+				</tr>`;
+
+	await mailer.send({
+		to: payload.to,
+		name: payload.name,
+		subject: `Invoice: window cleaning on ${date}`,
+		label: 'window cleaning invoice email',
+		html: renderEmailLayout({
+			title: 'Window cleaning invoice',
+			heading: 'Window cleaning invoice',
+			subheading: date,
+			footer: 'Thank you for your business!',
+			body: `
+		<p style="font-size: 16px; margin: 0 0 18px;">Hi ${escapeHtml(payload.name)},</p>
+		<p style="font-size: 15px; margin: 0 0 24px; color: #374151;">Thanks for having your windows cleaned. Here are the details of this visit.</p>
+		<div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+			<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+				${row('Date', escapeHtml(date))}
+				${row('Address', escapeHtml(payload.address))}
+				${payload.notes ? row('Notes', escapeHtml(payload.notes)) : ''}
+				${row('Amount due', CAD.format(payload.amountCharged), true)}
+			</table>
+		</div>`
 		})
 	});
 }

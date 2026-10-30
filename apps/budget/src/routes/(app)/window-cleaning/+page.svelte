@@ -10,11 +10,13 @@
 	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
 	import PageShell from '#lib/components/PageShell.svelte';
 	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import SendInvoiceMenuItem from '#lib/components/SendInvoiceMenuItem.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import DataTable from '#lib/components/ui/data-table/data-table.svelte';
 	import * as Sheet from '#lib/components/ui/sheet/index.js';
 	import WindowCleaningCustomerModal from '#lib/components/WindowCleaningCustomerModal.svelte';
 	import WindowCleaningJobModal from '#lib/components/WindowCleaningJobModal.svelte';
+	import WindowCleaningRevenueChart from '#lib/components/WindowCleaningRevenueChart.svelte';
 	import {
 		customerFormContext,
 		jobFormContext,
@@ -78,7 +80,28 @@
 		openDeleteJobModal = true;
 	}
 
-	const thisYear = new Date().getFullYear();
+	const percentFormatter = new Intl.NumberFormat('en-CA', {
+		style: 'percent',
+		maximumFractionDigits: 1
+	});
+
+	function formatRate(rate: number | null) {
+		return rate == null ? '—' : `${currencyFormatter.format(rate)}/h`;
+	}
+
+	function formatPct(pct: number | null) {
+		return pct == null ? '—' : percentFormatter.format(pct);
+	}
+
+	function formatDue(overdueDays: number) {
+		if (overdueDays > 0) return `${overdueDays} day${overdueDays === 1 ? '' : 's'} overdue`;
+		if (overdueDays === 0) return 'Due today';
+		const left = -overdueDays;
+		return `Due in ${left} day${left === 1 ? '' : 's'}`;
+	}
+
+	const thisYear = $derived(data.currentYear);
+	const hasRevenueThisYear = $derived(data.revenueByMonth.some((m) => m.earned > 0));
 
 	let stats = $derived.by<Stat[]>(() => {
 		const diff = data.earnedThisYear - data.earnedLastYear;
@@ -98,6 +121,16 @@
 								label: `${pct}% ${diff >= 0 ? 'ahead of' : 'behind'} ${thisYear - 1} (${currencyFormatter.format(data.earnedLastYear)})`
 							}
 						: undefined
+			},
+			{
+				label: '$/hour',
+				value: formatRate(data.hourlyRateThisYear),
+				tooltip: `Earned (incl. tips) per hour over ${thisYear} jobs that logged a duration`
+			},
+			{
+				label: 'Tips',
+				value: formatPct(data.tipPctThisYear),
+				tooltip: `Tips as a share of the amount charged in ${thisYear}`
 			}
 		];
 	});
@@ -120,6 +153,61 @@
 		<LoadErrorBanner message={data.loadError} />
 	{:else}
 		<DashboardStatStrip {stats} />
+
+		<div class="grid gap-4 lg:grid-cols-2">
+			<section class="bg-card rounded-xl border shadow-sm">
+				<div class="flex items-baseline justify-between gap-3 px-4 pt-4 pb-2">
+					<h2 class="text-sm font-medium">Due for a re-clean</h2>
+					<p class="text-muted-foreground text-xs">Overdue or due in the next 2 weeks</p>
+				</div>
+				{#if data.dueCustomers.length === 0}
+					<p class="text-muted-foreground px-4 pb-6 text-sm">Nobody is due right now.</p>
+				{:else}
+					<ul class="max-h-72 divide-y overflow-y-auto border-t">
+						{#each data.dueCustomers as customer (customer.id)}
+							{@const reclean = customer.reclean}
+							{#if reclean}
+								<li>
+									<button
+										type="button"
+										class="hover:bg-muted/60 flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left"
+										onclick={() => openCustomerSheet(customer)}
+									>
+										<div class="min-w-0 flex-1">
+											<p class="truncate text-sm font-medium">{customer.name}</p>
+											<p class="text-muted-foreground truncate text-xs">
+												Last visit {customer.lastJobDate
+													? formatLocalTimestamp(customer.lastJobDate)
+													: '—'} · every {reclean.intervalDays} days
+											</p>
+										</div>
+										<span
+											class={[
+												'shrink-0 text-xs font-medium tabular-nums',
+												reclean.overdueDays > 0 ? 'text-destructive' : 'text-muted-foreground'
+											]}
+										>
+											{formatDue(reclean.overdueDays)}
+										</span>
+									</button>
+								</li>
+							{/if}
+						{/each}
+					</ul>
+				{/if}
+			</section>
+
+			<section class="bg-card flex flex-col gap-2 rounded-xl border p-4 shadow-sm">
+				<h2 class="text-sm font-medium">Earned by month in {thisYear}</h2>
+				{#if hasRevenueThisYear}
+					<WindowCleaningRevenueChart chartData={data.revenueByMonth} />
+				{:else}
+					<p class="text-muted-foreground bg-muted/50 rounded-lg px-4 py-8 text-center text-sm">
+						No jobs logged this year yet.
+					</p>
+				{/if}
+			</section>
+		</div>
 
 		{#if data.customers.length > 0}
 			<DataTable
@@ -247,27 +335,51 @@
 						</dl>
 					{/if}
 
+					{#if selectedCustomer.reclean}
+						<p class="text-sm">
+							Usually every {selectedCustomer.reclean.intervalDays} days · next due
+							<span
+								class={[
+									'font-medium',
+									selectedCustomer.reclean.overdueDays > 0 && 'text-destructive'
+								]}>{formatLocalTimestamp(selectedCustomer.reclean.dueDate)}</span
+							>
+						</p>
+					{/if}
+
 					{#if selectedCustomer.notes}
 						<p class="bg-muted/60 rounded-[10px] px-3 py-2.5 text-sm">{selectedCustomer.notes}</p>
 					{/if}
 
-					<dl class="bg-border grid grid-cols-3 gap-px overflow-hidden rounded-xl border">
-						<div class="bg-card p-3">
+					<dl class="bg-border grid grid-cols-6 gap-px overflow-hidden rounded-xl border">
+						<div class="bg-card col-span-2 p-3">
 							<dt class="text-muted-foreground text-xs">Total earned</dt>
 							<dd class="mt-0.5 font-semibold tabular-nums">
 								{currencyFormatter.format(selectedCustomer.totalEarned)}
 							</dd>
 						</div>
-						<div class="bg-card p-3">
+						<div class="bg-card col-span-2 p-3">
 							<dt class="text-muted-foreground text-xs">Visits</dt>
 							<dd class="mt-0.5 font-semibold tabular-nums">{selectedCustomer.jobs.length}</dd>
 						</div>
-						<div class="bg-card p-3">
+						<div class="bg-card col-span-2 p-3">
 							<dt class="text-muted-foreground text-xs">Last visit</dt>
 							<dd class="mt-0.5 font-semibold tabular-nums">
 								{selectedCustomer.lastJobDate
 									? formatLocalTimestamp(selectedCustomer.lastJobDate)
 									: '—'}
+							</dd>
+						</div>
+						<div class="bg-card col-span-3 p-3">
+							<dt class="text-muted-foreground text-xs">$/hour</dt>
+							<dd class="mt-0.5 font-semibold tabular-nums">
+								{formatRate(selectedCustomer.hourlyRate)}
+							</dd>
+						</div>
+						<div class="bg-card col-span-3 p-3">
+							<dt class="text-muted-foreground text-xs">Tips</dt>
+							<dd class="mt-0.5 font-semibold tabular-nums">
+								{formatPct(selectedCustomer.tipPct)}
 							</dd>
 						</div>
 					</dl>
@@ -304,6 +416,15 @@
 												.filter(Boolean)
 												.join(' · ') || 'No details'}
 										</p>
+										{#if job.invoiceSentAt}
+											<p class="text-muted-foreground text-xs">
+												Invoiced {new Date(job.invoiceSentAt).toLocaleDateString('en-CA', {
+													month: 'short',
+													day: 'numeric',
+													year: 'numeric'
+												})}
+											</p>
+										{/if}
 									</div>
 									<div class="shrink-0 text-right">
 										<p class="text-sm font-medium tabular-nums">
@@ -318,7 +439,14 @@
 									<RowActionsMenu
 										onEdit={() => handleEditJob(job)}
 										onDelete={() => handleDeleteJob(job.id)}
-									/>
+									>
+										<SendInvoiceMenuItem
+											jobId={job.id}
+											customerEmail={job.customer.email}
+											invoiceSentAt={job.invoiceSentAt}
+											actionUrl="/window-cleaning?/sendInvoice"
+										/>
+									</RowActionsMenu>
 								</li>
 							{/each}
 						</ul>
