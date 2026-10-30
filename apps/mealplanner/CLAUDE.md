@@ -26,8 +26,8 @@ recipes → meals slot into a Monday–Sunday weekly planner.
 - This app is intentionally a **shared-data** system for exactly **two users** — the same model used
   by the sibling `budget` app (see `apps/budget/CLAUDE.md`, "Product Data-Sharing Model").
 - Both users are expected to see and edit the same household data: `pantry_items`, `recipes`,
-  `meal_plans`, and `meal_plan_entries` are shared, not per-user-private. There is one shared pantry
-  and one shared weekly planner, not one per user.
+  `recipe_cooks`, `meal_plans`, and `meal_plan_entries` are shared, not per-user-private. There is
+  one shared pantry and one shared weekly planner, not one per user.
 - Do **not** treat cross-user visibility or editing of these tables as a tenant-isolation bug (IDOR)
   in this project unless this product requirement changes. A full-codebase security review
   (2026-08-27) initially flagged this as critical in #31 and #32 — both were closed as by-design
@@ -98,7 +98,7 @@ src/
 ├── lib/
 │   ├── types.ts                 # Shared TS interfaces (camelCase)
 │   ├── auth-client.ts           # Client-side better-auth (better-auth/svelte)
-│   ├── schemas/                 # Zod v4 schemas — auth.ts, pantry.ts, mealPlan.ts
+│   ├── schemas/                 # Zod v4 schemas — auth.ts, pantry.ts, mealPlan.ts, recipes.ts
 │   ├── components/              # Svelte 5 UI components
 │   └── server/
 │       ├── logger.ts            # App-wide logger — use this, never console.log (server-only, keeps it out of client bundles)
@@ -114,16 +114,19 @@ src/
 │       │   ├── claude.ts        # suggestVariations() — variations on a meal
 │       │   ├── endpoint.ts      # createAiEndpoint() — auth, rate limit, body parse for both
 │       │   └── promptSafety.ts  # sanitizePromptText() for user text sent to either model
+│       ├── recipe-import/       # URL + photo import: safe-fetch (SSRF guard), json-ld, html-text, ai-extract
 │       └── services/
 │           ├── pantry.ts
 │           ├── mealPlan.ts      # includes getMondayOfCurrentWeek()
-│           └── recipes.ts
+│           ├── recipes.ts       # includes searchRecipes(), setRecipeRating()
+│           └── recipeCooks.ts   # the "cooked it" log
 ├── routes/
 │   ├── (auth)/                  # Unauthenticated: sign-in, sign-out, password reset, email verification
 │   ├── (app)/                   # Protected: auth guard in +layout.server.ts
 │   │   ├── pantry/
 │   │   ├── suggest/
 │   │   ├── planner/
+│   │   ├── recipes/             # library (search), new (manual + URL/photo import), [id] (view/edit/rate/log/plan)
 │   │   ├── profile/
 │   │   └── admin/               # Users, API keys, API logs
 │   ├── api/auth/[...all]/       # better-auth request handler
@@ -176,7 +179,7 @@ required, defaults, and where each is consumed) — it's the canonical source, k
   tables.
 - Better-auth tables: `user`, `session`, `account`, `verification` — defined with camelCase Drizzle
   field names mapping to snake_case DB columns.
-- App tables: `pantry_items`, `recipes`, `meal_plans`, `meal_plan_entries`.
+- App tables: `pantry_items`, `recipes`, `recipe_cooks`, `meal_plans`, `meal_plan_entries`.
 - Migrations output: `src/lib/server/db/migrations/`.
 
 ### Working with the DB
@@ -205,6 +208,13 @@ with `pickValidSuggestions` (`#lib/schemas/mealPlan.js`).
   responses.
 - User text goes through `sanitizePromptText()` (`ai/promptSafety.ts`) and is wrapped in delimiter
   tags the system prompts treat as data only.
+- **Recipe import** (`src/lib/server/recipe-import/`, `/recipes/new`): a URL is fetched by
+  `fetchRecipePage` (http/https on default ports, DNS-checked inside the socket lookup so private,
+  loopback, link-local and metadata addresses are refused at every redirect hop, 10 s, 2 MB), then
+  schema.org `Recipe` JSON-LD is used if present, else the page text goes to Gemini. A photo goes to
+  Gemini through `extractJson` (`@sheppakai/shared/ai-vision`). Both are held to
+  `recipeImportResultSchema` and only fill the form; nothing saves until the user does. Rate limit
+  20/hour/user.
 
 ---
 

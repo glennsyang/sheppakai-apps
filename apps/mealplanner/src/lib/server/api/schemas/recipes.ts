@@ -26,6 +26,6 @@ export const apiUpdateRecipeSchema = z
 	.refine((patch) => Object.keys(patch).length > 0, 'Provide at least one field to update');
 
 export const apiRecipeListQuerySchema = z.object({
-	source: z.enum(['ai', 'custom']).optional(),
+	source: z.enum(['ai', 'custom', 'imported']).optional(),
 	limit: z.coerce.number().int().min(1).max(200).default(50)
 });

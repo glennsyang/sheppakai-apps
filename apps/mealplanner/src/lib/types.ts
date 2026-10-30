@@ -21,7 +21,7 @@ export interface Ingredient {
 // Derived from the runtime schema so the type and the validation can't drift (#171).
 export type MealSuggestion = z.output<typeof mealSuggestionSchema>;
 
-export type RecipeSource = 'ai' | 'custom';
+export type RecipeSource = 'ai' | 'custom' | 'imported';
 
 export interface Recipe {
 	id: string;
@@ -33,6 +33,25 @@ export interface Recipe {
 	prepTimeMinutes: number;
 	servings: number;
 	source: RecipeSource;
+	/** 1–5, null until rated. */
+	rating: number | null;
+	sourceUrl: string | null;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+/** A recipe in the library list, with the date it was last cooked. */
+export interface RecipeListItem extends Recipe {
+	lastCookedOn: string | null;
+}
+
+/** One entry in a recipe's "cooked it" log. */
+export interface RecipeCook {
+	id: string;
+	recipeId: string;
+	userId: string | null;
+	cookedOn: string;
+	notes: string;
 	createdAt: Date;
 	updatedAt: Date;
 }

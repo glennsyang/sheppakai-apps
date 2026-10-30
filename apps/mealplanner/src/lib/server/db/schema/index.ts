@@ -174,12 +174,33 @@ export const recipes = sqliteTable('recipes', {
 	instructionsJson: text('instructions_json').notNull(),
 	prepTimeMinutes: integer('prep_time_minutes').notNull(),
 	servings: integer('servings').notNull(),
-	source: text('source', { enum: ['ai', 'custom'] })
+	source: text('source', { enum: ['ai', 'custom', 'imported'] })
 		.notNull()
 		.default('ai'),
+	// 1–5 stars, null until someone rates it.
+	rating: integer('rating'),
+	// Where an imported recipe came from; null for everything else.
+	sourceUrl: text('source_url'),
 	createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 });
+
+// The "cooked it" log: one row per time a recipe was made.
+export const recipeCooks = sqliteTable(
+	'recipe_cooks',
+	{
+		id: text('id').primaryKey(),
+		recipeId: text('recipe_id')
+			.notNull()
+			.references(() => recipes.id, { onDelete: 'cascade' }),
+		userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+		cookedOn: text('cooked_on').notNull(),
+		notes: text('notes').notNull().default(''),
+		createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+		updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
+	},
+	(table) => [index('recipe_cooks_recipe_id_idx').on(table.recipeId)]
+);
 
 // One shared plan per week, one entry per day — enforced by unique indexes so
 // concurrent writes can't create duplicates (see services/mealPlan.ts).
