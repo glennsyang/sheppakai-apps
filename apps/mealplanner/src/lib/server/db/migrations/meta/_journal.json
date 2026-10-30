@@ -57,6 +57,13 @@
 			"when": 1793234596307,
 			"tag": "0007_clear_mandroid",
 			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "6",
+			"when": 1793392966152,
+			"tag": "0008_funny_onslaught",
+			"breakpoints": true
 		}
 	]
 }
