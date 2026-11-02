@@ -118,8 +118,8 @@ catalogs:
       specifier: ^4.7.7
       version: 4.7.7
     svelte-sonner:
-      specifier: ^1.2.1
-      version: 1.2.1
+      specifier: ^1.2.2
+      version: 1.2.2
     sveltekit-rate-limiter:
       specifier: ^0.8.0
       version: 0.8.0
@@ -293,7 +293,7 @@ importers:
         version: 4.7.7(picomatch@4.0.7)(svelte@5.57.2)(typescript@6.0.3)
       svelte-sonner:
         specifier: 'catalog:'
-        version: 1.2.1(svelte@5.57.2)
+        version: 1.2.2(svelte@5.57.2)
       sveltekit-superforms:
         specifier: 'catalog:'
         version: 3.0.0(@sveltejs/kit@3.1.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.2)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.2)(typescript@6.0.3)
@@ -592,7 +592,7 @@ importers:
         version: 0.9.80(svelte@5.57.2)
       svelte-sonner:
         specifier: 'catalog:'
-        version: 1.2.1(svelte@5.57.2)
+        version: 1.2.2(svelte@5.57.2)
       sveltekit-superforms:
         specifier: 'catalog:'
         version: 3.0.0(@sveltejs/kit@3.1.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.2)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.2)(typescript@6.0.3)
@@ -3796,8 +3796,8 @@ packages:
     peerDependencies:
       svelte: '>=3.23.0 || ^5.0.0-next.0'
 
-  svelte-sonner@1.2.1:
-    resolution: {integrity: sha512-N00LOWb60fjKXULbpngku+7E9Krb16KpNq4/Eax5Vu7o1Dpbca55QpaLPsB+yp82JIEdFhfJuv5cVXLoe0ZtVA==}
+  svelte-sonner@1.2.2:
+    resolution: {integrity: sha512-sHAvdhf9PNC7LMBmUSWRGPdxZn17HrW5ITsUKmF4SP9C3IZBE7B3rBw8BEztIiSDcTpEdZcKgmnN+BAhH4M8qQ==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -6487,7 +6487,7 @@ snapshots:
     dependencies:
       svelte: 5.57.2
 
-  svelte-sonner@1.2.1(svelte@5.57.2):
+  svelte-sonner@1.2.2(svelte@5.57.2):
     dependencies:
       runed: 0.28.0(svelte@5.57.2)
       svelte: 5.57.2
