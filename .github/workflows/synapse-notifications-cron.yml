@@ -2,7 +2,13 @@ name: Synapse Scheduled Notifications
 
 on:
   schedule:
-    - cron: '*/10 * * * *' # Every 10 minutes
+    # Every 30 minutes, skipping overnight so the Fly machine can stay stopped.
+    # Each call wakes the machine for ~6 minutes; every 10 minutes kept it up ~60% of the time.
+    # GitHub cron is UTC: hours 12-23 and 0-5 UTC = 04:00-21:59 PST / 05:00-22:59 PDT.
+    # Off-the-hour minutes (:07/:37) dodge GitHub's top-of-hour scheduling delays.
+    # Reminders fire on the first run at or after their time, so they arrive up to ~30 min late,
+    # and anything scheduled during the overnight gap won't fire.
+    - cron: "7,37 0-5,12-23 * * *"
   workflow_dispatch: # Allow manual trigger
 
 permissions: {}

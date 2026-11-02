@@ -1,7 +1,7 @@
 /**
  * Email Notifications Cron Job
  *
- * Runs every 10 minutes to send scheduled reminders:
+ * Runs every 30 minutes (skipping overnight; see synapse-notifications-cron.yml) to send scheduled reminders:
  * - Workout reminders (based on workout_reminders table)
  * - Meditation reminders (based on meditation_schedules table)
  * - Visit warnings (for people in yellow/red visit status)
