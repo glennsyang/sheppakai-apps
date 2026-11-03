@@ -1,6 +1,9 @@
+import { eq } from 'drizzle-orm';
+
 import { getDb } from '#lib/server/db/index.js';
 import { windowCleaningJobQueries } from '#lib/server/db/queries/index.js';
 import { windowCleaningJob } from '#lib/server/db/schema/index.js';
+import { withUpdatedAt } from '#lib/server/db/utils.js';
 import type { WindowCleaningJob } from '#lib/types.js';
 import { formatDateForStorage } from '#lib/utils/dates.js';
 
@@ -41,4 +44,12 @@ export async function createWindowCleaningJob(
 		throw new Error(`Failed to re-fetch window cleaning job ${inserted.id} after creation`);
 	}
 	return withRelations;
+}
+
+/** Records when the job's invoice email went out. */
+export async function markWindowCleaningJobInvoiced(id: string, sentAt: Date): Promise<void> {
+	await getDb()
+		.update(windowCleaningJob)
+		.set(withUpdatedAt({ invoiceSentAt: sentAt }, sentAt))
+		.where(eq(windowCleaningJob.id, id));
 }

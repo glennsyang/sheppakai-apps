@@ -12,7 +12,13 @@ export const windowCleaningCustomerSchema = z.object({
 	buzzerNumber: z.string().max(20, 'Buzzer number must be at most 20 characters').optional(),
 	phoneNumber: z.string().max(20, 'Phone number must be at most 20 characters').optional(),
 	email: z.string().email('Invalid email address').max(255).optional().or(z.literal('')),
-	notes: z.string().max(500, 'Notes must be at most 500 characters').optional()
+	notes: z.string().max(500, 'Notes must be at most 500 characters').optional(),
+	recleanIntervalDays: z
+		.number()
+		.int('Interval must be a whole number of days')
+		.min(1, 'Interval must be at least 1 day')
+		.max(730, 'Interval must be at most 730 days')
+		.optional()
 });
 
 export const windowCleaningJobSchema = z.object({
@@ -27,6 +33,12 @@ export const windowCleaningJobSchema = z.object({
 	tip: z.number().min(0, 'Tip cannot be negative').default(0),
 	durationHours: z.number().positive('Duration must be positive').optional(),
 	notes: z.string().max(500, 'Notes must be at most 500 characters').optional()
+});
+
+/** `paid` only changes the email wording ("Amount paid"); it is not stored. */
+export const sendInvoiceSchema = z.object({
+	id: z.string().min(1, 'Job ID is required'),
+	paid: z.boolean().default(false)
 });
 
 export const restoreCustomerSchema = z.object({

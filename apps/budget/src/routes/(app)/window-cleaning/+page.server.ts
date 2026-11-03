@@ -9,7 +9,7 @@ import {
 } from '#lib/formSchemas/index.js';
 import { requireAuth } from '#lib/server/actions/auth-guard.js';
 import { createAction, updateAction } from '#lib/server/actions/crud-helpers.js';
-import { deleteJob, updateJob } from '#lib/server/actions/window-cleaning-jobs.js';
+import { deleteJob, sendInvoice, updateJob } from '#lib/server/actions/window-cleaning-jobs.js';
 import { getDb } from '#lib/server/db/index.js';
 import {
 	windowCleaningCustomerQueries,
@@ -21,8 +21,13 @@ import { toWindowCleaningCustomerRow } from '#lib/server/db/writes/window-cleani
 import { toWindowCleaningJobRow } from '#lib/server/db/writes/window-cleaning-jobs.js';
 import { logger } from '#lib/server/logger.js';
 import type { WindowCleaningJob } from '#lib/types.js';
+import { getCurrentPacificMonthYear, getPacificTodayDate } from '#lib/utils/dates.js';
+import { customerRates, recleanDue, revenueByMonth } from '#lib/utils/windowCleaningStats.js';
 
 import type { Actions, PageServerLoad } from './$types';
+
+// Show customers in the re-clean list once they are this close to their due date
+const RECLEAN_LOOKAHEAD_DAYS = 14;
 
 export const load: PageServerLoad = async () => {
 	const customerForm = await superValidate(zod4(windowCleaningCustomerSchema));
@@ -47,21 +52,32 @@ export const load: PageServerLoad = async () => {
 			return acc;
 		}, new Map<string, WindowCleaningJob[]>());
 
+		const today = getPacificTodayDate();
 		const customersWithStats = customers.map((customer) => {
 			const stats = statsMap.get(customer.id);
 			const jobs = jobsMap.get(customer.id) ?? [];
+			const { hourlyRate, tipPct } = customerRates(jobs);
 			return {
 				...customer,
 				jobs,
 				totalEarned: stats?.totalEarned ?? 0,
-				lastJobDate: stats?.lastJobDate ?? null
+				lastJobDate: stats?.lastJobDate ?? null,
+				hourlyRate,
+				tipPct,
+				reclean: recleanDue(
+					jobs.map((j) => j.jobDate),
+					customer.recleanIntervalDays,
+					today
+				)
 			};
 		});
 
+		const dueCustomers = customersWithStats
+			.filter((c) => c.reclean && c.reclean.overdueDays >= -RECLEAN_LOOKAHEAD_DAYS)
+			.toSorted((a, b) => (b.reclean?.overdueDays ?? 0) - (a.reclean?.overdueDays ?? 0));
+
 		// Page-level summary stats
-		const now = new Date();
-		const currentMonth = now.getMonth() + 1;
-		const currentYear = now.getFullYear();
+		const { month: currentMonth, year: currentYear } = getCurrentPacificMonthYear();
 		const monthPad = String(currentMonth).padStart(2, '0');
 		const monthPrefix = `${currentYear}-${monthPad}`;
 
@@ -74,8 +90,15 @@ export const load: PageServerLoad = async () => {
 		const jobsLastYear = allJobs.filter((j) => j.jobDate.startsWith(String(currentYear - 1)));
 		const earnedLastYear = jobsLastYear.reduce((sum, j) => sum + j.amountCharged + j.tip, 0);
 
+		const ratesThisYear = customerRates(jobsThisYear);
+
 		return {
 			customers: customersWithStats,
+			dueCustomers,
+			hourlyRateThisYear: ratesThisYear.hourlyRate,
+			tipPctThisYear: ratesThisYear.tipPct,
+			revenueByMonth: revenueByMonth(jobsThisYear, currentYear),
+			currentYear,
 			totalCustomers: customers.length,
 			jobsThisMonthCount: jobsThisMonth.length,
 			earnedThisMonth,
@@ -88,6 +111,11 @@ export const load: PageServerLoad = async () => {
 		logger.error('Failed to load window cleaning customers:', error);
 		return {
 			customers: [],
+			dueCustomers: [],
+			hourlyRateThisYear: null,
+			tipPctThisYear: null,
+			revenueByMonth: [],
+			currentYear: getCurrentPacificMonthYear().year,
 			totalCustomers: 0,
 			jobsThisMonthCount: 0,
 			earnedThisMonth: 0,
@@ -152,5 +180,6 @@ export const actions = {
 	}),
 
 	updateJob,
+	sendInvoice,
 	deleteJob
 } satisfies Actions;

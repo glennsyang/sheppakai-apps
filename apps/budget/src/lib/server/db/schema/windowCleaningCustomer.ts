@@ -14,6 +14,8 @@ const windowCleaningCustomer = sqliteTable('window_cleaning_customers', {
 	phoneNumber: text('phone_number'),
 	email: text('email'),
 	notes: text('notes'),
+	// Days between cleans; overrides the median gap between this customer's jobs
+	recleanIntervalDays: integer('reclean_interval_days'),
 	deletedAt: integer('deleted_at', { mode: 'timestamp' }),
 	deletedBy: text('deleted_by').references(() => user.id),
 	userId: text('user_id')

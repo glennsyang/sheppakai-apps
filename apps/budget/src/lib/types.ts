@@ -4,6 +4,7 @@ import type { Component } from 'svelte';
 import type { auth } from '#lib/server/auth.js';
 import type { QueryRow } from '#lib/server/db/queries/factory.js';
 import type { sessionQueries } from '#lib/server/db/queries/index.js';
+import type { RecleanDue } from '#lib/utils/windowCleaningStats.js';
 
 /**
  * Base props for all modal/dialog components in the application.
@@ -142,6 +143,9 @@ export type WindowCleaningCustomerWithStats = WindowCleaningCustomer & {
 	jobs: WindowCleaningJob[];
 	totalEarned: number;
 	lastJobDate: string | null;
+	hourlyRate: number | null;
+	tipPct: number | null;
+	reclean: RecleanDue | null;
 };
 
 export type SidebarData = {

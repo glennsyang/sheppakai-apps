@@ -2,7 +2,7 @@ import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { windowCleaningJobSchema } from '#lib/formSchemas/index.js';
-import { deleteJob, updateJob } from '#lib/server/actions/window-cleaning-jobs.js';
+import { deleteJob, sendInvoice, updateJob } from '#lib/server/actions/window-cleaning-jobs.js';
 import { windowCleaningJobQueries } from '#lib/server/db/queries/index.js';
 import { logger } from '#lib/server/logger.js';
 import { getCurrentPacificMonthYear, parseYearParam } from '#lib/utils/dates.js';
@@ -54,5 +54,6 @@ export const load: PageServerLoad = async ({ url }) => {
 
 export const actions = {
 	updateJob,
+	sendInvoice,
 	deleteJob
 } satisfies Actions;

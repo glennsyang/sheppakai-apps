@@ -49,6 +49,7 @@
 				$form.phoneNumber = initialData.phoneNumber || '';
 				$form.email = initialData.email || '';
 				$form.notes = initialData.notes || '';
+				$form.recleanIntervalDays = initialData.recleanIntervalDays ?? undefined;
 			} else {
 				$form.id = '';
 				$form.name = '';
@@ -59,6 +60,7 @@
 				$form.phoneNumber = '';
 				$form.email = '';
 				$form.notes = '';
+				$form.recleanIntervalDays = undefined;
 			}
 		}
 	});
@@ -189,6 +191,26 @@
 				/>
 				{#if $errors.email}
 					<p class="text-destructive text-sm">{$errors.email}</p>
+				{/if}
+			</div>
+
+			<div class="space-y-2">
+				<label for="customer-interval" class="text-sm font-medium"
+					>Clean every (days) <span class="text-muted-foreground text-xs">(optional)</span></label
+				>
+				<Input
+					id="customer-interval"
+					name="recleanIntervalDays"
+					type="number"
+					inputmode="numeric"
+					step="1"
+					min="1"
+					max="730"
+					bind:value={$form.recleanIntervalDays}
+					placeholder="Worked out from past visits"
+				/>
+				{#if $errors.recleanIntervalDays}
+					<p class="text-destructive text-sm">{$errors.recleanIntervalDays}</p>
 				{/if}
 			</div>
 

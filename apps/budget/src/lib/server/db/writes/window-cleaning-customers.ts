@@ -15,6 +15,7 @@ export type WindowCleaningCustomerInput = {
 	phoneNumber?: string;
 	email?: string;
 	notes?: string;
+	recleanIntervalDays?: number;
 };
 
 /** Input → row mapping shared by the UI form actions and the API write path. */
@@ -27,7 +28,8 @@ export function toWindowCleaningCustomerRow(input: WindowCleaningCustomerInput) 
 		buzzerNumber: input.buzzerNumber || null,
 		phoneNumber: input.phoneNumber || null,
 		email: input.email || null,
-		notes: input.notes || null
+		notes: input.notes || null,
+		recleanIntervalDays: input.recleanIntervalDays ?? null
 	};
 }
 

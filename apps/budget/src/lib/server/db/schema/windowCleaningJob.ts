@@ -18,6 +18,7 @@ const windowCleaningJob = sqliteTable(
 		tip: real('tip').notNull().default(0),
 		durationHours: real('duration_hours'),
 		notes: text('notes'),
+		invoiceSentAt: integer('invoice_sent_at', { mode: 'timestamp' }),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),

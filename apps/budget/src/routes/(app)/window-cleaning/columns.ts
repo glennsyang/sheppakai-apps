@@ -60,6 +60,20 @@ export const columns: ColumnDef<Features, WindowCleaningCustomerWithStats>[] = [
 		meta: { align: 'end' }
 	},
 	{
+		id: 'hourlyRate',
+		header: ({ column }) =>
+			renderComponent(DataTableSortButton, {
+				columnName: '$/hour',
+				onclick: column.getToggleSortingHandler()
+			}),
+		accessorFn: (row) => row.hourlyRate ?? -1,
+		cell: ({ row }) =>
+			row.original.hourlyRate == null
+				? '—'
+				: moneyCell(row.original.hourlyRate, { currency: 'CAD', muted: true }),
+		meta: { align: 'end' }
+	},
+	{
 		id: 'totalEarned',
 		header: ({ column }) =>
 			renderComponent(DataTableSortButton, {

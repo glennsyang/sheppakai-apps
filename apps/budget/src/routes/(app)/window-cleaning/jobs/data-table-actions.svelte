@@ -2,6 +2,8 @@
 	import type { WindowCleaningJob } from '#lib';
 	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
 	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import SendInvoiceDialog from '#lib/components/SendInvoiceDialog.svelte';
+	import SendInvoiceMenuItem from '#lib/components/SendInvoiceMenuItem.svelte';
 	import WindowCleaningJobModal from '#lib/components/WindowCleaningJobModal.svelte';
 	import { jobFormContext } from '#lib/contexts/index.js';
 
@@ -9,11 +11,26 @@
 
 	let openEditModal = $state(false);
 	let openDeleteModal = $state(false);
+	let openSendInvoiceModal = $state(false);
 
 	const jobForm = jobFormContext.get();
 </script>
 
-<RowActionsMenu onEdit={() => (openEditModal = true)} onDelete={() => (openDeleteModal = true)} />
+<RowActionsMenu onEdit={() => (openEditModal = true)} onDelete={() => (openDeleteModal = true)}>
+	<SendInvoiceMenuItem
+		customerEmail={jobData.customer.email}
+		invoiceSentAt={jobData.invoiceSentAt}
+		onSelect={() => (openSendInvoiceModal = true)}
+	/>
+</RowActionsMenu>
+
+<SendInvoiceDialog
+	bind:open={openSendInvoiceModal}
+	jobId={jobData.id}
+	customerEmail={jobData.customer.email}
+	invoiceSentAt={jobData.invoiceSentAt}
+	actionUrl="/window-cleaning/jobs?/sendInvoice"
+/>
 
 <WindowCleaningJobModal
 	bind:open={openEditModal}

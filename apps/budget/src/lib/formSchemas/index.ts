@@ -28,6 +28,7 @@ export {
 export { contributionSchema, savingsGoalSchema, savingsSchema, unArchiveSchema } from './savings';
 export {
 	restoreCustomerSchema,
+	sendInvoiceSchema,
 	windowCleaningCustomerSchema,
 	windowCleaningJobSchema
 } from './windowCleaning';
