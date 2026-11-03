@@ -1,7 +1,7 @@
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import { idSchema, windowCleaningJobSchema } from '#lib/formSchemas/index.js';
+import { sendInvoiceSchema, windowCleaningJobSchema } from '#lib/formSchemas/index.js';
 import { windowCleaningJobQueries } from '#lib/server/db/queries/index.js';
 import { windowCleaningJob } from '#lib/server/db/schema/index.js';
 import {
@@ -29,7 +29,7 @@ export const deleteJob = deleteAction({
 
 /** Emails the customer an invoice for one job and stamps `invoiceSentAt`. */
 export const sendInvoice = requireAuth(async (event, user) => {
-	const form = await superValidate(event.request, zod4(idSchema));
+	const form = await superValidate(event.request, zod4(sendInvoiceSchema));
 	if (!form.valid) {
 		return invalidForm(form, 'Job ID is required');
 	}
@@ -71,7 +71,7 @@ export const sendInvoice = requireAuth(async (event, user) => {
 				.join(', '),
 			jobDate: job.jobDate,
 			amountCharged: job.amountCharged,
-			notes: job.notes
+			paid: form.data.paid
 		});
 	} catch (error) {
 		// The mailer already logged the Brevo failure with the recipient

@@ -73,7 +73,7 @@ vi.mock('./crud-helpers', () => ({
 
 // Mock schema and schema-dependent modules after mocks are wired
 vi.mock('#lib/formSchemas/index.js', () => ({
-	idSchema: { _tag: 'id-schema' },
+	sendInvoiceSchema: { _tag: 'send-invoice-schema' },
 	windowCleaningJobSchema: { _tag: 'mock-schema' }
 }));
 vi.mock('#lib/server/db/schema/index.js', () => ({
@@ -199,7 +199,7 @@ describe('sendInvoice', () => {
 	};
 
 	beforeEach(() => {
-		mockState.superValidateResult = { valid: true, data: { id: 'job-1' } };
+		mockState.superValidateResult = { valid: true, data: { id: 'job-1', paid: false } };
 		mockState.findById.mockResolvedValue(job);
 		mockState.sendInvoiceEmail.mockResolvedValue(undefined);
 		mockState.markInvoiced.mockResolvedValue(undefined);
@@ -214,11 +214,21 @@ describe('sendInvoice', () => {
 			address: 'Unit 4B, 123 Main St, Vancouver',
 			jobDate: '2026-06-20 10:00:00',
 			amountCharged: 150,
-			notes: 'Back windows'
+			paid: false
 		});
 		expect(mockState.markInvoiced).toHaveBeenCalledWith('job-1', expect.any(Date));
 		expect(result.status).toBe(200);
 		expect(result.message).toEqual({ type: 'success', text: 'Invoice sent to jane@example.com' });
+	});
+
+	it('passes the paid flag through to the email', async () => {
+		mockState.superValidateResult = { valid: true, data: { id: 'job-1', paid: true } };
+
+		await run();
+
+		expect(mockState.sendInvoiceEmail).toHaveBeenCalledWith(
+			expect.objectContaining({ paid: true })
+		);
 	});
 
 	it('returns 400 without sending when the form is invalid', async () => {

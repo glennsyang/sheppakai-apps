@@ -10,6 +10,7 @@
 	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
 	import PageShell from '#lib/components/PageShell.svelte';
 	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
+	import SendInvoiceDialog from '#lib/components/SendInvoiceDialog.svelte';
 	import SendInvoiceMenuItem from '#lib/components/SendInvoiceMenuItem.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import DataTable from '#lib/components/ui/data-table/data-table.svelte';
@@ -50,6 +51,8 @@
 	let editingJob = $state<WindowCleaningJob | null>(null);
 	let deletingJobId = $state('');
 	let openDeleteJobModal = $state(false);
+	let invoicingJob = $state<WindowCleaningJob | null>(null);
+	let openSendInvoiceModal = $state(false);
 
 	const currencyFormatter = new Intl.NumberFormat('en-CA', {
 		style: 'currency',
@@ -73,6 +76,11 @@
 	function handleEditJob(job: WindowCleaningJob) {
 		editingJob = job;
 		openEditJobModal = true;
+	}
+
+	function handleSendInvoice(job: WindowCleaningJob) {
+		invoicingJob = job;
+		openSendInvoiceModal = true;
 	}
 
 	function handleDeleteJob(jobId: string) {
@@ -441,10 +449,9 @@
 										onDelete={() => handleDeleteJob(job.id)}
 									>
 										<SendInvoiceMenuItem
-											jobId={job.id}
 											customerEmail={job.customer.email}
 											invoiceSentAt={job.invoiceSentAt}
-											actionUrl="/window-cleaning?/sendInvoice"
+											onSelect={() => handleSendInvoice(job)}
 										/>
 									</RowActionsMenu>
 								</li>
@@ -483,6 +490,17 @@
 	jobForm={data.jobForm}
 	preselectedCustomerId={selectedCustomer?.id}
 />
+
+<!-- Send Invoice Confirm -->
+{#if invoicingJob}
+	<SendInvoiceDialog
+		bind:open={openSendInvoiceModal}
+		jobId={invoicingJob.id}
+		customerEmail={invoicingJob.customer.email}
+		invoiceSentAt={invoicingJob.invoiceSentAt}
+		actionUrl="/window-cleaning?/sendInvoice"
+	/>
+{/if}
 
 <!-- Delete Job Confirm -->
 <ConfirmModal

@@ -20,6 +20,14 @@ const mailer = createMailer({
 	logger
 });
 
+// Invoices go to window-cleaning customers, who know the business, not this app
+const invoiceMailer = createMailer({
+	apiKey: BREVO_API_KEY,
+	from: BREVO_FROM_ADDRESS,
+	appName: 'SOJI Maintenance',
+	logger
+});
+
 const FOOTER = 'Sheppakai Budget - Your Personal Finance Companion';
 
 export const {
@@ -178,12 +186,13 @@ type WindowCleaningInvoicePayload = {
 	address: string;
 	jobDate: string;
 	amountCharged: number;
-	notes?: string | null;
+	/** Customer already paid: the invoice is a receipt for their records. */
+	paid: boolean;
 };
 
 /**
- * One-job invoice for a window-cleaning customer. The tip is left off: it was a gift, not
- * part of the bill. Throws on a Brevo failure so the action can tell the user.
+ * One-job invoice for a window-cleaning customer, sent as SOJI Maintenance. The tip is left
+ * off: it was a gift, not part of the bill. Job notes are internal and never included. Throws on a Brevo failure so the action can tell the user.
  */
 export async function sendWindowCleaningInvoiceEmail(payload: WindowCleaningInvoicePayload) {
 	const date = formatLocalTimestamp(payload.jobDate);
@@ -193,15 +202,16 @@ export async function sendWindowCleaningInvoiceEmail(payload: WindowCleaningInvo
 					<td style="padding: 10px 8px; border-bottom: 1px solid #f3f4f6; text-align: right;${bold ? ' font-weight: 600;' : ''}">${value}</td>
 				</tr>`;
 
-	await mailer.send({
+	await invoiceMailer.send({
 		to: payload.to,
 		name: payload.name,
 		subject: `Invoice: window cleaning on ${date}`,
 		label: 'window cleaning invoice email',
 		html: renderEmailLayout({
-			title: 'Window cleaning invoice',
-			heading: 'Window cleaning invoice',
-			subheading: date,
+			title: 'SOJI Maintenance - Window cleaning invoice',
+			heading: 'SOJI Maintenance',
+			subheading: 'Window cleaning invoice',
+			accent: '#10b981 0%, #047857 100%',
 			footer: 'Thank you for your business!',
 			body: `
 		<p style="font-size: 16px; margin: 0 0 18px;">Hi ${escapeHtml(payload.name)},</p>
@@ -210,10 +220,14 @@ export async function sendWindowCleaningInvoiceEmail(payload: WindowCleaningInvo
 			<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
 				${row('Date', escapeHtml(date))}
 				${row('Address', escapeHtml(payload.address))}
-				${payload.notes ? row('Notes', escapeHtml(payload.notes)) : ''}
-				${row('Amount due', CAD.format(payload.amountCharged), true)}
+				${row(payload.paid ? 'Amount paid' : 'Amount due', CAD.format(payload.amountCharged), true)}
 			</table>
-		</div>`
+		</div>${
+			payload.paid
+				? `
+		<p style="font-size: 15px; margin: 18px 0 0; color: #047857; font-weight: 600;">Paid – thank you!</p>`
+				: ''
+		}`
 		})
 	});
 }

@@ -35,6 +35,12 @@ export const windowCleaningJobSchema = z.object({
 	notes: z.string().max(500, 'Notes must be at most 500 characters').optional()
 });
 
+/** `paid` only changes the email wording ("Amount paid"); it is not stored. */
+export const sendInvoiceSchema = z.object({
+	id: z.string().min(1, 'Job ID is required'),
+	paid: z.boolean().default(false)
+});
+
 export const restoreCustomerSchema = z.object({
 	customerId: z.string().min(1, 'Customer ID is required')
 });
