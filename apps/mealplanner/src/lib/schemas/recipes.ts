@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { parseIsoDate } from '#lib/dates.js';
-import type { Recipe } from '#lib/types.js';
+import type { MealSuggestion, Recipe } from '#lib/types.js';
 
 import { ingredientsJsonSchema, instructionsJsonSchema } from './mealPlan';
 
@@ -142,5 +142,19 @@ export function recipeToForm(recipe: Recipe): z.input<typeof recipeFormSchema> {
 		servings: recipe.servings,
 		source: recipe.source === 'imported' ? 'imported' : 'custom',
 		sourceUrl: recipe.sourceUrl ?? ''
+	};
+}
+
+/** A meal shown in the recipe drawer as recipe-form data, for editing its saved recipe. */
+export function suggestionToForm(suggestion: MealSuggestion): z.output<typeof recipeFormSchema> {
+	return {
+		name: suggestion.name,
+		description: suggestion.description,
+		ingredientsJson: JSON.stringify(suggestion.ingredients),
+		instructionsJson: JSON.stringify(suggestion.steps),
+		prepTimeMinutes: suggestion.prepTimeMinutes,
+		servings: suggestion.servings,
+		source: 'custom',
+		sourceUrl: ''
 	};
 }

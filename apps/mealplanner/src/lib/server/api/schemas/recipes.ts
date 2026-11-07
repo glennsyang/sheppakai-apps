@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { ingredientListSchema, instructionListSchema } from '#lib/schemas/mealPlan.js';
 
-// Bounds match the planner's edit-recipe form (updateRecipeSchema), but take real arrays
+// Bounds match the recipe form (recipeFormSchema in #lib/schemas/recipes.ts), but take real arrays
 // instead of the form's JSON strings. Defaults match a written-in custom meal.
 export const apiCreateRecipeSchema = z.object({
 	name: z.string().trim().min(1, 'Name is required').max(200),
