@@ -38,6 +38,7 @@
 	import {
 		getCurrentPacificMonthYear,
 		getMonthProgress,
+		getYearOptions,
 		getYearProgress,
 		padMonth,
 		parseMonthParam,
@@ -527,10 +528,12 @@
 		return stats;
 	});
 
-	const yearOptions = [
-		{ label: '2025', value: '2025' },
-		{ label: '2026', value: '2026' }
-	];
+	const yearOptions = $derived(
+		getYearOptions(Number(selectedYear)).map((year) => ({
+			label: String(year),
+			value: String(year)
+		}))
+	);
 
 	let categoryChartDescription = $derived.by(() => {
 		if (yearlyView !== 'current') return selectedYear;

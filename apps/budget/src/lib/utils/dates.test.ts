@@ -18,6 +18,7 @@ import {
 	getPreviousMonthsRange,
 	getTodayDate,
 	getYearDateRange,
+	getYearOptions,
 	getYearProgress,
 	padMonth,
 	parseMonthParam,
@@ -781,5 +782,29 @@ describe('formatDayHeading', () => {
 
 	it('adds the year for other years', () => {
 		expect(formatDayHeading('2025-12-31 08:00:00', now)).toBe('Wed, Dec 31, 2025');
+	});
+});
+
+describe('getYearOptions', () => {
+	it('lists every year from the first data year to the current year, newest first', () => {
+		expect(getYearOptions(undefined, 2025, new Date('2026-11-07T12:00:00Z'))).toEqual([2026, 2025]);
+	});
+
+	it('picks up the new year in January without a code change', () => {
+		expect(getYearOptions(undefined, 2025, new Date('2028-01-02T12:00:00Z'))).toEqual([
+			2028, 2027, 2026, 2025
+		]);
+	});
+
+	it('uses the Pacific year, not UTC, on New Year’s Eve', () => {
+		// 2027-01-01 03:00 UTC is still Dec 31, 2026 in Pacific time.
+		expect(getYearOptions(undefined, 2025, new Date('2027-01-01T03:00:00Z'))).toEqual([2026, 2025]);
+	});
+
+	it('includes a selected year that falls outside the range', () => {
+		const ref = new Date('2026-06-01T12:00:00Z');
+		expect(getYearOptions(2024, 2025, ref)).toEqual([2026, 2025, 2024]);
+		expect(getYearOptions(2030, 2025, ref)).toEqual([2030, 2026, 2025]);
+		expect(getYearOptions(2025, 2025, ref)).toEqual([2026, 2025]);
 	});
 });

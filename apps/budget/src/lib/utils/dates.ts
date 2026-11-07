@@ -259,6 +259,28 @@ export function parseYearParam(value: string | null, fallback: number): number {
 	return year >= 1900 ? year : fallback;
 }
 
+/** First year the app holds data for; the year pickers start here. */
+const FIRST_DATA_YEAR = 2025;
+
+/**
+ * Years for a year picker, newest first: `firstYear` through the current Pacific year, plus
+ * `selectedYear` when it falls outside that range (e.g. a hand-typed `?year=`), so the picker
+ * always contains the year it is showing. Grows on its own each January.
+ *
+ * Example: firstYear=2025, today in 2027 → [2027, 2026, 2025]
+ */
+export function getYearOptions(
+	selectedYear?: number,
+	firstYear: number = FIRST_DATA_YEAR,
+	referenceDate: Date = new Date()
+): number[] {
+	const { year: currentYear } = getCurrentPacificMonthYear(referenceDate);
+	const years = new Set<number>();
+	for (let year = currentYear; year >= firstYear; year--) years.add(year);
+	if (selectedYear !== undefined) years.add(selectedYear);
+	return [...years].sort((a, b) => b - a);
+}
+
 /**
  * Extract month and year from URL search params with fallback to current date
  * Invalid or out-of-range values fall back to the current Pacific month/year.
