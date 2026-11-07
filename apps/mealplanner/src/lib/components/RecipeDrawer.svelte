@@ -1,24 +1,19 @@
 <script lang="ts">
-	import { enhance, type SubmitFunction } from '$app/forms';
 	import { SvelteSet } from 'svelte/reactivity';
 
-	import { actionFailureText } from '#lib/action-result.js';
 	import Icon from '#lib/components/Icon.svelte';
-	import { Alert } from '#lib/components/ui/alert/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import { Input } from '#lib/components/ui/input/index.js';
-	import { Label } from '#lib/components/ui/label/index.js';
-	import { Textarea } from '#lib/components/ui/textarea/index.js';
-	import type { Ingredient, MealSuggestion } from '#lib/types.js';
+	import type { MealSuggestion } from '#lib/types.js';
 
 	import Modal from './Modal.svelte';
+	import RecipeDrawerEditor from './RecipeDrawerEditor.svelte';
 
 	interface Props {
 		suggestion: MealSuggestion | null;
 		onClose: () => void;
 		/** Omitted when the recipe is already on the board. */
 		onSaveToPlanner?: (suggestion: MealSuggestion) => void;
-		/** The saved recipe behind `suggestion`; when set, the drawer can edit it via the planner's `updateRecipe` action. */
+		/** The saved recipe behind `suggestion`; when set, the drawer can edit it via `/recipes/[id]?/update`. */
 		recipeId?: string;
 		/** Called after an edit is saved. */
 		onSaved?: () => Promise<void> | void;
@@ -31,55 +26,15 @@
 		void suggestion;
 		return false;
 	});
-	let saving = $state(false);
-	let saveError = $state<string | null>(null);
-	let draft = $state({ name: '', description: '', prepTimeMinutes: 0, servings: 1 });
-	let draftIngredients = $state<Ingredient[]>([]);
-	let draftSteps = $state<string[]>([]);
-
-	const blankIngredient = (): Ingredient => ({ quantity: '', unit: '', name: '' });
 
 	function startEditing() {
-		if (!suggestion) return;
-		draft = {
-			name: suggestion.name,
-			description: suggestion.description,
-			prepTimeMinutes: suggestion.prepTimeMinutes,
-			servings: suggestion.servings
-		};
-		draftIngredients = suggestion.ingredients.length
-			? suggestion.ingredients.map((ing) => ({ ...ing }))
-			: [blankIngredient()];
-		draftSteps = suggestion.steps.length ? [...suggestion.steps] : [''];
-		saveError = null;
 		editing = true;
 	}
 
-	const filledIngredients = $derived(
-		draftIngredients
-			.map((ing) => ({
-				quantity: ing.quantity.trim(),
-				unit: ing.unit.trim(),
-				name: ing.name.trim()
-			}))
-			.filter((ing) => ing.name)
-	);
-	const filledSteps = $derived(draftSteps.map((step) => step.trim()).filter(Boolean));
-
-	const saveEnhance: SubmitFunction = ({ cancel }) => {
-		if (saving) return cancel();
-		saving = true;
-		saveError = null;
-		return async ({ result }) => {
-			saving = false;
-			if (result.type === 'success') {
-				editing = false;
-				await onSaved?.();
-			} else {
-				saveError = actionFailureText(result, 'Could not save that recipe. Please try again.');
-			}
-		};
-	};
+	async function handleSaved() {
+		editing = false;
+		await onSaved?.();
+	}
 
 	// Ingredients ticked off while cooking; cleared whenever a different recipe opens.
 	const gathered = $derived.by(() => {
@@ -126,167 +81,17 @@
 			</div>
 		</div>
 
-		{#if editing}
-			<form
-				method="POST"
-				action="/planner?/updateRecipe"
-				use:enhance={saveEnhance}
-				class="flex min-h-0 flex-1 flex-col"
-			>
-				<input type="hidden" name="recipeId" value={recipeId} />
-
-				<input type="hidden" name="ingredientsJson" value={JSON.stringify(filledIngredients)} />
-
-				<input type="hidden" name="instructionsJson" value={JSON.stringify(filledSteps)} />
-
-				<div class="flex-1 space-y-8 overflow-y-auto px-6 py-7 sm:px-8">
-					{#if saveError}
-						<Alert variant="destructive" role="alert">{saveError}</Alert>
-					{/if}
-
-					<div class="space-y-4">
-						<Label class="space-y-1.5">
-							<span class="font-semibold">Name</span>
-							<Input type="text" name="name" bind:value={draft.name} maxlength={200} required />
-						</Label>
-
-						<Label class="space-y-1.5">
-							<span class="font-semibold"
-								>Notes <span class="ink-faint font-normal">(optional)</span></span
-							>
-							<Textarea
-								name="description"
-								bind:value={draft.description}
-								rows={3}
-								maxlength={2000}
-							/>
-						</Label>
-
-						<div class="grid grid-cols-2 gap-4">
-							<Label class="space-y-1.5">
-								<span class="font-semibold">Prep (min)</span>
-								<Input
-									type="number"
-									name="prepTimeMinutes"
-									bind:value={draft.prepTimeMinutes}
-									class="tabular"
-									min={0}
-									max={1440}
-									required
-								/>
-							</Label>
-							<Label class="space-y-1.5">
-								<span class="font-semibold">Serves</span>
-								<Input
-									type="number"
-									name="servings"
-									bind:value={draft.servings}
-									class="tabular"
-									min={1}
-									max={100}
-									required
-								/>
-							</Label>
-						</div>
-					</div>
-
-					<fieldset class="space-y-2">
-						<legend class="marker ink-red mb-3 text-xl">Ingredients</legend>
-						{#each draftIngredients as ing, i (i)}
-							<div class="ing-row">
-								<Input
-									type="text"
-									bind:value={ing.quantity}
-									placeholder="2"
-									maxlength={50}
-									aria-label="Ingredient {i + 1} quantity"
-								/>
-								<Input
-									type="text"
-									bind:value={ing.unit}
-									placeholder="cups"
-									maxlength={50}
-									aria-label="Ingredient {i + 1} unit"
-								/>
-								<Input
-									type="text"
-									bind:value={ing.name}
-									placeholder="rice"
-									maxlength={200}
-									aria-label="Ingredient {i + 1} name"
-								/>
-								<button
-									type="button"
-									class="row-remove"
-									onclick={() => draftIngredients.splice(i, 1)}
-									aria-label="Remove ingredient {i + 1}"
-								>
-									<Icon name="x" size={16} />
-								</button>
-							</div>
-						{/each}
-						{#if draftIngredients.length < 50}
-							<button
-								type="button"
-								class="act-text ink-blue inline-flex items-center gap-1.5 text-sm"
-								onclick={() => draftIngredients.push(blankIngredient())}
-							>
-								<Icon name="plus" size={16} />Add an ingredient
-							</button>
-						{/if}
-					</fieldset>
-
-					<fieldset class="space-y-3">
-						<legend class="marker ink-red mb-3 text-xl">Method</legend>
-						{#each draftSteps as _, i (i)}
-							<div class="step-row">
-								<span class="marker ink-blue tabular pt-2 text-xl leading-none" aria-hidden="true"
-									>{i + 1}</span
-								>
-								<Textarea
-									bind:value={draftSteps[i]}
-									rows={2}
-									maxlength={2000}
-									aria-label="Step {i + 1}"
-								/>
-								<button
-									type="button"
-									class="row-remove"
-									onclick={() => draftSteps.splice(i, 1)}
-									aria-label="Remove step {i + 1}"
-								>
-									<Icon name="x" size={16} />
-								</button>
-							</div>
-						{/each}
-						{#if draftSteps.length < 50}
-							<button
-								type="button"
-								class="act-text ink-blue inline-flex items-center gap-1.5 text-sm"
-								onclick={() => draftSteps.push('')}
-							>
-								<Icon name="plus" size={16} />Add a step
-							</button>
-						{/if}
-					</fieldset>
-				</div>
-
-				<div class="foot flex gap-2 px-6 py-4 sm:px-8">
-					<Button type="submit" disabled={saving} class="flex-1 py-3"
-						>{saving ? 'Saving…' : 'Save recipe'}</Button
-					>
-
-					<Button
-						type="button"
-						disabled={saving}
-						onclick={() => (editing = false)}
-						variant="outline"
-						class="py-3"
-					>
-						Cancel
-					</Button>
-				</div>
-			</form>
+		{#if editing && recipeId}
+			<div class="flex-1 overflow-y-auto px-6 py-7 sm:px-8">
+				{#key recipeId}
+					<RecipeDrawerEditor
+						{recipeId}
+						{suggestion}
+						onSaved={handleSaved}
+						onCancel={() => (editing = false)}
+					/>
+				{/key}
+			</div>
 		{:else}
 			<div class="flex-1 space-y-10 overflow-y-auto px-6 py-7 sm:px-8">
 				{#if suggestion.description}
@@ -387,32 +192,6 @@
 	}
 	.close:hover {
 		color: var(--ink);
-		background: color-mix(in oklch, var(--ink) 7%, transparent);
-	}
-
-	.ing-row {
-		display: grid;
-		grid-template-columns: 4rem 5rem minmax(0, 1fr) 2.5rem;
-		gap: 0.5rem;
-		align-items: center;
-	}
-	.step-row {
-		display: grid;
-		grid-template-columns: 1.5rem minmax(0, 1fr) 2.5rem;
-		gap: 0.5rem;
-		align-items: start;
-	}
-	.row-remove {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2.5rem;
-		height: 2.5rem;
-		border-radius: 8px;
-		color: var(--ink-faint);
-	}
-	.row-remove:hover {
-		color: var(--marker-red);
 		background: color-mix(in oklch, var(--ink) 7%, transparent);
 	}
 

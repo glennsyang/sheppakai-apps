@@ -9,7 +9,6 @@ import {
 	addCustomMealSchema,
 	ingredientsJsonSchema,
 	instructionsJsonSchema,
-	updateRecipeSchema,
 	weekStartDateSchema
 } from '#lib/schemas/mealPlan.js';
 import { requireAuth } from '#lib/server/actions/auth-guard.js';
@@ -22,7 +21,7 @@ import {
 	removeMealPlanEntry,
 	getMondayOfCurrentWeek
 } from '#lib/server/services/mealPlan.js';
-import { saveRecipe, updateRecipe } from '#lib/server/services/recipes.js';
+import { saveRecipe } from '#lib/server/services/recipes.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -121,30 +120,6 @@ export const actions: Actions = {
 				loggerContext: 'Failed to add custom meal',
 				fallbackMessage: 'Could not add your meal. Please try again.',
 				successMessage: `Added ${form.data.name} to the planner.`,
-				logFields: { userId: user.id }
-			}
-		);
-	}),
-
-	updateRecipe: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(updateRecipeSchema));
-		if (!form.valid) return invalidForm(form);
-
-		return handleDomainAction(
-			form,
-			() =>
-				updateRecipe(form.data.recipeId, {
-					name: form.data.name,
-					description: form.data.description,
-					ingredientsJson: ingredientsJsonSchema.parse(form.data.ingredientsJson),
-					instructionsJson: instructionsJsonSchema.parse(form.data.instructionsJson),
-					prepTimeMinutes: form.data.prepTimeMinutes,
-					servings: form.data.servings
-				}),
-			{
-				loggerContext: 'Failed to update recipe',
-				fallbackMessage: 'Could not save that recipe. Please try again.',
-				successMessage: 'Recipe saved.',
 				logFields: { userId: user.id }
 			}
 		);

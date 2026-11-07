@@ -6,7 +6,8 @@ import {
 	logCookSchema,
 	rateRecipeSchema,
 	recipeFormSchema,
-	recipeImportResultSchema
+	recipeImportResultSchema,
+	suggestionToForm
 } from '../../lib/schemas/recipes';
 
 describe('recipeImportResultSchema', () => {
@@ -89,6 +90,40 @@ describe('recipeFormSchema', () => {
 		expect(
 			recipeFormSchema.safeParse({ name: 'X', sourceUrl: 'javascript:alert(1)' }).success
 		).toBe(false);
+	});
+
+	it('rejects more than 50 ingredients and out-of-range numbers', () => {
+		const many = Array.from({ length: 51 }, () => ({ name: 'x', quantity: '1', unit: '' }));
+		expect(
+			recipeFormSchema.safeParse({ name: 'X', ingredientsJson: JSON.stringify(many) }).success
+		).toBe(false);
+		expect(recipeFormSchema.safeParse({ name: 'X', servings: '0' }).success).toBe(false);
+		expect(recipeFormSchema.safeParse({ name: 'X', prepTimeMinutes: '1441' }).success).toBe(false);
+	});
+});
+
+describe('suggestionToForm', () => {
+	it('seeds the drawer edit form from the meal it shows', () => {
+		const form = recipeFormSchema.parse(
+			suggestionToForm({
+				name: 'Dal',
+				description: 'Weeknight',
+				ingredients: [{ quantity: '1', unit: 'cup', name: 'lentils' }],
+				steps: ['Simmer.'],
+				prepTimeMinutes: 30,
+				servings: 4
+			})
+		);
+		expect(form).toEqual({
+			name: 'Dal',
+			description: 'Weeknight',
+			ingredientsJson: '[{"quantity":"1","unit":"cup","name":"lentils"}]',
+			instructionsJson: '["Simmer."]',
+			prepTimeMinutes: 30,
+			servings: 4,
+			source: 'custom',
+			sourceUrl: ''
+		});
 	});
 });
 

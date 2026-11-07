@@ -148,6 +148,45 @@ describe('create', () => {
 	});
 });
 
+describe('update', () => {
+	it('saves the edit from the drawer or the recipe page', async () => {
+		const result = await detailActions.update(
+			ctx(
+				{
+					name: ' Dal ',
+					description: 'Weeknight',
+					ingredientsJson: '[{"quantity":"1","unit":"cup","name":"lentils"}]',
+					instructionsJson: '["Simmer."]',
+					prepTimeMinutes: '30',
+					servings: '4'
+				},
+				{ id: 'recipe_9' }
+			)
+		);
+
+		expect(messageOf(result)).toEqual({ type: 'success', text: 'Recipe saved.' });
+		expect(recipesMock.updateRecipe).toHaveBeenCalledWith('recipe_9', {
+			name: 'Dal',
+			description: 'Weeknight',
+			ingredientsJson: [{ quantity: '1', unit: 'cup', name: 'lentils' }],
+			instructionsJson: ['Simmer.'],
+			prepTimeMinutes: 30,
+			servings: 4
+		});
+	});
+
+	it.each([
+		['a blank name', { name: '  ' }],
+		['zero servings', { name: 'Dal', servings: '0' }],
+		['a prep time over a day', { name: 'Dal', prepTimeMinutes: '1441' }],
+		['malformed ingredients', { name: 'Dal', ingredientsJson: '[{' }]
+	])('rejects %s without saving', async (_label, fields) => {
+		const result = await detailActions.update(ctx(fields));
+		expect(result).toMatchObject({ status: 400 });
+		expect(recipesMock.updateRecipe).not.toHaveBeenCalled();
+	});
+});
+
 describe('importUrl', () => {
 	const imported = {
 		name: 'Soup',
