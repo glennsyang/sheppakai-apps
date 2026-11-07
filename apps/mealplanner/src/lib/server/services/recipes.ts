@@ -1,12 +1,12 @@
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, max, or, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import { storedIngredientListSchema, storedInstructionListSchema } from '#lib/schemas/mealPlan.js';
 import { logger } from '#lib/server/logger.js';
-import type { Recipe, Ingredient, RecipeSource } from '#lib/types.js';
+import type { Recipe, Ingredient, RecipeListItem, RecipeSource } from '#lib/types.js';
 
 import { getDb } from '../db';
-import { recipes } from '../db/schema';
+import { recipeCooks, recipes } from '../db/schema';
 import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '../db/utils';
 
 // Rows saved before input validation may hold any JSON, so a malformed one degrades to an empty
@@ -47,6 +47,8 @@ export function rowToRecipe(row: typeof recipes.$inferSelect): Recipe {
 		prepTimeMinutes: row.prepTimeMinutes,
 		servings: row.servings,
 		source: row.source,
+		rating: row.rating,
+		sourceUrl: row.sourceUrl,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt
 	};
@@ -62,6 +64,7 @@ export async function saveRecipe(
 		prepTimeMinutes: number;
 		servings: number;
 		source?: RecipeSource;
+		sourceUrl?: string | null;
 	}
 ): Promise<Recipe> {
 	logger.debug('saveRecipe', { userId, name: data.name });
@@ -77,6 +80,7 @@ export async function saveRecipe(
 		prepTimeMinutes: data.prepTimeMinutes,
 		servings: data.servings,
 		source: data.source ?? 'ai',
+		sourceUrl: data.sourceUrl ?? null,
 		...withTimestampsForCreate()
 	});
 	const [row] = db.select().from(recipes).where(eq(recipes.id, id)).all();
@@ -127,12 +131,67 @@ export async function listRecipes(
 	return rows.map(rowToRecipe);
 }
 
+/** Escape LIKE wildcards so a search for `50%` matches the text, not everything. */
+function likeContains(term: string): string {
+	return `%${term.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+}
+
+/**
+ * The recipe library: every recipe, newest first, with when it was last cooked. `q` matches
+ * the name or any ingredient (case-insensitive for ASCII, SQLite's LIKE).
+ */
+export async function searchRecipes(
+	options: { q?: string; limit: number } = { limit: 200 }
+): Promise<RecipeListItem[]> {
+	logger.debug('searchRecipes', options);
+	const db = getDb();
+	const lastCooked = db
+		.select({ recipeId: recipeCooks.recipeId, lastCookedOn: max(recipeCooks.cookedOn).as('last') })
+		.from(recipeCooks)
+		.groupBy(recipeCooks.recipeId)
+		.as('last_cooked');
+
+	const q = options.q?.trim();
+	const pattern = q ? likeContains(q) : null;
+	const rows = db
+		.select({ recipe: recipes, lastCookedOn: lastCooked.lastCookedOn })
+		.from(recipes)
+		.leftJoin(lastCooked, eq(lastCooked.recipeId, recipes.id))
+		.where(
+			pattern
+				? or(
+						sql`${recipes.name} LIKE ${pattern} ESCAPE '\\'`,
+						sql`${recipes.ingredientsJson} LIKE ${pattern} ESCAPE '\\'`
+					)
+				: undefined
+		)
+		.orderBy(desc(recipes.updatedAt))
+		.limit(options.limit)
+		.all();
+	return rows.map((row) => ({
+		...rowToRecipe(row.recipe),
+		lastCookedOn: row.lastCookedOn ?? null
+	}));
+}
+
+/** Set or clear (null) a recipe's 1–5 rating. Returns whether the recipe exists. */
+export async function setRecipeRating(id: string, rating: number | null): Promise<boolean> {
+	logger.debug('setRecipeRating', { id, rating });
+	const updated = getDb()
+		.update(recipes)
+		.set({ rating, ...withTimestampsForUpdate() })
+		.where(eq(recipes.id, id))
+		.returning({ id: recipes.id })
+		.all();
+	return updated.length > 0;
+}
+
 export async function getRecipe(id: string): Promise<Recipe | null> {
 	const row = getDb().select().from(recipes).where(eq(recipes.id, id)).get();
 	return row ? rowToRecipe(row) : null;
 }
 
-/** Returns whether a row was deleted. Its meal plan entries go with it (FK cascade). */
+/** Returns whether a row was deleted. Its meal plan entries and cook log go with it (FK cascade). */
 export async function deleteRecipe(id: string): Promise<boolean> {
 	logger.debug('deleteRecipe', { id });
 	const deleted = getDb()
