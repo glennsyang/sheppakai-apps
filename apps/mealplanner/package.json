@@ -35,7 +35,7 @@
 		"@anthropic-ai/sdk": "^1.4.0",
 		"@better-auth/api-key": "catalog:",
 		"@getbrevo/brevo": "catalog:",
-		"@google/genai": "^2.32.0",
+		"@google/genai": "^3.0.0",
 		"@sentry/sveltekit": "catalog:",
 		"@sheppakai/logger": "workspace:*",
 		"@sheppakai/shared": "workspace:*",
