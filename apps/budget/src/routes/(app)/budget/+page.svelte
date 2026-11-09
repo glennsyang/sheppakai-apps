@@ -27,8 +27,8 @@
 		Record<string, 'lastMonth' | 'lastMonthBudget' | 'average' | 'custom' | null>
 	>({});
 
-	// Calculate total recurring expenses
-	let totalRecurring = $derived((data.recurring || []).reduce((sum, item) => sum + item.amount, 0));
+	// Recurring total for the selected month (Yearly bills spread as amount / 12)
+	let totalRecurring = $derived(data.recurringTotal || 0);
 
 	const monthYear = useMonthYearParams('/budget');
 	let selectedMonth = $derived(monthYear.month);

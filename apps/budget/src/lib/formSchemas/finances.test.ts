@@ -51,6 +51,7 @@ const recurring: Recurring = {
 	paid: false,
 	dueDay: 15,
 	dueMonth: 3,
+	endedAt: null,
 	userId: 'u1',
 	...audit,
 	user

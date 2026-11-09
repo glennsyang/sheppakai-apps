@@ -10,7 +10,7 @@ export const GET: RequestHandler = async ({ request }) => {
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
 	try {
-		const recurrings = await recurringQueries.findAll();
+		const recurrings = await recurringQueries.findActive();
 		return apiSuccess(recurrings);
 	} catch (error) {
 		logger.error('API: failed to list recurring expenses', error);
