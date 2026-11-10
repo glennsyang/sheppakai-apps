@@ -9,6 +9,7 @@ import {
 } from '#lib/server/db/queries/index.js';
 import { budget } from '#lib/server/db/schema/index.js';
 import { logger } from '#lib/server/logger.js';
+import { recurringTotalForMonth, toMonthKey } from '#lib/server/recurring-history.js';
 import { getMonthYearFromUrl, padMonth } from '#lib/utils/dates.js';
 
 import type { Actions, PageServerLoad } from './$types';
@@ -63,20 +64,22 @@ export const load: PageServerLoad = async ({ url }) => {
 	const endDateStr = `${latestMonth.year}-${latestMonth.month}-${padMonth(endDate.getDate().toString())}`;
 
 	try {
-		// Chart-window history plus the selected month's budget and the recurring list.
-		const [historicalBudgets, historicalTransactions, monthBudget, recurring] = await Promise.all([
-			budgetQueries.findHistory(earliestMonth, latestMonth),
-			transactionQueries.sumByCategoryMonth(startDate, endDateStr),
-			budgetQueries.findByMonthYear(month, year),
-			recurringQueries.findAll()
-		]);
+		// Chart-window history plus the selected month's budget and recurring versions.
+		const monthKey = toMonthKey(month, year);
+		const [historicalBudgets, historicalTransactions, monthBudget, recurringHistory] =
+			await Promise.all([
+				budgetQueries.findHistory(earliestMonth, latestMonth),
+				transactionQueries.sumByCategoryMonth(startDate, endDateStr),
+				budgetQueries.findByMonthYear(month, year),
+				recurringQueries.findHistory(monthKey, monthKey)
+			]);
 
 		return {
 			budget: monthBudget,
 			historicalBudgets,
 			historicalTransactions,
 			last12Months,
-			recurring
+			recurringTotal: recurringTotalForMonth(recurringHistory, monthKey)
 		};
 	} catch (error) {
 		logger.error('Failed to load budget:', error);
@@ -85,7 +88,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			historicalBudgets: [],
 			historicalTransactions: [],
 			last12Months,
-			recurring: [],
+			recurringTotal: 0,
 			loadError: 'Failed to load budget. Please try refreshing the page.'
 		};
 	}

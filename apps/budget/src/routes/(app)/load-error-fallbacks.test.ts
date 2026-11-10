@@ -79,7 +79,7 @@ const cases: LoadCase[] = [
 		name: 'budget',
 		load: budgetLoad,
 		path: '/budget?month=03&year=2026',
-		fallback: { budget: [], historicalBudgets: [], historicalTransactions: [], recurring: [] },
+		fallback: { budget: [], historicalBudgets: [], historicalTransactions: [], recurringTotal: 0 },
 		forms: []
 	},
 	{

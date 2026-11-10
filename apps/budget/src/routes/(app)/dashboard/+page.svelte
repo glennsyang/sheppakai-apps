@@ -270,14 +270,8 @@
 			.slice(0, 6);
 	});
 
-	// Recurring monthly total
-	let recurringMonthlyTotal = $derived(
-		(data.recurringExpenses || []).reduce((sum, item) => {
-			if (item.cadence === 'Monthly') return sum + item.amount;
-			if (item.cadence === 'Yearly') return sum + item.amount / 12;
-			return sum;
-		}, 0)
-	);
+	// Recurring total for the selected month, from the versions in effect that month.
+	let recurringMonthlyTotal = $derived(data.recurringMonthlyTotal || 0);
 
 	// Shared cash-flow projection (monthly only) — feeds the header subtitle, hero band, and waterfall.
 	let projection = $derived(

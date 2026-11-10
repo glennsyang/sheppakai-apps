@@ -141,6 +141,27 @@
 			"when": 1793341177515,
 			"tag": "0019_window_cleaning_business_tools",
 			"breakpoints": true
+		},
+		{
+			"idx": 20,
+			"version": "6",
+			"when": 1794227462973,
+			"tag": "0020_recurring_history",
+			"breakpoints": true
+		},
+		{
+			"idx": 21,
+			"version": "6",
+			"when": 1794227469025,
+			"tag": "0021_backfill_recurring_history",
+			"breakpoints": true
+		},
+		{
+			"idx": 22,
+			"version": "6",
+			"when": 1794227482944,
+			"tag": "0022_drop_recurring_paid",
+			"breakpoints": true
 		}
 	]
 }

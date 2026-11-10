@@ -11,6 +11,8 @@ export {
 export { default as income } from './income';
 export { default as rateLimit } from './rateLimit';
 export { default as recurring, recurringRelations } from './recurring';
+export { default as recurringPayment, recurringPaymentRelations } from './recurringPayment';
+export { default as recurringVersion, recurringVersionRelations } from './recurringVersion';
 export { default as savings, savingsRelations } from './savings';
 export { default as savingsGoal, savingsGoalRelations } from './savingsGoal';
 export { default as session, sessionRelations } from './session';

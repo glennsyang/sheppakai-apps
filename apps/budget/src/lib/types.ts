@@ -45,7 +45,11 @@ export type Transaction = QueryRow<'transaction', { category: true; user: true }
 
 export type Budget = QueryRow<'budget', { category: true; user: true }>;
 
-export type Recurring = QueryRow<'recurring', { user: true }>;
+/**
+ * A recurring bill as the UI and API see it: `amount`/`cadence` are the values in effect for
+ * the period being viewed, and `paid` is whether that period's payment is recorded.
+ */
+export type Recurring = QueryRow<'recurring', { user: true }> & { paid: boolean };
 
 export type Income = QueryRow<'income'>;
 
