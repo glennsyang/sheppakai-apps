@@ -25,6 +25,11 @@ export function previousMonthKey(monthKey: string): string {
 	return month === 1 ? toMonthKey(12, year - 1) : toMonthKey(month - 1, year);
 }
 
+export function nextMonthKey(monthKey: string): string {
+	const [year, month] = monthKey.split('-').map(Number);
+	return month === 12 ? toMonthKey(1, year + 1) : toMonthKey(month + 1, year);
+}
+
 /** The payment period a bill of `cadence` falls in during `monthKey`. */
 export function periodKey(cadence: Cadence, monthKey: string): string {
 	return cadence === 'Yearly' ? monthKey.slice(0, 4) : monthKey;

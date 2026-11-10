@@ -70,6 +70,13 @@ export const recurringSchema = z
 		}
 	});
 
+/** Change one past month's amount for a recurring bill; that month only. */
+export const pastAmountSchema = z.object({
+	id: z.string().min(1, 'Recurring ID is required'),
+	month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM'),
+	amount: z.number().positive('Amount must be positive')
+});
+
 export const togglePaidSchema = z.object({
 	id: z.string().min(1, 'Recurring ID is required'),
 	paid: z.boolean()

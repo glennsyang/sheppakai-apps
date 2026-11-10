@@ -28,8 +28,16 @@
 	const monthYear = useMonthYearParams('/recurring');
 	let periodLabel = $derived(`${monthNames[monthYear.month - 1]} ${monthYear.year}`);
 
-	// Only the current month is editable; other months are read-only history.
-	let columns = $derived(getColumns(data.isCurrentMonth));
+	// Only the current month is fully editable; past months allow a one-month amount fix.
+	let columns = $derived(
+		getColumns(
+			data.isCurrentMonth
+				? { kind: 'current' }
+				: data.isPastMonth
+					? { kind: 'past', monthKey: data.monthKey, periodLabel }
+					: { kind: 'future' }
+		)
+	);
 
 	// Paid bills recede so what is still owed stands out.
 	const getRecurringRowClass = (recurring: Recurring) =>
@@ -64,7 +72,9 @@
 	title="Recurring"
 	subtitle={data.isCurrentMonth
 		? 'Bills and subscriptions that come around every month or year'
-		: `Bills in effect in ${periodLabel} (read-only)`}
+		: data.isPastMonth
+			? `Bills in effect in ${periodLabel}. Amounts can be corrected for this month only.`
+			: `Bills expected in ${periodLabel} (read-only)`}
 	loadError={data.loadError}
 	selectedMonth={monthYear.month}
 	selectedYear={monthYear.year}

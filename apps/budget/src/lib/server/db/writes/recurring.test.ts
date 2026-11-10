@@ -14,7 +14,13 @@ const dbState = vi.hoisted(() => ({ db: undefined as unknown }));
 vi.mock('#lib/server/db/index.js', () => ({ getDb: () => dbState.db }));
 
 import { recurringQueries } from '../queries';
-import { createRecurring, deleteRecurring, markRecurringPaid, updateRecurring } from './recurring';
+import {
+	createRecurring,
+	deleteRecurring,
+	markRecurringPaid,
+	setRecurringAmountForMonth,
+	updateRecurring
+} from './recurring';
 
 type TestDb = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -185,5 +191,55 @@ describe('recurringQueries.findForMonth', () => {
 		expect(await recurringQueries.findForMonth('2026-02', MAR)).toMatchObject([{ id }]);
 		expect(await recurringQueries.findForMonth('2025-12', MAR)).toEqual([]);
 		expect(await recurringQueries.findForMonth('2026-03', MAR)).toEqual([]);
+	});
+});
+
+describe('setRecurringAmountForMonth', () => {
+	it('splits an open version so only that month changes', async () => {
+		const id = createRecurring(input, 'u1', JAN);
+
+		expect(setRecurringAmountForMonth(id, '2026-02', 70, MAR)).toBe('updated');
+
+		expect(versions(id)).toEqual([
+			{ amount: 80, cadence: 'Monthly', effectiveFrom: '2026-01', effectiveTo: '2026-01' },
+			{ amount: 70, cadence: 'Monthly', effectiveFrom: '2026-02', effectiveTo: '2026-02' },
+			{ amount: 80, cadence: 'Monthly', effectiveFrom: '2026-03', effectiveTo: null }
+		]);
+		expect(await recurringQueries.findForMonth('2026-02', MAR)).toMatchObject([{ amount: 70 }]);
+		expect(await recurringQueries.findForMonth('2026-03', MAR)).toMatchObject([{ amount: 80 }]);
+	});
+
+	it('splits a closed version at its first month and edits a one-month version in place', () => {
+		const id = createRecurring(input, 'u1', JAN);
+		updateRecurring(id, { ...input, amount: 95 }, MAR);
+
+		setRecurringAmountForMonth(id, '2026-01', 75, MAR);
+		setRecurringAmountForMonth(id, '2026-01', 76, MAR);
+
+		expect(versions(id)).toEqual([
+			{ amount: 76, cadence: 'Monthly', effectiveFrom: '2026-01', effectiveTo: '2026-01' },
+			{ amount: 80, cadence: 'Monthly', effectiveFrom: '2026-02', effectiveTo: '2026-02' },
+			{ amount: 95, cadence: 'Monthly', effectiveFrom: '2026-03', effectiveTo: null }
+		]);
+	});
+
+	it('works on a deleted bill for a month it was in effect', () => {
+		const id = createRecurring(input, 'u1', JAN);
+		deleteRecurring(id, MAR);
+
+		expect(setRecurringAmountForMonth(id, '2026-02', 60, MAR)).toBe('updated');
+		expect(versions(id)).toEqual([
+			{ amount: 80, cadence: 'Monthly', effectiveFrom: '2026-01', effectiveTo: '2026-01' },
+			{ amount: 60, cadence: 'Monthly', effectiveFrom: '2026-02', effectiveTo: '2026-02' }
+		]);
+	});
+
+	it('refuses the current or a future month, and months the bill was not in effect', () => {
+		const id = createRecurring(input, 'u1', JAN);
+
+		expect(setRecurringAmountForMonth(id, '2026-03', 70, MAR)).toBe('not-past');
+		expect(setRecurringAmountForMonth(id, '2026-05', 70, MAR)).toBe('not-past');
+		expect(setRecurringAmountForMonth(id, '2025-12', 70, MAR)).toBe('not-found');
+		expect(versions(id)).toHaveLength(1);
 	});
 });

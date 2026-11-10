@@ -7,6 +7,7 @@ import { type Features, renderComponent } from '#lib/components/ui/data-table/in
 
 import DataTableActions from './data-table-actions.svelte';
 import PaidToggle from './paid-toggle.svelte';
+import PastAmountEdit from './past-amount-edit.svelte';
 
 const MONTH_ABBREVIATIONS = [
 	'Jan',
@@ -38,11 +39,17 @@ function ordinalSuffix(day: number): string {
 	return 'th';
 }
 
+export type ColumnMode =
+	| { kind: 'current' }
+	| { kind: 'past'; monthKey: string; periodLabel: string }
+	| { kind: 'future' };
+
 /**
- * Columns for the recurring table. `editable` is false for months other than the current one:
- * paid state shows but can't be toggled, and the edit/delete actions are dropped.
+ * Columns for the recurring table. Only the current month toggles paid state and edits or
+ * deletes bills. A past month offers a one-month amount correction; a future month is view-only.
  */
-export function getColumns(editable: boolean): ColumnDef<Features, Recurring>[] {
+export function getColumns(mode: ColumnMode): ColumnDef<Features, Recurring>[] {
+	const editable = mode.kind === 'current';
 	const columns: ColumnDef<Features, Recurring>[] = [
 		{
 			id: 'paid',
@@ -94,7 +101,17 @@ export function getColumns(editable: boolean): ColumnDef<Features, Recurring>[] 
 		}
 	];
 
-	if (editable) {
+	if (mode.kind === 'past') {
+		columns.push({
+			id: 'actions',
+			cell: ({ row }) =>
+				renderComponent(PastAmountEdit, {
+					recurring: row.original,
+					monthKey: mode.monthKey,
+					periodLabel: mode.periodLabel
+				})
+		});
+	} else if (editable) {
 		columns.push({
 			id: 'actions',
 			cell: ({ row }) =>
