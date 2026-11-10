@@ -18,6 +18,7 @@ export { dashboardVisibilitySchema } from './dashboard';
 export {
 	incomeSchema,
 	receiptScanResultSchema,
+	pastAmountSchema,
 	recurringSchema,
 	togglePaidSchema,
 	toRecurringFormData,

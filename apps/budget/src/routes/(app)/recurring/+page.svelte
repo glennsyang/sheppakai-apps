@@ -2,17 +2,17 @@
 	import PlusIcon from '@lucide/svelte/icons/plus';
 
 	import type { Recurring } from '#lib';
-	import DashboardStatStrip, { type Stat } from '#lib/components/DashboardStatStrip.svelte';
-	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
-	import PageShell from '#lib/components/PageShell.svelte';
+	import type { Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import MonthlyTablePageShell from '#lib/components/MonthlyTablePageShell.svelte';
 	import RecurringModal from '#lib/components/RecurringModal.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { DataTable } from '#lib/components/ui/data-table/index.js';
 	import { recurringFormContext } from '#lib/contexts/index.js';
-	import { formatCurrency } from '#lib/utils.js';
+	import { formatCurrency, monthNames } from '#lib/utils.js';
+	import { useMonthYearParams } from '#lib/utils/monthYearParams.svelte.js';
 
 	import type { PageProps } from './$types';
-	import { columns } from './columns';
+	import { getColumns } from './columns';
 
 	let { data }: PageProps = $props();
 
@@ -24,6 +24,20 @@
 		month: 'short',
 		day: 'numeric'
 	}).format(new Date());
+
+	const monthYear = useMonthYearParams('/recurring');
+	let periodLabel = $derived(`${monthNames[monthYear.month - 1]} ${monthYear.year}`);
+
+	// Only the current month is fully editable; past months allow a one-month amount fix.
+	let columns = $derived(
+		getColumns(
+			data.isCurrentMonth
+				? { kind: 'current' }
+				: data.isPastMonth
+					? { kind: 'past', monthKey: data.monthKey, periodLabel }
+					: { kind: 'future' }
+		)
+	);
 
 	// Paid bills recede so what is still owed stands out.
 	const getRecurringRowClass = (recurring: Recurring) =>
@@ -40,7 +54,7 @@
 		{
 			label: 'Left to pay',
 			value: formatCurrency(totalUnpaidRecurring),
-			subtext: `Unpaid as of ${unpaidAsOf}`
+			subtext: data.isCurrentMonth ? `Unpaid as of ${unpaidAsOf}` : `Unpaid in ${periodLabel}`
 		},
 		{
 			label: 'Paid',
@@ -54,30 +68,41 @@
 	<title>Recurring</title>
 </svelte:head>
 
-<PageShell
+<MonthlyTablePageShell
 	title="Recurring"
-	subtitle="Bills and subscriptions that come around every month or year"
+	subtitle={data.isCurrentMonth
+		? 'Bills and subscriptions that come around every month or year'
+		: data.isPastMonth
+			? `Bills in effect in ${periodLabel}. Amounts can be corrected for this month only.`
+			: `Bills expected in ${periodLabel} (read-only)`}
+	loadError={data.loadError}
+	selectedMonth={monthYear.month}
+	selectedYear={monthYear.year}
+	onMonthYearChange={monthYear.onMonthYearChange}
+	{stats}
+	skeletonColumns={columns.length}
 >
-	{#snippet actions()}
-		<Button onclick={() => (openModal = true)}>
-			<PlusIcon />
-			Add recurring
-		</Button>
+	{#snippet primaryAction()}
+		{#if data.isCurrentMonth}
+			<Button onclick={() => (openModal = true)}>
+				<PlusIcon />
+				Add recurring
+			</Button>
+		{/if}
 	{/snippet}
 
-	{#if data.loadError}
-		<LoadErrorBanner message={data.loadError} />
-	{:else}
-		<DashboardStatStrip {stats} />
+	{#snippet tableContent()}
 		<DataTable
 			{columns}
 			data={data.recurrings}
 			defaultPageSize={20}
 			rowClassName={getRecurringRowClass}
 			searchPlaceholder="Search bills…"
-			emptyMessage="No recurring bills yet. Add rent, subscriptions or insurance to see what is still owed each month."
+			emptyMessage={data.isCurrentMonth
+				? 'No recurring bills yet. Add rent, subscriptions or insurance to see what is still owed each month.'
+				: `No recurring bills were in effect in ${periodLabel}.`}
 		/>
-	{/if}
-</PageShell>
+	{/snippet}
+</MonthlyTablePageShell>
 
 <RecurringModal bind:open={openModal} recurringForm={data.form} />

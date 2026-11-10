@@ -1,15 +1,21 @@
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, gte, isNull, lte, or } from 'drizzle-orm';
 
 import { getDb } from '#lib/server/db/index.js';
 import { recurringQueries } from '#lib/server/db/queries/index.js';
 import { recurring, recurringPayment, recurringVersion } from '#lib/server/db/schema/index.js';
 import { withUpdatedAt } from '#lib/server/db/utils.js';
-import { currentMonthKey, periodKey, previousMonthKey } from '#lib/server/recurring-history.js';
+import {
+	currentMonthKey,
+	nextMonthKey,
+	periodKey,
+	previousMonthKey
+} from '#lib/server/recurring-history.js';
 import type { Recurring } from '#lib/types.js';
 
 /**
  * The single write path for recurring bills (#240). Every change applies from the current
- * month on: past months keep the version that was in effect, so their totals never move.
+ * month on: past months keep the version that was in effect, so their totals never move. The
+ * one exception is `setRecurringAmountForMonth`, an explicit one-month correction of the past.
  */
 
 export type RecurringInput = {
@@ -95,6 +101,61 @@ export function updateRecurring(id: string, input: RecurringInput, now = new Dat
 			.values({ recurringId: id, ...values, effectiveFrom: monthKey })
 			.run();
 		return true;
+	});
+}
+
+export type PastAmountResult = 'updated' | 'not-found' | 'not-past';
+
+/**
+ * Correct a bill's amount for one past month only. The version in effect that month is split
+ * into up to three: the months before keep the old amount, `monthKey` gets `amount`, and the
+ * months after keep the old amount. Cadence and every other month are untouched. Returns
+ * 'not-past' for the current or a future month (use `updateRecurring`), and 'not-found' when
+ * the bill wasn't in effect in `monthKey`.
+ */
+export function setRecurringAmountForMonth(
+	id: string,
+	monthKey: string,
+	amount: number,
+	now = new Date()
+): PastAmountResult {
+	if (monthKey >= currentMonthKey(now)) return 'not-past';
+
+	return getDb().transaction((tx) => {
+		const version = tx
+			.select()
+			.from(recurringVersion)
+			.where(
+				and(
+					eq(recurringVersion.recurringId, id),
+					lte(recurringVersion.effectiveFrom, monthKey),
+					or(isNull(recurringVersion.effectiveTo), gte(recurringVersion.effectiveTo, monthKey))
+				)
+			)
+			.get();
+		if (!version) return 'not-found';
+		if (version.amount === amount) return 'updated';
+
+		const { effectiveFrom, effectiveTo, cadence } = version;
+		const pieces = [
+			effectiveFrom < monthKey && {
+				amount: version.amount,
+				effectiveFrom,
+				effectiveTo: previousMonthKey(monthKey)
+			},
+			{ amount, effectiveFrom: monthKey, effectiveTo: monthKey },
+			(effectiveTo === null || effectiveTo > monthKey) && {
+				amount: version.amount,
+				effectiveFrom: nextMonthKey(monthKey),
+				effectiveTo
+			}
+		].filter((piece) => piece !== false);
+
+		tx.delete(recurringVersion).where(eq(recurringVersion.id, version.id)).run();
+		tx.insert(recurringVersion)
+			.values(pieces.map((piece) => ({ ...piece, recurringId: id, cadence })))
+			.run();
+		return 'updated';
 	});
 }
 

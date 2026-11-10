@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	currentMonthKey,
 	isActiveIn,
+	nextMonthKey,
 	periodKey,
 	previousMonthKey,
 	recurringTotalForMonth,
@@ -17,6 +18,8 @@ describe('month keys', () => {
 	it('steps back across a year boundary', () => {
 		expect(previousMonthKey('2027-01')).toBe('2026-12');
 		expect(previousMonthKey('2026-11')).toBe('2026-10');
+		expect(nextMonthKey('2026-12')).toBe('2027-01');
+		expect(nextMonthKey('2026-09')).toBe('2026-10');
 	});
 
 	it('uses Pacific time for the current month', () => {
