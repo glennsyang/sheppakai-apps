@@ -32,10 +32,10 @@
 		"db:studio": "drizzle-kit studio"
 	},
 	"dependencies": {
-		"@anthropic-ai/sdk": "^1.4.0",
+		"@anthropic-ai/sdk": "^1.8.0",
 		"@better-auth/api-key": "catalog:",
 		"@getbrevo/brevo": "catalog:",
-		"@google/genai": "^2.32.0",
+		"@google/genai": "^3.0.0",
 		"@sentry/sveltekit": "catalog:",
 		"@sheppakai/logger": "workspace:*",
 		"@sheppakai/shared": "workspace:*",
@@ -45,7 +45,7 @@
 		"sveltekit-rate-limiter": "catalog:"
 	},
 	"devDependencies": {
-		"@formkit/auto-animate": "^0.10.0",
+		"@formkit/auto-animate": "^0.10.2",
 		"@sveltejs/adapter-node": "catalog:",
 		"@sveltejs/kit": "catalog:",
 		"@sveltejs/vite-plugin-svelte": "catalog:",
