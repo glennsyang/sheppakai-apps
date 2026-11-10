@@ -164,3 +164,26 @@ describe('markRecurringPaid', () => {
 		expect(await markRecurringPaid('missing', true, JAN)).toBeUndefined();
 	});
 });
+
+describe('recurringQueries.findForMonth', () => {
+	it('shows a past month at its own amount and paid state', async () => {
+		const id = createRecurring(input, 'u1', JAN);
+		await markRecurringPaid(id, true, JAN);
+		updateRecurring(id, { ...input, amount: 95 }, MAR);
+
+		const january = await recurringQueries.findForMonth('2026-01', MAR);
+		expect(january).toMatchObject([{ id, amount: 80, paid: true }]);
+
+		const current = await recurringQueries.findForMonth('2026-03', MAR);
+		expect(current).toMatchObject([{ id, amount: 95, paid: false }]);
+	});
+
+	it('keeps a deleted bill in the months it was active, and nothing before it existed', async () => {
+		const id = createRecurring(input, 'u1', JAN);
+		deleteRecurring(id, MAR);
+
+		expect(await recurringQueries.findForMonth('2026-02', MAR)).toMatchObject([{ id }]);
+		expect(await recurringQueries.findForMonth('2025-12', MAR)).toEqual([]);
+		expect(await recurringQueries.findForMonth('2026-03', MAR)).toEqual([]);
+	});
+});

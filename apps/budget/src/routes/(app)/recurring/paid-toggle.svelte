@@ -7,7 +7,8 @@
 
 	import type { Recurring } from '#lib';
 
-	let { recurring }: { recurring: Recurring } = $props();
+	// `readonly` shows the paid state of a past or future month without a toggle.
+	let { recurring, readonly = false }: { recurring: Recurring; readonly?: boolean } = $props();
 
 	let pending = $state(false);
 	// Optimistic: flip straight away, settle to the server's value once it answers.
@@ -15,47 +16,63 @@
 	let paid = $derived(optimisticPaid ?? recurring.paid);
 </script>
 
-<form
-	method="POST"
-	action="?/togglePaid"
-	use:enhance={() => {
-		pending = true;
-		optimisticPaid = !recurring.paid;
-		return async ({ result, update }) => {
-			if (result.type === 'success') {
-				// Silent on success — a toast on every tick would be noise.
-				await refreshAll();
-			} else {
-				const { text } = actionMessage(result, {
-					success: 'Paid status updated',
-					error: 'Failed to toggle paid status'
-				});
-				toast.error(text);
-			}
-			await update();
-			optimisticPaid = null;
-			pending = false;
-		};
-	}}
->
-	<input type="hidden" name="id" value={recurring.id} />
-	<input type="hidden" name="paid" value={recurring.paid ? 'false' : 'true'} />
-	<button
-		type="submit"
-		disabled={pending}
-		aria-pressed={paid}
-		aria-label="{paid ? 'Mark unpaid' : 'Mark paid'}: {recurring.merchant}"
-		class="group focus-visible:ring-ring/50 flex size-11 items-center justify-center rounded-full outline-none focus-visible:ring-[3px] md:size-8"
-	>
-		<span
-			class={[
-				'flex size-5 items-center justify-center rounded-full border transition-colors',
-				paid
-					? 'bg-primary border-primary text-primary-foreground'
+{#snippet indicator(isPaid: boolean)}
+	<span
+		class={[
+			'flex size-5 items-center justify-center rounded-full border transition-colors',
+			isPaid
+				? 'bg-primary border-primary text-primary-foreground'
+				: readonly
+					? 'border-input bg-transparent text-transparent'
 					: 'border-input group-hover:border-foreground/40 bg-transparent text-transparent'
-			]}
+		]}
+	>
+		<CheckIcon class="size-3" strokeWidth={3} />
+	</span>
+{/snippet}
+
+{#if readonly}
+	<span
+		role="img"
+		aria-label="{recurring.paid ? 'Paid' : 'Unpaid'}: {recurring.merchant}"
+		class="flex size-11 items-center justify-center md:size-8"
+	>
+		{@render indicator(recurring.paid)}
+	</span>
+{:else}
+	<form
+		method="POST"
+		action="?/togglePaid"
+		use:enhance={() => {
+			pending = true;
+			optimisticPaid = !recurring.paid;
+			return async ({ result, update }) => {
+				if (result.type === 'success') {
+					// Silent on success — a toast on every tick would be noise.
+					await refreshAll();
+				} else {
+					const { text } = actionMessage(result, {
+						success: 'Paid status updated',
+						error: 'Failed to toggle paid status'
+					});
+					toast.error(text);
+				}
+				await update();
+				optimisticPaid = null;
+				pending = false;
+			};
+		}}
+	>
+		<input type="hidden" name="id" value={recurring.id} />
+		<input type="hidden" name="paid" value={recurring.paid ? 'false' : 'true'} />
+		<button
+			type="submit"
+			disabled={pending}
+			aria-pressed={paid}
+			aria-label="{paid ? 'Mark unpaid' : 'Mark paid'}: {recurring.merchant}"
+			class="group focus-visible:ring-ring/50 flex size-11 items-center justify-center rounded-full outline-none focus-visible:ring-[3px] md:size-8"
 		>
-			<CheckIcon class="size-3" strokeWidth={3} />
-		</span>
-	</button>
-</form>
+			{@render indicator(paid)}
+		</button>
+	</form>
+{/if}

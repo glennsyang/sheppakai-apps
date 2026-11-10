@@ -162,6 +162,13 @@
 			"when": 1794227482944,
 			"tag": "0022_drop_recurring_paid",
 			"breakpoints": true
+		},
+		{
+			"idx": 23,
+			"version": "6",
+			"when": 1794348243338,
+			"tag": "0023_backfill_recurring_paid",
+			"breakpoints": true
 		}
 	]
 }

@@ -1,6 +1,11 @@
 import { and, asc, eq, gte, inArray, isNull, lte, or } from 'drizzle-orm';
 
-import { currentMonthKey, toMonthKey, withPaid } from '#lib/server/recurring-history.js';
+import {
+	currentMonthKey,
+	recurringForMonth,
+	toMonthKey,
+	withPaid
+} from '#lib/server/recurring-history.js';
 import type { Recurring } from '#lib/types.js';
 
 import { getDb } from '../index';
@@ -72,8 +77,18 @@ async function findActiveById(id: string, now: Date = new Date()): Promise<Recur
 	return row ? withPaid(row, row.cadence, monthKey) : undefined;
 }
 
+/**
+ * The bills in effect in `monthKey`. The current month reads live bills; any other month is
+ * rebuilt from version history, at that month's amount, cadence and paid state.
+ */
+async function findForMonth(monthKey: string, now: Date = new Date()): Promise<Recurring[]> {
+	if (monthKey === currentMonthKey(now)) return findActive(now);
+	return recurringForMonth(await findHistory(monthKey, monthKey), monthKey);
+}
+
 export const recurringQueries = {
 	findActive,
 	findActiveById,
+	findForMonth,
 	findHistory
 };

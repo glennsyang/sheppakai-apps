@@ -13,20 +13,27 @@ import {
 	updateRecurring
 } from '#lib/server/db/writes/recurring.js';
 import { logger } from '#lib/server/logger.js';
+import { currentMonthKey, toMonthKey } from '#lib/server/recurring-history.js';
+import { getMonthYearFromUrl } from '#lib/utils/dates.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
 	const form = await superValidate(zod4(recurringSchema));
+	const { month, year } = getMonthYearFromUrl(url);
+	const monthKey = toMonthKey(month, year);
+	// Only the current month is editable; other months are a read-only view of history (#240).
+	const isCurrentMonth = monthKey === currentMonthKey();
 
 	try {
-		const recurrings = await recurringQueries.findActive();
+		const recurrings = await recurringQueries.findForMonth(monthKey);
 
-		return { recurrings, form };
+		return { recurrings, form, isCurrentMonth };
 	} catch (error) {
 		logger.error('Failed to load recurring transactions:', error);
 		return {
 			recurrings: [],
+			isCurrentMonth,
 			loadError: 'Failed to load recurring transactions. Please try refreshing the page.',
 			form
 		};
