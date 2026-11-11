@@ -14,6 +14,8 @@ import { logger } from '#lib/server/logger.js';
 
 Sentry.init({
 	dsn: SENTRY_DSN,
+	// Local dev shares the prod DSN via .env; keep dev errors out of the Sentry feed.
+	enabled: !dev,
 	tracesSampleRate: 1.0,
 	// Same restrictive baseline as hooks.client.ts. Loosening it server-side would let Sentry
 	// capture cookies, bodies and full headers — including the auth session cookie — which the

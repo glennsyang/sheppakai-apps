@@ -8,11 +8,14 @@ import { sentryDataCollection } from './sentry-data-collection';
  */
 export function initClientSentry(options: {
 	dsn: string | undefined;
+	/** Pass `!dev`: local dev shares the prod DSN via .env, so its errors would land in the prod feed. */
+	enabled: boolean;
 	/** Drop SvelteKit's history.pushState/replaceState warnings (raised by LayerChart). */
 	suppressRouterWarnings?: boolean;
 }) {
 	Sentry.init({
 		dsn: options.dsn,
+		enabled: options.enabled,
 
 		tracesSampleRate: 0.2,
 
