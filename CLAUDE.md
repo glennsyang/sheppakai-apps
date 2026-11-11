@@ -65,5 +65,4 @@ When asked for a review, lead with findings (bugs, regressions, risks, missing t
 Shared skills, agents and commands for all three apps live in the repo-root `.claude/` folder (no plugin install needed) — it is the single source; there are no copies under `.github/`.
 
 - **Skills:** `svelte-code-writer`, `svelte5-best-practices`, `better-auth-best-practices`, `shadcn-svelte-components`, `tailwind-patterns`, `brevo-email-log` (checks Brevo's transactional email event log to verify whether a specific email actually sent/delivered/bounced — all three apps send through the same Brevo account) and `restore-db-backup`.
-- **Command:** `/scaffold-form <app> ...` scaffolds a new form/CRUD feature. Each app's `CLAUDE.md` names its flavor and an exemplar to point it at.
 - **Agents:** `code-structure-reviewer` and `security-reviewer` (in `.claude/agents/`) are available on demand — invoke them when you want a structural or security pass on a change, not automatically on every PR. They aren't wired into any automated hook.

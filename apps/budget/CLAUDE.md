@@ -148,5 +148,4 @@ pnpm db:studio
 ## Shared toolkit
 
 Repo-wide conventions, the shared `.claude/` skills and agents, and `packages/shared` are described
-in the repo-root `CLAUDE.md`. This app's `/scaffold-form budget ...` flavor is the CRUD-list pattern
-above — point it at an existing route like `transactions/+page.server.ts` as the exemplar.
+in the repo-root `CLAUDE.md`.

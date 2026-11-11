@@ -328,8 +328,7 @@ the repo root for the cross-app strategy.
 ## Shared Tooling & Review
 
 Repo-wide conventions, the shared `.claude/` skills and agents, and `packages/shared` are described
-in the repo-root `CLAUDE.md`. This app's `/scaffold-form mealplanner ...` flavor is the full-page
-form pattern (schema + `+page.server.ts` with superValidate + `+page.svelte` with superForm).
+in the repo-root `CLAUDE.md`.
 
 ---
 

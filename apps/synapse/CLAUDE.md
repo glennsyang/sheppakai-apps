@@ -109,9 +109,7 @@ src/
 
 `LogWorkoutDialog`, `LogMealDialog`, `LogWeightDialog`, `CreateReminderDialog`,
 `SetCalorieTargetDialog`, `SetGoalWeightDialog` all follow one identical skeleton — **match it
-exactly** when adding a new one. The shared toolkit's `/scaffold-form` command's "dialog-based entry
-form" flavor targets this exact shape — point it at one of these dialogs as the exemplar rather than
-hand-rolling a new one from scratch:
+exactly** when adding a new one:
 
 ```ts
 let {
@@ -197,5 +195,4 @@ pnpm db:migrate             # drizzle-kit migrate
 ## Shared toolkit
 
 Repo-wide conventions, the shared `.claude/` skills and agents, and `packages/shared` are described
-in the repo-root `CLAUDE.md`. This app's `/scaffold-form synapse ...` flavor is the "Log-entry
-dialog pattern" above. The logger comes from the `@sheppakai/logger` workspace package.
+in the repo-root `CLAUDE.md`. The logger comes from the `@sheppakai/logger` workspace package.
