@@ -168,19 +168,31 @@ Register the table in the `tables` map each app passes to `createAppAuth`.
 - **Use-time checks unchanged.** `isUserAccessAllowed` (called from `server-handle.ts`) runs on every request regardless of how the session was created.
 - **Rate limiting.** Better Auth's limiter (5 per minute per IP per path) covers the new endpoints. One passkey sign-in makes two requests on two paths, so normal use stays well inside it.
 - **New edge case: lost device.** Recovery is the password, which stays. If passkey-only accounts are ever added, this needs a new recovery design first.
-- **Password reset doesn't remove passkeys.** A reset revokes sessions but keeps passkeys. If an account is suspected compromised, the user (or admin) should also review the Profile list. Deleting a user cascades to their passkeys.
+- **Deleting a user** cascades to their passkeys.
+
+### Password reset must remove passkeys
+
+A password reset is the recovery path for a hacked account: `revokeSessionsOnPasswordReset` signs out every device, so the intruder loses access. Passkeys break that. An intruder with a session can add their own passkey, and a later reset would leave it working. Better Auth doesn't remove passkeys on reset by itself.
+
+#265 closes this with two changes:
+
+1. **Reset deletes every passkey.** `onPasswordReset` in `createAppAuth` deletes all `passkey` rows for the user (through Better Auth's adapter, `deleteMany({ model: 'passkey', where: [{ field: 'userId', value: user.id }] })`) before the "password changed" email goes out. The user re-adds passkeys on their own devices after signing in with the new password. The email copy says passkeys were removed.
+2. **Email on every new passkey.** After `/passkey/verify-registration` succeeds, send a "A passkey was added to your account" email (device name, time, link to Profile) and an operator alert via `sendAuthAlerts`. Fire-and-forget with `.catch`, like the "password changed" email. If the user didn't add it, the email tells them to reset their password, which now also removes the passkey.
+
+A profile password change (not a reset) keeps passkeys: the user is signed in and can see and remove them on Profile.
 
 ## Risks and mitigations
 
 Owner for all: @glennsyang.
 
-| Risk                                                           | Mitigation                                                                                                                                                       |
-| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Wrong `rpID` / origin in production → every passkey call fails | Defaults come from `BETTER_AUTH_BASE_URL`. Test on the deployed Fly URL before announcing. Password sign-in is untouched, so a failure only hides a convenience. |
-| Changing an app's domain later orphans its passkeys            | Passkeys are bound to the domain. Users would re-add them; password still works. Note it in the domain-change checklist.                                         |
-| Migration fails on deploy                                      | New table only. Test on a restored backup (`restore-db-backup` skill) before deploy.                                                                             |
-| Autofill call conflicts with the password form                 | Start conditional sign-in once, on mount, and abort it when the form submits. Covered by the per-app acceptance criteria.                                        |
-| Plugin ordering                                                | Add before `sveltekitCookies`; existing plugins (admin, HIBP, API key) don't touch passkey paths.                                                                |
+| Risk                                                           | Mitigation                                                                                                                                                              |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wrong `rpID` / origin in production → every passkey call fails | Defaults come from `BETTER_AUTH_BASE_URL`. Test on the deployed Fly URL before announcing. Password sign-in is untouched, so a failure only hides a convenience.        |
+| Changing an app's domain later orphans its passkeys            | Passkeys are bound to the domain. Users would re-add them; password still works. Note it in the domain-change checklist.                                                |
+| Migration fails on deploy                                      | New table only. Test on a restored backup (`restore-db-backup` skill) before deploy.                                                                                    |
+| Autofill call conflicts with the password form                 | Start conditional sign-in once, on mount, and abort it when the form submits. Covered by the per-app acceptance criteria.                                               |
+| Plugin ordering                                                | Add before `sveltekitCookies`; existing plugins (admin, HIBP, API key) don't touch passkey paths.                                                                       |
+| Intruder adds a passkey that survives a password reset         | Reset deletes all passkeys; every new passkey triggers an email and an operator alert. See [Password reset must remove passkeys](#password-reset-must-remove-passkeys). |
 
 ## Test plan
 
@@ -189,6 +201,8 @@ Automated (#265):
 - Passkey sign-in for a user not in `ALLOWED_EMAILS` → no session.
 - Passkey sign-in for a banned user → no session.
 - `/passkey/generate-register-options` with no session → 401.
+- Password reset deletes all of the user's passkeys; another user's passkeys are untouched.
+- Adding a passkey sends the "passkey added" email and an operator alert; a failing email doesn't fail registration.
 - Existing password sign-in and route action tests still pass.
 
 Manual, per app (#266–#268):
