@@ -102,6 +102,14 @@ progress, spending trends, savings goals). Query parameters:
 - `month` / `year` — for `mode=monthly`
 - `year` / `view` (`current` or `full`) — for `mode=yearly`
 
+Yearly-only fields include:
+
+- `timeRangeData[]` — `{ month, in, out, budgeted }` per chart month. `budgeted` is that month's
+  category budgets plus recurring, matching the monthly `plannedExpensesTotal`.
+- `excludedExpenses[]` — `{ id, date, payee, notes, amount, categoryName }` for every
+  excluded-from-budget transaction in the calendar year, newest first. They sum to
+  `excludedExpensesTotal`.
+
 ```bash
 curl -H "Authorization: Bearer sk_live_xxx" \
   "https://budget.example.com/api/v1/dashboard?mode=monthly&month=8&year=2026"
