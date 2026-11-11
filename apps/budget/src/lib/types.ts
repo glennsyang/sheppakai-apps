@@ -111,6 +111,8 @@ export type TimeRangeInOutData = {
 	month: string;
 	in: number;
 	out: number;
+	/** Planned total for the month (category budgets + recurring). Yearly view only. */
+	budgeted?: number;
 };
 
 export type SpendingBreakdownData = {
@@ -124,6 +126,16 @@ export type ExcludedSpendCategory = {
 	categoryId: string | null;
 	categoryName: string;
 	amount: number;
+};
+
+/** Lean row for an excluded-from-budget transaction (yearly "Not counted" sheet). */
+export type ExcludedExpense = {
+	id: string;
+	date: string;
+	payee: string;
+	notes: string;
+	amount: number;
+	categoryName: string;
 };
 
 export type CategoryAnomaly = {

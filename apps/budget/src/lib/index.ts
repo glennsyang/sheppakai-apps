@@ -8,6 +8,7 @@ export type {
 	CategoryAnomaly,
 	ChartData,
 	Contribution,
+	ExcludedExpense,
 	ExcludedSpendCategory,
 	Income,
 	MonthEndForecast,

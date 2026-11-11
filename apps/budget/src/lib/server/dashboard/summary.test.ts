@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-type MockTransaction = { amount: number; date?: string; category?: unknown };
-type MockBudget = { amount: number };
+type MockTransaction = {
+	amount: number;
+	date?: string;
+	category?: unknown;
+	id?: string;
+	payee?: string;
+	notes?: string;
+};
+type MockBudget = { amount: number; month?: string; year?: string; category?: { id: string } };
 type MockVersion = {
 	amount: number;
 	cadence: 'Monthly' | 'Yearly';
@@ -21,7 +28,7 @@ const mockTransactionQueries = vi.hoisted(() => ({
 }));
 const mockBudgetQueries = vi.hoisted(() => ({
 	findByMonthYear: vi.fn<() => Promise<MockBudget[]>>(async () => []),
-	findByYear: vi.fn<() => Promise<MockBudget[]>>(async () => [])
+	findByYear: vi.fn<(year?: number) => Promise<MockBudget[]>>(async () => [])
 }));
 const mockRecurringQueries = vi.hoisted(() => ({
 	findHistory: vi.fn<(fromKey?: string, toKey?: string) => Promise<MockVersion[]>>(async () => [])
@@ -222,6 +229,104 @@ describe('loadYearlyDashboard', () => {
 		expect(result.actualExpensesTotal).toBe(320 + 760 + 60 + 120);
 		expect(result.timeRangeData.map((d) => d.out).slice(0, 5)).toEqual([110, 110, 110, 90, 105]);
 	});
+
+	it('budgets each month as its category budgets plus recurring', async () => {
+		mockRecurringQueries.findHistory.mockResolvedValue(priceChangeHistory);
+		mockBudgetQueries.findByYear.mockResolvedValue([
+			{ amount: 300, month: '03', year: '2020', category: { id: 'c1' } },
+			{ amount: 200, month: '03', year: '2020', category: { id: 'c1' } },
+			{ amount: 400, month: '05', year: '2020', category: { id: 'c1' } }
+		]);
+
+		const result = await loadYearlyDashboard(new URL('https://example.com/dashboard?year=2020'));
+
+		// Recurring: 100 (Jan–Mar), 80 (Apr), 95 (May on)
+		expect(result.timeRangeData.map((d) => d.budgeted).slice(0, 6)).toEqual([
+			100,
+			100,
+			500 + 100,
+			80,
+			400 + 95,
+			95
+		]);
+		expect(result.plannedExpensesTotal).toBe(900 + 320 + 760 + 60);
+	});
+
+	it('returns excluded transactions lean and newest first, summing to the stat', async () => {
+		mockTransactionQueries.findByDateRangeExcludedFromBudget.mockResolvedValue([
+			{
+				id: 't1',
+				amount: 40,
+				date: '2020-02-01',
+				payee: 'Vet',
+				notes: '',
+				category: { id: 'c1', name: 'Pets' }
+			},
+			{ id: 't2', amount: 60, date: '2020-07-09', payee: 'Gift', notes: 'Birthday' },
+			{
+				id: 't3',
+				amount: 25,
+				date: '2020-05-20',
+				payee: 'Vet',
+				notes: '',
+				category: { id: 'c1', name: 'Pets' }
+			}
+		]);
+
+		const result = await loadYearlyDashboard(new URL('https://example.com/dashboard?year=2020'));
+
+		expect(result.excludedExpenses).toEqual([
+			{
+				id: 't2',
+				date: '2020-07-09',
+				payee: 'Gift',
+				notes: 'Birthday',
+				amount: 60,
+				categoryName: 'Uncategorized'
+			},
+			{ id: 't3', date: '2020-05-20', payee: 'Vet', notes: '', amount: 25, categoryName: 'Pets' },
+			{ id: 't1', date: '2020-02-01', payee: 'Vet', notes: '', amount: 40, categoryName: 'Pets' }
+		]);
+		expect(result.excludedExpenses.reduce((acc, e) => acc + e.amount, 0)).toBe(
+			result.excludedExpensesTotal
+		);
+	});
+
+	describe('view=current crossing into the prior year', () => {
+		beforeEach(() => {
+			vi.useFakeTimers({ now: new Date('2026-02-15T19:00:00Z'), toFake: ['Date'] });
+		});
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it('budgets prior-year chart months from that year without changing yearly totals', async () => {
+			mockBudgetQueries.findByYear.mockImplementation(async (year?: number) =>
+				year === 2025
+					? [
+							{ amount: 700, month: '11', year: '2025', category: { id: 'c1' } },
+							{ amount: 800, month: '12', year: '2025', category: { id: 'c1' } }
+						]
+					: [{ amount: 500, month: '01', year: '2026', category: { id: 'c1' } }]
+			);
+
+			const result = await loadYearlyDashboard(
+				new URL('https://example.com/dashboard?mode=yearly&year=2026')
+			);
+
+			expect(mockBudgetQueries.findByYear).toHaveBeenCalledWith(2026);
+			expect(mockBudgetQueries.findByYear).toHaveBeenCalledWith(2025);
+			expect(result.timeRangeData.map((d) => [d.month, d.budgeted])).toEqual([
+				['September', 0],
+				['October', 0],
+				['November', 700],
+				['December', 800],
+				['January', 500],
+				['February', 0]
+			]);
+			expect(result.plannedExpensesTotal).toBe(500);
+		});
+	});
 });
 
 describe('getDashboardSummary', () => {
@@ -244,5 +349,7 @@ describe('getDashboardSummary', () => {
 			new URL('https://example.com/dashboard?mode=yearly&year=2020')
 		);
 		expect(result.mode).toBe('yearly');
+		expect(result).toHaveProperty('excludedExpenses');
+		expect(result.mode === 'yearly' && result.timeRangeData[0]).toHaveProperty('budgeted');
 	});
 });

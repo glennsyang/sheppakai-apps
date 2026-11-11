@@ -81,6 +81,7 @@
 
 	// Transaction drawer
 	let openTransactionSheet = $state(false);
+	let openExcludedSheet = $state(false);
 	let selectedCategoryId = $state<string | null>(null);
 
 	// Quick action: log a new expense without navigating away
@@ -516,7 +517,9 @@
 					names.length > 2
 						? `${names.slice(0, 2).join(', ')} +${names.length - 2} more`
 						: names.join(', '),
-				tooltip: `Spending in categories excluded from the budget: ${names.join(', ')}. It isn't counted in income, spent or net.`
+				tooltip: `Spending in categories excluded from the budget: ${names.join(', ')}. It isn't counted in income, spent or net.`,
+				onclick: () => (openExcludedSheet = true),
+				actionLabel: `Not counted, ${formatCurrency(excludedExpensesTotal)}: show transactions`
 			});
 		}
 		return stats;
@@ -814,7 +817,18 @@
 	{/if}
 </div>
 
-{#if selectedMode === 'monthly'}
+{#if selectedMode === 'yearly'}
+	<CategoryTransactionSheet
+		bind:openSheet={openExcludedSheet}
+		transactions={(data.excludedExpenses || []).map((e) => ({
+			...e,
+			category: { name: e.categoryName }
+		}))}
+		title="Not counted · {selectedYear}"
+		timeRange="Spending excluded from the budget, Jan 1 – Dec 31, {selectedYear}"
+		showCategory
+	/>
+{:else if selectedMode === 'monthly'}
 	<CategoryTransactionSheet
 		bind:openSheet={openTransactionSheet}
 		transactions={filteredTransactions}

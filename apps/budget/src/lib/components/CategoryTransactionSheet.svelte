@@ -1,14 +1,28 @@
 <script lang="ts">
-	import type { Category, Transaction } from '#lib';
+	import type { Category } from '#lib';
 	import * as Sheet from '#lib/components/ui/sheet/index.js';
 	import * as Table from '#lib/components/ui/table/index.js';
 	import { months } from '#lib/utils.js';
 	import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
+	/** Minimal row shape; full `Transaction`s satisfy it. */
+	type SheetTransaction = {
+		id: string;
+		date: string;
+		payee: string;
+		amount: number;
+		notes?: string | null;
+		category?: { name: string } | null;
+	};
+
 	interface Props {
 		openSheet: boolean;
-		transactions: Transaction[];
-		category: Category | null | undefined;
+		transactions: SheetTransaction[];
+		category?: Category | null;
+		/** Overrides the "<category> Transactions" title. */
+		title?: string;
+		/** Adds a Category column and shows notes under the description (multi-category lists). */
+		showCategory?: boolean;
 		month?: string;
 		year?: number;
 		timeRange?: string;
@@ -19,6 +33,8 @@
 		openSheet = $bindable(),
 		transactions,
 		category,
+		title,
+		showCategory = false,
 		month,
 		year,
 		timeRange,
@@ -31,7 +47,7 @@
 <Sheet.Root bind:open={openSheet}>
 	<Sheet.Content side="right" class="flex w-full flex-col sm:max-w-lg">
 		<Sheet.Header>
-			<Sheet.Title>{category?.name} Transactions</Sheet.Title>
+			<Sheet.Title>{title ?? `${category?.name} Transactions`}</Sheet.Title>
 			<Sheet.Description>
 				{#if timeRange}
 					{timeRange}
@@ -52,7 +68,12 @@
 					<Table.Header>
 						<Table.Row>
 							<Table.Head>Date</Table.Head>
-							<Table.Head>Payee</Table.Head>
+							{#if showCategory}
+								<Table.Head>Category</Table.Head>
+								<Table.Head>Description</Table.Head>
+							{:else}
+								<Table.Head>Payee</Table.Head>
+							{/if}
 							<Table.Head class="text-right">Amount</Table.Head>
 						</Table.Row>
 					</Table.Header>
@@ -60,7 +81,17 @@
 						{#each transactions as transaction (transaction.id)}
 							<Table.Row>
 								<Table.Cell>{formatLocalTimestamp(transaction.date)}</Table.Cell>
-								<Table.Cell>{transaction.payee}</Table.Cell>
+								{#if showCategory}
+									<Table.Cell>{transaction.category?.name ?? 'Uncategorized'}</Table.Cell>
+									<Table.Cell class="whitespace-normal">
+										{transaction.payee}
+										{#if transaction.notes}
+											<span class="text-muted-foreground block text-xs">{transaction.notes}</span>
+										{/if}
+									</Table.Cell>
+								{:else}
+									<Table.Cell>{transaction.payee}</Table.Cell>
+								{/if}
 								<Table.Cell class="text-right font-medium">
 									${transaction.amount.toLocaleString('en-US', {
 										minimumFractionDigits: 2,

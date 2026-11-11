@@ -1,7 +1,9 @@
 import { inArray, min, sql, sum } from 'drizzle-orm';
 
 import type {
+	Budget,
 	CategoryAnomaly,
+	ExcludedExpense,
 	ExcludedSpendCategory,
 	MonthEndForecast,
 	SavingsGoalWithEta,
@@ -59,6 +61,20 @@ function groupExcludedByCategory(excludedExpenses: Transaction[]): ExcludedSpend
 	}
 
 	return [...totals.values()].sort((a, b) => b.amount - a.amount);
+}
+
+/** Lean, newest-first rows for the yearly "Not counted" sheet. */
+function toExcludedExpenseRows(excludedExpenses: Transaction[]): ExcludedExpense[] {
+	return excludedExpenses
+		.map((e) => ({
+			id: e.id,
+			date: e.date,
+			payee: e.payee,
+			notes: e.notes,
+			amount: e.amount,
+			categoryName: e.category?.name ?? 'Uncategorized'
+		}))
+		.toSorted((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 }
 
 async function getGoalsWithProgress(): Promise<SavingsGoalWithEta[]> {
@@ -266,6 +282,8 @@ export async function loadYearlyDashboard(url: URL) {
 		toMonthKey(1, year),
 		...monthRanges.map((r) => toMonthKey(r.month, r.year))
 	].toSorted()[0];
+	// `view=current` in January–May reaches back into the prior year; fetch those budgets too.
+	const otherChartYears = [...new Set(monthRanges.map((r) => r.year))].filter((y) => y !== year);
 
 	const [
 		actualExpenses,
@@ -273,6 +291,7 @@ export async function loadYearlyDashboard(url: URL) {
 		incomeRecords,
 		recurringHistory,
 		allYearBudgets,
+		otherYearBudgets,
 		goalsWithProgress,
 		totalSavings
 	] = await Promise.all([
@@ -281,9 +300,11 @@ export async function loadYearlyDashboard(url: URL) {
 		incomeQueries.findByDateRange(startDate, endDate),
 		recurringQueries.findHistory(historyStartKey, toMonthKey(12, year)),
 		budgetQueries.findByYear(year),
+		Promise.all(otherChartYears.map((y) => budgetQueries.findByYear(y))),
 		getGoalsWithProgress(),
 		savingsQueries.getTotal()
 	]);
+	const chartBudgets: Budget[] = [...allYearBudgets, ...otherYearBudgets.flat()];
 
 	const yearlyBudgets: Array<{ categoryId: string; amount: number }> = [];
 	allYearBudgets.forEach((b) => {
@@ -331,12 +352,20 @@ export async function loadYearlyDashboard(url: URL) {
 					inc.date.substring(0, 10) >= range.startDate && inc.date.substring(0, 10) <= range.endDate
 			);
 
+			const monthRecurring = recurringTotalForMonth(
+				recurringHistory,
+				toMonthKey(range.month, range.year)
+			);
+			// Same definition as the monthly view's planned budget: category budgets + recurring.
+			const monthBudgeted = chartBudgets
+				.filter((b) => Number(b.month) === range.month && Number(b.year) === range.year)
+				.reduce((acc, b) => acc + b.amount, 0);
+
 			timeRangeData.push({
 				month: monthNames[range.month - 1],
 				in: monthInc.reduce((acc, inc) => acc + inc.amount, 0),
-				out:
-					monthTx.reduce((acc, t) => acc + t.amount, 0) +
-					recurringTotalForMonth(recurringHistory, toMonthKey(range.month, range.year))
+				out: monthTx.reduce((acc, t) => acc + t.amount, 0) + monthRecurring,
+				budgeted: monthBudgeted + monthRecurring
 			});
 		}
 	}
@@ -351,6 +380,7 @@ export async function loadYearlyDashboard(url: URL) {
 		actualExpensesTotal,
 		excludedExpensesTotal,
 		excludedExpensesBreakdown,
+		excludedExpenses: toExcludedExpenseRows(excludedExpenses),
 		plannedExpensesTotal,
 		totalIncome,
 		remainingBalance,
