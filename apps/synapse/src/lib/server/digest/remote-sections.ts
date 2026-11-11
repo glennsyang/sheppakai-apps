@@ -10,7 +10,9 @@ import { logger } from '#lib/server/logger.js';
 
 import { selectBillsDueThisWeek, type DigestBill } from './morning-digest';
 
-const REMOTE_TIMEOUT_MS = 5000;
+// Budget and mealplanner run on Fly with min_machines_running = 0, so the cron usually hits a
+// stopped machine; a cold start routinely takes longer than 5s.
+const REMOTE_TIMEOUT_MS = 20_000;
 
 /** `ok: false` means the section is skipped: the app is unconfigured, unreachable or answered badly. */
 type RemoteSection<T> = { ok: true; value: T } | { ok: false };
