@@ -31,6 +31,7 @@ synapse.
 | `journal:read`    | `GET /api/v1/journal`, `GET /api/v1/journal/{id}`      |
 | `journal:write`   | `POST /api/v1/journal`, `PATCH /api/v1/journal/{id}`   |
 | `meditation:read` | `GET /api/v1/meditation`                               |
+| `agenda:read`     | `GET /api/v1/agenda`                                   |
 
 `people:read` exists mainly to resolve a `personId` for the visits endpoints — a visit is tied to an
 existing person record, not a free-text name.
@@ -194,6 +195,34 @@ routine:
 ```
 
 Read-only for now: log sessions from the web UI.
+
+### Daily Agenda
+
+`GET /api/v1/agenda` — requires `agenda:read`. Returns one day's agenda in display order. Query
+param (optional): `date` (`YYYY-MM-DD`, Pacific calendar day; defaults to today). Recurring
+(template) items for that day are created on first read, the same as opening the day in the web UI.
+
+```bash
+curl -H "Authorization: Bearer sk_live_xxx" "https://synapse.example.com/api/v1/agenda?date=2026-11-11"
+```
+
+```json
+{
+	"date": "2026-11-11",
+	"entries": [
+		{
+			"id": "abc123",
+			"title": "Stretch",
+			"sourceType": "default",
+			"completed": false,
+			"completedAt": null
+		}
+	]
+}
+```
+
+`sourceType` is `default` for an item from a recurring template and `custom` for a one-off item.
+Read-only: check items off from the web UI.
 
 ## Out of scope
 
