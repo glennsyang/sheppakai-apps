@@ -18,7 +18,8 @@ export const API_SCOPES = [
 	'people:read',
 	'journal:read',
 	'journal:write',
-	'meditation:read'
+	'meditation:read',
+	'agenda:read'
 ] as const;
 
 export type ApiScope = (typeof API_SCOPES)[number];
