@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const { api, sendPasswordChangedEmail } = vi.hoisted(() => ({
 	api: {
 		updateUser: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-		changePassword: vi.fn<(...args: unknown[]) => Promise<unknown>>()
+		changePassword: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		listPasskeys: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		updatePasskey: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		deletePasskey: vi.fn<(...args: unknown[]) => Promise<unknown>>()
 	},
 	sendPasswordChangedEmail: vi.fn<(...args: unknown[]) => Promise<unknown>>()
 }));
@@ -72,18 +75,136 @@ describe('profile actions — wiring', () => {
 
 // `load` is auto-wrapped by @sentry/sveltekit, which reads `event.request` / `event.route`.
 describe('profile load', () => {
-	it('returns the user with pre-filled name and password forms', async () => {
-		const result = await load({
+	const loadEvent = () =>
+		({
 			locals: { user: USER },
-			request: new Request('https://example.com/profile'),
+			request: new Request('https://example.com/profile', { headers: { cookie: 'session=abc' } }),
 			url: new URL('https://example.com/profile'),
 			route: { id: '/(app)/profile' }
-		} as never);
+		}) as never;
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		api.listPasskeys.mockResolvedValue([]);
+	});
+
+	it('returns the user with pre-filled name and password forms', async () => {
+		const result = await load(loadEvent());
 
 		expect(result).toMatchObject({
 			user: USER,
 			nameForm: { data: { name: 'Alice' } },
 			passwordForm: { data: { currentPassword: '', newPassword: '', confirmPassword: '' } }
 		});
+	});
+
+	it("lists the user's passkeys with their provider and date, using the request's session", async () => {
+		api.listPasskeys.mockResolvedValue([
+			{
+				id: 'pk-1',
+				name: 'iPhone',
+				aaguid: null,
+				createdAt: '2026-11-11T10:00:00.000Z'
+			},
+			{
+				id: 'pk-2',
+				name: null,
+				// Apple Passwords' AAGUID
+				aaguid: 'fbfc3007-154e-4ecc-8c0b-6e020557d7bd',
+				createdAt: null
+			}
+		]);
+
+		const result = await load(loadEvent());
+
+		const [{ headers }] = api.listPasskeys.mock.calls[0] as [{ headers: Headers }];
+		expect(headers.get('cookie')).toBe('session=abc');
+		expect(result).toMatchObject({
+			passkeys: [
+				{ id: 'pk-1', name: 'iPhone', provider: null, createdAt: new Date('2026-11-11T10:00:00Z') },
+				{ id: 'pk-2', name: null, provider: 'Apple Passwords', createdAt: null }
+			]
+		});
+		expect(result).not.toHaveProperty('passkeysLoadError');
+	});
+
+	it('still renders the profile when listing passkeys fails', async () => {
+		api.listPasskeys.mockRejectedValue(new Error('db down'));
+
+		const result = await load(loadEvent());
+
+		expect(result).toMatchObject({
+			user: USER,
+			nameForm: { data: { name: 'Alice' } },
+			passkeys: [],
+			passkeysLoadError: expect.stringContaining('passkeys')
+		});
+	});
+});
+
+describe('passkey actions', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		api.updatePasskey.mockResolvedValue({ passkey: {} });
+		api.deletePasskey.mockResolvedValue({ status: true });
+	});
+
+	const event = (fields: Record<string, string>, user: typeof USER | null = USER) =>
+		({ request: post(fields), locals: { user } }) as never;
+
+	it('renames a passkey with a trimmed name', async () => {
+		const result = await actions.renamePasskey(event({ id: 'pk-1', name: '  Work laptop ' }));
+
+		expect(api.updatePasskey).toHaveBeenCalledWith(
+			expect.objectContaining({ body: { id: 'pk-1', name: 'Work laptop' } })
+		);
+		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
+	});
+
+	it('rejects an empty or too-long name without calling Better Auth', async () => {
+		const empty = await actions.renamePasskey(event({ id: 'pk-1', name: '   ' }));
+		const long = await actions.renamePasskey(event({ id: 'pk-1', name: 'x'.repeat(51) }));
+
+		expect(api.updatePasskey).not.toHaveBeenCalled();
+		expect(empty).toMatchObject({ status: 400 });
+		expect(long).toMatchObject({ status: 400 });
+	});
+
+	it('shows an error when the rename fails', async () => {
+		api.updatePasskey.mockRejectedValue(new Error('not yours'));
+
+		const result = await actions.renamePasskey(event({ id: 'pk-1', name: 'Phone' }));
+
+		expect(result).toMatchObject({
+			status: 500,
+			data: { form: { message: { type: 'error', text: expect.stringContaining('rename') } } }
+		});
+	});
+
+	it('removes a passkey', async () => {
+		const result = await actions.removePasskey(event({ id: 'pk-1' }));
+
+		expect(api.deletePasskey).toHaveBeenCalledWith(
+			expect.objectContaining({ body: { id: 'pk-1' } })
+		);
+		expect(result).toMatchObject({ form: { message: { type: 'success' } } });
+	});
+
+	it('shows an error when the removal fails', async () => {
+		api.deletePasskey.mockRejectedValue(new Error('not found'));
+
+		const result = await actions.removePasskey(event({ id: 'pk-1' }));
+
+		expect(result).toMatchObject({
+			status: 500,
+			data: { form: { message: { type: 'error', text: expect.stringContaining('remove') } } }
+		});
+	});
+
+	it('requires a signed-in user', async () => {
+		const result = await actions.removePasskey(event({ id: 'pk-1' }, null));
+
+		expect(api.deletePasskey).not.toHaveBeenCalled();
+		expect(result).toMatchObject({ status: 401 });
 	});
 });
