@@ -23,6 +23,7 @@ export const {
 	sendVerificationEmail,
 	sendPasswordResetEmail,
 	sendPasswordChangedEmail,
+	sendPasskeyAddedEmail,
 	sendNewUserEmail
 } = createAuthEmails({ mailer, appName: APP_NAME });
 

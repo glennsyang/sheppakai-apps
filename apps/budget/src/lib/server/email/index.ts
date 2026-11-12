@@ -34,6 +34,7 @@ export const {
 	sendVerificationEmail,
 	sendPasswordResetEmail,
 	sendPasswordChangedEmail,
+	sendPasskeyAddedEmail,
 	sendNewUserEmail
 } = createAuthEmails({ mailer, appName: 'Sheppakai Budget', footer: FOOTER });
 

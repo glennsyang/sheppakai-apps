@@ -15,6 +15,7 @@ import * as schema from '../db/schema';
 import {
 	sendNewUserEmail,
 	sendPasswordChangedEmail,
+	sendPasskeyAddedEmail,
 	sendPasswordResetEmail,
 	sendVerificationEmail
 } from '../email';
@@ -46,6 +47,7 @@ export const auth = createAppAuth({
 		sendPasswordResetEmail,
 		sendVerificationEmail,
 		sendPasswordChangedEmail,
+		sendPasskeyAddedEmail,
 		sendNewUserEmail
 	},
 	sendAuthAlerts,

@@ -1,3 +1,4 @@
+import { passkey } from '@better-auth/passkey';
 import { betterAuth, type BetterAuthPlugin } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin, haveIBeenPwned } from 'better-auth/plugins';
@@ -5,15 +6,10 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 
 import { createAllowlistBeforeHook, createAllowlistSessionGuard } from './auth-allowlist';
 import { createAuthAfterHooks, logPasswordResetAudit } from './auth-audit-hooks';
+import type { PasskeyAddedEmailPayload, PasswordChangedEmailPayload } from './email';
 import { assertNameLength } from './name-guard';
 
 type DrizzleDb = Parameters<typeof drizzleAdapter>[0];
-type PasswordChangedEmailPayload = {
-	to: string;
-	name: string;
-	changedAt: Date;
-	source?: string;
-};
 type SendAuthAlerts = (message: string, title: string, priority: number) => unknown;
 
 export interface AppAuthConfig<Extra extends BetterAuthPlugin[]> {
@@ -28,12 +24,19 @@ export interface AppAuthConfig<Extra extends BetterAuthPlugin[]> {
 	adminUserIds: string;
 	allowedEmails: Set<string>;
 	db: DrizzleDb;
-	/** Drizzle tables keyed by Better Auth model name (user, session, account, …). */
+	/**
+	 * Drizzle tables keyed by Better Auth model name: user, session, account, verification,
+	 * rateLimit, plus any plugin tables (e.g. apikey). Passing `passkey` turns passkeys on:
+	 * Better Auth checks the schema before every query, so the plugin may only run once the
+	 * app has the table.
+	 */
 	tables: Record<string, unknown>;
 	email: {
 		sendPasswordResetEmail: (to: string, name: string, url: string) => Promise<unknown>;
 		sendVerificationEmail: (to: string, name: string, url: string) => Promise<unknown>;
 		sendPasswordChangedEmail: (payload: PasswordChangedEmailPayload) => Promise<unknown>;
+		/** Sent after a passkey is registered. May reject; the audit hook logs it. */
+		sendPasskeyAddedEmail: (payload: PasskeyAddedEmailPayload) => Promise<unknown>;
 		sendNewUserEmail: (to: string, name: string) => unknown;
 	};
 	sendAuthAlerts: SendAuthAlerts;
@@ -58,12 +61,21 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 	config: AppAuthConfig<Extra>
 ) {
 	const { appName, allowedEmails, email, sendAuthAlerts, logger } = config;
-	const auditDeps = { logger, sendNewUserEmail: email.sendNewUserEmail, sendAuthAlerts };
+	const passkeysEnabled = 'passkey' in config.tables;
+	const auditDeps = {
+		logger,
+		sendNewUserEmail: email.sendNewUserEmail,
+		sendPasskeyAddedEmail: email.sendPasskeyAddedEmail,
+		sendAuthAlerts,
+		profileUrl: new URL('/profile', config.baseURL).href
+	};
 
-	// The session guard needs the user's email, read through Better Auth's own adapter. The
-	// instance only exists after `betterAuth()` returns, so the lookup is bound just below.
-	const userLookup = {
-		findEmail: async (_userId: string): Promise<string | undefined> => undefined
+	// The session guard needs the user's email, and a password reset deletes the user's
+	// passkeys, both through Better Auth's own adapter. The instance only exists after
+	// `betterAuth()` returns, so these are bound just below.
+	const authDb = {
+		findEmail: async (_userId: string): Promise<string | undefined> => undefined,
+		deletePasskeys: async (_userId: string): Promise<number> => 0
 	};
 
 	const auth = betterAuth({
@@ -111,6 +123,19 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 			},
 			onPasswordReset: async ({ user }) => {
 				logPasswordResetAudit(user, appName, auditDeps);
+				// A reset is how a hacked account is recovered, so a passkey an intruder added
+				// must stop working too (Better Auth leaves passkeys alone on reset). A failure is
+				// logged, not thrown: the password has already changed.
+				let passkeysRemoved = false;
+				if (passkeysEnabled) {
+					try {
+						const removed = await authDb.deletePasskeys(user.id);
+						passkeysRemoved = removed > 0;
+						logger.info('Passkeys removed after password reset', { userId: user.id, removed });
+					} catch (err) {
+						logger.error('Failed to remove passkeys after password reset', err);
+					}
+				}
 				// Fire-and-forget: the reset has already succeeded, so a failing confirmation
 				// email must not break the response.
 				void email
@@ -118,7 +143,8 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 						to: user.email,
 						name: user.name || user.email,
 						changedAt: new Date(),
-						source: 'Password reset flow'
+						source: 'Password reset flow',
+						passkeysRemoved
 					})
 					.catch((err: unknown) => logger.error('Password changed email failed', err));
 			}
@@ -155,9 +181,7 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 				create: {
 					// Backstop for every session-creating flow (sign-in, verify-email auto sign-in,
 					// impersonation, …), not just the paths hooks.before sees.
-					before: createAllowlistSessionGuard(allowedEmails, (userId) =>
-						userLookup.findEmail(userId)
-					)
+					before: createAllowlistSessionGuard(allowedEmails, (userId) => authDb.findEmail(userId))
 				}
 			}
 		},
@@ -214,6 +238,12 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 			// server. Fails closed: an HIBP outage blocks the password change rather than
 			// silently skipping the check.
 			haveIBeenPwned(),
+			// WebAuthn sign-in as an optional extra to the password. rpID and origin are left to
+			// the defaults, derived from baseURL and trustedOrigins above. Registration requires
+			// a signed-in session (the plugin default), so it never skips email verification.
+			// Sign-in still passes the session-create guards (allowlist above, admin ban check).
+			// Only with a `passkey` table (see AppAuthConfig.tables).
+			...(passkeysEnabled ? [passkey({ rpName: appName })] : []),
 			// Keeps the `Extra` tuple in betterAuth's inferred plugin list; `[]` only stands in when
 			// `Extra` is its `[]` default.
 			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- `?? []` widens away from Extra
@@ -222,9 +252,13 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 		]
 	});
 
-	userLookup.findEmail = async (userId) => {
+	authDb.findEmail = async (userId) => {
 		const { internalAdapter } = await auth.$context;
 		return (await internalAdapter.findUserById(userId))?.email;
+	};
+	authDb.deletePasskeys = async (userId) => {
+		const { adapter } = await auth.$context;
+		return adapter.deleteMany({ model: 'passkey', where: [{ field: 'userId', value: userId }] });
 	};
 
 	return auth;

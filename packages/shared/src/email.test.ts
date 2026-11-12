@@ -208,6 +208,46 @@ describe('createAuthEmails', () => {
 		expect(sent().html).toContain('<strong>Source:</strong> Account settings');
 	});
 
+	it('mentions removed passkeys in the password-changed email only when some were removed', async () => {
+		const payload = { to: 'user@example.com', name: 'User', changedAt: new Date() };
+
+		await emails.sendPasswordChangedEmail(payload);
+		expect(sent().html).not.toContain('passkey');
+
+		mailer.send.mockClear();
+		await emails.sendPasswordChangedEmail({ ...payload, passkeysRemoved: true });
+		expect(sent().html).toContain('every passkey on your account was removed');
+	});
+
+	it('sends the passkey-added email with the escaped device name and a Profile link', async () => {
+		await emails.sendPasskeyAddedEmail({
+			to: 'user@example.com',
+			name: 'User',
+			deviceName: '<b>iPhone</b>',
+			addedAt: new Date('2026-11-11T10:00:00Z'),
+			profileUrl: 'https://app.example.com/profile'
+		});
+
+		expect(sent().subject).toBe('[Test App] A passkey was added to your account');
+		expect(sent().label).toBe('passkey added email');
+		expect(sent().html).toContain('&lt;b&gt;iPhone&lt;/b&gt;');
+		expect(sent().html).not.toContain('<b>iPhone');
+		expect(sent().html).toContain('href="https://app.example.com/profile"');
+		expect(sent().html).toContain('Reset your password');
+	});
+
+	it('labels an unnamed passkey in the passkey-added email', async () => {
+		await emails.sendPasskeyAddedEmail({
+			to: 'user@example.com',
+			name: 'User',
+			deviceName: null,
+			addedAt: new Date(),
+			profileUrl: 'https://app.example.com/profile'
+		});
+
+		expect(sent().html).toContain('<strong>Passkey:</strong> Unnamed passkey');
+	});
+
 	it('greets the new user by email when they have no name, escaped', async () => {
 		await emails.sendNewUserEmail('<b>@example.com', '');
 

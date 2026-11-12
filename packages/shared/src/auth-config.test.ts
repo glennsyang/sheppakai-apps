@@ -5,7 +5,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createAppAuth } from './auth-config';
 
-function buildAuth(overrides: { nodeEnv?: string; plugins?: BetterAuthPlugin[] } = {}) {
+function buildAuth(
+	overrides: {
+		nodeEnv?: string;
+		plugins?: BetterAuthPlugin[];
+		tables?: Record<string, unknown>;
+	} = {}
+) {
 	return createAppAuth({
 		appName: 'Test App',
 		cookiePrefix: 'test_app',
@@ -15,11 +21,12 @@ function buildAuth(overrides: { nodeEnv?: string; plugins?: BetterAuthPlugin[] }
 		adminUserIds: 'admin-1,admin-2',
 		allowedEmails: new Set(['a@example.com']),
 		db: drizzle(new Database(':memory:')),
-		tables: {},
+		tables: overrides.tables ?? {},
 		email: {
 			sendPasswordResetEmail: vi.fn<() => Promise<void>>(),
 			sendVerificationEmail: vi.fn<() => Promise<void>>(),
-			sendPasswordChangedEmail: vi.fn<() => Promise<void>>(),
+			sendPasswordChangedEmail: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+			sendPasskeyAddedEmail: vi.fn<() => Promise<void>>(),
 			sendNewUserEmail: vi.fn<() => void>()
 		},
 		sendAuthAlerts: vi.fn<() => void>(),
@@ -66,6 +73,20 @@ describe('createAppAuth', () => {
 		const extra = { id: 'extra-plugin' } satisfies BetterAuthPlugin;
 		const ids = buildAuth({ plugins: [extra] }).options.plugins?.map((p) => p.id);
 		expect(ids).toEqual(['admin', 'have-i-been-pwned', 'extra-plugin', 'sveltekit-cookies']);
+	});
+
+	it('adds the passkey plugin only when the app passes a passkey table', () => {
+		const extra = { id: 'extra-plugin' } satisfies BetterAuthPlugin;
+		const ids = buildAuth({ plugins: [extra], tables: { passkey: {} } }).options.plugins?.map(
+			(p) => p.id
+		);
+		expect(ids).toEqual([
+			'admin',
+			'have-i-been-pwned',
+			'passkey',
+			'extra-plugin',
+			'sveltekit-cookies'
+		]);
 	});
 });
 

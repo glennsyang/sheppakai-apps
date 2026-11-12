@@ -120,23 +120,79 @@ Sign-in still needs the network, the same as password sign-in today.
 
 ### Server (#265)
 
-- Add `passkey({ rpName: appName })` to the plugin list in `createAppAuth`, before `sveltekitCookies` (which must stay last).
+- `createAppAuth` adds `passkey({ rpName: appName })` after `haveIBeenPwned()` and before app plugins and `sveltekitCookies` (which must stay last), **only when the app's `tables` map has a `passkey` key**. Better Auth checks the Drizzle schema against every plugin's tables before each query, so turning the plugin on before an app has the table would break every auth request in that app. Registering the table is the per-app on switch.
 - Leave `rpID` and `origin` unset. The plugin derives them from `baseURL` and `trustedOrigins`, which `createAppAuth` already sets (including `http://localhost:5173` in development).
 - New endpoints under `/api/auth`: `/passkey/generate-register-options`, `/passkey/verify-registration`, `/passkey/generate-authenticate-options`, `/passkey/verify-authentication`, `/passkey/list-user-passkeys`, `/passkey/update-passkey`, `/passkey/delete-passkey`.
 - Registration needs a signed-in session (`requireSession` default). Signed-in users already have a verified email, so passkeys never skip email verification.
 
+- Audit (`createAuthAfterHooks`): `Sign-in successful` with `method: 'passkey'` (password sign-ins log `method: 'password'`), `Passkey added` and `Passkey removed`. A new passkey also sends the "passkey added" email (`sendPasskeyAddedEmail` from `createAuthEmails`) and a `sendAuthAlerts` security alert.
+
 ### Browser client (#265, used by each app)
 
-No app has a Better Auth browser client today: sign-in is a SvelteKit form action calling `auth.api.signInEmail` (`packages/shared/src/auth-route-actions.ts`). The WebAuthn prompt can only start in the browser (`navigator.credentials`), so each app gets a small client:
+No app has a Better Auth browser client today: sign-in is a SvelteKit form action calling `auth.api.signInEmail` (`packages/shared/src/auth-route-actions.ts`). The WebAuthn prompt can only start in the browser (`navigator.credentials`), so each app uses the shared helper in `@sheppakai/shared/passkey-client`:
 
-```ts
-import { passkeyClient } from "@better-auth/passkey/client";
-import { createAuthClient } from "better-auth/svelte";
-
-export const authClient = createAuthClient({ plugins: [passkeyClient()] });
-```
+- `createPasskeyAuthClient()`: `createAuthClient({ plugins: [passkeyClient()] })` from `better-auth/svelte`.
+- `passkeyErrorMessage(error)`: user copy for a failure, or `null` when the user cancelled (stay silent). Takes a thrown error or the `error` of a `{ data, error }` result.
+- `isPasskeySupported()`: hide the button when `false`.
 
 Only the passkey button and the profile Passkeys section use it. After a passkey sign-in the page navigates with `goto(postLoginRoute, { invalidateAll: true })`; after add/rename/remove it calls `invalidateAll()`.
+
+### Per-app UI pattern (#266, #267, #268)
+
+The Svelte pieces stay in each app (each app has its own shadcn `Button`/`Card` copies). Create the client once in a module, e.g. `src/lib/passkey-client.ts`:
+
+```ts
+import { createPasskeyAuthClient } from "@sheppakai/shared/passkey-client";
+
+export const authClient = createPasskeyAuthClient();
+```
+
+**Sign-in page.** Add `autocomplete="username webauthn"` to the email input. Start conditional (autofill) sign-in once on mount (a browser-only API, so `onMount` is fine) and abort it when the password form submits:
+
+```svelte
+<script lang="ts">
+  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
+  import { isPasskeySupported, passkeyErrorMessage } from "@sheppakai/shared/passkey-client";
+  import { authClient } from "#lib/passkey-client";
+
+  let supported = $state(false);
+  let passkeyError = $state<string | null>(null);
+
+  async function signInWithPasskey(autoFill = false) {
+    passkeyError = null;
+    const { error } = await authClient.signIn.passkey({ autoFill });
+    if (error) {
+      passkeyError = passkeyErrorMessage(error);
+      return;
+    }
+    await goto(postLoginRoute, { invalidateAll: true });
+  }
+
+  onMount(() => {
+    supported = isPasskeySupported();
+    if (supported && PublicKeyCredential.isConditionalMediationAvailable) {
+      void PublicKeyCredential.isConditionalMediationAvailable().then((ok) => {
+        if (ok) void signInWithPasskey(true);
+      });
+    }
+  });
+</script>
+
+{#if supported}
+  <Button variant="outline" onclick={() => signInWithPasskey()}>Sign in with a passkey</Button>
+  {#if passkeyError}<p role="alert">{passkeyError}</p>{/if}
+{/if}
+```
+
+The password form keeps its own `use:enhance` submit. The browser cancels a pending conditional request when a new WebAuthn call starts or the page navigates, and the cancel maps to `null`, so the password path shows no passkey error.
+
+**Profile page.** A "Passkeys" card under "Password":
+
+- List: `authClient.passkey.listUserPasskeys()` (or `authClient.useListPasskeys()` for a reactive store). Show `name` and `createdAt`.
+- Add: `authClient.passkey.addPasskey({ name })`, then `invalidateAll()`. Show `passkeyErrorMessage(error)` when it isn't `null`.
+- Rename: `authClient.passkey.updatePasskey({ id, name })`. Remove: `authClient.passkey.deletePasskey({ id })`. Both followed by `invalidateAll()`.
+- Registration needs a fresh session (Better Auth's `freshAge`, 1 day by default). An older session gets `SESSION_NOT_FRESH` (403), which `passkeyErrorMessage` turns into "sign out and sign in again".
 
 ### Schema (#266, #267, #268)
 
@@ -158,7 +214,7 @@ One new `passkey` table per app, generated with `pnpm --filter <app> db:generate
 
 Column names follow each app's convention: snake_case for budget and mealplanner (`user_id`, `public_key`, …), camelCase for synapse. The table is new, so the migration is a plain `CREATE TABLE`, with no rebuild of existing tables.
 
-Register the table in the `tables` map each app passes to `createAppAuth`.
+Register the table as `passkey` in the `tables` map each app passes to `createAppAuth`. That turns the plugin on for that app (see [Server](#server-265)).
 
 ## Security
 
