@@ -92,6 +92,24 @@ export const accountRelations = relations(account, ({ one }) => ({
 	})
 }));
 
+export const passkey = sqliteTable('passkey', {
+	id: text('id').primaryKey().$defaultFn(generateId),
+	name: text('name'),
+	publicKey: text('publicKey').notNull(),
+	userId: text('userId')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	credentialID: text('credentialID').notNull().unique(),
+	counter: integer('counter').notNull(),
+	deviceType: text('deviceType').notNull(),
+	backedUp: integer('backedUp', { mode: 'boolean' }).notNull(),
+	transports: text('transports'),
+	aaguid: text('aaguid'),
+	createdAt: integer('createdAt', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
 export const verification = sqliteTable('verification', {
 	id: text('id').primaryKey().$defaultFn(generateId),
 	identifier: text('identifier').notNull(),

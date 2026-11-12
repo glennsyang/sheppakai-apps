@@ -239,6 +239,13 @@
 			"when": 1793241143865,
 			"tag": "0033_morning_digest_settings",
 			"breakpoints": true
+		},
+		{
+			"idx": 34,
+			"version": "6",
+			"when": 1794444076092,
+			"tag": "0034_mature_machine_man",
+			"breakpoints": true
 		}
 	]
 }

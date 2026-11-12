@@ -1,16 +1,21 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import {
 		CircleAlert,
 		CircleCheck,
 		Gauge,
+		KeyRound,
 		Lock,
 		Pencil,
 		Save,
 		Sunrise,
 		SlidersHorizontal,
+		Trash2,
 		User,
 		X
 	} from '@lucide/svelte';
+	import { passkeyErrorMessage, isPasskeySupported } from '@sheppakai/shared/passkey-client';
+	import { onMount } from 'svelte';
 	import { superForm } from 'sveltekit-superforms';
 
 	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
@@ -19,6 +24,8 @@
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as Separator from '#lib/components/ui/separator/index.js';
+	import { authClient } from '#lib/passkey-client.js';
+	import { formatTimestampShort } from '#lib/utils/date.js';
 	import {
 		convertVisitThresholdFromDays,
 		convertVisitThresholdToDays
@@ -218,6 +225,149 @@
 		$morningDigestForm.sendTime = data.morningDigest.sendTime;
 		isEditingMorningDigest = false;
 	}
+
+	type PasskeyListItem = {
+		id: string;
+		name: string | null;
+		createdAt: string | Date;
+	};
+
+	function toPasskeyListItem(value: unknown): PasskeyListItem | null {
+		if (!value || typeof value !== 'object') return null;
+
+		const record = value as Record<string, unknown>;
+		const id = typeof record.id === 'string' ? record.id : null;
+		const createdAt = record.createdAt;
+		const createdAtValid = typeof createdAt === 'string' || createdAt instanceof Date;
+
+		if (!id || !createdAtValid) return null;
+
+		return {
+			id,
+			name: typeof record.name === 'string' ? record.name : null,
+			createdAt
+		};
+	}
+
+	function formatPasskeyDate(createdAt: string | Date): string {
+		return formatTimestampShort(createdAt);
+	}
+
+	let passkeySupported = $state(false);
+	let passkeys = $state<PasskeyListItem[]>([]);
+	let passkeysLoading = $state(false);
+	let passkeyError = $state<string | null>(null);
+	let passkeySuccess = $state<string | null>(null);
+	let addingPasskey = $state(false);
+	let newPasskeyName = $state('');
+	let renamingPasskeyId = $state<string | null>(null);
+	let renamingPasskeyName = $state('');
+	let removingPasskeyId = $state<string | null>(null);
+	const canSavePasskeyRename = $derived(renamingPasskeyName.trim().length > 0);
+
+	async function loadPasskeys() {
+		if (!passkeySupported) return;
+
+		passkeysLoading = true;
+		passkeyError = null;
+		const { data: passkeyData, error } = await authClient.passkey.listUserPasskeys();
+
+		passkeysLoading = false;
+		if (error) {
+			passkeys = [];
+			passkeyError = passkeyErrorMessage(error) ?? 'Could not load passkeys. Try refreshing.';
+			return;
+		}
+
+		const nextPasskeys = Array.isArray(passkeyData)
+			? passkeyData
+					.map((entry) => toPasskeyListItem(entry))
+					.filter((entry): entry is PasskeyListItem => entry !== null)
+			: [];
+		passkeys = nextPasskeys;
+	}
+
+	async function addPasskey() {
+		passkeyError = null;
+		passkeySuccess = null;
+		addingPasskey = true;
+
+		const trimmedName = newPasskeyName.trim();
+		const { error } = await authClient.passkey.addPasskey({
+			name: trimmedName.length > 0 ? trimmedName : undefined
+		});
+
+		addingPasskey = false;
+		if (error) {
+			passkeyError = passkeyErrorMessage(error);
+			return;
+		}
+
+		newPasskeyName = '';
+		passkeySuccess = 'Passkey added.';
+		await invalidateAll();
+		await loadPasskeys();
+	}
+
+	function startPasskeyRename(passkey: PasskeyListItem) {
+		passkeyError = null;
+		passkeySuccess = null;
+		renamingPasskeyId = passkey.id;
+		renamingPasskeyName = passkey.name ?? '';
+	}
+
+	function cancelPasskeyRename() {
+		renamingPasskeyId = null;
+		renamingPasskeyName = '';
+	}
+
+	async function savePasskeyRename(id: string) {
+		if (!canSavePasskeyRename) return;
+
+		passkeyError = null;
+		passkeySuccess = null;
+		const { error } = await authClient.passkey.updatePasskey({
+			id,
+			name: renamingPasskeyName.trim()
+		});
+
+		if (error) {
+			passkeyError = passkeyErrorMessage(error);
+			return;
+		}
+
+		cancelPasskeyRename();
+		passkeySuccess = 'Passkey renamed.';
+		await invalidateAll();
+		await loadPasskeys();
+	}
+
+	async function removePasskey(id: string) {
+		passkeyError = null;
+		passkeySuccess = null;
+		removingPasskeyId = id;
+		const { error } = await authClient.passkey.deletePasskey({ id });
+		removingPasskeyId = null;
+
+		if (error) {
+			passkeyError = passkeyErrorMessage(error);
+			return;
+		}
+
+		if (renamingPasskeyId === id) {
+			cancelPasskeyRename();
+		}
+		passkeySuccess = 'Passkey removed.';
+		await invalidateAll();
+		await loadPasskeys();
+	}
+
+	onMount(() => {
+		passkeySupported = isPasskeySupported();
+		if (passkeySupported) {
+			void loadPasskeys();
+		}
+	});
 
 	const visitThresholdSummary = $derived.by(() => {
 		const recentToOverdueInDays = convertVisitThresholdToDays(
@@ -912,6 +1062,139 @@
 						{/if}
 						<p class="mt-1">Click "Change Password" to update your password.</p>
 					</div>
+				{/if}
+			</div>
+		</div>
+
+		<Separator.Root />
+
+		<!-- Passkeys Section -->
+		<div class="overflow-hidden rounded-lg border shadow">
+			<div class="p-6">
+				<div class="mb-4 flex items-center gap-2">
+					<KeyRound class="h-5 w-5" />
+					<h2 class="text-xl font-semibold">Passkeys</h2>
+				</div>
+				<p class="text-muted-foreground mb-4 text-sm">
+					Sign in with Face ID, Touch ID or your device PIN instead of a password.
+				</p>
+
+				{#if passkeySuccess}
+					<div
+						class="border-pen-fitness/35 bg-pen-fitness/12 text-pen-fitness mb-4 flex items-center gap-2 rounded-md border p-3"
+					>
+						<CircleCheck class="h-4 w-4" />
+						<span class="text-sm">{passkeySuccess}</span>
+					</div>
+				{/if}
+				{#if passkeyError}
+					<div
+						class="border-destructive/35 bg-destructive/12 text-destructive mb-4 flex items-center gap-2 rounded-md border p-3"
+						role="alert"
+					>
+						<CircleAlert class="h-4 w-4" />
+						<span class="text-sm">{passkeyError}</span>
+					</div>
+				{/if}
+
+				{#if !passkeySupported}
+					<p class="text-muted-foreground text-sm">Passkeys are not supported in this browser.</p>
+				{:else if passkeysLoading}
+					<p class="text-muted-foreground text-sm">Loading passkeys…</p>
+				{:else}
+					<div class="space-y-3">
+						{#if passkeys.length === 0}
+							<p class="text-muted-foreground text-sm">No passkeys added yet.</p>
+						{:else}
+							{#each passkeys as passkey (passkey.id)}
+								<div
+									class="bg-muted/40 flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
+								>
+									<div>
+										<p class="font-medium">{passkey.name || 'Unnamed passkey'}</p>
+										<p class="text-muted-foreground text-xs">
+											Added {formatPasskeyDate(passkey.createdAt)}
+										</p>
+									</div>
+									<div class="flex flex-wrap items-center gap-2">
+										{#if renamingPasskeyId === passkey.id}
+											<Input
+												class="h-8 w-48"
+												type="text"
+												bind:value={renamingPasskeyName}
+												placeholder="Passkey name"
+											/>
+											<Button
+												type="button"
+												size="sm"
+												onclick={() => savePasskeyRename(passkey.id)}
+												disabled={!canSavePasskeyRename}
+											>
+												Save
+											</Button>
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												onclick={cancelPasskeyRename}
+											>
+												Cancel
+											</Button>
+										{:else}
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												onclick={() => startPasskeyRename(passkey)}
+											>
+												Rename
+											</Button>
+										{/if}
+										<Button
+											type="button"
+											size="sm"
+											variant="destructive"
+											onclick={() => removePasskey(passkey.id)}
+											disabled={removingPasskeyId === passkey.id}
+										>
+											<Trash2 class="mr-2 h-4 w-4" />
+											{#if removingPasskeyId === passkey.id}
+												Removing…
+											{:else}
+												Remove
+											{/if}
+										</Button>
+									</div>
+								</div>
+							{/each}
+						{/if}
+					</div>
+
+					<form
+						class="mt-5 space-y-3 rounded-md border p-4"
+						onsubmit={(event) => {
+							event.preventDefault();
+							void addPasskey();
+						}}
+					>
+						<div class="space-y-2">
+							<Label for="newPasskeyName" class="text-sm font-medium">Passkey name (optional)</Label
+							>
+							<Input
+								id="newPasskeyName"
+								type="text"
+								bind:value={newPasskeyName}
+								placeholder="e.g. iPhone"
+							/>
+						</div>
+						<Button type="submit" size="sm" disabled={addingPasskey}>
+							{#if addingPasskey}
+								Adding…
+							{:else}
+								Add a passkey
+							{/if}
+						</Button>
+					</form>
 				{/if}
 			</div>
 		</div>
