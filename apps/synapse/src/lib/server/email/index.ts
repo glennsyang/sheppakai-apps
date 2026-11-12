@@ -30,6 +30,7 @@ export const {
 	sendVerificationEmail,
 	sendPasswordResetEmail,
 	sendPasswordChangedEmail,
+	sendPasskeyAddedEmail,
 	sendNewUserEmail
 } = createAuthEmails({ mailer, appName: 'Synapse', footer: SYNAPSE_EMAIL_FOOTER });
 

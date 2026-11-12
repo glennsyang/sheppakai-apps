@@ -4,6 +4,7 @@ packages:
 
 catalog:
   '@better-auth/api-key': ^1.7.19
+  '@better-auth/passkey': 1.7.19 # keep equal to better-auth
   '@getbrevo/brevo': ^6.2.0
   '@internationalized/date': ^3.12.4
   '@lucide/svelte': ^1.71.0

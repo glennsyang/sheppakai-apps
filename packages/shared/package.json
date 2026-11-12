@@ -37,6 +37,7 @@
 		"./healthz": "./src/healthz.ts",
 		"./image-resize": "./src/image-resize.ts",
 		"./name-guard": "./src/name-guard.ts",
+		"./passkey-client": "./src/passkey-client.ts",
 		"./ntfy": "./src/ntfy.ts",
 		"./profile-actions": "./src/profile-actions.ts",
 		"./rate-limiter": "./src/rate-limiter.ts",
@@ -58,6 +59,7 @@
 	},
 	"devDependencies": {
 		"@better-auth/api-key": "catalog:",
+		"@better-auth/passkey": "catalog:",
 		"@getbrevo/brevo": "catalog:",
 		"@sentry/sveltekit": "catalog:",
 		"@sveltejs/kit": "catalog:",
@@ -81,6 +83,7 @@
 	},
 	"peerDependencies": {
 		"@better-auth/api-key": "^1",
+		"@better-auth/passkey": "^1",
 		"@getbrevo/brevo": "^6",
 		"@sentry/sveltekit": "^11",
 		"@sveltejs/kit": "^3",

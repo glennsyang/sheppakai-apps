@@ -143,6 +143,18 @@ export interface PasswordChangedEmailPayload {
 	ipAddress?: string;
 	userAgent?: string;
 	source?: string;
+	/** Set by the reset flow, which deletes every passkey on the account. */
+	passkeysRemoved?: boolean;
+}
+
+export interface PasskeyAddedEmailPayload {
+	to: string;
+	name: string;
+	/** The label the user gave the passkey, if any. */
+	deviceName: string | null;
+	addedAt: Date;
+	/** Absolute URL of the app's Profile page, where passkeys are listed and removed. */
+	profileUrl: string;
 }
 
 export interface AuthEmailsOptions {
@@ -154,8 +166,8 @@ export interface AuthEmailsOptions {
 }
 
 /**
- * The four Better Auth emails every app sends (verification, password reset, password
- * changed, new user), with one copy deck and `appName` filled in. Each send rethrows a
+ * The Better Auth emails every app sends (verification, password reset, password
+ * changed, passkey added, new user), with one copy deck and `appName` filled in. Each send rethrows a
  * Brevo failure (see `createMailer`); callers that must not fail, such as the
  * fire-and-forget audit hooks, catch it themselves.
  *
@@ -245,9 +257,46 @@ export function createAuthEmails({ mailer, appName, footer = appName }: AuthEmai
 		<p style="font-size: 14px; margin-bottom: 8px;"><strong>When:</strong> ${changedAtText}</p>
 		<p style="font-size: 14px; margin-bottom: 8px;"><strong>Source:</strong> ${source}</p>
 		<p style="font-size: 14px; margin-bottom: 8px;"><strong>IP:</strong> ${ipAddress}</p>
-		<p style="font-size: 14px; margin-bottom: 20px;"><strong>Device:</strong> ${userAgent}</p>
+		<p style="font-size: 14px; margin-bottom: 20px;"><strong>Device:</strong> ${userAgent}</p>${
+			payload.passkeysRemoved
+				? `
+		<p style="font-size: 14px; margin-bottom: 20px;">
+			For your security, every passkey on your account was removed. Sign in with your new password, then add a passkey again from your Profile page.
+		</p>`
+				: ''
+		}
 		<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
 			If this wasn't you, reset your password immediately and contact support.
+		</p>`
+			)
+		});
+	}
+
+	/** Security notice after a passkey is added, so a passkey an intruder added gets noticed. */
+	async function sendPasskeyAddedEmail(payload: PasskeyAddedEmailPayload) {
+		const addedAtText = escapeHtml(payload.addedAt.toLocaleString());
+		const deviceName = escapeHtml(payload.deviceName || 'Unnamed passkey');
+
+		await mailer.send({
+			to: payload.to,
+			name: payload.name,
+			subject: subject('A passkey was added to your account'),
+			label: 'passkey added email',
+			html: layout(
+				'Passkey added',
+				'Passkey Added',
+				`
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(payload.name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			A passkey was added to your ${app} account. It can now be used to sign in instead of your password.
+		</p>
+		<p style="font-size: 14px; margin-bottom: 8px;"><strong>Passkey:</strong> ${deviceName}</p>
+		<p style="font-size: 14px; margin-bottom: 20px;"><strong>When:</strong> ${addedAtText}</p>
+		<div style="text-align: center; margin: 30px 0;">
+			<a href="${escapeHtml(payload.profileUrl)}" style="${EMAIL_BUTTON_STYLE}">View your passkeys</a>
+		</div>
+		<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+			Didn't do this? Reset your password now (choose <strong>Forgot password</strong> on the sign-in page). A reset signs out every device and removes every passkey, including this one.
 		</p>`
 			)
 		});
@@ -275,6 +324,7 @@ export function createAuthEmails({ mailer, appName, footer = appName }: AuthEmai
 		sendVerificationEmail,
 		sendPasswordResetEmail,
 		sendPasswordChangedEmail,
+		sendPasskeyAddedEmail,
 		sendNewUserEmail
 	};
 }
