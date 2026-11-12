@@ -111,9 +111,9 @@ describe('profile load — passkeys', () => {
 			passkeys: [
 				{ id: 'pk-1', name: 'iPhone', provider: null, createdAt: new Date('2026-11-11T10:00:00Z') },
 				{ id: 'pk-2', name: null, provider: 'Apple Passwords', createdAt: null }
-			],
-			passkeysLoadError: null
+			]
 		});
+		expect(result).not.toHaveProperty('passkeysLoadError');
 	});
 
 	it('still renders the profile when listing passkeys fails', async () => {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import KeyRoundIcon from '@lucide/svelte/icons/key-round';
+	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import { isPasskeySupported, passkeyErrorMessage } from '@sheppakai/shared/passkey-client';
 	import { superForm } from 'sveltekit-superforms';
 
@@ -163,7 +163,7 @@
 						<Spinner aria-hidden="true" />
 						Waiting for your device…
 					{:else}
-						<KeyRoundIcon aria-hidden="true" />
+						<ShieldIcon aria-hidden="true" />
 						Sign in with a passkey
 					{/if}
 				</Button>

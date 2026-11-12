@@ -12,6 +12,7 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Dialog from '#lib/components/ui/dialog/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
 	import { Spinner } from '#lib/components/ui/spinner/index.js';
 	import { PASSKEY_NAME_MAX } from '#lib/formSchemas/index.js';
 	import { authClient } from '#lib/passkey-client.js';
@@ -82,16 +83,15 @@
 	// ── Passkeys ────────────────────────────────────────────────────────────
 	type Passkey = PageProps['data']['passkeys'][number];
 
-	const addedFormat = new Intl.DateTimeFormat('en-US', {
-		month: 'short',
+	const addedFormat = new Intl.DateTimeFormat(undefined, {
 		day: 'numeric',
+		month: 'short',
 		year: 'numeric'
 	});
 
-	// `null` until the browser check runs, so SSR doesn't flash the "not supported" note.
-	let passkeySupported = $state<boolean | null>(null);
+	let passkeySupported = $state(false);
 	let addingPasskey = $state(false);
-	let passkeyStatus = $state<App.Superforms.Message | null>(null);
+	let passkeyStatus = $state<{ type: 'success' | 'error'; text: string } | null>(null);
 	let renamingId = $state<string | null>(null);
 	let renameValue = $state('');
 	let removeTarget = $state<Passkey | null>(null);
@@ -112,7 +112,6 @@
 		try {
 			const { error } = await authClient.passkey.addPasskey();
 			if (error) {
-				// A cancelled device prompt has no message: show nothing.
 				const text = passkeyErrorMessage(error);
 				if (text) passkeyStatus = { type: 'error', text };
 				return;
@@ -323,10 +322,8 @@
 				<FormMessage type={passkeyStatus.type} text={passkeyStatus.text} />
 			{/if}
 
-			{#if data.passkeys.length === 0}
-				{#if !data.passkeysLoadError}
-					<p class="text-muted-foreground text-sm">No passkeys yet.</p>
-				{/if}
+			{#if data.passkeys.length === 0 && !data.passkeysLoadError}
+				<p class="text-muted-foreground text-sm">No passkeys yet.</p>
 			{:else}
 				<ul class="w-full divide-y rounded-lg border">
 					{#each data.passkeys as passkey (passkey.id)}
@@ -338,36 +335,33 @@
 									class="flex flex-wrap items-end gap-2"
 									use:enhance={() =>
 										async ({ result, update }) => {
-											passkeyStatus = actionMessage(result, {
-												success: 'Passkey renamed.',
-												error: 'Could not rename that passkey. Please try again.'
-											});
-											if (passkeyStatus.type === 'success') renamingId = null;
+											if (result.type === 'success') {
+												renamingId = null;
+												passkeyStatus = { type: 'success', text: 'Passkey renamed.' };
+											} else {
+												passkeyStatus = actionMessage(result, {
+													success: 'Passkey renamed.',
+													error: 'Could not rename that passkey. Please try again.'
+												});
+											}
 											await update({ reset: false });
 										}}
 								>
 									<input type="hidden" name="id" value={passkey.id} />
-									<div class="flex min-w-48 flex-1 flex-col gap-2">
-										<label for="passkey-name-{passkey.id}" class="text-sm font-medium">
-											Passkey name
-										</label>
+									<Label class="min-w-48 flex-1 flex-col items-start">
+										<span class="font-semibold">Passkey name</span>
 										<Input
-											id="passkey-name-{passkey.id}"
 											type="text"
 											name="name"
 											bind:value={renameValue}
+											class="mt-1"
 											required
 											maxlength={PASSKEY_NAME_MAX}
 											autocomplete="off"
 										/>
-									</div>
-									<Button type="submit" size="sm">Save</Button>
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										onclick={() => (renamingId = null)}
-									>
+									</Label>
+									<Button type="submit">Save</Button>
+									<Button type="button" variant="outline" onclick={() => (renamingId = null)}>
 										Cancel
 									</Button>
 								</form>
@@ -377,7 +371,7 @@
 										<p class="text-sm font-medium">{passkeyLabel(passkey)}</p>
 										{#if passkey.createdAt}
 											<p class="text-muted-foreground text-xs">
-												Added {addedFormat.format(passkey.createdAt)}
+												added {addedFormat.format(passkey.createdAt)}
 											</p>
 										{/if}
 									</div>
@@ -415,7 +409,6 @@
 			{#if passkeySupported}
 				<Button
 					type="button"
-					variant="outline"
 					disabled={addingPasskey}
 					aria-busy={addingPasskey}
 					onclick={addPasskey}
@@ -428,7 +421,7 @@
 						Add a passkey
 					{/if}
 				</Button>
-			{:else if passkeySupported === false}
+			{:else}
 				<p class="text-muted-foreground text-xs">This browser doesn't support passkeys.</p>
 			{/if}
 		</div>
@@ -467,15 +460,14 @@
 				}}
 			>
 				<input type="hidden" name="id" value={removeTarget.id} />
-				<Dialog.Footer>
+				<div class="flex gap-2">
+					<Button type="submit" variant="destructive" disabled={removing} aria-busy={removing}>
+						{removing ? 'Removing…' : 'Remove passkey'}
+					</Button>
 					<Button type="button" variant="outline" onclick={() => (removeTarget = null)}>
 						Cancel
 					</Button>
-					<Button type="submit" variant="destructive" disabled={removing} aria-busy={removing}>
-						{#if removing}<Spinner aria-hidden="true" />{/if}
-						{removing ? 'Removing…' : 'Remove passkey'}
-					</Button>
-				</Dialog.Footer>
+				</div>
 			</form>
 		{/if}
 	</Dialog.Content>

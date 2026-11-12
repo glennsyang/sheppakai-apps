@@ -1,8 +1,7 @@
 import { getAuthenticatorName } from '@better-auth/passkey';
 import { getBetterAuthErrorMessage } from '@sheppakai/shared/better-auth-errors';
 import { createProfileActions } from '@sheppakai/shared/profile-actions';
-import { isRedirect } from '@sveltejs/kit';
-import { message, superValidate, type SuperValidated } from 'sveltekit-superforms';
+import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import {
@@ -12,6 +11,7 @@ import {
 	updateProfileSchema
 } from '#lib/formSchemas/index.js';
 import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { handleDomainAction } from '#lib/server/actions/domain-action.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { auth } from '#lib/server/auth.js';
 import { accountQueries, userQueries } from '#lib/server/db/queries/index.js';
@@ -29,9 +29,7 @@ interface PasskeyRow {
 	createdAt: Date | null;
 }
 
-const PASSKEYS_LOAD_ERROR = 'Failed to load your passkeys. Please try refreshing the page.';
-
-/** A passkey-list failure only hides that section; name and password still work. */
+// A passkey-list failure only hides that section; name and password still work.
 async function loadPasskeys(headers: Headers, userId: string) {
 	try {
 		const rows = await auth.api.listPasskeys({ headers });
@@ -41,10 +39,13 @@ async function loadPasskeys(headers: Headers, userId: string) {
 			provider: getAuthenticatorName(row.aaguid) ?? null,
 			createdAt: row.createdAt ? new Date(row.createdAt) : null
 		}));
-		return { passkeys, passkeysLoadError: null };
-	} catch (error) {
-		logger.error('Failed to load passkeys', error, { userId });
-		return { passkeys: [] as PasskeyRow[], passkeysLoadError: PASSKEYS_LOAD_ERROR };
+		return { passkeys };
+	} catch (err) {
+		logger.error('Failed to load passkeys', err, { userId });
+		return {
+			passkeys: [] as PasskeyRow[],
+			passkeysLoadError: 'Failed to load your passkeys. Please try refreshing the page.'
+		};
 	}
 }
 
@@ -99,35 +100,15 @@ const profileActions = createProfileActions({
 	logger
 });
 
-/**
- * Runs a Better Auth passkey call for a form action: success → message, redirect →
- * re-thrown, anything else → logged and a 500 message (docs/ERROR_HANDLING_POLICY.md).
- */
-async function runPasskeyAction<T extends Record<string, unknown>>(
-	form: SuperValidated<T>,
-	call: () => Promise<unknown>,
-	text: { success: string; error: string; log: string },
-	userId: string
-) {
-	try {
-		await call();
-		return message(form, { type: 'success', text: text.success });
-	} catch (error) {
-		if (isRedirect(error)) throw error;
-		logger.error(text.log, error, { userId });
-		return message(form, { type: 'error', text: text.error }, { status: 500 });
-	}
-}
-
 // Adding a passkey runs in the browser (WebAuthn); renaming and removing one are plain
 // form posts. Better Auth checks the passkey belongs to the signed-in user.
-export const actions = {
+export const actions: Actions = {
 	...profileActions,
 	renamePasskey: requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(renamePasskeySchema));
 		if (!form.valid) return invalidForm(form);
 
-		return runPasskeyAction(
+		return handleDomainAction(
 			form,
 			() =>
 				auth.api.updatePasskey({
@@ -135,26 +116,26 @@ export const actions = {
 					headers: request.headers
 				}),
 			{
-				success: 'Passkey renamed.',
-				error: 'Could not rename that passkey. Please try again.',
-				log: 'Failed to rename passkey'
-			},
-			user.id
+				loggerContext: 'Failed to rename passkey',
+				fallbackMessage: 'Could not rename that passkey. Please try again.',
+				successMessage: 'Passkey renamed.',
+				logFields: { userId: user.id }
+			}
 		);
 	}),
 	removePasskey: requireAuth(async ({ request }, user) => {
 		const form = await superValidate(request, zod4(removePasskeySchema));
 		if (!form.valid) return invalidForm(form);
 
-		return runPasskeyAction(
+		return handleDomainAction(
 			form,
 			() => auth.api.deletePasskey({ body: { id: form.data.id }, headers: request.headers }),
 			{
-				success: 'Passkey removed.',
-				error: 'Could not remove that passkey. Please try again.',
-				log: 'Failed to remove passkey'
-			},
-			user.id
+				loggerContext: 'Failed to remove passkey',
+				fallbackMessage: 'Could not remove that passkey. Please try again.',
+				successMessage: 'Passkey removed.',
+				logFields: { userId: user.id }
+			}
 		);
 	})
-} satisfies Actions;
+};
