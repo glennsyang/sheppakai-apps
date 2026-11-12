@@ -9,6 +9,7 @@ export {
 	dashboardSectionPreferenceRelations
 } from './dashboardSectionPreference';
 export { default as income } from './income';
+export { default as passkey, passkeyRelations } from './passkey';
 export { default as rateLimit } from './rateLimit';
 export { default as recurring, recurringRelations } from './recurring';
 export { default as recurringPayment, recurringPaymentRelations } from './recurringPayment';

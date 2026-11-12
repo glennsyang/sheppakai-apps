@@ -42,7 +42,8 @@ export const auth = createAppAuth({
 		account: schema.account,
 		verification: schema.verification,
 		apikey: schema.apiKey,
-		rateLimit: schema.rateLimit
+		rateLimit: schema.rateLimit,
+		passkey: schema.passkey
 	},
 	email: {
 		sendPasswordResetEmail,
