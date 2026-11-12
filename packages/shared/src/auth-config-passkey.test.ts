@@ -18,6 +18,7 @@ const email = {
 	sendPasskeyAddedEmail: vi.fn<() => Promise<void>>(),
 	sendNewUserEmail: vi.fn<() => void>()
 };
+const sendAuthAlerts = vi.fn<(message: string, title: string, priority: number) => void>();
 const logger = {
 	debug: vi.fn<() => void>(),
 	info: vi.fn<() => void>(),
@@ -37,7 +38,7 @@ function buildAuth() {
 		// Only the key matters here (it turns passkeys on); the memory adapter ignores tables.
 		tables: { passkey: {} },
 		email,
-		sendAuthAlerts: vi.fn<() => void>(),
+		sendAuthAlerts,
 		logger,
 		getRequestEvent: vi.fn<() => never>()
 	});
@@ -153,6 +154,47 @@ describe('createAppAuth with passkeys', () => {
 
 		expect(email.sendPasswordChangedEmail).toHaveBeenCalledWith(
 			expect.objectContaining({ passkeysRemoved: false })
+		);
+	});
+
+	it('alerts the operator and leaves passkeys out of the email when removal fails', async () => {
+		memory.db.passkey.push(passkeyRow('pk-a1', 'user-a'));
+		const auth = buildAuth();
+		const { adapter } = await auth.$context;
+		vi.spyOn(adapter, 'deleteMany').mockRejectedValueOnce(new Error('db locked'));
+		const onPasswordReset = auth.options.emailAndPassword?.onPasswordReset;
+		if (!onPasswordReset) throw new Error('onPasswordReset missing');
+
+		await expect(
+			onPasswordReset({ user: user('user-a', 'a@example.com') })
+		).resolves.toBeUndefined();
+
+		expect(memory.db.passkey).toHaveLength(1);
+		expect(logger.error).toHaveBeenCalledWith(
+			'Failed to remove passkeys after password reset',
+			expect.any(Error)
+		);
+		expect(sendAuthAlerts).toHaveBeenCalledWith(
+			expect.stringContaining('could not remove their passkeys'),
+			'Test App - Security Alert: passkeys not removed',
+			5
+		);
+		expect(email.sendPasswordChangedEmail).toHaveBeenCalledWith(
+			expect.objectContaining({ passkeysRemoved: false })
+		);
+	});
+
+	it('sends no failure alert when removal works', async () => {
+		memory.db.passkey.push(passkeyRow('pk-a1', 'user-a'));
+		const onPasswordReset = buildAuth().options.emailAndPassword?.onPasswordReset;
+		if (!onPasswordReset) throw new Error('onPasswordReset missing');
+
+		await onPasswordReset({ user: user('user-a', 'a@example.com') });
+
+		expect(sendAuthAlerts).not.toHaveBeenCalledWith(
+			expect.anything(),
+			expect.stringContaining('passkeys not removed'),
+			expect.anything()
 		);
 	});
 });

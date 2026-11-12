@@ -125,7 +125,9 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 				logPasswordResetAudit(user, appName, auditDeps);
 				// A reset is how a hacked account is recovered, so a passkey an intruder added
 				// must stop working too (Better Auth leaves passkeys alone on reset). A failure is
-				// logged, not thrown: the password has already changed.
+				// not thrown (the password has already changed), but it leaves a possibly
+				// hostile passkey working, so it gets a top-priority operator alert, not just a
+				// log line. The email only claims removal when the delete succeeded.
 				let passkeysRemoved = false;
 				if (passkeysEnabled) {
 					try {
@@ -134,6 +136,11 @@ export function createAppAuth<const Extra extends BetterAuthPlugin[] = []>(
 						logger.info('Passkeys removed after password reset', { userId: user.id, removed });
 					} catch (err) {
 						logger.error('Failed to remove passkeys after password reset', err);
+						void sendAuthAlerts(
+							`Password reset for user ${user.id} could not remove their passkeys. They still sign in: remove them by hand.`,
+							`${appName} - Security Alert: passkeys not removed`,
+							5
+						);
 					}
 				}
 				// Fire-and-forget: the reset has already succeeded, so a failing confirmation

@@ -232,7 +232,7 @@ A password reset is the recovery path for a hacked account: `revokeSessionsOnPas
 
 #265 closes this with two changes:
 
-1. **Reset deletes every passkey.** `onPasswordReset` in `createAppAuth` deletes all `passkey` rows for the user (through Better Auth's adapter, `deleteMany({ model: 'passkey', where: [{ field: 'userId', value: user.id }] })`) before the "password changed" email goes out. The user re-adds passkeys on their own devices after signing in with the new password. The email copy says passkeys were removed.
+1. **Reset deletes every passkey.** `onPasswordReset` in `createAppAuth` deletes all `passkey` rows for the user (through Better Auth's adapter, `deleteMany({ model: 'passkey', where: [{ field: 'userId', value: user.id }] })`) before the "password changed" email goes out. The user re-adds passkeys on their own devices after signing in with the new password. The email copy says passkeys were removed. If the delete fails, the reset still completes, the email says nothing about passkeys, and the operator gets a priority-5 `sendAuthAlerts` alert to remove them by hand.
 2. **Email on every new passkey.** After `/passkey/verify-registration` succeeds, send a "A passkey was added to your account" email (device name, time, link to Profile) and an operator alert via `sendAuthAlerts`. Fire-and-forget with `.catch`, like the "password changed" email. If the user didn't add it, the email tells them to reset their password, which now also removes the passkey.
 
 A profile password change (not a reset) keeps passkeys: the user is signed in and can see and remove them on Profile.
