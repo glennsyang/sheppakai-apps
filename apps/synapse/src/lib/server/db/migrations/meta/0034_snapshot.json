@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "499ebbf8-a5bd-4b70-8c94-73d1e1950fbd",
+	"id": "252b3128-fa59-4546-9b5c-62e69b26a1ff",
 	"prevId": "81541e41-b8fe-483d-81ea-2fbb20e9e31d",
 	"tables": {
 		"account": {
@@ -213,7 +213,7 @@
 					"name": "createdAt",
 					"type": "integer",
 					"primaryKey": false,
-					"notNull": true,
+					"notNull": false,
 					"autoincrement": false
 				}
 			},
@@ -222,6 +222,11 @@
 					"name": "passkey_credentialID_unique",
 					"columns": ["credentialID"],
 					"isUnique": true
+				},
+				"passkey_userId_idx": {
+					"name": "passkey_userId_idx",
+					"columns": ["userId"],
+					"isUnique": false
 				}
 			},
 			"foreignKeys": {

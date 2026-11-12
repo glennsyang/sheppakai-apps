@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance as enhanceAction } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import {
 		CircleAlert,
@@ -14,17 +15,20 @@
 		User,
 		X
 	} from '@lucide/svelte';
-	import { passkeyErrorMessage, isPasskeySupported } from '@sheppakai/shared/passkey-client';
-	import { onMount } from 'svelte';
+	import { actionMessage } from '@sheppakai/shared/action-message';
+	import { isPasskeySupported, passkeyErrorMessage } from '@sheppakai/shared/passkey-client';
 	import { superForm } from 'sveltekit-superforms';
 
+	import ConfirmDialog from '#lib/components/shared/ConfirmDialog.svelte';
 	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as Separator from '#lib/components/ui/separator/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 	import { authClient } from '#lib/passkey-client.js';
+	import { PASSKEY_NAME_MAX } from '#lib/schemas/passkeys.js';
 	import { formatTimestampShort } from '#lib/utils/date.js';
 	import {
 		convertVisitThresholdFromDays,
@@ -226,148 +230,57 @@
 		isEditingMorningDigest = false;
 	}
 
-	type PasskeyListItem = {
-		id: string;
-		name: string | null;
-		createdAt: string | Date;
-	};
-
-	function toPasskeyListItem(value: unknown): PasskeyListItem | null {
-		if (!value || typeof value !== 'object') return null;
-
-		const record = value as Record<string, unknown>;
-		const id = typeof record.id === 'string' ? record.id : null;
-		const createdAt = record.createdAt;
-		const createdAtValid = typeof createdAt === 'string' || createdAt instanceof Date;
-
-		if (!id || !createdAtValid) return null;
-
-		return {
-			id,
-			name: typeof record.name === 'string' ? record.name : null,
-			createdAt
-		};
-	}
-
-	function formatPasskeyDate(createdAt: string | Date): string {
-		return formatTimestampShort(createdAt);
-	}
+	// ── Passkeys ────────────────────────────────────────────────────────────
+	type Passkey = PageProps['data']['passkeys'][number];
 
 	let passkeySupported = $state(false);
-	let passkeys = $state<PasskeyListItem[]>([]);
-	let passkeysLoading = $state(false);
-	let passkeyError = $state<string | null>(null);
-	let passkeySuccess = $state<string | null>(null);
 	let addingPasskey = $state(false);
-	let newPasskeyName = $state('');
-	let renamingPasskeyId = $state<string | null>(null);
-	let renamingPasskeyName = $state('');
-	let removingPasskeyId = $state<string | null>(null);
-	const canSavePasskeyRename = $derived(renamingPasskeyName.trim().length > 0);
+	let passkeyStatus = $state<{ type: 'success' | 'error'; text: string } | null>(null);
+	let renamingId = $state<string | null>(null);
+	let renameValue = $state('');
+	let removeTarget = $state<Passkey | null>(null);
+	let removeDialogOpen = $state(false);
 
-	async function loadPasskeys() {
-		if (!passkeySupported) return;
-
-		passkeysLoading = true;
-		passkeyError = null;
-		const { data: passkeyData, error } = await authClient.passkey.listUserPasskeys();
-
-		passkeysLoading = false;
-		if (error) {
-			passkeys = [];
-			passkeyError = passkeyErrorMessage(error) ?? 'Could not load passkeys. Try refreshing.';
-			return;
-		}
-
-		const nextPasskeys = Array.isArray(passkeyData)
-			? passkeyData
-					.map((entry) => toPasskeyListItem(entry))
-					.filter((entry): entry is PasskeyListItem => entry !== null)
-			: [];
-		passkeys = nextPasskeys;
+	function passkeyLabel(passkey: Passkey) {
+		return passkey.name ?? passkey.provider ?? 'Unnamed passkey';
 	}
+
+	// Browser-only: WebAuthn isn't available during SSR.
+	$effect(() => {
+		passkeySupported = isPasskeySupported();
+	});
 
 	async function addPasskey() {
-		passkeyError = null;
-		passkeySuccess = null;
 		addingPasskey = true;
-
-		const trimmedName = newPasskeyName.trim();
-		const { error } = await authClient.passkey.addPasskey({
-			name: trimmedName.length > 0 ? trimmedName : undefined
-		});
-
-		addingPasskey = false;
-		if (error) {
-			passkeyError = passkeyErrorMessage(error);
-			return;
+		passkeyStatus = null;
+		try {
+			const { error } = await authClient.passkey.addPasskey();
+			if (error) {
+				const text = passkeyErrorMessage(error);
+				if (text) passkeyStatus = { type: 'error', text };
+				return;
+			}
+			passkeyStatus = { type: 'success', text: 'Passkey added.' };
+			await invalidateAll();
+		} catch (err) {
+			const text = passkeyErrorMessage(err);
+			if (text) passkeyStatus = { type: 'error', text };
+		} finally {
+			addingPasskey = false;
 		}
-
-		newPasskeyName = '';
-		passkeySuccess = 'Passkey added.';
-		await invalidateAll();
-		await loadPasskeys();
 	}
 
-	function startPasskeyRename(passkey: PasskeyListItem) {
-		passkeyError = null;
-		passkeySuccess = null;
-		renamingPasskeyId = passkey.id;
-		renamingPasskeyName = passkey.name ?? '';
+	function startRename(passkey: Passkey) {
+		renamingId = passkey.id;
+		renameValue = passkey.name ?? passkey.provider ?? '';
+		passkeyStatus = null;
 	}
 
-	function cancelPasskeyRename() {
-		renamingPasskeyId = null;
-		renamingPasskeyName = '';
+	function confirmRemove(passkey: Passkey) {
+		removeTarget = passkey;
+		removeDialogOpen = true;
+		passkeyStatus = null;
 	}
-
-	async function savePasskeyRename(id: string) {
-		if (!canSavePasskeyRename) return;
-
-		passkeyError = null;
-		passkeySuccess = null;
-		const { error } = await authClient.passkey.updatePasskey({
-			id,
-			name: renamingPasskeyName.trim()
-		});
-
-		if (error) {
-			passkeyError = passkeyErrorMessage(error);
-			return;
-		}
-
-		cancelPasskeyRename();
-		passkeySuccess = 'Passkey renamed.';
-		await invalidateAll();
-		await loadPasskeys();
-	}
-
-	async function removePasskey(id: string) {
-		passkeyError = null;
-		passkeySuccess = null;
-		removingPasskeyId = id;
-		const { error } = await authClient.passkey.deletePasskey({ id });
-		removingPasskeyId = null;
-
-		if (error) {
-			passkeyError = passkeyErrorMessage(error);
-			return;
-		}
-
-		if (renamingPasskeyId === id) {
-			cancelPasskeyRename();
-		}
-		passkeySuccess = 'Passkey removed.';
-		await invalidateAll();
-		await loadPasskeys();
-	}
-
-	onMount(() => {
-		passkeySupported = isPasskeySupported();
-		if (passkeySupported) {
-			void loadPasskeys();
-		}
-	});
 
 	const visitThresholdSummary = $derived.by(() => {
 		const recentToOverdueInDays = convertVisitThresholdToDays(
@@ -1070,133 +983,149 @@
 
 		<!-- Passkeys Section -->
 		<div class="overflow-hidden rounded-lg border shadow">
-			<div class="p-6">
-				<div class="mb-4 flex items-center gap-2">
-					<KeyRound class="h-5 w-5" />
-					<h2 class="text-xl font-semibold">Passkeys</h2>
+			<div class="space-y-4 p-6">
+				<div>
+					<div class="mb-4 flex items-center gap-2">
+						<KeyRound class="h-5 w-5" />
+						<h2 class="text-xl font-semibold">Passkeys</h2>
+					</div>
+					<p class="text-muted-foreground text-sm">
+						Sign in with Face ID, Touch ID or your device PIN instead of a password.
+					</p>
 				</div>
-				<p class="text-muted-foreground mb-4 text-sm">
-					Sign in with Face ID, Touch ID or your device PIN instead of a password.
-				</p>
 
-				{#if passkeySuccess}
-					<div
-						class="border-pen-fitness/35 bg-pen-fitness/12 text-pen-fitness mb-4 flex items-center gap-2 rounded-md border p-3"
-					>
-						<CircleCheck class="h-4 w-4" />
-						<span class="text-sm">{passkeySuccess}</span>
-					</div>
-				{/if}
-				{#if passkeyError}
-					<div
-						class="border-destructive/35 bg-destructive/12 text-destructive mb-4 flex items-center gap-2 rounded-md border p-3"
-						role="alert"
-					>
-						<CircleAlert class="h-4 w-4" />
-						<span class="text-sm">{passkeyError}</span>
-					</div>
-				{/if}
+				<LoadErrorAlert message={data.passkeysLoadError} class="" />
 
-				{#if !passkeySupported}
-					<p class="text-muted-foreground text-sm">Passkeys are not supported in this browser.</p>
-				{:else if passkeysLoading}
-					<p class="text-muted-foreground text-sm">Loading passkeys…</p>
-				{:else}
-					<div class="space-y-3">
-						{#if passkeys.length === 0}
-							<p class="text-muted-foreground text-sm">No passkeys added yet.</p>
+				{#if passkeyStatus}
+					<div
+						class={passkeyStatus.type === 'success'
+							? 'border-pen-fitness/35 bg-pen-fitness/12 text-pen-fitness flex items-center gap-2 rounded-md border p-3'
+							: 'border-destructive/35 bg-destructive/12 text-destructive flex items-center gap-2 rounded-md border p-3'}
+						role={passkeyStatus.type === 'success' ? 'status' : 'alert'}
+					>
+						{#if passkeyStatus.type === 'success'}
+							<CircleCheck class="h-4 w-4" />
 						{:else}
-							{#each passkeys as passkey (passkey.id)}
-								<div
-									class="bg-muted/40 flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
-								>
-									<div>
-										<p class="font-medium">{passkey.name || 'Unnamed passkey'}</p>
-										<p class="text-muted-foreground text-xs">
-											Added {formatPasskeyDate(passkey.createdAt)}
-										</p>
-									</div>
-									<div class="flex flex-wrap items-center gap-2">
-										{#if renamingPasskeyId === passkey.id}
+							<CircleAlert class="h-4 w-4" />
+						{/if}
+						<span class="text-sm">{passkeyStatus.text}</span>
+					</div>
+				{/if}
+
+				{#if data.passkeys.length === 0 && !data.passkeysLoadError}
+					<p class="text-muted-foreground text-sm">No passkeys yet.</p>
+				{:else}
+					<ul class="space-y-3">
+						{#each data.passkeys as passkey (passkey.id)}
+							<li class="bg-muted/40 rounded-md border p-3">
+								{#if renamingId === passkey.id}
+									<form
+										method="POST"
+										action="?/renamePasskey"
+										class="flex flex-wrap items-end gap-2"
+										use:enhanceAction={() =>
+											async ({ result, update }) => {
+												const resultMessage = actionMessage(result, {
+													success: 'Passkey renamed.',
+													error: 'Could not rename that passkey. Please try again.'
+												});
+												if (resultMessage.type === 'success') renamingId = null;
+												passkeyStatus = resultMessage;
+												await update({ reset: false });
+											}}
+									>
+										<input type="hidden" name="id" value={passkey.id} />
+										<div class="min-w-48 flex-1 space-y-1">
+											<Label for="passkey-name-{passkey.id}">Passkey name</Label>
 											<Input
-												class="h-8 w-48"
+												id="passkey-name-{passkey.id}"
 												type="text"
-												bind:value={renamingPasskeyName}
-												placeholder="Passkey name"
+												name="name"
+												bind:value={renameValue}
+												required
+												maxlength={PASSKEY_NAME_MAX}
+												autocomplete="off"
 											/>
-											<Button
-												type="button"
-												size="sm"
-												onclick={() => savePasskeyRename(passkey.id)}
-												disabled={!canSavePasskeyRename}
-											>
-												Save
-											</Button>
-											<Button
-												type="button"
-												size="sm"
-												variant="outline"
-												onclick={cancelPasskeyRename}
-											>
-												Cancel
-											</Button>
-										{:else}
-											<Button
-												type="button"
-												size="sm"
-												variant="outline"
-												onclick={() => startPasskeyRename(passkey)}
-											>
-												Rename
-											</Button>
-										{/if}
+										</div>
+										<Button type="submit" size="sm">Save</Button>
 										<Button
 											type="button"
 											size="sm"
-											variant="destructive"
-											onclick={() => removePasskey(passkey.id)}
-											disabled={removingPasskeyId === passkey.id}
+											variant="outline"
+											onclick={() => (renamingId = null)}
 										>
-											<Trash2 class="mr-2 h-4 w-4" />
-											{#if removingPasskeyId === passkey.id}
-												Removing…
-											{:else}
-												Remove
-											{/if}
+											Cancel
 										</Button>
+									</form>
+								{:else}
+									<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+										<div>
+											<p class="font-medium">{passkeyLabel(passkey)}</p>
+											{#if passkey.createdAt}
+												<p class="text-muted-foreground text-xs">
+													Added {formatTimestampShort(passkey.createdAt)}
+												</p>
+											{/if}
+										</div>
+										<div class="flex flex-wrap items-center gap-2">
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												aria-label="Rename {passkeyLabel(passkey)}"
+												onclick={() => startRename(passkey)}
+											>
+												Rename
+											</Button>
+											<Button
+												type="button"
+												size="sm"
+												variant="destructive"
+												aria-label="Remove {passkeyLabel(passkey)}"
+												onclick={() => confirmRemove(passkey)}
+											>
+												<Trash2 class="mr-2 h-4 w-4" />
+												Remove
+											</Button>
+										</div>
 									</div>
-								</div>
-							{/each}
-						{/if}
-					</div>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				{/if}
 
-					<form
-						class="mt-5 space-y-3 rounded-md border p-4"
-						onsubmit={(event) => {
-							event.preventDefault();
-							void addPasskey();
-						}}
+				{#if passkeySupported}
+					<Button
+						type="button"
+						size="sm"
+						disabled={addingPasskey}
+						aria-busy={addingPasskey}
+						onclick={addPasskey}
 					>
-						<div class="space-y-2">
-							<Label for="newPasskeyName" class="text-sm font-medium">Passkey name (optional)</Label
-							>
-							<Input
-								id="newPasskeyName"
-								type="text"
-								bind:value={newPasskeyName}
-								placeholder="e.g. iPhone"
-							/>
-						</div>
-						<Button type="submit" size="sm" disabled={addingPasskey}>
-							{#if addingPasskey}
-								Adding…
-							{:else}
-								Add a passkey
-							{/if}
-						</Button>
-					</form>
+						{#if addingPasskey}
+							<Spinner aria-hidden="true" />
+							Waiting for your device…
+						{:else}
+							<KeyRound class="mr-2 h-4 w-4" />
+							Add a passkey
+						{/if}
+					</Button>
+				{:else}
+					<p class="text-muted-foreground text-sm">This browser doesn't support passkeys.</p>
 				{/if}
 			</div>
 		</div>
 	</div>
 </div>
+
+{#if removeTarget}
+	<ConfirmDialog
+		bind:open={removeDialogOpen}
+		title="Remove {passkeyLabel(removeTarget)}?"
+		message="It will stop signing you in. You can still sign in with your password and add it again later."
+		confirmButtonText="Remove passkey"
+		id={removeTarget.id}
+		actionUrl="?/removePasskey"
+	/>
+{/if}

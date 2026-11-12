@@ -9,8 +9,9 @@ CREATE TABLE `passkey` (
 	`backedUp` integer NOT NULL,
 	`transports` text,
 	`aaguid` text,
-	`createdAt` integer NOT NULL,
+	`createdAt` integer,
 	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `passkey_credentialID_unique` ON `passkey` (`credentialID`);
+CREATE UNIQUE INDEX `passkey_credentialID_unique` ON `passkey` (`credentialID`);--> statement-breakpoint
+CREATE INDEX `passkey_userId_idx` ON `passkey` (`userId`);
