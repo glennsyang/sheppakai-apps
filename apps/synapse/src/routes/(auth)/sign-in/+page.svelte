@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { Shield } from '@lucide/svelte';
 	import { isPasskeySupported, passkeyErrorMessage } from '@sheppakai/shared/passkey-client';
 	import { superForm } from 'sveltekit-superforms';
 
 	import { FORGOT_PASSWORD_ROUTE, POST_LOGIN_ROUTE } from '#lib/auth-routes.js';
 	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
+	import * as Alert from '#lib/components/ui/alert/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import { Field, FieldGroup, FieldLabel } from '#lib/components/ui/field/index.js';
@@ -139,33 +141,40 @@
 						{/if}
 					</Button>
 				</Field>
-				{#if passkeySupported}
-					<div class="text-muted-foreground relative py-1 text-center text-xs">
-						<span class="bg-card relative z-10 px-2">or</span>
-						<div class="bg-border absolute inset-x-0 top-1/2 h-px -translate-y-1/2"></div>
-					</div>
-					<Field>
-						<Button
-							type="button"
-							variant="outline"
-							class="w-full"
-							onclick={() => signInWithPasskey(false)}
-							disabled={passkeyPending}
-							aria-busy={passkeyPending}
-						>
-							{#if passkeyPending}
-								<Spinner aria-hidden="true" />
-								Waiting for your device…
-							{:else}
-								Sign in with a passkey
-							{/if}
-						</Button>
-					</Field>
-					{#if passkeyError}
-						<p class="text-destructive text-sm" role="alert">{passkeyError}</p>
-					{/if}
-				{/if}
 			</FieldGroup>
 		</form>
+
+		{#if passkeySupported}
+			<div class="mt-6 space-y-4">
+				<div class="text-muted-foreground flex items-center gap-3 text-sm" aria-hidden="true">
+					<span class="bg-border h-px flex-1"></span>
+					or
+					<span class="bg-border h-px flex-1"></span>
+				</div>
+
+				{#if passkeyError}
+					<Alert.Root variant="destructive">
+						<Alert.Description>{passkeyError}</Alert.Description>
+					</Alert.Root>
+				{/if}
+
+				<Button
+					type="button"
+					variant="outline"
+					disabled={passkeyPending}
+					aria-busy={passkeyPending}
+					class="w-full"
+					onclick={() => signInWithPasskey(false)}
+				>
+					{#if passkeyPending}
+						<Spinner aria-hidden="true" />
+						Waiting for your device…
+					{:else}
+						<Shield />
+						Sign in with a passkey
+					{/if}
+				</Button>
+			</div>
+		{/if}
 	</Card.Content>
 </Card.Root>

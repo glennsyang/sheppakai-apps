@@ -8,10 +8,10 @@
 		KeyRound,
 		Lock,
 		Pencil,
+		Plus,
 		Save,
 		Sunrise,
 		SlidersHorizontal,
-		Trash2,
 		User,
 		X
 	} from '@lucide/svelte';
@@ -19,10 +19,10 @@
 	import { isPasskeySupported, passkeyErrorMessage } from '@sheppakai/shared/passkey-client';
 	import { superForm } from 'sveltekit-superforms';
 
-	import ConfirmDialog from '#lib/components/shared/ConfirmDialog.svelte';
 	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as Separator from '#lib/components/ui/separator/index.js';
@@ -239,7 +239,7 @@
 	let renamingId = $state<string | null>(null);
 	let renameValue = $state('');
 	let removeTarget = $state<Passkey | null>(null);
-	let removeDialogOpen = $state(false);
+	let removing = $state(false);
 
 	function passkeyLabel(passkey: Passkey) {
 		return passkey.name ?? passkey.provider ?? 'Unnamed passkey';
@@ -273,12 +273,6 @@
 	function startRename(passkey: Passkey) {
 		renamingId = passkey.id;
 		renameValue = passkey.name ?? passkey.provider ?? '';
-		passkeyStatus = null;
-	}
-
-	function confirmRemove(passkey: Passkey) {
-		removeTarget = passkey;
-		removeDialogOpen = true;
 		passkeyStatus = null;
 	}
 
@@ -1025,35 +1019,36 @@
 										class="flex flex-wrap items-end gap-2"
 										use:enhanceAction={() =>
 											async ({ result, update }) => {
-												const resultMessage = actionMessage(result, {
-													success: 'Passkey renamed.',
-													error: 'Could not rename that passkey. Please try again.'
-												});
-												if (resultMessage.type === 'success') renamingId = null;
-												passkeyStatus = resultMessage;
+												if (result.type === 'success') {
+													renamingId = null;
+													passkeyStatus = { type: 'success', text: 'Passkey renamed.' };
+												} else {
+													passkeyStatus = {
+														type: 'error',
+														text: actionMessage(result, {
+															success: 'Passkey renamed.',
+															error: 'Could not rename that passkey. Please try again.'
+														}).text
+													};
+												}
 												await update({ reset: false });
 											}}
 									>
 										<input type="hidden" name="id" value={passkey.id} />
-										<div class="min-w-48 flex-1 space-y-1">
-											<Label for="passkey-name-{passkey.id}">Passkey name</Label>
+										<Label class="block min-w-48 flex-1">
+											<span class="font-semibold">Passkey name</span>
 											<Input
-												id="passkey-name-{passkey.id}"
 												type="text"
 												name="name"
 												bind:value={renameValue}
+												class="mt-1"
 												required
 												maxlength={PASSKEY_NAME_MAX}
 												autocomplete="off"
 											/>
-										</div>
-										<Button type="submit" size="sm">Save</Button>
-										<Button
-											type="button"
-											size="sm"
-											variant="outline"
-											onclick={() => (renamingId = null)}
-										>
+										</Label>
+										<Button type="submit">Save</Button>
+										<Button type="button" variant="outline" onclick={() => (renamingId = null)}>
 											Cancel
 										</Button>
 									</form>
@@ -1062,8 +1057,8 @@
 										<div>
 											<p class="font-medium">{passkeyLabel(passkey)}</p>
 											{#if passkey.createdAt}
-												<p class="text-muted-foreground text-xs">
-													Added {formatTimestampShort(passkey.createdAt)}
+												<p class="text-muted-foreground text-sm">
+													added {formatTimestampShort(passkey.createdAt)}
 												</p>
 											{/if}
 										</div>
@@ -1082,9 +1077,11 @@
 												size="sm"
 												variant="destructive"
 												aria-label="Remove {passkeyLabel(passkey)}"
-												onclick={() => confirmRemove(passkey)}
+												onclick={() => {
+													removeTarget = passkey;
+													passkeyStatus = null;
+												}}
 											>
-												<Trash2 class="mr-2 h-4 w-4" />
 												Remove
 											</Button>
 										</div>
@@ -1098,7 +1095,6 @@
 				{#if passkeySupported}
 					<Button
 						type="button"
-						size="sm"
 						disabled={addingPasskey}
 						aria-busy={addingPasskey}
 						onclick={addPasskey}
@@ -1107,7 +1103,7 @@
 							<Spinner aria-hidden="true" />
 							Waiting for your device…
 						{:else}
-							<KeyRound class="mr-2 h-4 w-4" />
+							<Plus />
 							Add a passkey
 						{/if}
 					</Button>
@@ -1119,13 +1115,54 @@
 	</div>
 </div>
 
-{#if removeTarget}
-	<ConfirmDialog
-		bind:open={removeDialogOpen}
-		title="Remove {passkeyLabel(removeTarget)}?"
-		message="It will stop signing you in. You can still sign in with your password and add it again later."
-		confirmButtonText="Remove passkey"
-		id={removeTarget.id}
-		actionUrl="?/removePasskey"
-	/>
-{/if}
+<Dialog.Root
+	open={removeTarget !== null}
+	onOpenChange={(open) => {
+		if (!open) removeTarget = null;
+	}}
+>
+	<Dialog.Content aria-label="Remove passkey">
+		{#if removeTarget}
+			<div class="space-y-4">
+				<Dialog.Title class="text-xl font-bold tracking-tight">
+					Remove {passkeyLabel(removeTarget)}?
+				</Dialog.Title>
+				<Dialog.Description>
+					It will stop signing you in. You can still sign in with your password and add it again
+					later.
+				</Dialog.Description>
+				<form
+					method="POST"
+					action="?/removePasskey"
+					class="flex gap-2"
+					use:enhanceAction={() => {
+						removing = true;
+						return async ({ result, update }) => {
+							removing = false;
+							passkeyStatus =
+								result.type === 'success'
+									? { type: 'success', text: 'Passkey removed.' }
+									: {
+											type: 'error',
+											text: actionMessage(result, {
+												success: 'Passkey removed.',
+												error: 'Could not remove that passkey. Please try again.'
+											}).text
+										};
+							removeTarget = null;
+							await update();
+						};
+					}}
+				>
+					<input type="hidden" name="id" value={removeTarget.id} />
+					<Button type="submit" variant="destructive" disabled={removing} aria-busy={removing}>
+						{removing ? 'Removing…' : 'Remove passkey'}
+					</Button>
+					<Button type="button" variant="outline" onclick={() => (removeTarget = null)}>
+						Cancel
+					</Button>
+				</form>
+			</div>
+		{/if}
+	</Dialog.Content>
+</Dialog.Root>

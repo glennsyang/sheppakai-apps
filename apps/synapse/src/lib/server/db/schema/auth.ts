@@ -99,7 +99,7 @@ export const accountRelations = relations(account, ({ one }) => ({
 export const passkey = sqliteTable(
 	'passkey',
 	{
-		id: text('id').primaryKey().$defaultFn(generateId),
+		id: text('id').primaryKey(),
 		// Label shown on Profile; the user can rename it.
 		name: text('name'),
 		publicKey: text('publicKey').notNull(),

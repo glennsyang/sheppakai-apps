@@ -174,6 +174,7 @@ describe('profile load — passkeys', () => {
 		const result = await load(loadEvent());
 
 		expect(result).toMatchObject({
+			user: USER,
 			passkeys: [],
 			passkeysLoadError: expect.stringContaining('passkeys')
 		});

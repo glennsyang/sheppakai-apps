@@ -1,6 +1,7 @@
 import { getAuthenticatorName } from '@better-auth/passkey';
 import { getBetterAuthErrorMessage } from '@sheppakai/shared/better-auth-errors';
 import { createProfileActions } from '@sheppakai/shared/profile-actions';
+import { isRedirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -170,6 +171,7 @@ export const actions = {
 			});
 			return message(form, { type: 'success', text: 'Passkey renamed.' });
 		} catch (error) {
+			if (isRedirect(error)) throw error;
 			logger.error('Failed to rename passkey', error, { userId: currentUser.id });
 			return message(
 				form,
@@ -187,6 +189,7 @@ export const actions = {
 			await auth.api.deletePasskey({ body: { id: form.data.id }, headers: request.headers });
 			return message(form, { type: 'success', text: 'Passkey removed.' });
 		} catch (error) {
+			if (isRedirect(error)) throw error;
 			logger.error('Failed to remove passkey', error, { userId: currentUser.id });
 			return message(
 				form,
