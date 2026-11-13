@@ -15,6 +15,7 @@ export { budgetSchema } from './budget';
 export { categorySchema } from './categories';
 export { idSchema } from './common';
 export { dashboardVisibilitySchema } from './dashboard';
+export { PASSKEY_NAME_MAX, removePasskeySchema, renamePasskeySchema } from './passkeys';
 export {
 	incomeSchema,
 	receiptScanResultSchema,

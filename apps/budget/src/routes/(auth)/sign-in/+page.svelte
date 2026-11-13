@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import ShieldIcon from '@lucide/svelte/icons/shield';
+	import { isPasskeySupported, passkeyErrorMessage } from '@sheppakai/shared/passkey-client';
 	import { superForm } from 'sveltekit-superforms';
 
-	import { FORGOT_PASSWORD_ROUTE } from '#lib/auth-routes.js';
+	import { FORGOT_PASSWORD_ROUTE, POST_LOGIN_ROUTE } from '#lib/auth-routes.js';
 	import AuthFormMessage from '#lib/components/AuthFormMessage.svelte';
 	import FormMessage from '#lib/components/FormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -9,6 +12,7 @@
 	import { Field, FieldGroup, FieldLabel } from '#lib/components/ui/field/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Spinner } from '#lib/components/ui/spinner/index.js';
+	import { authClient } from '#lib/passkey-client.js';
 
 	import type { PageData } from './$types';
 
@@ -16,6 +20,44 @@
 
 	// svelte-ignore state_referenced_locally
 	const { form, errors, message, submitting, enhance } = superForm(data.form);
+
+	let passkeySupported = $state(false);
+	let passkeyPending = $state(false);
+	let passkeyError = $state<string | null>(null);
+
+	/**
+	 * `autoFill` is the conditional request behind the email field's autofill list. It stays
+	 * silent on failure: it is cancelled whenever the button starts a new request or the
+	 * page navigates, and the user never asked for it.
+	 */
+	async function signInWithPasskey(autoFill: boolean) {
+		if (!autoFill) {
+			passkeyPending = true;
+			passkeyError = null;
+		}
+		try {
+			const { error } = await authClient.signIn.passkey({ autoFill });
+			if (error) {
+				if (!autoFill) passkeyError = passkeyErrorMessage(error);
+				return;
+			}
+			await goto(POST_LOGIN_ROUTE, { invalidateAll: true });
+		} catch (err) {
+			if (!autoFill) passkeyError = passkeyErrorMessage(err);
+		} finally {
+			if (!autoFill) passkeyPending = false;
+		}
+	}
+
+	// Browser-only WebAuthn setup, once: show the button and start autofill sign-in.
+	$effect(() => {
+		const supported = isPasskeySupported();
+		passkeySupported = supported;
+		if (!supported) return;
+		void PublicKeyCredential.isConditionalMediationAvailable?.().then((available) => {
+			if (available) void signInWithPasskey(true);
+		});
+	});
 </script>
 
 <svelte:head>
@@ -52,7 +94,7 @@
 						placeholder="you@example.com"
 						bind:value={$form.email}
 						class={$errors.email ? 'border-destructive' : ''}
-						autocomplete="email"
+						autocomplete="username webauthn"
 						required
 					/>
 					{#if $errors.email}
@@ -96,5 +138,36 @@
 				</Field>
 			</FieldGroup>
 		</form>
+
+		{#if passkeySupported}
+			<div class="mt-6 flex flex-col gap-4">
+				<div class="text-muted-foreground flex items-center gap-3 text-xs" aria-hidden="true">
+					<span class="bg-border h-px flex-1"></span>
+					or
+					<span class="bg-border h-px flex-1"></span>
+				</div>
+
+				{#if passkeyError}
+					<FormMessage type="error" text={passkeyError} />
+				{/if}
+
+				<Button
+					type="button"
+					variant="outline"
+					class="w-full"
+					disabled={passkeyPending}
+					aria-busy={passkeyPending}
+					onclick={() => signInWithPasskey(false)}
+				>
+					{#if passkeyPending}
+						<Spinner aria-hidden="true" />
+						Waiting for your device…
+					{:else}
+						<ShieldIcon aria-hidden="true" />
+						Sign in with a passkey
+					{/if}
+				</Button>
+			</div>
+		{/if}
 	</Card.Content>
 </Card.Root>
