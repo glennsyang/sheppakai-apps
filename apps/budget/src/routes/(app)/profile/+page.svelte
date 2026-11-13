@@ -89,7 +89,9 @@
 		year: 'numeric'
 	});
 
-	let passkeySupported = $state(false);
+	// `null` until the browser check runs, so the server render doesn't flash the
+	// "doesn't support passkeys" note before hydration.
+	let passkeySupported = $state<boolean | null>(null);
 	let addingPasskey = $state(false);
 	let passkeyStatus = $state<{ type: 'success' | 'error'; text: string } | null>(null);
 	let renamingId = $state<string | null>(null);
@@ -421,7 +423,7 @@
 						Add a passkey
 					{/if}
 				</Button>
-			{:else}
+			{:else if passkeySupported === false}
 				<p class="text-muted-foreground text-xs">This browser doesn't support passkeys.</p>
 			{/if}
 		</div>
