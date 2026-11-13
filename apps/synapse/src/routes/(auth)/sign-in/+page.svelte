@@ -25,11 +25,14 @@
 	let passkeySupported = $state(false);
 	let passkeyPending = $state(false);
 	let passkeyError = $state<string | null>(null);
+	// Set when the page unmounts. A client-side navigation doesn't cancel the pending
+	// conditional request, so the autofill flow must not start or redirect after this.
+	let unmounted = false;
 
 	/**
 	 * `autoFill` is the conditional request behind the email field's autofill list. It stays
-	 * silent on failure: it is cancelled whenever the button starts a new request or the
-	 * page navigates, and the user never asked for it.
+	 * silent on failure: it is cancelled whenever the button starts a new request, and the
+	 * user never asked for it.
 	 */
 	async function signInWithPasskey(autoFill: boolean) {
 		if (!autoFill) {
@@ -42,6 +45,7 @@
 				if (!autoFill) passkeyError = passkeyErrorMessage(error);
 				return;
 			}
+			if (autoFill && unmounted) return;
 			await goto(POST_LOGIN_ROUTE, { invalidateAll: true });
 		} catch (err) {
 			if (!autoFill) passkeyError = passkeyErrorMessage(err);
@@ -55,9 +59,15 @@
 		const supported = isPasskeySupported();
 		passkeySupported = supported;
 		if (!supported) return;
-		void PublicKeyCredential.isConditionalMediationAvailable?.().then((available) => {
-			if (available) void signInWithPasskey(true);
-		});
+		PublicKeyCredential.isConditionalMediationAvailable?.()
+			.then((available) => {
+				if (available && !unmounted) void signInWithPasskey(true);
+			})
+			// Autofill is best-effort: without it the button still works.
+			.catch(() => {});
+		return () => {
+			unmounted = true;
+		};
 	});
 </script>
 
