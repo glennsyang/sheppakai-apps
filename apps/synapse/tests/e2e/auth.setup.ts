@@ -15,7 +15,7 @@ setup('sign in once and save the session', async ({ page }) => {
 	await page.goto('/sign-in', { waitUntil: 'networkidle' });
 	await page.getByLabel('Email').fill(testUserEmail ?? '');
 	await page.getByLabel('Password').fill(testUserPassword ?? '');
-	await page.getByRole('button', { name: 'Sign in' }).click();
+	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 
 	await page.waitForURL('**/dashboard');
 	await expect(page.getByRole('navigation', { name: 'Sections' })).toBeVisible();

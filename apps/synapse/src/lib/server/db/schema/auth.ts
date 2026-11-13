@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 import { generateId } from '../utils';
 
@@ -91,6 +91,32 @@ export const accountRelations = relations(account, ({ one }) => ({
 		references: [user.id]
 	})
 }));
+
+// Mirrors the `@better-auth/passkey` plugin's `passkey` model (see
+// node_modules/@better-auth/passkey/dist/index.mjs, `const schema`). The plugin queries
+// it by these TypeScript field names through the drizzle adapter's schema map in
+// auth.ts, so keep them exact. Registering it there is what turns passkeys on.
+export const passkey = sqliteTable(
+	'passkey',
+	{
+		id: text('id').primaryKey(),
+		// Label shown on Profile; the user can rename it.
+		name: text('name'),
+		publicKey: text('publicKey').notNull(),
+		userId: text('userId')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		credentialID: text('credentialID').notNull().unique(),
+		counter: integer('counter').notNull(),
+		deviceType: text('deviceType').notNull(),
+		backedUp: integer('backedUp', { mode: 'boolean' }).notNull(),
+		transports: text('transports'),
+		// Identifies the provider (iCloud Keychain, Google Password Manager, …).
+		aaguid: text('aaguid'),
+		createdAt: integer('createdAt', { mode: 'timestamp' })
+	},
+	(table) => [index('passkey_userId_idx').on(table.userId)]
+);
 
 export const verification = sqliteTable('verification', {
 	id: text('id').primaryKey().$defaultFn(generateId),
