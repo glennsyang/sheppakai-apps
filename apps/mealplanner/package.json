@@ -36,7 +36,7 @@
 		"@better-auth/api-key": "catalog:",
 		"@better-auth/passkey": "catalog:",
 		"@getbrevo/brevo": "catalog:",
-		"@google/genai": "^3.0.0",
+		"@google/genai": "^3.3.0",
 		"@sentry/sveltekit": "catalog:",
 		"@sheppakai/logger": "workspace:*",
 		"@sheppakai/shared": "workspace:*",
