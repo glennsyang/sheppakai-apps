@@ -12,6 +12,17 @@ export interface PantryItem {
 	updatedAt: Date;
 }
 
+export interface ShoppingListItem {
+	id: string;
+	weekStartDate: string;
+	name: string;
+	quantity: number | null;
+	unit: string | null;
+	aisle: string;
+	checked: boolean;
+	manual: boolean;
+}
+
 export interface Ingredient {
 	name: string;
 	quantity: string;

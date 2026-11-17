@@ -26,8 +26,8 @@ recipes → meals slot into a Monday–Sunday weekly planner.
 - This app is intentionally a **shared-data** system for exactly **two users** — the same model used
   by the sibling `budget` app (see `apps/budget/CLAUDE.md`, "Product Data-Sharing Model").
 - Both users are expected to see and edit the same household data: `pantry_items`, `recipes`,
-  `recipe_cooks`, `meal_plans`, and `meal_plan_entries` are shared, not per-user-private. There is
-  one shared pantry and one shared weekly planner, not one per user.
+  `recipe_cooks`, `meal_plans`, `meal_plan_entries` and `shopping_list_items` are shared, not
+  per-user-private. There is one shared pantry and one shared weekly planner, not one per user.
 - Do **not** treat cross-user visibility or editing of these tables as a tenant-isolation bug (IDOR)
   in this project unless this product requirement changes. A full-codebase security review
   (2026-08-27) initially flagged this as critical in #31 and #32 — both were closed as by-design
@@ -119,13 +119,15 @@ src/
 │           ├── pantry.ts
 │           ├── mealPlan.ts      # includes getMondayOfCurrentWeek()
 │           ├── recipes.ts       # includes searchRecipes(), setRecipeRating()
-│           └── recipeCooks.ts   # the "cooked it" log
+│           ├── recipeCooks.ts   # the "cooked it" log
+│           └── shoppingList.ts  # week's list: sync from plan − pantry, tick → restockPantry()
 ├── routes/
 │   ├── (auth)/                  # Unauthenticated: sign-in, sign-out, password reset, email verification
 │   ├── (app)/                   # Protected: auth guard in +layout.server.ts
 │   │   ├── pantry/
 │   │   ├── suggest/
 │   │   ├── planner/
+│   │   ├── shopping/            # week's shopping list (src/lib/shopping.ts does the aggregation)
 │   │   ├── recipes/             # library (search), new (manual + URL/photo import), [id] (view/edit/rate/log/plan)
 │   │   ├── profile/
 │   │   └── admin/               # Users, API keys, API logs
@@ -179,7 +181,8 @@ required, defaults, and where each is consumed) — it's the canonical source, k
   tables.
 - Better-auth tables: `user`, `session`, `account`, `verification` — defined with camelCase Drizzle
   field names mapping to snake_case DB columns.
-- App tables: `pantry_items`, `recipes`, `recipe_cooks`, `meal_plans`, `meal_plan_entries`.
+- App tables: `pantry_items`, `recipes`, `recipe_cooks`, `meal_plans`, `meal_plan_entries`,
+  `shopping_list_items`.
 - Migrations output: `src/lib/server/db/migrations/`.
 
 ### Working with the DB

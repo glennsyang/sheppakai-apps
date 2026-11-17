@@ -258,3 +258,33 @@ export const mealPlanEntries = sqliteTable(
 	},
 	(table) => [uniqueIndex('meal_plan_entries_plan_day_idx').on(table.mealPlanId, table.dayOfWeek)]
 );
+
+// The week's shopping list (#194). Generated rows mirror what the plan needs after pantry
+// stock (`item_key` = normalized name + unit group); manual rows use `manual:<id>` keys and are
+// never touched by regeneration. The `pantry_*` columns record what ticking an item did to the
+// pantry so un-ticking can undo exactly that.
+export const shoppingListItems = sqliteTable(
+	'shopping_list_items',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+		weekStartDate: text('week_start_date').notNull(),
+		itemKey: text('item_key').notNull(),
+		name: text('name').notNull(),
+		quantity: real('quantity'),
+		unit: text('unit'),
+		aisle: text('aisle').notNull(),
+		checked: integer('checked', { mode: 'boolean' }).notNull().default(false),
+		manual: integer('manual', { mode: 'boolean' }).notNull().default(false),
+		pantryItemId: text('pantry_item_id').references(() => pantryItems.id, {
+			onDelete: 'set null'
+		}),
+		pantryAddedQuantity: real('pantry_added_quantity'),
+		pantryCreated: integer('pantry_created', { mode: 'boolean' }).notNull().default(false),
+		createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+		updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
+	},
+	(table) => [
+		uniqueIndex('shopping_list_items_week_key_idx').on(table.weekStartDate, table.itemKey)
+	]
+);

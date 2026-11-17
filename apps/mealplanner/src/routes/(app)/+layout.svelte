@@ -18,6 +18,7 @@
 	const navLinks: { href: string; label: string; icon: IconName }[] = [
 		{ href: '/', label: 'Tonight', icon: 'home' },
 		{ href: '/planner', label: 'Week', icon: 'calendar' },
+		{ href: '/shopping', label: 'List', icon: 'list' },
 		{ href: '/suggest', label: 'Suggest', icon: 'sparkles' },
 		{ href: '/recipes', label: 'Recipes', icon: 'book' },
 		{ href: '/pantry', label: 'Pantry', icon: 'basket' }
@@ -212,7 +213,9 @@
 		bottom: 0;
 		z-index: 30;
 		display: grid;
-		grid-template-columns: repeat(5, 1fr);
+		/* One equal column per link, so adding a link never wraps the tray. */
+		grid-auto-columns: 1fr;
+		grid-auto-flow: column;
 		padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
 		background: var(--frame);
 		border-top: 1px solid var(--frame-lo);
