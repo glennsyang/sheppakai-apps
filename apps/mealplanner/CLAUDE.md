@@ -113,6 +113,7 @@ src/
 │       │   ├── gemini.ts        # suggestMeals() — pantry → dinner suggestions
 │       │   ├── claude.ts        # suggestVariations() — variations on a meal
 │       │   ├── endpoint.ts      # createAiEndpoint() — auth, rate limit, body parse for both
+│       │   ├── models.ts        # GEMINI_MODEL + GEMINI_API_VERSION (v1beta) for gemini.ts and recipe import
 │       │   └── promptSafety.ts  # sanitizePromptText() for user text sent to either model
 │       ├── recipe-import/       # URL + photo import: safe-fetch (SSRF guard), json-ld, html-text, ai-extract
 │       └── services/
@@ -200,11 +201,12 @@ pnpm db:studio    # Open Drizzle visual browser
 Two providers, one per feature. Both return typed `MealSuggestion[]` and validate the model output
 with `pickValidSuggestions` (`#lib/schemas/mealPlan.js`).
 
-- **Suggestions — Gemini** (`src/lib/server/ai/gemini.ts`, model `gemini-3-flash-preview`,
-  `GEMINI_API_KEY`): `suggestMeals(pantryItems, history?)` uses a JSON response schema. Served by
-  `POST /api/suggest` and `POST /api/v1/suggestions`, which both pass `getSuggestionHistory()`
-  (`services/suggestionHistory.ts`): recipes cooked in the last 14 days (never re-suggested; also
-  filtered from the output), 4–5★ favorites and 1–2★ dislikes.
+- **Suggestions — Gemini** (`src/lib/server/ai/gemini.ts`, model `GEMINI_MODEL` in `ai/models.ts`,
+  `GEMINI_API_KEY`). The client is pinned to the `v1beta` API: preview models 404 on
+  `@google/genai`'s default `v1` (#290). `suggestMeals(pantryItems, history?)` uses a JSON response
+  schema. Served by `POST /api/suggest` and `POST /api/v1/suggestions`, which both pass
+  `getSuggestionHistory()` (`services/suggestionHistory.ts`): recipes cooked in the last 14 days
+  (never re-suggested; also filtered from the output), 4–5★ favorites and 1–2★ dislikes.
 - **Variations — Claude** (`src/lib/server/ai/claude.ts`, model `claude-sonnet-4-6`,
   `ANTHROPIC_API_KEY`): `suggestVariations(mealName)` uses tool use for typed output. Served by
   `POST /api/variations`.

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { anthropicCreate, geminiGenerate, loggerMock } = vi.hoisted(() => ({
+const { anthropicCreate, geminiGenerate, geminiOptions, loggerMock } = vi.hoisted(() => ({
+	geminiOptions: [] as unknown[],
 	anthropicCreate: vi.fn<() => Promise<unknown>>(),
 	geminiGenerate: vi.fn<() => Promise<unknown>>(),
 	loggerMock: {
@@ -21,6 +22,9 @@ vi.mock('@anthropic-ai/sdk', () => ({
 vi.mock('@google/genai', () => ({
 	GoogleGenAI: class {
 		models = { generateContent: geminiGenerate };
+		constructor(options: unknown) {
+			geminiOptions.push(options);
+		}
 	},
 	Type: { OBJECT: 'OBJECT', ARRAY: 'ARRAY', STRING: 'STRING', NUMBER: 'NUMBER' }
 }));
@@ -81,6 +85,12 @@ describe('mealSuggestionSchema (#171)', () => {
 			rejected: 2
 		});
 		expect(pickValidSuggestions('nope')).toEqual({ suggestions: [], rejected: 0 });
+	});
+});
+
+describe('Gemini client (#290)', () => {
+	it('uses the v1beta API, since preview models 404 on the SDK default v1', () => {
+		expect(geminiOptions).toEqual([expect.objectContaining({ apiVersion: 'v1beta' })]);
 	});
 });
 
