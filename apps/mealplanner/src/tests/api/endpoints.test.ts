@@ -7,7 +7,8 @@ const mocks = vi.hoisted(() => ({
 	requireApiKey: vi.fn<(request: Request, scope: string) => Promise<unknown>>(),
 	recordApiWrite: vi.fn<(entry: unknown) => Promise<void>>(),
 	limiterCheck: vi.fn<() => Promise<{ limited: boolean; retryAfter: number }>>(),
-	suggestMeals: vi.fn<(items: string[]) => Promise<unknown>>(),
+	suggestMeals: vi.fn<(items: string[], history?: unknown) => Promise<unknown>>(),
+	getSuggestionHistory: vi.fn<(today: Date) => Promise<unknown>>(),
 	pantry: {
 		listPantryItems: vi.fn<() => Promise<unknown[]>>(),
 		addPantryItem: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
@@ -36,6 +37,9 @@ vi.mock('#lib/server/rate-limiter.js', () => ({
 	createUserRateLimiter: () => ({ check: mocks.limiterCheck })
 }));
 vi.mock('#lib/server/ai/gemini.js', () => ({ suggestMeals: mocks.suggestMeals }));
+vi.mock('#lib/server/services/suggestionHistory.js', () => ({
+	getSuggestionHistory: mocks.getSuggestionHistory
+}));
 vi.mock('#lib/server/services/pantry.js', () => mocks.pantry);
 vi.mock('#lib/server/services/recipes.js', () => mocks.recipes);
 vi.mock('#lib/server/services/mealPlan.js', () => mocks.mealPlan);
@@ -311,6 +315,8 @@ describe('plans', () => {
 
 describe('suggestions', () => {
 	it('returns suggestions and audits the call', async () => {
+		const history = { recentlyCooked: ['Congee'], favorites: [], disliked: [] };
+		mocks.getSuggestionHistory.mockResolvedValue(history);
 		mocks.suggestMeals.mockResolvedValue([{ name: 'Fried rice' }]);
 		const res = await call(suggestions.POST, '/api/v1/suggestions', {
 			method: 'POST',
@@ -318,6 +324,7 @@ describe('suggestions', () => {
 		});
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ data: [{ name: 'Fried rice' }] });
+		expect(mocks.suggestMeals).toHaveBeenCalledWith(['rice', 'egg'], history);
 		expect(mocks.limiterCheck).toHaveBeenCalledWith(expect.anything(), { userId: 'apikey:key-1' });
 		expect(mocks.recordApiWrite).toHaveBeenCalledWith(
 			expect.objectContaining({ action: 'suggest:write', statusCode: 200 })

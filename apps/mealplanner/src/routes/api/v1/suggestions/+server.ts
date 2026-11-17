@@ -6,6 +6,7 @@ import { handleApiWrite } from '#lib/server/api/handle-write.js';
 import { requireApiKey } from '#lib/server/api/require-api-key.js';
 import { apiSuggestionsSchema } from '#lib/server/api/schemas/suggestions.js';
 import { createUserRateLimiter } from '#lib/server/rate-limiter.js';
+import { getSuggestionHistory } from '#lib/server/services/suggestionHistory.js';
 
 import type { RequestHandler } from './$types';
 
@@ -40,7 +41,7 @@ export const POST: RequestHandler = async (event) => {
 			path: url.pathname,
 			action: 'suggest:write'
 		},
-		() => suggestMeals(parsed.data.items),
+		async () => suggestMeals(parsed.data.items, await getSuggestionHistory(new Date())),
 		{ successStatus: 200, failureMessage: 'Failed to generate suggestions' }
 	);
 };
