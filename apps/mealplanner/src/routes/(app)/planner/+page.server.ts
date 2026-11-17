@@ -1,15 +1,12 @@
-import { redirect } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import { getMondayOf, parseIsoDate } from '#lib/dates.js';
 import {
 	removeMealPlanEntrySchema,
 	saveAndAddSchema,
 	addCustomMealSchema,
 	ingredientsJsonSchema,
-	instructionsJsonSchema,
-	weekStartDateSchema
+	instructionsJsonSchema
 } from '#lib/schemas/mealPlan.js';
 import { requireAuth } from '#lib/server/actions/auth-guard.js';
 import { handleDomainAction } from '#lib/server/actions/domain-action.js';
@@ -18,27 +15,12 @@ import { logger } from '#lib/server/logger.js';
 import {
 	getMealPlanWithEntries,
 	addMealPlanEntry,
-	removeMealPlanEntry,
-	getMondayOfCurrentWeek
+	removeMealPlanEntry
 } from '#lib/server/services/mealPlan.js';
 import { saveRecipe } from '#lib/server/services/recipes.js';
+import { resolveWeekStartDate } from '#lib/server/week.js';
 
 import type { Actions, PageServerLoad } from './$types';
-
-/**
- * Resolve `?week=` to a Monday plan key. A real date that isn't a Monday redirects to
- * that week's Monday; anything unparseable redirects to the current week, so arbitrary
- * strings never become meal-plan keys and the URL always matches what's shown.
- */
-function resolveWeekStartDate(url: URL): string {
-	const week = url.searchParams.get('week');
-	if (week === null) return getMondayOfCurrentWeek();
-	if (weekStartDateSchema.safeParse(week).success) return week;
-
-	const date = parseIsoDate(week);
-	if (date) throw redirect(302, `${url.pathname}?week=${getMondayOf(date)}`);
-	throw redirect(302, url.pathname);
-}
 
 export const load: PageServerLoad = async ({ url }) => {
 	const weekStartDate = resolveWeekStartDate(url);

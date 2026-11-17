@@ -397,9 +397,18 @@
 			</a>
 		</nav>
 	</div>
-	{#if !isCurrentWeek}
-		<a href="/planner" class="act-text ink-blue mt-3 inline-block">Back to this week</a>
-	{/if}
+	<div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+		<a
+			href="/shopping?week={data.weekStartDate}"
+			class="act-text ink-blue inline-flex items-center gap-1.5"
+		>
+			<Icon name="list" size={18} />
+			Shopping list
+		</a>
+		{#if !isCurrentWeek}
+			<a href="/planner" class="act-text ink-blue">Back to this week</a>
+		{/if}
+	</div>
 
 	{#if data.loadError}
 		<Alert variant="destructive" class="mt-6" role="alert">{data.loadError}</Alert>
