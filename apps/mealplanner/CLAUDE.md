@@ -198,8 +198,10 @@ Two providers, one per feature. Both return typed `MealSuggestion[]` and validat
 with `pickValidSuggestions` (`#lib/schemas/mealPlan.js`).
 
 - **Suggestions — Gemini** (`src/lib/server/ai/gemini.ts`, model `gemini-3-flash-preview`,
-  `GEMINI_API_KEY`): `suggestMeals(pantryItems)` uses a JSON response schema. Served by
-  `POST /api/suggest`.
+  `GEMINI_API_KEY`): `suggestMeals(pantryItems, history?)` uses a JSON response schema. Served by
+  `POST /api/suggest` and `POST /api/v1/suggestions`, which both pass `getSuggestionHistory()`
+  (`services/suggestionHistory.ts`): recipes cooked in the last 14 days (never re-suggested; also
+  filtered from the output), 4–5★ favorites and 1–2★ dislikes.
 - **Variations — Claude** (`src/lib/server/ai/claude.ts`, model `claude-sonnet-4-6`,
   `ANTHROPIC_API_KEY`): `suggestVariations(mealName)` uses tool use for typed output. Served by
   `POST /api/variations`.
