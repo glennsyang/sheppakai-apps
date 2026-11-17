@@ -5,10 +5,10 @@ import { type AiImage, extractJson } from '@sheppakai/shared/ai-vision';
 import { isRecord } from '@sheppakai/shared/guards';
 
 import { type RecipeImportResult, recipeImportResultSchema } from '#lib/schemas/recipes.js';
+import { GEMINI_MODEL } from '#lib/server/ai/models.js';
 import { sanitizePromptText } from '#lib/server/ai/promptSafety.js';
 import { logger } from '#lib/server/logger.js';
 
-const MODEL = 'gemini-3-flash-preview';
 const MAX_PAGE_TEXT = 30_000;
 
 /** The model answered, but not with a usable recipe (not a recipe, too blurry, empty page). */
@@ -127,7 +127,7 @@ export async function extractRecipe(
 		raw = await extractJson({
 			provider: 'gemini',
 			apiKey: GEMINI_API_KEY,
-			model: MODEL,
+			model: GEMINI_MODEL,
 			prompt,
 			image: 'image' in input ? input.image : null,
 			schemas: outputSchemas

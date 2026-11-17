@@ -6,12 +6,11 @@ import { pickValidSuggestions } from '#lib/schemas/mealPlan.js';
 import { logger } from '#lib/server/logger.js';
 import type { MealSuggestion } from '#lib/types.js';
 
+import { GEMINI_API_VERSION, GEMINI_MODEL } from './models';
 import { sanitizePromptText } from './promptSafety';
 import { buildHistoryPrompt, dropRecentRepeats, type SuggestionHistory } from './suggestionHistory';
 
-const client = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
-const MODEL = 'gemini-3-flash-preview';
+const client = new GoogleGenAI({ apiKey: GEMINI_API_KEY, apiVersion: GEMINI_API_VERSION });
 
 // Mirrors src/lib/schemas/pantry.ts's suggestFromPantrySchema bounds — enforced here
 // too so this function stays safe regardless of caller (defense-in-depth).
@@ -126,7 +125,7 @@ export async function suggestMeals(
 
 	const response = await withRetry(() =>
 		client.models.generateContent({
-			model: MODEL,
+			model: GEMINI_MODEL,
 			contents,
 			config: {
 				systemInstruction: SYSTEM_PROMPT,
