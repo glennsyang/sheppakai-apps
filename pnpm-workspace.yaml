@@ -65,3 +65,11 @@ onlyBuiltDependencies:
 
 overrides:
   nanoid: ^3.3.18
+
+auditConfig:
+  ignoreGhsas:
+    # picomatch ReDoS, no patched release exists (<=4.0.7 affected, 4.0.7 is latest).
+    # Only reached via build/dev tooling (vite via @sentry/sveltekit, lint-staged),
+    # which matches globs from our own config, never user input.
+    # Remove once picomatch >4.0.7 ships.
+    - GHSA-fc5q-39xc-vjpf
