@@ -1,5 +1,6 @@
-// Recipe photo or page text → import result, via Gemini, falling back to Claude when Gemini
-// returns no text (it filters cookbook text as RECITATION). The model's answer is untrusted:
+// Recipe photo or page text → import result, via Gemini, falling back to Claude when the Gemini
+// call fails for any reason (no text — it filters cookbook text as RECITATION — a timeout,
+// a quota 429, a 5xx or malformed JSON). The model's answer is untrusted:
 // it's held to `recipeImportResultSchema` like a JSON-LD recipe is.
 import { ANTHROPIC_API_KEY, GEMINI_API_KEY } from '$app/env/private';
 import {
@@ -110,7 +111,7 @@ ${OUTPUT_RULES}
 <page_text>${pageText}</page_text>`;
 }
 
-/** Gemini first; on an empty answer, the same request to Claude. */
+/** Gemini first; if that call fails for any reason, the same request to Claude. */
 async function extractJsonWithFallback(
 	request: ExtractJsonRequest,
 	kind: string
@@ -118,10 +119,9 @@ async function extractJsonWithFallback(
 	try {
 		return await extractJson(request);
 	} catch (err) {
-		if (!(err instanceof AiNoOutputError)) throw err;
-		logger.warn('Gemini returned no recipe text; retrying with Claude', {
+		logger.warn('Gemini recipe extraction failed; retrying with Claude', {
 			kind,
-			reason: err.reason
+			reason: err instanceof AiNoOutputError ? err.reason : String(err)
 		});
 		return extractJson({
 			...request,

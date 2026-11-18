@@ -219,7 +219,9 @@ with `pickValidSuggestions` (`#lib/schemas/mealPlan.js`).
   `fetchRecipePage` (http/https on default ports, DNS-checked inside the socket lookup so private,
   loopback, link-local and metadata addresses are refused at every redirect hop, 10 s, 2 MB), then
   schema.org `Recipe` JSON-LD is used if present, else the page text goes to Gemini. A photo goes to
-  Gemini through `extractJson` (`@sheppakai/shared/ai-vision`). Both are held to
+  Gemini through `extractJson` (`@sheppakai/shared/ai-vision`). If either Gemini call (photo or page
+  text) fails for any reason (no text, e.g. `RECITATION` on cookbook pages; timeout; 429; 5xx;
+  malformed JSON), the same request is retried on Claude (`CLAUDE_IMPORT_MODEL`). Both are held to
   `recipeImportResultSchema` and only fill the form; nothing saves until the user does. Rate limit
   20/hour/user.
 

@@ -67,29 +67,33 @@ describe('extractRecipe', () => {
 		await expect(extractRecipe({ image })).rejects.toBeInstanceOf(UnreadableRecipeError);
 	});
 
-	it('maps malformed JSON to UnreadableRecipeError and passes provider failures through', async () => {
-		extractJsonMock.mockRejectedValueOnce(new SyntaxError('bad json'));
-		await expect(extractRecipe({ image })).rejects.toBeInstanceOf(UnreadableRecipeError);
-
-		extractJsonMock.mockRejectedValueOnce(new Error('Gemini request failed with status 500'));
-		await expect(extractRecipe({ image })).rejects.not.toBeInstanceOf(UnreadableRecipeError);
-	});
-
-	it('retries with Claude when Gemini returns no text', async () => {
+	it.each([
+		['no text', new AiNoOutputError('gemini', 'finishReason: RECITATION')],
+		['a timeout', new DOMException('The operation was aborted due to timeout', 'TimeoutError')],
+		['a quota 429', new Error('Gemini request failed with status 429')],
+		['a 5xx', new Error('Gemini request failed with status 500')],
+		['malformed JSON', new SyntaxError('bad json')]
+	])('retries with Claude when Gemini fails with %s', async (_label, geminiError) => {
 		extractJsonMock
-			.mockRejectedValueOnce(new AiNoOutputError('gemini', 'finishReason: RECITATION'))
+			.mockRejectedValueOnce(geminiError)
 			.mockResolvedValueOnce({ isRecipe: true, name: 'Scones' });
 
 		await expect(extractRecipe({ image })).resolves.toMatchObject({ name: 'Scones' });
+		expect(extractJsonMock).toHaveBeenCalledTimes(2);
 		expect(extractJsonMock).toHaveBeenLastCalledWith(
 			expect.objectContaining({ provider: 'claude', apiKey: 'claude-key', image })
 		);
 	});
 
-	it('does not fall back to Claude on other Gemini failures', async () => {
-		extractJsonMock.mockRejectedValueOnce(new Error('Gemini request failed with status 429'));
-		await expect(extractRecipe({ image })).rejects.toThrow('status 429');
-		expect(extractJsonMock).toHaveBeenCalledTimes(1);
+	it("maps Claude's malformed JSON to UnreadableRecipeError and passes its failures through", async () => {
+		const geminiDown = new Error('Gemini request failed with status 500');
+		extractJsonMock.mockRejectedValueOnce(geminiDown).mockRejectedValueOnce(new SyntaxError('bad'));
+		await expect(extractRecipe({ image })).rejects.toBeInstanceOf(UnreadableRecipeError);
+
+		extractJsonMock
+			.mockRejectedValueOnce(geminiDown)
+			.mockRejectedValueOnce(new Error('Claude request failed with status 401'));
+		await expect(extractRecipe({ image })).rejects.toThrow('Claude request failed with status 401');
 	});
 
 	it('treats a page with no text as unreadable without calling the model', async () => {
