@@ -48,6 +48,23 @@ export async function extractJson(request: ExtractJsonRequest): Promise<unknown>
 	return request.provider === 'claude' ? extractWithClaude(request) : extractWithGemini(request);
 }
 
+/**
+ * The provider answered 200 but with no text to parse: Gemini filtered or truncated its own
+ * answer (e.g. `finishReason: RECITATION`, `SAFETY`, `MAX_TOKENS`) or blocked the prompt
+ * (`blockReason`). Callers can fall back to another provider on this error.
+ */
+export class AiNoOutputError extends Error {
+	constructor(
+		readonly provider: AiProvider,
+		readonly reason: string | undefined
+	) {
+		super(
+			`${provider === 'gemini' ? 'Gemini' : 'Claude'} returned no text content (${reason ?? 'no reason given'})`
+		);
+		this.name = 'AiNoOutputError';
+	}
+}
+
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 const CLAUDE_API_VERSION = '2026-10-21';
 
@@ -103,6 +120,19 @@ async function extractWithClaude({
 
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
+/** Why Gemini sent no text: the prompt's blockReason or the first candidate's finishReason. */
+function geminiNoTextReason(body: unknown): string | undefined {
+	if (!isRecord(body)) return undefined;
+	if (isRecord(body.promptFeedback) && typeof body.promptFeedback.blockReason === 'string') {
+		return `blockReason: ${body.promptFeedback.blockReason}`;
+	}
+	const [candidate] = Array.isArray(body.candidates) ? (body.candidates as unknown[]) : [];
+	if (isRecord(candidate) && typeof candidate.finishReason === 'string') {
+		return `finishReason: ${candidate.finishReason}`;
+	}
+	return undefined;
+}
+
 /** The first non-thought text part of the first candidate. */
 function geminiResponseText(body: unknown): string | undefined {
 	if (!isRecord(body) || !Array.isArray(body.candidates)) return undefined;
@@ -147,7 +177,8 @@ async function extractWithGemini({
 
 	if (!response.ok) throw new Error(`Gemini request failed with status ${response.status}`);
 
-	const text = geminiResponseText(await response.json());
-	if (!text) throw new Error('Gemini returned no text content');
+	const body: unknown = await response.json();
+	const text = geminiResponseText(body);
+	if (!text) throw new AiNoOutputError('gemini', geminiNoTextReason(body));
 	return JSON.parse(text);
 }

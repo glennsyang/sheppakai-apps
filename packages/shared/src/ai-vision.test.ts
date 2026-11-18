@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
 	type AiImage,
+	AiNoOutputError,
 	extractJson,
 	type ExtractJsonRequest,
 	MAX_AI_IMAGE_BYTES,
@@ -104,6 +105,23 @@ describe('extractJson with Gemini', () => {
 	it('throws a SyntaxError on malformed JSON', async () => {
 		fetchMock.mockResolvedValue(geminiResponse('{not json'));
 		await expect(extractJson(request())).rejects.toBeInstanceOf(SyntaxError);
+	});
+
+	it.each([
+		[
+			'finishReason',
+			{ candidates: [{ finishReason: 'RECITATION', content: { parts: [] } }] },
+			'finishReason: RECITATION'
+		],
+		['blockReason', { promptFeedback: { blockReason: 'SAFETY' } }, 'blockReason: SAFETY'],
+		['no reason', { candidates: [] }, 'no reason given']
+	])('throws AiNoOutputError with the %s when there is no text', async (_label, body, reason) => {
+		fetchMock.mockResolvedValue(Response.json(body));
+
+		const err = await extractJson(request()).catch((e: unknown) => e);
+		expect(err).toBeInstanceOf(AiNoOutputError);
+		expect((err as AiNoOutputError).provider).toBe('gemini');
+		expect((err as Error).message).toContain(reason);
 	});
 
 	it('refuses to call without an API key', async () => {

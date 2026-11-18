@@ -1,11 +1,17 @@
-// Recipe photo or page text → import result, via Gemini. The model's answer is untrusted:
+// Recipe photo or page text → import result, via Gemini, falling back to Claude when Gemini
+// returns no text (it filters cookbook text as RECITATION). The model's answer is untrusted:
 // it's held to `recipeImportResultSchema` like a JSON-LD recipe is.
-import { GEMINI_API_KEY } from '$app/env/private';
-import { type AiImage, extractJson } from '@sheppakai/shared/ai-vision';
+import { ANTHROPIC_API_KEY, GEMINI_API_KEY } from '$app/env/private';
+import {
+	type AiImage,
+	AiNoOutputError,
+	extractJson,
+	type ExtractJsonRequest
+} from '@sheppakai/shared/ai-vision';
 import { isRecord } from '@sheppakai/shared/guards';
 
 import { type RecipeImportResult, recipeImportResultSchema } from '#lib/schemas/recipes.js';
-import { GEMINI_MODEL } from '#lib/server/ai/models.js';
+import { CLAUDE_IMPORT_MODEL, GEMINI_MODEL } from '#lib/server/ai/models.js';
 import { sanitizePromptText } from '#lib/server/ai/promptSafety.js';
 import { logger } from '#lib/server/logger.js';
 
@@ -104,6 +110,28 @@ ${OUTPUT_RULES}
 <page_text>${pageText}</page_text>`;
 }
 
+/** Gemini first; on an empty answer, the same request to Claude. */
+async function extractJsonWithFallback(
+	request: ExtractJsonRequest,
+	kind: string
+): Promise<unknown> {
+	try {
+		return await extractJson(request);
+	} catch (err) {
+		if (!(err instanceof AiNoOutputError)) throw err;
+		logger.warn('Gemini returned no recipe text; retrying with Claude', {
+			kind,
+			reason: err.reason
+		});
+		return extractJson({
+			...request,
+			provider: 'claude',
+			apiKey: ANTHROPIC_API_KEY,
+			model: CLAUDE_IMPORT_MODEL
+		});
+	}
+}
+
 export async function extractRecipe(
 	input: { image: AiImage } | { pageText: string }
 ): Promise<RecipeImportResult> {
@@ -122,16 +150,17 @@ export async function extractRecipe(
 	}
 
 	const started = Date.now();
+	const request: ExtractJsonRequest = {
+		provider: 'gemini',
+		apiKey: GEMINI_API_KEY,
+		model: GEMINI_MODEL,
+		prompt,
+		image: 'image' in input ? input.image : null,
+		schemas: outputSchemas
+	};
 	let raw: unknown;
 	try {
-		raw = await extractJson({
-			provider: 'gemini',
-			apiKey: GEMINI_API_KEY,
-			model: GEMINI_MODEL,
-			prompt,
-			image: 'image' in input ? input.image : null,
-			schemas: outputSchemas
-		});
+		raw = await extractJsonWithFallback(request, kind);
 	} catch (err) {
 		if (err instanceof SyntaxError)
 			throw new UnreadableRecipeError('Malformed JSON', { cause: err });
