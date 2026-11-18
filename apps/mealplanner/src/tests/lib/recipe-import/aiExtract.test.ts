@@ -4,7 +4,15 @@ const { extractJsonMock } = vi.hoisted(() => ({
 	extractJsonMock: vi.fn<() => Promise<unknown>>()
 }));
 
-vi.mock('@sheppakai/shared/ai-vision', () => ({ extractJson: extractJsonMock }));
+vi.mock('$app/env/private', () => ({
+	ANTHROPIC_API_KEY: 'claude-key',
+	GEMINI_API_KEY: 'gemini-key'
+}));
+vi.mock('@sheppakai/shared/ai-vision', async (importOriginal) => ({
+	AiNoOutputError: (await importOriginal<typeof import('@sheppakai/shared/ai-vision')>())
+		.AiNoOutputError,
+	extractJson: extractJsonMock
+}));
 vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<() => void>(),
@@ -13,6 +21,8 @@ vi.mock('#lib/server/logger.js', () => ({
 		error: vi.fn<() => void>()
 	}
 }));
+
+import { AiNoOutputError } from '@sheppakai/shared/ai-vision';
 
 import { extractRecipe, UnreadableRecipeError } from '../../../lib/server/recipe-import/ai-extract';
 
@@ -63,6 +73,23 @@ describe('extractRecipe', () => {
 
 		extractJsonMock.mockRejectedValueOnce(new Error('Gemini request failed with status 500'));
 		await expect(extractRecipe({ image })).rejects.not.toBeInstanceOf(UnreadableRecipeError);
+	});
+
+	it('retries with Claude when Gemini returns no text', async () => {
+		extractJsonMock
+			.mockRejectedValueOnce(new AiNoOutputError('gemini', 'finishReason: RECITATION'))
+			.mockResolvedValueOnce({ isRecipe: true, name: 'Scones' });
+
+		await expect(extractRecipe({ image })).resolves.toMatchObject({ name: 'Scones' });
+		expect(extractJsonMock).toHaveBeenLastCalledWith(
+			expect.objectContaining({ provider: 'claude', apiKey: 'claude-key', image })
+		);
+	});
+
+	it('does not fall back to Claude on other Gemini failures', async () => {
+		extractJsonMock.mockRejectedValueOnce(new Error('Gemini request failed with status 429'));
+		await expect(extractRecipe({ image })).rejects.toThrow('status 429');
+		expect(extractJsonMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('treats a page with no text as unreadable without calling the model', async () => {
