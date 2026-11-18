@@ -3,17 +3,15 @@
 
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
-	import type { JournalEntry } from '#lib/types.js';
+	import type { JournalListEntry } from '#lib/types.js';
 	import { formatDateHeuristic } from '#lib/utils/date.js';
-	import { renderMarkdownToSafeHtml } from '#lib/utils/markdown.js';
 
 	import ConfirmDialog from '../shared/ConfirmDialog.svelte';
 
-	let { entry }: { entry: JournalEntry } = $props();
+	let { entry }: { entry: JournalListEntry } = $props();
 
 	let openDeleteModal = $state<boolean>(false);
 
-	let previewHtml = $derived(renderMarkdownToSafeHtml(entry.content));
 	let hasMetadata = $derived(
 		Boolean(entry.location) || Boolean(entry.weather?.temp) || Boolean(entry.weather?.condition)
 	);
@@ -97,11 +95,15 @@
 			</div>
 		</div>
 
-		<div
-			class="prose prose-slate dark:prose-invert prose-p:leading-7 prose-blockquote:border-l-pen-journal/40 prose-blockquote:text-muted-foreground mt-2 max-w-[68ch] text-[15px] leading-7"
-		>
-			{@html previewHtml}
-		</div>
+		<p class="mt-2 line-clamp-4 max-w-[68ch] text-[15px] leading-7">{entry.excerpt}</p>
+		{#if entry.truncated}
+			<a
+				href="/journal/{entry.id}"
+				class="text-pen-journal mt-1 inline-block text-sm font-bold hover:underline"
+			>
+				Read more
+			</a>
+		{/if}
 
 		{#if hasMetadata}
 			<div class="mt-3 flex flex-wrap gap-2">

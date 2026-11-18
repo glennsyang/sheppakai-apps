@@ -35,6 +35,12 @@ export type JournalEntry = {
 	updatedAt: Date;
 };
 
+/** Journal entry as the list page receives it: a preview instead of the full content. */
+export type JournalListEntry = Pick<JournalEntry, 'id' | 'date' | 'location' | 'weather'> & {
+	excerpt: string;
+	truncated: boolean;
+};
+
 export type Exercise = {
 	exerciseName: string;
 	sets: number | null;
