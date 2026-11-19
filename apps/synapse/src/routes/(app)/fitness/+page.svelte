@@ -185,6 +185,7 @@
 			goalForm={data.goalForm}
 			calorieForm={data.calorieForm}
 			reminderForm={data.reminderForm}
+			onOpenHistory={() => (historySheetOpen = true)}
 		/>
 
 		<!-- Daily Status Band: Hero KPI cards -->

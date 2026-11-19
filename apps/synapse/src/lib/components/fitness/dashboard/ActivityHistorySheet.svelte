@@ -7,6 +7,7 @@
 	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
 	import type { Workout } from '#lib/types.js';
 	import { formatDateMedium, formatTime12Hour } from '#lib/utils/date.js';
+	import { sumCalories } from '#lib/utils/meal.js';
 	import { getWorkoutBadgeClass, getWorkoutLabel } from '#lib/utils/workout.js';
 
 	interface WeightEntry {
@@ -115,7 +116,14 @@
 			}
 			current.items.push(item);
 		}
-		return groups;
+		return groups.map((group) => {
+			const dayMeals = group.items.flatMap((item) => (item.kind === 'meal' ? [item.data] : []));
+			return {
+				...group,
+				// The day's calorie total, shown once a meal is in the group.
+				calories: dayMeals.length > 0 ? sumCalories(dayMeals) : null
+			};
+		});
 	});
 
 	const filters: { value: FilterKind; label: string }[] = [
@@ -167,6 +175,11 @@
 						class="text-muted-foreground dark:text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase"
 					>
 						{group.label}
+						{#if group.calories != null}
+							<span class="text-foreground ml-1 normal-case tabular-nums">
+								· {group.calories.toLocaleString()} cal
+							</span>
+						{/if}
 					</h3>
 					<ul class="space-y-1.5">
 						{#each group.items as item (item.kind + item.data.id)}
