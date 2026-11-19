@@ -3,6 +3,7 @@
 		BellPlus,
 		Dumbbell,
 		EllipsisVertical,
+		History,
 		Scale,
 		Settings,
 		Target,
@@ -36,9 +37,19 @@
 		goalForm: SuperValidated<Infer<typeof setGoalWeightSchema>>;
 		calorieForm: SuperValidated<Infer<typeof setCalorieTargetSchema>>;
 		reminderForm: SuperValidated<Infer<typeof workoutReminderSchema>>;
+		/** Opens the full activity history (workouts, weight, meals). */
+		onOpenHistory: () => void;
 	}
 
-	let { workoutForm, weightForm, mealForm, goalForm, calorieForm, reminderForm }: Props = $props();
+	let {
+		workoutForm,
+		weightForm,
+		mealForm,
+		goalForm,
+		calorieForm,
+		reminderForm,
+		onOpenHistory
+	}: Props = $props();
 
 	// Dialog state
 	let showLogWorkout = $state(false);
@@ -59,6 +70,10 @@
 		</div>
 
 		<div class="flex items-center gap-2">
+			<Button variant="outline" onclick={onOpenHistory}>
+				<History />
+				History
+			</Button>
 			<Button
 				class="bg-pen-fitness text-paper hover:bg-pen-fitness/90"
 				onclick={() => (showLogWorkout = true)}

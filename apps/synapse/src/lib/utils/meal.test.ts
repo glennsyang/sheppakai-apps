@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getFrequentMeals, mealTypeForNow } from './meal';
+import { getFrequentMeals, mealTypeForNow, sumCalories } from './meal';
 
 const meal = (
 	date: string,
@@ -100,5 +100,21 @@ describe('mealTypeForNow', () => {
 		['2026-10-25T05:00:00Z', 'snack'] // 22:00
 	])('maps %s to %s in Pacific time', (iso, expected) => {
 		expect(mealTypeForNow(new Date(iso))).toBe(expected);
+	});
+});
+
+describe('sumCalories', () => {
+	it('adds estimates and counts missing ones as 0', () => {
+		expect(
+			sumCalories([
+				meal('2026-11-18', 'Oatmeal', 'breakfast', 350),
+				meal('2026-11-18', 'Coffee', 'breakfast', null),
+				meal('2026-11-18', 'Wrap', 'lunch', 600)
+			])
+		).toBe(950);
+	});
+
+	it('is 0 for no meals', () => {
+		expect(sumCalories([])).toBe(0);
 	});
 });

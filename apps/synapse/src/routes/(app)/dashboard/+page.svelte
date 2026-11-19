@@ -16,6 +16,7 @@
 
 	import AgendaCompletionChart from '#lib/components/dashboard/AgendaCompletionChart.svelte';
 	import AgendaItemScorecard from '#lib/components/dashboard/AgendaItemScorecard.svelte';
+	import TodayMealsSection from '#lib/components/dashboard/TodayMealsSection.svelte';
 	import VisitHealthPanel from '#lib/components/dashboard/VisitHealthPanel.svelte';
 	import WorkoutTypeChart from '#lib/components/dashboard/WorkoutTypeChart.svelte';
 	import LoadErrorAlert from '#lib/components/shared/LoadErrorAlert.svelte';
@@ -228,76 +229,84 @@
 
 		<!-- ── Today's agenda + the margin of readings ──────────────────────── -->
 		<div class="grid grid-cols-1 gap-x-10 gap-y-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-			<section aria-labelledby="agenda-h" class="min-w-0">
-				<div class="ruled mb-1 flex items-baseline gap-3 pb-2">
-					<h2 id="agenda-h" class="text-2xl font-black tracking-tight">Today's agenda</h2>
-					<span class="text-muted-foreground text-sm tabular-nums">
-						<span class="text-foreground font-black">{doneCount}</span>
-						/ {data.todayAgendaSummary.total} done
-					</span>
-					<a
-						href="/tasks?tab=agenda"
-						class="text-pen-tasks ml-auto flex items-center gap-1 text-xs font-bold hover:underline"
-						>Open agenda<ArrowRight class="size-3" aria-hidden="true" /></a
-					>
-				</div>
-
-				{#if data.todayAgendaSummary.total === 0}
-					<div class="border-rule border-b border-dashed py-8">
-						<p class="text-sm font-medium">No agenda items for today.</p>
+			<div class="min-w-0 space-y-12">
+				<section aria-labelledby="agenda-h" class="min-w-0">
+					<div class="ruled mb-1 flex items-baseline gap-3 pb-2">
+						<h2 id="agenda-h" class="text-2xl font-black tracking-tight">Today's agenda</h2>
+						<span class="text-muted-foreground text-sm tabular-nums">
+							<span class="text-foreground font-black">{doneCount}</span>
+							/ {data.todayAgendaSummary.total} done
+						</span>
 						<a
 							href="/tasks?tab=agenda"
-							class="text-pen-tasks mt-1 inline-block text-sm font-bold hover:underline"
-							>Set up your daily agenda</a
+							class="text-pen-tasks ml-auto flex items-center gap-1 text-xs font-bold hover:underline"
+							>Open agenda<ArrowRight class="size-3" aria-hidden="true" /></a
 						>
 					</div>
-				{:else}
-					<div class="bg-rule mb-2 h-1 w-full" aria-hidden="true">
-						<div
-							class="bg-pen-tasks h-full transition-[width] duration-500"
-							style="width: {agendaProgressPct}%"
-						></div>
-					</div>
-					<ul>
-						{#each data.todayAgendaSummary.items as item (item.id)}
-							{@const done = pending[item.id] ?? item.completed}
-							<li class="border-rule flex min-h-11 items-center gap-2 border-b">
-								<form
-									method="POST"
-									action="/tasks?/toggleAgendaEntry"
-									use:enhance={() => {
-										pending[item.id] = !item.completed;
-										return async ({ result }) => {
-											if (result.type !== 'success') {
-												toast.error('Unable to update agenda item.');
-											}
-											await refreshAll();
-											delete pending[item.id];
-										};
-									}}
-								>
-									<input type="hidden" name="id" value={item.id} />
-									<input type="hidden" name="completed" value={item.completed ? 'false' : 'true'} />
-									<PenCheck
-										checked={done}
-										label={item.title}
-										style="--pen: oklch(var(--color-orange))"
-										onchange={(event) => event.currentTarget.form?.requestSubmit()}
-									/>
-								</form>
-								<span
-									class={[
-										'text-[0.95rem] transition-colors',
-										done && 'text-muted-foreground decoration-pen-tasks/70 line-through'
-									]}
-								>
-									{item.title}
-								</span>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</section>
+
+					{#if data.todayAgendaSummary.total === 0}
+						<div class="border-rule border-b border-dashed py-8">
+							<p class="text-sm font-medium">No agenda items for today.</p>
+							<a
+								href="/tasks?tab=agenda"
+								class="text-pen-tasks mt-1 inline-block text-sm font-bold hover:underline"
+								>Set up your daily agenda</a
+							>
+						</div>
+					{:else}
+						<div class="bg-rule mb-2 h-1 w-full" aria-hidden="true">
+							<div
+								class="bg-pen-tasks h-full transition-[width] duration-500"
+								style="width: {agendaProgressPct}%"
+							></div>
+						</div>
+						<ul>
+							{#each data.todayAgendaSummary.items as item (item.id)}
+								{@const done = pending[item.id] ?? item.completed}
+								<li class="border-rule flex min-h-11 items-center gap-2 border-b">
+									<form
+										method="POST"
+										action="/tasks?/toggleAgendaEntry"
+										use:enhance={() => {
+											pending[item.id] = !item.completed;
+											return async ({ result }) => {
+												if (result.type !== 'success') {
+													toast.error('Unable to update agenda item.');
+												}
+												await refreshAll();
+												delete pending[item.id];
+											};
+										}}
+									>
+										<input type="hidden" name="id" value={item.id} />
+										<input
+											type="hidden"
+											name="completed"
+											value={item.completed ? 'false' : 'true'}
+										/>
+										<PenCheck
+											checked={done}
+											label={item.title}
+											style="--pen: oklch(var(--color-orange))"
+											onchange={(event) => event.currentTarget.form?.requestSubmit()}
+										/>
+									</form>
+									<span
+										class={[
+											'text-[0.95rem] transition-colors',
+											done && 'text-muted-foreground decoration-pen-tasks/70 line-through'
+										]}
+									>
+										{item.title}
+									</span>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+				</section>
+
+				<TodayMealsSection todayMeals={data.todayMeals} mealForm={data.mealForm} />
+			</div>
 
 			<!-- Readings: the week so far, one pen per domain -->
 			<section aria-labelledby="readings-h" class="lg:border-rule min-w-0 lg:border-l lg:pl-10">

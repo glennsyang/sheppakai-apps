@@ -73,3 +73,27 @@ export function mealTypeForNow(now: Date = new Date()): MealType {
 	if (hour < 21) return 'dinner';
 	return 'snack';
 }
+
+interface DayMeal {
+	timeOfDay: string;
+	caloriesEstimate: number | null;
+}
+
+/** Total calories across meals; meals without an estimate count as 0. */
+export function sumCalories(meals: DayMeal[]): number {
+	return meals.reduce((sum, meal) => sum + (meal.caloriesEstimate ?? 0), 0);
+}
+
+export interface TodayMealSlot {
+	type: MealType;
+	/** The slot's meals joined with ", ", or null when nothing is logged for it. */
+	description: string | null;
+	/** Summed estimates, or null when none of the slot's meals has one. */
+	calories: number | null;
+}
+
+export interface TodayMeals {
+	slots: TodayMealSlot[];
+	totalCalories: number;
+	targetCalories: number | null;
+}

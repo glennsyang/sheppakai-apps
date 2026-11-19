@@ -18,9 +18,11 @@
 		/** What the user has typed as the description so far; sent along as the note. */
 		note: string;
 		onEstimated: (estimate: MealEstimate) => void;
+		/** Route that owns the estimateMeal action, when used outside it (e.g. '/fitness'). */
+		actionPath?: string;
 	}
 
-	let { note, onEstimated }: Props = $props();
+	let { note, onEstimated, actionPath = '' }: Props = $props();
 
 	let formEl = $state<HTMLFormElement>();
 	let cameraInput = $state<HTMLInputElement>();
@@ -62,7 +64,7 @@
 <form
 	bind:this={formEl}
 	method="POST"
-	action="?/estimateMeal"
+	action={`${actionPath}?/estimateMeal`}
 	enctype="multipart/form-data"
 	class="bg-muted/50 rounded-lg p-3"
 	use:enhance={({ formData }) => {
