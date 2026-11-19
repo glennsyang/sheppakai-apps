@@ -73,3 +73,35 @@ export function mealTypeForNow(now: Date = new Date()): MealType {
 	if (hour < 21) return 'dinner';
 	return 'snack';
 }
+
+interface DayMeal {
+	timeOfDay: string;
+	caloriesEstimate: number | null;
+}
+
+/** A day's meals in eating order: breakfast, lunch, dinner, then snacks. Stable within a type. */
+export function sortMealsForDay<T extends DayMeal>(meals: T[]): T[] {
+	const rank = (type: string) => {
+		const index = (MEAL_TYPES as readonly string[]).indexOf(type);
+		return index === -1 ? MEAL_TYPES.length : index;
+	};
+	return [...meals].sort((a, b) => rank(a.timeOfDay) - rank(b.timeOfDay));
+}
+
+/** Total calories across meals; meals without an estimate count as 0. */
+export function sumCalories(meals: DayMeal[]): number {
+	return meals.reduce((sum, meal) => sum + (meal.caloriesEstimate ?? 0), 0);
+}
+
+/**
+ * The day whose meals the fitness page shows, from its `?day=` param: a real YYYY-MM-DD date on or
+ * before today, otherwise today.
+ */
+export function parseMealDay(value: string | null, today: string): string {
+	if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return today;
+	const [year, month, day] = value.split('-').map(Number);
+	const date = new Date(year, month - 1, day);
+	const isRealDate =
+		date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+	return isRealDate && value <= today ? value : today;
+}
