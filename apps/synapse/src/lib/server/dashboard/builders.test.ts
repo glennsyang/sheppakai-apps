@@ -13,6 +13,7 @@ import {
 	buildDaysSinceLastWorkout,
 	buildTaskStats,
 	buildTodayAgendaSummary,
+	buildTodayMeals,
 	buildUpcomingVisits,
 	buildVisitHealth,
 	sumCountsByDate
@@ -188,5 +189,53 @@ describe('buildDaysSinceLastWorkout', () => {
 			2
 		);
 		expect(buildDaysSinceLastWorkout([], TODAY)).toBeNull();
+	});
+});
+
+describe('buildTodayMeals', () => {
+	const meal = (timeOfDay: string, description: string, caloriesEstimate: number | null) => ({
+		timeOfDay,
+		description,
+		caloriesEstimate
+	});
+
+	it('always lists breakfast, lunch and dinner, marking unlogged ones empty', () => {
+		const result = buildTodayMeals([meal('lunch', 'Wrap', 600)], []);
+		expect(result.slots).toEqual([
+			{ type: 'breakfast', description: null, calories: null },
+			{ type: 'lunch', description: 'Wrap', calories: 600 },
+			{ type: 'dinner', description: null, calories: null }
+		]);
+		expect(result.totalCalories).toBe(600);
+		expect(result.targetCalories).toBeNull();
+	});
+
+	it('adds a snack slot only once a snack is logged', () => {
+		const result = buildTodayMeals([meal('snack', 'Apple', 95)], [{ targetCalories: 2000 }]);
+		expect(result.slots.map((s) => s.type)).toEqual(['breakfast', 'lunch', 'dinner', 'snack']);
+		expect(result.targetCalories).toBe(2000);
+	});
+
+	it('joins several meals in one slot and sums their calories', () => {
+		const result = buildTodayMeals(
+			[
+				meal('breakfast', 'Oatmeal ', 340),
+				meal('breakfast', 'Coffee', null),
+				meal('breakfast', 'Banana', 105)
+			],
+			[]
+		);
+		expect(result.slots[0]).toEqual({
+			type: 'breakfast',
+			description: 'Oatmeal, Coffee, Banana',
+			calories: 445
+		});
+		expect(result.totalCalories).toBe(445);
+	});
+
+	it('leaves calories empty when no meal in the slot has an estimate', () => {
+		const result = buildTodayMeals([meal('dinner', 'Leftovers', null)], []);
+		expect(result.slots[2]).toEqual({ type: 'dinner', description: 'Leftovers', calories: null });
+		expect(result.totalCalories).toBe(0);
 	});
 });

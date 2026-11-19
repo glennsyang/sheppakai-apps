@@ -1,3 +1,7 @@
+import { superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+
+import { logMealSchema } from '#lib/schemas/fitness.js';
 import { getUser } from '#lib/server/actions/auth-guard.js';
 import { getDashboardGoalsForUser } from '#lib/server/dashboard-goal-settings.js';
 import { buildAgendaItemStats, buildDateRanges } from '#lib/server/dashboard/agenda-stats.js';
@@ -9,6 +13,7 @@ import {
 	buildMeditationCountByDate,
 	buildTaskStats,
 	buildTodayAgendaSummary,
+	buildTodayMeals,
 	buildUpcomingVisits,
 	buildVisitHealth,
 	emptyDashboardReturn,
@@ -18,6 +23,7 @@ import {
 import { runDashboardQueries } from '#lib/server/dashboard/queries.js';
 import { getDb } from '#lib/server/db/index.js';
 import { logger } from '#lib/server/logger.js';
+import { isMealEstimateEnabled } from '#lib/server/meal-estimate/index.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
 import { formatTodayLabel, getISODayOfWeek, getTodayString } from '#lib/utils/date.js';
 
@@ -28,6 +34,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const today = getTodayString();
 	const ranges = buildDateRanges(today);
+	// The dashboard's Log Meal dialog posts to /fitness; it reads mealEstimateEnabled from page data.
+	const mealLogging = {
+		mealForm: await superValidate(zod4(logMealSchema)),
+		mealEstimateEnabled: isMealEstimateEnabled()
+	};
 
 	try {
 		const db = getDb();
@@ -101,12 +112,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 			agendaItemStats: buildAgendaItemStats(data.agendaEntriesForTrend, ranges),
 			daysSinceLastWorkout: buildDaysSinceLastWorkout(data.recentWorkoutRaw, today),
 			todayAgendaSummary: buildTodayAgendaSummary(data.agendaEntriesForTrend, today),
-			dashboardGoals
+			todayMeals: buildTodayMeals(data.todayMealsRaw, data.calorieTargetRaw),
+			dashboardGoals,
+			...mealLogging
 		};
 	} catch (error) {
 		logger.error('Failed to load dashboard data', error);
 		return {
 			...emptyDashboardReturn(),
+			...mealLogging,
 			loadError: 'Failed to load dashboard data. Please try refreshing the page.'
 		};
 	}

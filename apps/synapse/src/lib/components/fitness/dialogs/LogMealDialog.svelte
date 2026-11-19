@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import PlusIcon from '@lucide/svelte/icons/plus';
+	import { untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import type { Infer, SuperValidated } from 'sveltekit-superforms';
 	import { superForm } from 'sveltekit-superforms';
@@ -33,13 +34,19 @@
 		editEntry = null,
 		onClose,
 		open = $bindable(),
-		instanceId = 'default'
+		instanceId = 'default',
+		actionPath = '',
+		defaultTimeOfDay
 	}: {
 		formData: SuperValidated<LogMealData>;
 		editEntry?: EditMeal | null;
 		onClose?: () => void;
 		open?: boolean;
 		instanceId?: string;
+		/** Route that owns the meal actions, when the dialog is used elsewhere (e.g. '/fitness'). */
+		actionPath?: string;
+		/** Meal type a new entry starts as; defaults to the meal usually eaten at this hour. */
+		defaultTimeOfDay?: MealType;
 	} = $props();
 
 	const isEditing = $derived(editEntry !== null);
@@ -96,12 +103,17 @@
 		}
 	});
 
-	// Default a new entry to today, and to the meal usually eaten at this hour
+	// Default a new entry to today, and to the given meal type or the one usually eaten at this hour.
+	// A given type is applied on every open, so one dialog can serve several meal slots.
+	// Only opening (or a new default) re-runs this; form edits must not undo a manual choice.
 	$effect(() => {
-		if (dialogOpen && !isEditing) {
+		if (!dialogOpen || isEditing) return;
+		const presetType = defaultTimeOfDay;
+		untrack(() => {
 			if (!$form.date) $form.date = getTodayString();
-			if (!$form.timeOfDay) $form.timeOfDay = mealTypeForNow();
-		}
+			if (presetType) $form.timeOfDay = presetType;
+			else if (!$form.timeOfDay) $form.timeOfDay = mealTypeForNow();
+		});
 	});
 
 	function applyEstimate(estimate: MealEstimate) {
@@ -146,9 +158,17 @@
 			</Dialog.Description>
 		</Dialog.Header>
 		{#if canEstimate}
-			<MealEstimateButtons note={$form.description ?? ''} onEstimated={applyEstimate} />
+			<MealEstimateButtons
+				note={$form.description ?? ''}
+				onEstimated={applyEstimate}
+				{actionPath}
+			/>
 		{/if}
-		<form method="POST" action={isEditing ? '?/updateMeal' : '?/logMeal'} use:enhance>
+		<form
+			method="POST"
+			action={`${actionPath}${isEditing ? '?/updateMeal' : '?/logMeal'}`}
+			use:enhance
+		>
 			{#if isEditing && editEntry}
 				<Input type="hidden" name="id" value={editEntry.id} />
 			{/if}

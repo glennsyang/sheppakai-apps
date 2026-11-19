@@ -1,3 +1,4 @@
+import type { MealType } from '#lib/schemas/fitness.js';
 import { getPersonVisitStatus } from '#lib/server/visits.js';
 import { DEFAULT_DASHBOARD_GOALS } from '#lib/utils/dashboard-goals.js';
 import {
@@ -13,6 +14,7 @@ import {
 	getTodayString
 } from '#lib/utils/date.js';
 import { createMarkdownExcerpt } from '#lib/utils/markdown.js';
+import { sumCalories, type TodayMeals } from '#lib/utils/meal.js';
 import type { VisitStatus, VisitStatusThresholds } from '#lib/utils/visit-status.js';
 import { getWorkoutLabel } from '#lib/utils/workout.js';
 
@@ -303,6 +305,7 @@ export function buildDaysSinceLastWorkout(
 
 export function emptyDashboardReturn() {
 	return {
+		todayMeals: buildTodayMeals([], []),
 		todayLabel: formatTodayLabel(),
 		today: getTodayString(),
 		todayDowIndex: getISODayOfWeek(getTodayString()),
@@ -350,5 +353,35 @@ export function emptyDashboardReturn() {
 			items: [] as { id: string; title: string; completed: boolean }[]
 		},
 		dashboardGoals: DEFAULT_DASHBOARD_GOALS
+	};
+}
+
+const MAIN_MEALS: readonly MealType[] = ['breakfast', 'lunch', 'dinner'];
+
+/**
+ * Today's meals for the dashboard: breakfast, lunch and dinner always (so a missing one shows),
+ * snacks only once one is logged.
+ */
+export function buildTodayMeals(
+	meals: QueryData['todayMealsRaw'],
+	calorieTarget: QueryData['calorieTargetRaw']
+): TodayMeals {
+	const hasSnack = meals.some((m) => m.timeOfDay === 'snack');
+	const types: MealType[] = hasSnack ? [...MAIN_MEALS, 'snack'] : [...MAIN_MEALS];
+
+	const slots = types.map((type) => {
+		const logged = meals.filter((m) => m.timeOfDay === type);
+		const withCalories = logged.filter((m) => m.caloriesEstimate != null);
+		return {
+			type,
+			description: logged.length > 0 ? logged.map((m) => m.description.trim()).join(', ') : null,
+			calories: withCalories.length > 0 ? sumCalories(withCalories) : null
+		};
+	});
+
+	return {
+		slots,
+		totalCalories: sumCalories(meals),
+		targetCalories: calorieTarget[0]?.targetCalories ?? null
 	};
 }

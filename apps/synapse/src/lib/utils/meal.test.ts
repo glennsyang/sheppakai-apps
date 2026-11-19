@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-	getFrequentMeals,
-	mealTypeForNow,
-	parseMealDay,
-	sortMealsForDay,
-	sumCalories
-} from './meal';
+import { getFrequentMeals, mealTypeForNow, sumCalories } from './meal';
 
 const meal = (
 	date: string,
@@ -109,25 +103,6 @@ describe('mealTypeForNow', () => {
 	});
 });
 
-describe('sortMealsForDay', () => {
-	it('orders breakfast, lunch, dinner, snack and keeps order within a type', () => {
-		const result = sortMealsForDay([
-			meal('2026-11-18', 'Chips', 'snack'),
-			meal('2026-11-18', 'Salmon', 'dinner'),
-			meal('2026-11-18', 'Apple', 'snack'),
-			meal('2026-11-18', 'Oatmeal', 'breakfast'),
-			meal('2026-11-18', 'Wrap', 'lunch')
-		]);
-		expect(result.map((m) => m.description)).toEqual([
-			'Oatmeal',
-			'Wrap',
-			'Salmon',
-			'Chips',
-			'Apple'
-		]);
-	});
-});
-
 describe('sumCalories', () => {
 	it('adds estimates and counts missing ones as 0', () => {
 		expect(
@@ -141,26 +116,5 @@ describe('sumCalories', () => {
 
 	it('is 0 for no meals', () => {
 		expect(sumCalories([])).toBe(0);
-	});
-});
-
-describe('parseMealDay', () => {
-	const today = '2026-11-18';
-
-	it('falls back to today when the param is missing or malformed', () => {
-		expect(parseMealDay(null, today)).toBe(today);
-		expect(parseMealDay('', today)).toBe(today);
-		expect(parseMealDay('yesterday', today)).toBe(today);
-		expect(parseMealDay('2026-1-5', today)).toBe(today);
-	});
-
-	it('falls back to today for impossible or future dates', () => {
-		expect(parseMealDay('2026-02-30', today)).toBe(today);
-		expect(parseMealDay('2026-11-19', today)).toBe(today);
-	});
-
-	it('accepts today and past dates', () => {
-		expect(parseMealDay('2026-11-18', today)).toBe('2026-11-18');
-		expect(parseMealDay('2025-12-31', today)).toBe('2025-12-31');
 	});
 });

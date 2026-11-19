@@ -1,6 +1,6 @@
 import { toAiImage } from '@sheppakai/shared/ai-vision';
 import { redirect } from '@sveltejs/kit';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import type { z } from 'zod';
@@ -50,7 +50,6 @@ import {
 } from '#lib/server/meal-estimate/index.js';
 import { createUserRateLimiter } from '#lib/server/rate-limiter.js';
 import { getTodayString } from '#lib/utils/date.js';
-import { parseMealDay } from '#lib/utils/meal.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -93,7 +92,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const reminderForm = await superValidate(zod4(workoutReminderSchema));
 
 	const userId = getUser(locals).id;
-	const mealDay = parseMealDay(url.searchParams.get('day'), getTodayString());
 
 	try {
 		const db = getDb();
@@ -123,12 +121,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			where: eq(mealLogs.userId, userId),
 			orderBy: [desc(mealLogs.date)],
 			limit: 50
-		});
-
-		// Load the meals for the day shown in the day log (not capped by the recent list above)
-		const dayMeals = await db.query.mealLogs.findMany({
-			where: and(eq(mealLogs.userId, userId), eq(mealLogs.date, mealDay)),
-			orderBy: [asc(mealLogs.createdAt)]
 		});
 
 		// Load calorie target
@@ -164,8 +156,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			goalWeight,
 			workouts,
 			meals,
-			mealDay,
-			dayMeals,
 			calorieTarget,
 			weightStats: {
 				currentWeight,
@@ -191,8 +181,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			goalWeight: null,
 			workouts: [],
 			meals: [],
-			mealDay,
-			dayMeals: [],
 			calorieTarget: null,
 			weightStats: {
 				currentWeight: null,

@@ -9,7 +9,6 @@
 	import FitnessDashboardHeader from '#lib/components/fitness/dashboard/FitnessDashboardHeader.svelte';
 	import FitnessMomentumPanel from '#lib/components/fitness/dashboard/FitnessMomentumPanel.svelte';
 	import FitnessStatusCard from '#lib/components/fitness/dashboard/FitnessStatusCard.svelte';
-	import MealDayLog from '#lib/components/fitness/dashboard/MealDayLog.svelte';
 	import NutritionInsightsSection from '#lib/components/fitness/dashboard/NutritionInsightsSection.svelte';
 	import QuickRelogMeals from '#lib/components/fitness/dashboard/QuickRelogMeals.svelte';
 	import RecentActivityPreview from '#lib/components/fitness/dashboard/RecentActivityPreview.svelte';
@@ -237,9 +236,6 @@
 				trendLabel={calorieAdherence != null ? `${calorieAdherence}% of target` : 'No target set'}
 			/>
 		</div>
-
-		<!-- Today's (or a chosen day's) logged meals, with day-by-day history -->
-		<MealDayLog day={data.mealDay} meals={data.dayMeals} mealForm={data.mealForm} />
 
 		<!-- One-tap re-log of frequent meals -->
 		<QuickRelogMeals meals={data.meals} />

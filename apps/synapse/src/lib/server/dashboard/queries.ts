@@ -1,9 +1,11 @@
-import { and, desc, eq, gte, lt, lte, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lt, lte, ne, sql } from 'drizzle-orm';
 
 import type { getDb } from '#lib/server/db/index.js';
 import {
 	dailyAgendaEntries,
+	dailyCalorieTargets,
 	journalEntries,
+	mealLogs,
 	meditationSessions,
 	people,
 	tasks,
@@ -41,7 +43,9 @@ export async function runDashboardQueries(
 		recentVisitRaw,
 		upcomingVisitsByDateRaw,
 		upcomingFollowUpsByDateRaw,
-		upcomingScheduledOnlyRaw
+		upcomingScheduledOnlyRaw,
+		todayMealsRaw,
+		calorieTargetRaw
 	] = await Promise.all([
 		db
 			.select({ date: journalEntries.date, count: sql<number>`count(*)` })
@@ -243,7 +247,21 @@ export async function runDashboardQueries(
 					lte(people.scheduledVisitDate, r.upcomingEndDate)
 				)
 			)
-			.orderBy(people.scheduledVisitDate)
+			.orderBy(people.scheduledVisitDate),
+		db
+			.select({
+				timeOfDay: mealLogs.timeOfDay,
+				description: mealLogs.description,
+				caloriesEstimate: mealLogs.caloriesEstimate
+			})
+			.from(mealLogs)
+			.where(and(eq(mealLogs.userId, userId), eq(mealLogs.date, r.today)))
+			.orderBy(asc(mealLogs.createdAt)),
+		db
+			.select({ targetCalories: dailyCalorieTargets.targetCalories })
+			.from(dailyCalorieTargets)
+			.where(eq(dailyCalorieTargets.userId, userId))
+			.limit(1)
 	]);
 
 	return {
@@ -268,7 +286,9 @@ export async function runDashboardQueries(
 		recentVisitRaw,
 		upcomingVisitsByDateRaw,
 		upcomingFollowUpsByDateRaw,
-		upcomingScheduledOnlyRaw
+		upcomingScheduledOnlyRaw,
+		todayMealsRaw,
+		calorieTargetRaw
 	};
 }
 
