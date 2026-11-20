@@ -9,7 +9,7 @@
 		...restProps
 	}: {
 		showBreadcrumb?: boolean;
-		color?: 'teal' | 'blue' | 'green' | 'orange' | 'purple' | 'pink';
+		color?: 'teal' | 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'brown';
 		class?: string;
 	} = $props();
 </script>

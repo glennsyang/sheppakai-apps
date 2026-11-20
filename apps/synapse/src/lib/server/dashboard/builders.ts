@@ -13,6 +13,7 @@ import {
 	getISODayOfWeek,
 	getTodayString
 } from '#lib/utils/date.js';
+import type { WeekPlan } from '#lib/utils/family-worship.js';
 import { createMarkdownExcerpt } from '#lib/utils/markdown.js';
 import { sumCalories, type TodayMeals } from '#lib/utils/meal.js';
 import type { VisitStatus, VisitStatusThresholds } from '#lib/utils/visit-status.js';
@@ -297,6 +298,8 @@ export function buildDaysSinceLastWorkout(
 
 export function emptyDashboardReturn() {
 	return {
+		familyWorshipWeek: null as WeekPlan | null,
+		familyWorshipTopicTitles: {} as Record<string, string>,
 		todayMeals: buildTodayMeals([], []),
 		todayLabel: formatTodayLabel(),
 		today: getTodayString(),

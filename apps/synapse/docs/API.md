@@ -15,23 +15,25 @@ synapse.
 
 ## Scopes
 
-| Scope             | Grants                                                 |
-| ----------------- | ------------------------------------------------------ |
-| `tasks:read`      | `GET /api/v1/tasks`, `GET /api/v1/tasks/{id}`          |
-| `tasks:write`     | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/{id}`       |
-| `mood:read`       | `GET /api/v1/mood`                                     |
-| `mood:write`      | `POST /api/v1/mood`                                    |
-| `workouts:read`   | `GET /api/v1/workouts`, `GET /api/v1/workouts/{id}`    |
-| `workouts:write`  | `POST /api/v1/workouts`, `PATCH /api/v1/workouts/{id}` |
-| `meals:read`      | `GET /api/v1/meals`, `GET /api/v1/meals/{id}`          |
-| `meals:write`     | `POST /api/v1/meals`, `PATCH /api/v1/meals/{id}`       |
-| `visits:read`     | `GET /api/v1/visits`, `GET /api/v1/visits/{id}`        |
-| `visits:write`    | `POST /api/v1/visits`, `PATCH /api/v1/visits/{id}`     |
-| `people:read`     | `GET /api/v1/people`                                   |
-| `journal:read`    | `GET /api/v1/journal`, `GET /api/v1/journal/{id}`      |
-| `journal:write`   | `POST /api/v1/journal`, `PATCH /api/v1/journal/{id}`   |
-| `meditation:read` | `GET /api/v1/meditation`                               |
-| `agenda:read`     | `GET /api/v1/agenda`                                   |
+| Scope                  | Grants                                                                                        |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `tasks:read`           | `GET /api/v1/tasks`, `GET /api/v1/tasks/{id}`                                                 |
+| `tasks:write`          | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/{id}`                                              |
+| `mood:read`            | `GET /api/v1/mood`                                                                            |
+| `mood:write`           | `POST /api/v1/mood`                                                                           |
+| `workouts:read`        | `GET /api/v1/workouts`, `GET /api/v1/workouts/{id}`                                           |
+| `workouts:write`       | `POST /api/v1/workouts`, `PATCH /api/v1/workouts/{id}`                                        |
+| `meals:read`           | `GET /api/v1/meals`, `GET /api/v1/meals/{id}`                                                 |
+| `meals:write`          | `POST /api/v1/meals`, `PATCH /api/v1/meals/{id}`                                              |
+| `visits:read`          | `GET /api/v1/visits`, `GET /api/v1/visits/{id}`                                               |
+| `visits:write`         | `POST /api/v1/visits`, `PATCH /api/v1/visits/{id}`                                            |
+| `people:read`          | `GET /api/v1/people`                                                                          |
+| `journal:read`         | `GET /api/v1/journal`, `GET /api/v1/journal/{id}`                                             |
+| `journal:write`        | `POST /api/v1/journal`, `PATCH /api/v1/journal/{id}`                                          |
+| `meditation:read`      | `GET /api/v1/meditation`                                                                      |
+| `agenda:read`          | `GET /api/v1/agenda`                                                                          |
+| `family-worship:read`  | `GET /api/v1/family-worship/topics`, `/schedule`, `/sessions`                                 |
+| `family-worship:write` | `POST /api/v1/family-worship/sessions`, `PATCH`/`DELETE /api/v1/family-worship/sessions/{id}` |
 
 `people:read` exists mainly to resolve a `personId` for the visits endpoints — a visit is tied to an
 existing person record, not a free-text name.
@@ -232,7 +234,42 @@ curl -H "Authorization: Bearer sk_live_xxx" "https://synapse.example.com/api/v1/
 `sourceType` is `default` for an item from a recurring template and `custom` for a one-off item.
 Read-only: check items off from the web UI.
 
+### Family Worship
+
+Weeks are keyed by their Wednesday (`weekOf`, `YYYY-MM-DD`, Pacific time); a session's `date` can be
+any day in that week.
+
+`GET /api/v1/family-worship/topics` — requires `family-worship:read`. Topics with their history
+stats (`count`, `lastCovered`, `dates`). Query param: `includeArchived` (`true`/`false`, default
+`false`).
+
+`GET /api/v1/family-worship/schedule` — requires `family-worship:read`. This week's Wednesday
+onward: `scheduledTopic`, rotation `suggestedTopic`, logged `session` and `status`
+(`logged`/`upcoming`/`tonight`/`missed`). Query param: `weeks` (1-26, default 8).
+
+`GET /api/v1/family-worship/sessions` — requires `family-worship:read`. Query params: `topicId`
+(optional), `limit` (1-200, default 50).
+
+`POST /api/v1/family-worship/sessions` — requires `family-worship:write`. Logs the week containing
+`date`; logging the same week again replaces its entry. Body:
+
+```json
+{
+	"date": "2026-11-18",
+	"status": "done",
+	"topicId": "abc123",
+	"notes": "Chapters 1-2",
+	"continueNextWeek": true
+}
+```
+
+`status` is `done` (default; needs `topicId`) or `skipped`. `continueNextWeek` also schedules the
+topic for the following Wednesday.
+
+`PATCH /api/v1/family-worship/sessions/{id}` — requires `family-worship:write`. Any of `date`,
+`status`, `topicId`, `notes`. `DELETE /api/v1/family-worship/sessions/{id}` removes a session.
+
 ## Out of scope
 
-Beyond the [shared list](../../../docs/API_CONVENTIONS.md#out-of-scope): there are no delete
-endpoints. Delete records from the web UI.
+Beyond the [shared list](../../../docs/API_CONVENTIONS.md#out-of-scope): the only delete endpoint is
+`DELETE /api/v1/family-worship/sessions/{id}`. Delete other records from the web UI.

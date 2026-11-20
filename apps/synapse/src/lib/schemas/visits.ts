@@ -1,24 +1,6 @@
 import { z } from 'zod';
 
-const booleanFromForm = z.preprocess((value) => {
-	if (value === true || value === 'true' || value === 'on' || value === 1 || value === '1') {
-		return true;
-	}
-
-	if (
-		value === false ||
-		value === 'false' ||
-		value === 0 ||
-		value === '0' ||
-		value === undefined ||
-		value === null ||
-		value === ''
-	) {
-		return false;
-	}
-
-	return value;
-}, z.boolean());
+import { booleanFromForm } from './common';
 
 /**
  * Schema for creating and updating people

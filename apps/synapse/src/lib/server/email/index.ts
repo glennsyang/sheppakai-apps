@@ -9,6 +9,7 @@ import {
 } from '@sheppakai/shared/email';
 import type { WelcomeEmailPayload } from '@sheppakai/shared/welcome';
 
+import { buildFamilyWorshipReminderSubject } from '#lib/server/email/family-worship-reminder-utils.js';
 import {
 	buildTasksDueTodayDigestTitle,
 	buildTasksDueTodayEmailHtml,
@@ -288,6 +289,33 @@ export async function sendVisitTodayReminderEmail(
 			Make it a great visit!
 		</p>${FLOCK_QUOTE}`,
 			{ accent: '#43e97b 0%, #38f9d7 100%' }
+		)
+	});
+}
+
+export async function sendFamilyWorshipReminderEmail(to: string, name: string, topicTitle: string) {
+	await mailer.send({
+		to,
+		name,
+		subject: buildFamilyWorshipReminderSubject(topicTitle),
+		label: 'family worship reminder email',
+		html: layout(
+			'Family Worship Tonight',
+			'📖 Family Worship Tonight',
+			`
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			It's Wednesday. Tonight's family worship topic is:
+		</p>
+		<div style="background: #f5ede4; border-left: 4px solid #8a5a3b; padding: 15px 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+			<p style="margin: 0; font-size: 16px; font-weight: 600; color: #5c3a24;">
+				📖 ${escapeHtml(topicTitle)}
+			</p>
+		</div>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			Log it in Synapse afterwards, or pick a different topic on the Family Worship page.
+		</p>`,
+			{ accent: '#b07a52 0%, #8a5a3b 100%' }
 		)
 	});
 }

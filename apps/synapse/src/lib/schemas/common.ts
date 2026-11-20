@@ -11,3 +11,24 @@ export const idSchema = z.object({
  * with `message(form, …)` per `docs/ERROR_HANDLING_POLICY.md`.
  */
 export const noFieldsSchema = z.object({});
+
+/** A checkbox/boolean form field: 'on' / 'true' / '1' → true; absent or empty → false. */
+export const booleanFromForm = z.preprocess((value) => {
+	if (value === true || value === 'true' || value === 'on' || value === 1 || value === '1') {
+		return true;
+	}
+
+	if (
+		value === false ||
+		value === 'false' ||
+		value === 0 ||
+		value === '0' ||
+		value === undefined ||
+		value === null ||
+		value === ''
+	) {
+		return false;
+	}
+
+	return value;
+}, z.boolean());
