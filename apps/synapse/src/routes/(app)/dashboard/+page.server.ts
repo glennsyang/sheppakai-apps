@@ -22,6 +22,7 @@ import {
 } from '#lib/server/dashboard/builders.js';
 import { runDashboardQueries } from '#lib/server/dashboard/queries.js';
 import { getDb } from '#lib/server/db/index.js';
+import { loadFamilyWorship } from '#lib/server/family-worship.js';
 import { logger } from '#lib/server/logger.js';
 import { isMealEstimateEnabled } from '#lib/server/meal-estimate/index.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
@@ -42,10 +43,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	try {
 		const db = getDb();
-		const [data, visitStatusThresholds, dashboardGoals] = await Promise.all([
+		const [data, visitStatusThresholds, dashboardGoals, familyWorship] = await Promise.all([
 			runDashboardQueries(db, user.id, ranges),
 			getVisitStatusThresholdsForUser(user.id, db),
-			getDashboardGoalsForUser(user.id, db)
+			getDashboardGoalsForUser(user.id, db),
+			loadFamilyWorship(db, user.id, today, 1)
 		]);
 
 		const journalCountByDate = buildCountByDateMap(data.journalDateCounts);
@@ -114,6 +116,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 			todayAgendaSummary: buildTodayAgendaSummary(data.agendaEntriesForTrend, today),
 			todayMeals: buildTodayMeals(data.todayMealsRaw, data.calorieTargetRaw),
 			dashboardGoals,
+			familyWorshipWeek: familyWorship.upcoming[0] ?? null,
+			familyWorshipTopicTitles: Object.fromEntries(
+				familyWorship.topics.map((topic) => [topic.id, topic.title])
+			),
 			...mealLogging
 		};
 	} catch (error) {

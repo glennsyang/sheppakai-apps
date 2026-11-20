@@ -5,7 +5,7 @@
 
 	let { items }: { items: SidebarNav['navMain'] } = $props();
 
-	// Admin lives in the account menu on phones; six tabs is the thumb limit.
+	// Admin lives in the account menu on phones.
 	const tabs = $derived(items.filter((i) => !i.adminOnly));
 </script>
 
@@ -13,7 +13,10 @@
 	aria-label="Sections"
 	class="fixed inset-x-0 bottom-0 z-40 bg-cover pb-[env(safe-area-inset-bottom)] md:hidden"
 >
-	<ul class="grid grid-cols-6 gap-1 px-1.5">
+	<ul
+		class="grid gap-1 px-1.5"
+		style="grid-template-columns: repeat({tabs.length}, minmax(0, 1fr))"
+	>
 		{#each tabs as item (item.title)}
 			{@const active = item.url ? page.url.pathname.startsWith(item.url) : false}
 			{@const Icon = item.icon}
