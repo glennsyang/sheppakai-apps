@@ -16,6 +16,7 @@
 
 	import AgendaCompletionChart from '#lib/components/dashboard/AgendaCompletionChart.svelte';
 	import AgendaItemScorecard from '#lib/components/dashboard/AgendaItemScorecard.svelte';
+	import FamilyWorshipCard from '#lib/components/dashboard/FamilyWorshipCard.svelte';
 	import TodayMealsSection from '#lib/components/dashboard/TodayMealsSection.svelte';
 	import VisitHealthPanel from '#lib/components/dashboard/VisitHealthPanel.svelte';
 	import WorkoutTypeChart from '#lib/components/dashboard/WorkoutTypeChart.svelte';
@@ -306,6 +307,12 @@
 				</section>
 
 				<TodayMealsSection todayMeals={data.todayMeals} mealForm={data.mealForm} />
+
+				<FamilyWorshipCard
+					week={data.familyWorshipWeek}
+					today={data.today}
+					topicTitles={data.familyWorshipTopicTitles}
+				/>
 			</div>
 
 			<!-- Readings: the week so far, one pen per domain -->

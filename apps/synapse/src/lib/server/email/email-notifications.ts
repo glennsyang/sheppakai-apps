@@ -8,6 +8,7 @@
  * - Morning digest push at each user's send time (default 6:00 AM PT): agenda, tasks due,
  *   tonight's dinner (mealplanner API), bills due this week (budget API) and overdue visits
  * - Tasks due-today digest emails at 6:00 AM PT (based on tasks.due_date)
+ * - Family worship reminder on Wednesday at 9:00 AM PT when the week has no entry yet
  *
  * Logs all sent emails in email_notifications table to prevent duplicates.
  */
@@ -17,6 +18,7 @@ import { APP_TIME_ZONE, getTodayString } from '#lib/utils/date.js';
 
 import { processMorningDigests } from '../digest/process-morning-digests';
 import { processTasksDueTodayDigests } from './digests';
+import { processFamilyWorshipReminders } from './family-worship-reminders';
 import { processMeditationReminders } from './meditation-reminders';
 import { processScheduledVisitReminders, processVisitsTodayReminders } from './visit-reminders';
 import { processVisitWarnings } from './visit-warnings';
@@ -74,6 +76,7 @@ export async function runEmailNotifications(): Promise<{ ok: true } | { ok: fals
 		await processVisitWarnings();
 		await processVisitsTodayReminders(todayPacific);
 		await processScheduledVisitReminders();
+		await processFamilyWorshipReminders(currentDay, currentHour, currentMinute, todayPacific);
 
 		logger.debug('\n✅ Email notifications cron job completed successfully!');
 		return { ok: true };
