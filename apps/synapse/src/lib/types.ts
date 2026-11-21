@@ -18,6 +18,8 @@ export type SidebarNav = {
 		short: string;
 		items?: { title: string; url: string }[];
 		adminOnly?: boolean;
+		/** On phones, tuck this section behind the tab bar's "More" menu. */
+		mobileOverflow?: boolean;
 	}[];
 };
 
