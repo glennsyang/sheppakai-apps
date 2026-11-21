@@ -66,3 +66,19 @@ Shared skills, agents and commands for all three apps live in the repo-root `.cl
 
 - **Skills:** `svelte-code-writer`, `svelte5-best-practices`, `better-auth-best-practices`, `shadcn-svelte-components`, `tailwind-patterns`, `brevo-email-log` (checks Brevo's transactional email event log to verify whether a specific email actually sent/delivered/bounced — all three apps send through the same Brevo account) and `restore-db-backup`.
 - **Agents:** `code-structure-reviewer` and `security-reviewer` (in `.claude/agents/`) are available on demand — invoke them when you want a structural or security pass on a change, not automatically on every PR. They aren't wired into any automated hook.
+
+---
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues in `glennsyang/sheppakai-apps`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context: one context per app (`apps/budget`, `apps/mealplanner`, `apps/synapse`). Repo-wide ADRs go in `docs/adr/`. See `docs/agents/domain.md`.
