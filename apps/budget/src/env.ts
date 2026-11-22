@@ -16,7 +16,7 @@ export const variables = defineEnvVars({
 	},
 	RECEIPT_SCAN_PROVIDER: {
 		description:
-			'AI provider that reads receipt photos on the transactions page: gemini or claude. ' +
+			'AI provider that reads receipt photos on the expenses page: gemini or claude. ' +
 			"Scanning is off (button hidden) until the chosen provider's API key is set.",
 		schema: z.enum(['gemini', 'claude']).default('gemini')
 	},

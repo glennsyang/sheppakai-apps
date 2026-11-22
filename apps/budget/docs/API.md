@@ -22,8 +22,8 @@ This is intentional for the budget app's collaborative household model.
 
 | Scope                           | Grants                                                                                  |
 | ------------------------------- | --------------------------------------------------------------------------------------- |
-| `transactions:read`             | `GET /api/v1/transactions`                                                              |
-| `transactions:write`            | `POST /api/v1/transactions`                                                             |
+| `transactions:read`             | `GET /api/v1/expenses`                                                                  |
+| `transactions:write`            | `POST /api/v1/expenses`                                                                 |
 | `budgets:read`                  | `GET /api/v1/budgets`                                                                   |
 | `categories:read`               | `GET /api/v1/categories`                                                                |
 | `dashboard:read`                | `GET /api/v1/dashboard`                                                                 |
@@ -39,7 +39,7 @@ This is intentional for the budget app's collaborative household model.
 
 ## Endpoints
 
-### `GET /api/v1/transactions`
+### `GET /api/v1/expenses`
 
 Requires `transactions:read`. Query parameters (all optional):
 
@@ -49,10 +49,14 @@ Requires `transactions:read`. Query parameters (all optional):
 
 ```bash
 curl -H "Authorization: Bearer sk_live_xxx" \
-  "https://budget.example.com/api/v1/transactions?startDate=2026-08-01&endDate=2026-08-31"
+  "https://budget.example.com/api/v1/expenses?startDate=2026-08-01&endDate=2026-08-31"
 ```
 
-### `POST /api/v1/transactions`
+> **Deprecated alias:** `GET /api/v1/transactions` and `POST /api/v1/transactions` still work and
+> return the same responses, but will be removed after one release. Switch callers to
+> `/api/v1/expenses`. The scope names (`transactions:read`, `transactions:write`) are unchanged.
+
+### `POST /api/v1/expenses`
 
 Requires `transactions:write`. Body:
 
@@ -66,12 +70,12 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
     "categoryId": "cat_123",
     "excludedFromBudget": false
   }' \
-  "https://budget.example.com/api/v1/transactions"
+  "https://budget.example.com/api/v1/expenses"
 ```
 
-Returns `201` with the created transaction (including its resolved category and owner) on success.
-Every write — successful or failed — is recorded in an internal audit log with the key that made it,
-so activity from an external tool is traceable if something looks wrong.
+Returns `201` with the created expense (including its resolved category and owner) on success. Every
+write — successful or failed — is recorded in an internal audit log with the key that made it, so
+activity from an external tool is traceable if something looks wrong.
 
 ### `GET /api/v1/budgets`
 

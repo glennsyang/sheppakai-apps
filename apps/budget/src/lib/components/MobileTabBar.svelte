@@ -39,9 +39,9 @@
 
 		{
 			label: 'Spending',
-			url: '/transactions',
+			url: '/expenses',
 			icon: ReceiptIcon,
-			owns: ['/transactions']
+			owns: ['/expenses']
 		},
 
 		{
@@ -74,7 +74,7 @@
 				items: (items as SidebarData['navSetup']).filter(
 					(item) =>
 						!!item.url &&
-						!['/dashboard', '/transactions', '/budget', '/window-cleaning'].includes(item.url) &&
+						!['/dashboard', '/expenses', '/budget', '/window-cleaning'].includes(item.url) &&
 						(!item.adminOnly || isAdmin)
 				)
 			}))

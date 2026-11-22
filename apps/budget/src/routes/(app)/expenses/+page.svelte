@@ -62,20 +62,20 @@
 		debounceTimer = setTimeout(() => {
 			const trimmed = value.trim().slice(0, MAX_SEARCH_QUERY_LENGTH);
 			const url = trimmed
-				? `/transactions?search=${encodeURIComponent(trimmed)}`
-				: `/transactions?month=${monthYear.month}&year=${monthYear.year}`;
+				? `/expenses?search=${encodeURIComponent(trimmed)}`
+				: `/expenses?month=${monthYear.month}&year=${monthYear.year}`;
 			goto(url, { replace: true, reset: false });
 		}, 500);
 	}
 
 	function clearSearch() {
-		goto(`/transactions?month=${monthYear.month}&year=${monthYear.year}`, {
+		goto(`/expenses?month=${monthYear.month}&year=${monthYear.year}`, {
 			replace: true,
 			reset: false
 		});
 	}
 
-	const monthYear = useMonthYearParams('/transactions');
+	const monthYear = useMonthYearParams('/expenses');
 
 	const categories = getCategoriesContext();
 	let excludedFromBudgetTotal = $derived(data.excludedFromBudgetTotal ?? 0);
@@ -106,7 +106,7 @@
 			return `${n} ${n === 1 ? 'result' : 'results'} for “${data.searchQuery}” across all months${more}`;
 		}
 		const n = data.transactions.length;
-		return `${n} ${n === 1 ? 'transaction' : 'transactions'} in ${periodLabel}`;
+		return `${n} ${n === 1 ? 'expense' : 'expenses'} in ${periodLabel}`;
 	});
 
 	let summary = $derived(
@@ -137,11 +137,11 @@
 </script>
 
 <svelte:head>
-	<title>Transactions</title>
+	<title>Expenses</title>
 </svelte:head>
 
 <MonthlyTablePageShell
-	title="Transactions"
+	title="Expenses"
 	{subtitle}
 	loadError={data.loadError}
 	selectedMonth={monthYear.month}
@@ -177,7 +177,7 @@
 				}}
 			>
 				<PlusIcon />
-				Add transaction
+				Add expense
 			</Button>
 		</div>
 	{/snippet}
@@ -191,8 +191,8 @@
 			rowClassName={getTransactionRowClass}
 			mobileGroupBy={(t) => formatDayHeading(t.date)}
 			emptyMessage={data.searchQuery
-				? 'No transactions match that search.'
-				: `No transactions in ${periodLabel} yet.`}
+				? 'No expenses match that search.'
+				: `No expenses in ${periodLabel} yet.`}
 		>
 			{#snippet toolbar()}
 				<div class="relative max-w-md">
@@ -202,8 +202,8 @@
 					/>
 					<Input
 						type="search"
-						placeholder="Search all transactions…"
-						aria-label="Search transactions"
+						placeholder="Search all expenses…"
+						aria-label="Search expenses"
 						class={['h-11 pl-9 md:h-9', data.searchQuery && 'pr-11 md:pr-9']}
 						value={searchInput}
 						oninput={(e) => onSearchInput(e.currentTarget.value)}

@@ -106,7 +106,7 @@ function renderWeeklyRows(
 
 function renderExcludedRows(rows: WeeklySummaryExcludedTransaction[]): string {
 	if (rows.length === 0) {
-		return '<p style="margin: 0; color: #4b5563;">No transactions were excluded from the budget this month.</p>';
+		return '<p style="margin: 0; color: #4b5563;">No expenses were excluded from the budget this month.</p>';
 	}
 
 	const total = rows.reduce((acc, row) => acc + row.amount, 0);
@@ -171,7 +171,7 @@ export async function sendWeeklySummaryEmail(payload: WeeklySummaryEmailPayload)
 
 		<section style="margin-bottom: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
 			<h2 style="margin: 0 0 4px; color: #374151; font-size: 18px;">Excluded From Budget</h2>
-			<p style="margin: 0 0 12px; font-size: 13px; color: #6b7280;">These transactions don't count toward any category budget above.</p>
+			<p style="margin: 0 0 12px; font-size: 13px; color: #6b7280;">These expenses don't count toward any category budget above.</p>
 			${renderExcludedRows(payload.excludedTransactions)}
 		</section>`
 		})

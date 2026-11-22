@@ -26,7 +26,7 @@ export const actions = createCrudActions({
 		});
 
 		if (inUse) {
-			return { error: 'Cannot delete category that is in use by transactions' };
+			return { error: 'Cannot delete category that is in use by expenses' };
 		}
 	}
 }) satisfies Actions;

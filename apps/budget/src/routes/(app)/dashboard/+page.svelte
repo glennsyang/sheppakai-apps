@@ -525,7 +525,7 @@
 						: names.join(', '),
 				tooltip: `Spending in categories excluded from the budget: ${names.join(', ')}. It isn't counted in income, spent or net.`,
 				onclick: () => (openExcludedSheet = true),
-				actionLabel: `Not counted, ${formatCurrency(excludedExpensesTotal)}: show transactions`
+				actionLabel: `Not counted, ${formatCurrency(excludedExpensesTotal)}: show expenses`
 			});
 		}
 		return stats;
@@ -678,7 +678,7 @@
 				<div class="mb-3 flex items-center gap-1.5">
 					<h2 class="text-base font-semibold tracking-tight">Categories to watch</h2>
 					<InfoTooltip
-						text="Your top 6 budget categories ranked by risk: over-budget first, then the highest share of budget used. Select one to see its transactions."
+						text="Your top 6 budget categories ranked by risk: over-budget first, then the highest share of budget used. Select one to see its expenses."
 					/>
 				</div>
 				<CategoryBudgetList

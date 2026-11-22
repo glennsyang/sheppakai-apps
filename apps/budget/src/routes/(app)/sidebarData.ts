@@ -22,8 +22,8 @@ export const sidebarData: SidebarData = {
 			url: '/dashboard'
 		},
 		{
-			title: 'Transactions',
-			url: '/transactions',
+			title: 'Expenses',
+			url: '/expenses',
 			icon: ReceiptIcon
 		},
 		{

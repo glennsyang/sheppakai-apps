@@ -51,7 +51,7 @@
 	bind:open={openDeleteModal}
 	{id}
 	{actionUrl}
-	title="Delete transaction"
+	title="Delete expense"
 	message={deleteMessage}
 	confirmButtonText="Delete"
 />

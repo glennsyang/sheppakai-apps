@@ -95,7 +95,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			receiptScanEnabled: isReceiptScanEnabled()
 		};
 	} catch (error) {
-		logger.error('Failed to load transaction data:', error);
+		logger.error('Failed to load expense data:', error);
 		return {
 			transactions: [],
 			budgets: [],
@@ -104,7 +104,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			excludedFromBudgetTotal: 0,
 			yearlyTransactions: [],
 			completedMonthsSinceJanuary,
-			loadError: 'Failed to load transaction data. Please try refreshing the page.',
+			loadError: 'Failed to load expense data. Please try refreshing the page.',
 			form,
 			searchQuery
 		};
@@ -118,7 +118,7 @@ export const actions = {
 	...createCrudActions({
 		schema: transactionSchema,
 		table: transaction,
-		entityName: 'Transaction',
+		entityName: 'Expense',
 		...transactionBudgetAlertHooks,
 		transformCreate: (data, userId) => ({ ...toTransactionRow(data), userId }),
 		transformUpdate: (data) => toTransactionRow(data)
@@ -166,7 +166,7 @@ export const actions = {
 				return fail("Couldn't read that receipt. Try a clearer, flatter photo.", 422);
 			}
 			logger.error('Receipt scan failed', err);
-			return fail('Receipt scanning failed. Try again, or add the transaction manually.', 502);
+			return fail('Receipt scanning failed. Try again, or add the expense manually.', 502);
 		}
 	})
 } satisfies Actions;

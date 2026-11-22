@@ -48,7 +48,7 @@
 		onError: ({ result }) => {
 			// Catastrophic DB crashes (Form data is lost)
 			toast.error(
-				`There was an error ${isEditing ? 'updating' : 'creating'} the transaction. Reason: ${result.error.message}`
+				`There was an error ${isEditing ? 'updating' : 'creating'} the expense. Reason: ${result.error.message}`
 			);
 		}
 	});
@@ -82,24 +82,20 @@
 	<Dialog.Content class="sm:max-w-106.25">
 		<Dialog.Header>
 			<Dialog.Title>
-				{isEditing
-					? 'Edit transaction'
-					: isDuplicating
-						? 'Duplicate transaction'
-						: 'Add transaction'}
+				{isEditing ? 'Edit expense' : isDuplicating ? 'Duplicate expense' : 'Add expense'}
 			</Dialog.Title>
 			<Dialog.Description>
 				{isEditing
-					? 'Update this transaction entry. Modify the amount, payee, notes, date, or category as needed.'
+					? 'Update this expense entry. Modify the amount, payee, notes, date, or category as needed.'
 					: isDuplicating
-						? 'Create a new transaction from this copy. Adjust the amount, date, or anything else before saving.'
-						: 'Record a new transaction entry. Fill in the amount, payee, notes, date, and select a category.'}
+						? 'Create a new expense from this copy. Adjust the amount, date, or anything else before saving.'
+						: 'Record a new expense entry. Fill in the amount, payee, notes, date, and select a category.'}
 			</Dialog.Description>
 		</Dialog.Header>
 		<form
 			class="space-y-4"
 			method="POST"
-			action={isEditing ? '/transactions?/update' : '/transactions?/create'}
+			action={isEditing ? '/expenses?/update' : '/expenses?/create'}
 			use:enhance
 		>
 			<input type="hidden" name="id" bind:value={$form.id} />
@@ -163,7 +159,7 @@
 					id="transaction-notes"
 					name="notes"
 					bind:value={$form.notes}
-					placeholder="What was this transaction for?"
+					placeholder="What was this expense for?"
 					class={$errors.notes ? 'border-destructive' : ''}
 					rows={2}
 				/>
@@ -201,7 +197,7 @@
 							Exclude from monthly budget
 						</label>
 						<p class="text-muted-foreground text-xs">
-							This transaction stays visible in tracking and search.
+							This expense stays visible in tracking and search.
 						</p>
 					</div>
 				</div>
