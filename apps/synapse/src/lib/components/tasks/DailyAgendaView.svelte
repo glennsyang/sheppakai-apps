@@ -831,7 +831,7 @@
 												: 'border-border/70'
 										)}
 									>
-										<Input
+										<input
 											type="checkbox"
 											checked={newTemplateDays.includes(day.id)}
 											class="border-pen-tasks text-pen-tasks focus:ring-pen-tasks size-3.5 rounded"
@@ -903,7 +903,7 @@
 															: 'border-border/70'
 													)}
 												>
-													<Input
+													<input
 														type="checkbox"
 														checked={editingTemplateDays.includes(day.id)}
 														class="border-pen-tasks text-pen-tasks focus:ring-pen-tasks size-3.5 rounded"
