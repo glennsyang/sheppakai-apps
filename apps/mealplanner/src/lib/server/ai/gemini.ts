@@ -138,7 +138,7 @@ export async function suggestMeals(
 	const text = response.text;
 	if (!text) {
 		logger.error('Gemini returned empty response');
-		throw new Error('No meal suggestions returned from AI');
+		throw new Error('No suggestions returned from AI');
 	}
 
 	let parsed: unknown;

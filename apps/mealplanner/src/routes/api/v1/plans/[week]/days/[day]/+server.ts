@@ -48,7 +48,7 @@ export const PUT: RequestHandler = async ({ request, params, url }) => {
 			await addMealPlanEntry(auth.userId, week, day, body.data.recipeId);
 			return toApiWeek(week, await getMealPlanWithEntries(week));
 		},
-		{ successStatus: 200, failureMessage: 'Failed to set meal plan day' }
+		{ successStatus: 200, failureMessage: 'Failed to set planned dinner' }
 	);
 };
 
@@ -74,6 +74,6 @@ export const DELETE: RequestHandler = async ({ request, params, url }) => {
 			}
 			return toApiWeek(week, await getMealPlanWithEntries(week));
 		},
-		{ successStatus: 200, failureMessage: 'Failed to clear meal plan day' }
+		{ successStatus: 200, failureMessage: 'Failed to clear planned dinner' }
 	);
 };

@@ -24,7 +24,7 @@ export const load: PageServerLoad = async () => {
 			entries: [],
 			pantryCount: 0,
 			todayIndex,
-			loadError: "Failed to load this week's meals. Please try refreshing the page."
+			loadError: "Failed to load this week's plan. Please try refreshing the page."
 		};
 	}
 };

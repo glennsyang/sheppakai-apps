@@ -2,7 +2,7 @@
 	"id": "/",
 	"name": "Sheppakai MealPlanner",
 	"short_name": "MealPlanner",
-	"description": "Family meal planning and management",
+	"description": "Household dinner planning: pantry, recipes, week plan and shopping list",
 	"start_url": "/",
 	"display": "standalone",
 	"background_color": "#0b0c0e",

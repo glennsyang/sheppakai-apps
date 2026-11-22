@@ -61,7 +61,7 @@
 					actions?.onEntryRemoved(entryId);
 				} else {
 					actions?.onRemoveFailed(
-						actionFailureText(result, 'Could not erase that meal. Please try again.')
+						actionFailureText(result, 'Could not remove that planned dinner. Please try again.')
 					);
 				}
 			};
@@ -149,13 +149,13 @@
 							type="button"
 							onclick={() => actions.onAddCustom(i)}
 							class="ghost"
-							aria-label="Write in a meal for {day}"
+							aria-label="Write in a dinner for {day}"
 						>
 							<Icon name="pencil" size={16} />
 							<span>write one in</span>
 						</button>
 					{:else}
-						<a href="/planner" class="ghost" aria-label="Write in a meal for {day}">
+						<a href="/planner" class="ghost" aria-label="Write in a dinner for {day}">
 							<Icon name="pencil" size={16} />
 							<span>write one in</span>
 						</a>
