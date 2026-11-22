@@ -620,7 +620,7 @@ describe('Date Utilities - Local Timezone Storage', () => {
 		});
 
 		it('preserves the input order', () => {
-			const reversed = [...rows].reverse();
+			const reversed = rows.toReversed();
 			expect(filterByDateRange(reversed, '2026-03-01', '2026-03-31').map((r) => r.id)).toEqual([
 				'date-only',
 				'mar-31-late',
