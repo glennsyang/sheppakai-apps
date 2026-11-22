@@ -20,11 +20,8 @@ import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { toCommaSeparatedJson } from '#lib/server/actions/string-parsers.js';
 import { getDb } from '#lib/server/db/index.js';
 import { people, visits } from '#lib/server/db/schema/index.js';
-import {
-	generateId,
-	withTimestampsForCreate,
-	withTimestampsForUpdate
-} from '#lib/server/db/utils.js';
+import { generateId, withTimestampsForUpdate } from '#lib/server/db/utils.js';
+import { logVisitAndSetNextVisit } from '#lib/server/db/writes/visits.js';
 import { stringListSchema, safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
@@ -126,28 +123,22 @@ export const actions = {
 			const companions = toCommaSeparatedJson(form.data.companions);
 
 			const visitId = generateId();
-			// One timestamp for the visit and the person it clears
+			// One timestamp for the visit and the member's Next Visit it sets
 			const now = new Date();
 
-			await db.insert(visits).values({
-				id: visitId,
-				personId: params.id,
-				userId: user.id,
-				date: form.data.date,
-				time: form.data.time || null,
-				companions,
-				notes: form.data.notes || null,
-				followUpDate: form.data.followUpDate || null,
-				...withTimestampsForCreate(now)
+			logVisitAndSetNextVisit(db, {
+				visit: {
+					id: visitId,
+					personId: params.id,
+					userId: user.id,
+					date: form.data.date,
+					time: form.data.time || null,
+					companions,
+					notes: form.data.notes || null
+				},
+				nextVisitDate: form.data.followUpDate || null,
+				now
 			});
-
-			// A real visit's follow-up date now takes over as the source of truth
-			if (person.scheduledVisitDate) {
-				await db
-					.update(people)
-					.set({ scheduledVisitDate: null, ...withTimestampsForUpdate(now) })
-					.where(and(eq(people.id, params.id), eq(people.userId, user.id)));
-			}
 
 			logger.info('Visit logged', {
 				visitId,
@@ -212,7 +203,6 @@ export const actions = {
 					time: form.data.time || null,
 					companions,
 					notes: form.data.notes || null,
-					followUpDate: form.data.followUpDate || null,
 					...withTimestampsForUpdate()
 				})
 				.where(
@@ -322,19 +312,19 @@ export const actions = {
 				})
 				.where(and(eq(people.id, params.id), eq(people.userId, user.id)));
 
-			logger.info('Visit scheduled', { personId: params.id, userId: user.id });
+			logger.info('Next Visit set', { personId: params.id, userId: user.id });
 
 			return message(form, {
 				type: 'success',
-				text: 'Visit scheduled successfully!'
+				text: 'Next Visit set.'
 			});
 		} catch (err) {
-			logger.error('Failed to schedule visit', err);
+			logger.error('Failed to set Next Visit', err);
 			return message(
 				form,
 				{
 					type: 'error',
-					text: 'An error occurred while scheduling the visit. Please try again.'
+					text: 'An error occurred while setting the Next Visit. Please try again.'
 				},
 				{ status: 500 }
 			);
@@ -363,16 +353,12 @@ export const actions = {
 				.set({ scheduledVisitDate: null, ...withTimestampsForUpdate() })
 				.where(and(eq(people.id, params.id), eq(people.userId, user.id)));
 
-			logger.info('Scheduled visit cancelled', { personId: params.id, userId: user.id });
+			logger.info('Next Visit cleared', { personId: params.id, userId: user.id });
 
-			return message(form, { type: 'success', text: 'Scheduled visit cleared.' });
+			return message(form, { type: 'success', text: 'Next Visit cleared.' });
 		} catch (err) {
-			logger.error('Failed to cancel scheduled visit', err);
-			return message(
-				form,
-				{ type: 'error', text: 'Failed to cancel scheduled visit' },
-				{ status: 500 }
-			);
+			logger.error('Failed to clear Next Visit', err);
+			return message(form, { type: 'error', text: 'Failed to clear Next Visit' }, { status: 500 });
 		}
 	}),
 

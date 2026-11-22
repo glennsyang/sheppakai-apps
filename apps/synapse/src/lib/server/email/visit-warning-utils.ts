@@ -12,14 +12,14 @@ const visitWarningDateFormatter = new Intl.DateTimeFormat('en-US', {
 
 export function getVisitWarningStatus(
 	lastVisitDate: string,
-	latestFollowUpDate: string | null = null,
+	nextVisitDate: string | null = null,
 	visitStatusThresholds?: Partial<VisitStatusThresholds> | null,
 	today: string = getTodayString()
 ): VisitWarningStatus | null {
 	const { status } = calculatePersonVisitStatus(
 		lastVisitDate,
 		false,
-		latestFollowUpDate,
+		nextVisitDate,
 		today,
 		visitStatusThresholds
 	);

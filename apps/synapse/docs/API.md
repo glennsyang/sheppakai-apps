@@ -123,7 +123,8 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
 
 `GET /api/v1/people` — requires `people:read`. Query params: `includeArchived` (`true`/`false`,
 default `false`). Returns `{ id, name, isArchived, scheduledVisitDate }` for each person — use the
-`id` as `personId` when creating a visit.
+`id` as `personId` when creating a visit. `scheduledVisitDate` is the member's **Next Visit**, the
+one place it is stored.
 
 ```bash
 curl -H "Authorization: Bearer sk_live_xxx" "https://synapse.example.com/api/v1/people"
@@ -150,7 +151,12 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
   "https://synapse.example.com/api/v1/visits"
 ```
 
-`PATCH /api/v1/visits/{id}` — requires `visits:write`.
+`followUpDate` sets the group member's Next Visit (`scheduledVisitDate` on `/people`). Logging a
+visit always replaces it, so leaving `followUpDate` out clears the member's Next Visit.
+
+`PATCH /api/v1/visits/{id}` — requires `visits:write`. A `followUpDate` in the body sets the
+member's Next Visit, `null` clears it, and leaving it out keeps it. The `followUpDate` field on
+visit responses is no longer kept up to date and will be removed.
 
 ### Journal
 

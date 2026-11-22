@@ -18,7 +18,7 @@ import {
 	buildVisitHealth,
 	emptyDashboardReturn,
 	sumCountsByDate,
-	type UpcomingScheduledOnlyRow
+	type UpcomingNextVisitRow
 } from '#lib/server/dashboard/builders.js';
 import { runDashboardQueries } from '#lib/server/dashboard/queries.js';
 import { getDb } from '#lib/server/db/index.js';
@@ -56,7 +56,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			ranges.endOfThisWeekDate
 		);
 		const latestVisitByPersonId = new Map(
-			data.allVisitsRaw.map((v) => [v.personId, { date: v.date, followUpDate: v.followUpDate }])
+			data.allVisitsRaw.map((v) => [v.personId, { date: v.date }])
 		);
 		const { counts: visitHealthCounts, names: visitHealthNames } = buildVisitHealth(
 			data.allPeopleRaw,
@@ -102,9 +102,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			visitHealthNames,
 			upcomingVisits: buildUpcomingVisits(
 				data.upcomingVisitsByDateRaw,
-				data.upcomingFollowUpsByDateRaw,
-				data.upcomingScheduledOnlyRaw.filter(
-					(v): v is UpcomingScheduledOnlyRow => v.scheduledVisitDate !== null
+				data.upcomingNextVisitsRaw.filter(
+					(v): v is UpcomingNextVisitRow => v.scheduledVisitDate !== null
 				),
 				today
 			),

@@ -42,10 +42,13 @@ export const scheduleVisitSchema = z.object({
  */
 export const visitSchema = z.object({
 	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (use YYYY-MM-DD)'),
-	time: z
-		.string()
-		.regex(/^\d{2}:\d{2}$/, 'Invalid time format (use HH:MM)')
-		.optional(),
+	time: z.preprocess(
+		(value) => (value === '' ? undefined : value),
+		z
+			.string()
+			.regex(/^\d{2}:\d{2}$/, 'Invalid time format (use HH:MM)')
+			.optional()
+	),
 	companions: z.string().optional(),
 	notes: z.string().optional(),
 	followUpDate: z.preprocess(

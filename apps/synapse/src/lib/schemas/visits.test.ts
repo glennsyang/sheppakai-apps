@@ -79,7 +79,12 @@ describe('visitSchema', () => {
 		);
 	});
 
-	it('treats an empty string followUpDate as undefined (no follow-up)', () => {
+	it('treats an empty string time as undefined (no time)', () => {
+		const result = visitSchema.parse({ date: '2026-03-15', time: '' });
+		expect(result.time).toBeUndefined();
+	});
+
+	it('treats an empty string followUpDate as undefined (no Next Visit)', () => {
 		const result = visitSchema.parse({ date: '2026-03-15', followUpDate: '' });
 		expect(result.followUpDate).toBeUndefined();
 	});

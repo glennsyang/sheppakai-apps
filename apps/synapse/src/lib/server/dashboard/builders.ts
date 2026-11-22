@@ -55,8 +55,8 @@ function getDayLabel(date: string, today: string, tomorrow: string): string {
 }
 
 type UpcomingVisitRow = { personId: string; personName: string; date: string };
-type UpcomingFollowUpRow = { personId: string; personName: string; followUpDate: string | null };
-export type UpcomingScheduledOnlyRow = {
+/** A group member whose Next Visit falls in the upcoming window. */
+export type UpcomingNextVisitRow = {
 	personId: string;
 	personName: string;
 	scheduledVisitDate: string;
@@ -64,8 +64,7 @@ export type UpcomingScheduledOnlyRow = {
 
 export function buildUpcomingVisits(
 	byDateRaw: UpcomingVisitRow[],
-	byFollowUpRaw: UpcomingFollowUpRow[],
-	byScheduledOnlyRaw: UpcomingScheduledOnlyRow[],
+	byNextVisitRaw: UpcomingNextVisitRow[],
 	today: string
 ): { dayLabel: string; names: string[]; isToday: boolean }[] {
 	const tomorrow = addDaysToDateString(today, 1);
@@ -78,14 +77,7 @@ export function buildUpcomingVisits(
 		map.set(v.date, inner);
 	}
 
-	for (const v of byFollowUpRaw) {
-		if (!v.followUpDate) continue;
-		const inner = map.get(v.followUpDate) ?? new Map<string, string>();
-		inner.set(v.personId, v.personName);
-		map.set(v.followUpDate, inner);
-	}
-
-	for (const v of byScheduledOnlyRaw) {
+	for (const v of byNextVisitRaw) {
 		const inner = map.get(v.scheduledVisitDate) ?? new Map<string, string>();
 		inner.set(v.personId, v.personName);
 		map.set(v.scheduledVisitDate, inner);
@@ -102,7 +94,7 @@ export function buildUpcomingVisits(
 
 export function buildVisitHealth(
 	peopleRaw: { id: string; name: string; isExempt: boolean; scheduledVisitDate: string | null }[],
-	visitsMap: Map<string, { date: string; followUpDate: string | null }>,
+	visitsMap: Map<string, { date: string }>,
 	today: string,
 	visitStatusThresholds: VisitStatusThresholds
 ): VisitHealthResult {

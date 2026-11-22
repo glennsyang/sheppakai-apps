@@ -34,15 +34,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 		const peopleWithStatus: PersonWithStatus[] = userPeople.map((person) => {
 			const latestVisit = latestVisitsByPersonId.get(person.id);
 			const statusInfo = getPersonVisitStatus(person, latestVisit, today, visitStatusThresholds);
-			const { effectiveFollowUpDate } = statusInfo;
-			const nextFollowUpDate =
-				effectiveFollowUpDate && effectiveFollowUpDate >= today ? effectiveFollowUpDate : null;
+			const nextVisitDate =
+				statusInfo.nextVisitDate && statusInfo.nextVisitDate >= today
+					? statusInfo.nextVisitDate
+					: null;
 
 			return {
 				id: person.id,
 				name: person.name,
 				isExempt: person.isExempt,
-				nextFollowUpDate,
+				nextVisitDate,
 				lastVisit: latestVisit
 					? {
 							date: latestVisit.date,

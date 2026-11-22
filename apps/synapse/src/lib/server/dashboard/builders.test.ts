@@ -42,8 +42,10 @@ describe('buildUpcomingVisits', () => {
 				{ personId: 'p1', personName: 'Zoe', date: TODAY },
 				{ personId: 'p2', personName: 'Ann', date: TODAY }
 			],
-			[{ personId: 'p1', personName: 'Zoe', followUpDate: TODAY }],
-			[{ personId: 'p3', personName: 'Bo', scheduledVisitDate: '2026-10-23' }],
+			[
+				{ personId: 'p1', personName: 'Zoe', scheduledVisitDate: TODAY },
+				{ personId: 'p3', personName: 'Bo', scheduledVisitDate: '2026-10-23' }
+			],
 			TODAY
 		);
 
@@ -51,17 +53,6 @@ describe('buildUpcomingVisits', () => {
 			{ dayLabel: 'Today', names: ['Ann', 'Zoe'], isToday: true },
 			{ dayLabel: 'Tomorrow', names: ['Bo'], isToday: false }
 		]);
-	});
-
-	it('skips follow-ups without a date', () => {
-		expect(
-			buildUpcomingVisits(
-				[],
-				[{ personId: 'p1', personName: 'Zoe', followUpDate: null }],
-				[],
-				TODAY
-			)
-		).toEqual([]);
 	});
 });
 

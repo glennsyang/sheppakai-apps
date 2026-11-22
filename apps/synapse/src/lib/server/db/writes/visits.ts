@@ -15,11 +15,40 @@ function companionsToJson(companions: string[] | undefined | null): string | nul
 	return JSON.stringify(companions);
 }
 
+type Db = ReturnType<typeof getDb>;
+
+type NewVisit = Omit<typeof visits.$inferInsert, 'followUpDate' | 'createdAt' | 'updatedAt'> & {
+	id: string;
+	personId: string;
+	userId: string;
+};
+
 /**
- * Insert path for API-key-driven visit logging. Mirrors the `logVisit` action in
- * src/routes/(app)/visits/[id]/+page.server.ts — verifying the person belongs to the
- * caller and clearing a stale `scheduledVisitDate` — kept as its own standalone
- * function rather than sharing code with that UI action.
+ * Logs a visit and sets the group member's Next Visit in one transaction. The Next Visit lives
+ * on the member (`people.scheduledVisitDate`); logging a visit always replaces it, so a visit
+ * logged with no Next Visit clears it. Shared by the `logVisit` UI action and the API.
+ */
+export function logVisitAndSetNextVisit(
+	db: Db,
+	{ visit, nextVisitDate, now }: { visit: NewVisit; nextVisitDate: string | null; now: Date }
+): void {
+	// The better-sqlite3 driver runs transaction callbacks synchronously, so every query
+	// inside must use `.run()` instead of `await`.
+	db.transaction((tx) => {
+		tx.insert(visits)
+			.values({ ...visit, ...withTimestampsForCreate(now) })
+			.run();
+		tx.update(people)
+			.set({ scheduledVisitDate: nextVisitDate, ...withTimestampsForUpdate(now) })
+			.where(and(eq(people.id, visit.personId), eq(people.userId, visit.userId)))
+			.run();
+	});
+}
+
+/**
+ * Insert path for API-key-driven visit logging. Verifies the person belongs to the caller,
+ * then logs the visit and sets the member's Next Visit from `followUpDate` (the API keeps
+ * that field name), clearing it when omitted, exactly like the `logVisit` UI action.
  */
 export async function createVisit(userId: string, input: ApiCreateVisitInput) {
 	const db = getDb();
@@ -33,35 +62,29 @@ export async function createVisit(userId: string, input: ApiCreateVisitInput) {
 	}
 
 	const visitId = generateId();
-	// One timestamp for the visit and the person it clears
-	const now = new Date();
 
-	await db.insert(visits).values({
-		id: visitId,
-		personId: input.personId,
-		userId,
-		date: input.date,
-		time: input.time ?? null,
-		companions: companionsToJson(input.companions),
-		notes: input.notes ?? null,
-		followUpDate: input.followUpDate ?? null,
-		...withTimestampsForCreate(now)
+	logVisitAndSetNextVisit(db, {
+		visit: {
+			id: visitId,
+			personId: input.personId,
+			userId,
+			date: input.date,
+			time: input.time ?? null,
+			companions: companionsToJson(input.companions),
+			notes: input.notes ?? null
+		},
+		nextVisitDate: input.followUpDate ?? null,
+		now: new Date()
 	});
-
-	if (person.scheduledVisitDate) {
-		await db
-			.update(people)
-			.set({ scheduledVisitDate: null, ...withTimestampsForUpdate(now) })
-			.where(and(eq(people.id, input.personId), eq(people.userId, userId)));
-	}
 
 	return db.query.visits.findFirst({ where: eq(visits.id, visitId) });
 }
 
 /**
  * Update path for API-key-driven visit updates. Mirrors the `updateVisit` action in
- * src/routes/(app)/visits/[id]/+page.server.ts, kept as its own standalone function
- * rather than sharing code with that UI action.
+ * src/routes/(app)/visits/[id]/+page.server.ts. A `followUpDate` in the body (the API keeps
+ * that field name) sets the group member's Next Visit; `null` clears it, and leaving it out
+ * keeps it.
  */
 export async function updateVisit(userId: string, visitId: string, input: ApiUpdateVisitInput) {
 	const db = getDb();
@@ -74,18 +97,29 @@ export async function updateVisit(userId: string, visitId: string, input: ApiUpd
 		throw new ApiWriteError('not_found', 'Visit not found.', 404);
 	}
 
-	await db
-		.update(visits)
-		.set({
-			date: input.date ?? existing.date,
-			time: input.time !== undefined ? input.time : existing.time,
-			companions:
-				input.companions !== undefined ? companionsToJson(input.companions) : existing.companions,
-			notes: input.notes !== undefined ? input.notes : existing.notes,
-			followUpDate: input.followUpDate !== undefined ? input.followUpDate : existing.followUpDate,
-			...withTimestampsForUpdate()
-		})
-		.where(and(eq(visits.id, visitId), eq(visits.userId, userId)));
+	// One timestamp for the visit and the member's Next Visit
+	const now = new Date();
+
+	db.transaction((tx) => {
+		tx.update(visits)
+			.set({
+				date: input.date ?? existing.date,
+				time: input.time !== undefined ? input.time : existing.time,
+				companions:
+					input.companions !== undefined ? companionsToJson(input.companions) : existing.companions,
+				notes: input.notes !== undefined ? input.notes : existing.notes,
+				...withTimestampsForUpdate(now)
+			})
+			.where(and(eq(visits.id, visitId), eq(visits.userId, userId)))
+			.run();
+
+		if (input.followUpDate !== undefined) {
+			tx.update(people)
+				.set({ scheduledVisitDate: input.followUpDate, ...withTimestampsForUpdate(now) })
+				.where(and(eq(people.id, existing.personId), eq(people.userId, userId)))
+				.run();
+		}
+	});
 
 	return db.query.visits.findFirst({ where: eq(visits.id, visitId) });
 }

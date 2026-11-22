@@ -30,78 +30,82 @@
 	let editingVisitId = $state<string | null>(null);
 	let visitToDelete = $state<string | null>(null);
 
-	let visitFormState = $derived(
-		superForm(data.visitForm, {
-			validators: zod4(visitSchema),
-			resetForm: true,
-			onUpdated({ form }) {
-				if (form.message) {
-					if (form.message.type === 'success') {
-						toast.success(form.message.text);
-						showLogVisitDialog = false;
-						editingVisitId = null;
-					} else if (form.message.type === 'error') {
-						toast.error(form.message.text);
-					}
+	// Init once: superForm inside $derived re-runs on every data refresh and its teardown
+	// removes the <form> from the DOM.
+	// svelte-ignore state_referenced_locally
+	const visitFormState = superForm(data.visitForm, {
+		validators: zod4(visitSchema),
+		resetForm: true,
+		onUpdated({ form }) {
+			if (form.message) {
+				if (form.message.type === 'success') {
+					toast.success(form.message.text);
+					showLogVisitDialog = false;
+					editingVisitId = null;
+				} else if (form.message.type === 'error') {
+					toast.error(form.message.text);
 				}
 			}
-		})
-	);
+		}
+	});
 
-	let editFormState = $derived(
-		superForm(data.editForm, {
-			validators: zod4(personSchema),
-			onUpdated({ form }) {
-				if (form.message) {
-					if (form.message.type === 'success') {
-						toast.success(form.message.text);
-						showEditPersonDialog = false;
-					} else if (form.message.type === 'error') {
-						toast.error(form.message.text);
-					}
+	// svelte-ignore state_referenced_locally
+	const editFormState = superForm(data.editForm, {
+		validators: zod4(personSchema),
+		// Keep the saved values; resetting would put the old name back in the form.
+		resetForm: false,
+		onUpdated({ form }) {
+			if (form.message) {
+				if (form.message.type === 'success') {
+					toast.success(form.message.text);
+					showEditPersonDialog = false;
+				} else if (form.message.type === 'error') {
+					toast.error(form.message.text);
 				}
 			}
-		})
-	);
+		}
+	});
 
-	let scheduleFormState = $derived(
-		superForm(data.scheduleForm, {
-			validators: zod4(scheduleVisitSchema),
-			onUpdated({ form }) {
-				if (form.message) {
-					if (form.message.type === 'success') {
-						toast.success(form.message.text);
-						showScheduleVisitDialog = false;
-					} else if (form.message.type === 'error') {
-						toast.error(form.message.text);
-					}
+	// svelte-ignore state_referenced_locally
+	const scheduleFormState = superForm(data.scheduleForm, {
+		validators: zod4(scheduleVisitSchema),
+		onUpdated({ form }) {
+			if (form.message) {
+				if (form.message.type === 'success') {
+					toast.success(form.message.text);
+					showScheduleVisitDialog = false;
+				} else if (form.message.type === 'error') {
+					toast.error(form.message.text);
 				}
 			}
-		})
-	);
+		}
+	});
 
 	const {
 		form: visitForm,
 		errors: visitErrors,
 		enhance: visitEnhance,
 		submitting: visitSubmitting
-	} = $derived(visitFormState);
+	} = visitFormState;
 
 	const {
 		form: editForm,
 		errors: editErrors,
 		enhance: editEnhance,
 		submitting: editSubmitting
-	} = $derived(editFormState);
+	} = editFormState;
 
 	const {
 		form: scheduleForm,
 		errors: scheduleErrors,
 		enhance: scheduleEnhance,
 		submitting: scheduleSubmitting
-	} = $derived(scheduleFormState);
+	} = scheduleFormState;
 
 	const isEditingVisit = $derived(editingVisitId !== null);
+	const nextVisitActionLabel = $derived(
+		data.person.scheduledVisitDate ? 'Edit Next Visit' : 'Set Next Visit'
+	);
 
 	function openLogVisitDialogForCreate() {
 		editingVisitId = null;
@@ -119,7 +123,7 @@
 		$visitForm.time = visit.time ?? '';
 		$visitForm.companions = visit.companions?.join(', ') ?? '';
 		$visitForm.notes = visit.notes ?? '';
-		$visitForm.followUpDate = visit.followUpDate ?? '';
+		$visitForm.followUpDate = '';
 		showLogVisitDialog = true;
 	}
 
@@ -158,7 +162,7 @@
 
 	function getEditStatusDescription(isExempt: boolean): string {
 		return isExempt
-			? 'This person is exempt from yellow/critical visit warnings when no scheduled follow-up is set.'
+			? 'This person is exempt from yellow/critical visit warnings when no Next Visit is set.'
 			: 'This person will follow normal yellow/critical visit warning rules.';
 	}
 </script>
@@ -186,9 +190,9 @@
 							Last visit: {formatTimeSince(data.person.daysSinceLastVisit)}
 						</span>
 					{/if}
-					{#if data.visits.length === 0 && data.person.scheduledVisitDate}
+					{#if data.person.scheduledVisitDate}
 						<span class="text-muted-foreground text-sm">
-							Scheduled: {formatDateShort(data.person.scheduledVisitDate)}
+							Next Visit: {formatDateShort(data.person.scheduledVisitDate)}
 						</span>
 					{/if}
 				</div>
@@ -210,26 +214,22 @@
 					<Tooltip.Content>Log Visit</Tooltip.Content>
 				</Tooltip.Root>
 
-				{#if data.visits.length === 0}
-					<Tooltip.Root>
-						<Tooltip.Trigger>
-							{#snippet child({ props })}
-								<Button
-									{...props}
-									size="icon"
-									variant="outline"
-									aria-label="Schedule Visit"
-									onclick={openScheduleVisitDialog}
-								>
-									<CalendarClock class="h-4 w-4" />
-								</Button>
-							{/snippet}
-						</Tooltip.Trigger>
-						<Tooltip.Content>
-							{data.person.scheduledVisitDate ? 'Edit Scheduled Visit' : 'Schedule Visit'}
-						</Tooltip.Content>
-					</Tooltip.Root>
-				{/if}
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<Button
+								{...props}
+								size="icon"
+								variant="outline"
+								aria-label={nextVisitActionLabel}
+								onclick={openScheduleVisitDialog}
+							>
+								<CalendarClock class="h-4 w-4" />
+							</Button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content>{nextVisitActionLabel}</Tooltip.Content>
+				</Tooltip.Root>
 
 				<Tooltip.Root>
 					<Tooltip.Trigger>
@@ -295,13 +295,13 @@
 					<p class="text-muted-foreground mb-4">No visits logged yet.</p>
 					{#if data.person.scheduledVisitDate}
 						<p class="text-muted-foreground mb-4 text-sm">
-							Scheduled: {formatDateShort(data.person.scheduledVisitDate)}
+							Next Visit: {formatDateShort(data.person.scheduledVisitDate)}
 						</p>
 					{/if}
 					<div class="flex justify-center gap-2">
 						<Button onclick={openLogVisitDialogForCreate}>Log First Visit</Button>
 						<Button variant="outline" onclick={openScheduleVisitDialog}>
-							{data.person.scheduledVisitDate ? 'Edit Scheduled Visit' : 'Schedule Visit'}
+							{nextVisitActionLabel}
 						</Button>
 					</div>
 				</Card.Content>
@@ -326,12 +326,6 @@
 
 									{#if visit.notes}
 										<p class="text-muted-foreground mt-2 text-sm">Notes: {visit.notes}</p>
-									{/if}
-
-									{#if visit.followUpDate}
-										<p class="text-muted-foreground mt-2 text-sm">
-											Follow-up: {formatDateShort(visit.followUpDate)}
-										</p>
 									{/if}
 								</div>
 
@@ -456,19 +450,24 @@
 					/>
 				</div>
 
-				<div class="space-y-2">
-					<Label for="followUpDate">Follow-up Date</Label>
-					<Input
-						id="followUpDate"
-						name="followUpDate"
-						type="date"
-						bind:value={$visitForm.followUpDate}
-						aria-invalid={$visitErrors.followUpDate ? 'true' : undefined}
-					/>
-					{#if $visitErrors.followUpDate}
-						<p class="text-destructive mt-1 text-sm">{$visitErrors.followUpDate}</p>
-					{/if}
-				</div>
+				{#if !isEditingVisit}
+					<div class="space-y-2">
+						<Label for="followUpDate">Next Visit</Label>
+						<Input
+							id="followUpDate"
+							name="followUpDate"
+							type="date"
+							bind:value={$visitForm.followUpDate}
+							aria-invalid={$visitErrors.followUpDate ? 'true' : undefined}
+						/>
+						<p class="text-muted-foreground text-xs">
+							Leave blank if no next visit is planned. This replaces any Next Visit already set.
+						</p>
+						{#if $visitErrors.followUpDate}
+							<p class="text-destructive mt-1 text-sm">{$visitErrors.followUpDate}</p>
+						{/if}
+					</div>
+				{/if}
 
 				<div class="flex justify-end gap-2">
 					<Button type="button" variant="outline" onclick={closeLogVisitDialog}>Cancel</Button>
@@ -545,16 +544,16 @@
 <Dialog.Root bind:open={showScheduleVisitDialog}>
 	<Dialog.Content>
 		<Dialog.Header>
-			<Dialog.Title>Schedule Visit</Dialog.Title>
+			<Dialog.Title>{nextVisitActionLabel}</Dialog.Title>
 			<Dialog.Description>
-				Set a scheduled visit date for {data.person.name} without logging a visit
+				Set the date of your next visit with {data.person.name}
 			</Dialog.Description>
 		</Dialog.Header>
 
 		<div class="space-y-4">
 			<form method="POST" action="?/scheduleVisit" use:scheduleEnhance>
 				<div class="space-y-2">
-					<Label for="scheduledVisitDate">Scheduled Date*</Label>
+					<Label for="scheduledVisitDate">Next Visit*</Label>
 					<Input
 						id="scheduledVisitDate"
 						name="scheduledVisitDate"
@@ -587,8 +586,8 @@
 
 						return async ({ result, update }) => {
 							const resultMessage = actionMessage(result, {
-								success: 'Scheduled visit cleared',
-								error: 'Failed to clear scheduled visit'
+								success: 'Next Visit cleared',
+								error: 'Failed to clear Next Visit'
 							});
 							if (resultMessage.type === 'success') {
 								toast.success(resultMessage.text);
@@ -600,7 +599,7 @@
 						};
 					}}
 				>
-					<Button type="submit" variant="ghost" class="w-full">Clear Schedule</Button>
+					<Button type="submit" variant="ghost" class="w-full">Clear Next Visit</Button>
 				</form>
 			{/if}
 		</div>
