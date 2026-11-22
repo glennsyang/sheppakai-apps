@@ -68,7 +68,7 @@ A recipe is returned as:
 	"instructions": ["Preheat the oven…"],
 	"prepTimeMinutes": 40,
 	"servings": 4,
-	"source": "ai", // "ai" (saved from a suggestion), "custom" or "imported" (from a link or photo)
+	"source": "suggested", // "suggested" (saved from a suggestion), "custom" or "imported" (from a link or photo)
 	"rating": 4, // 1-5, or null when unrated
 	"sourceUrl": null, // the page a URL import came from, else null
 	"createdAt": "…",
@@ -76,8 +76,9 @@ A recipe is returned as:
 }
 ```
 
-`GET /api/v1/recipes` — requires `recipes:read`. Query parameters (optional): `source` (`ai` /
-`custom` / `imported`), `limit` (1-200, default 50). Most recently updated first.
+`GET /api/v1/recipes` — requires `recipes:read`. Query parameters (optional): `source` (`suggested`
+/ `custom` / `imported`; `ai` is still accepted as an older name for `suggested`), `limit` (1-200,
+default 50). Most recently updated first.
 
 `GET /api/v1/recipes/{id}` — requires `recipes:read`.
 

@@ -20,12 +20,12 @@
 	import { recipeAsSuggestion } from '#lib/recipes.js';
 	import {
 		addCustomMealSchema,
-		mealSuggestionListSchema,
-		mealSuggestionSchema
+		suggestionListSchema,
+		suggestionSchema
 	} from '#lib/schemas/mealPlan.js';
 	import { trackToday } from '#lib/today.svelte.js';
 	import { DAY_LABELS } from '#lib/types.js';
-	import type { MealPlanEntryWithRecipe, MealSuggestion } from '#lib/types.js';
+	import type { MealPlanEntryWithRecipe, Suggestion } from '#lib/types.js';
 
 	import type { PageData } from './$types';
 
@@ -34,7 +34,7 @@
 	// Writable derived: tracks data.entries, but handleEntryRemoved can optimistically
 	// drop a row until the next load replaces it.
 	let entries = $derived<MealPlanEntryWithRecipe[]>(data.entries);
-	let pendingSuggestion = $state<MealSuggestion | null>(null);
+	let pendingSuggestion = $state<Suggestion | null>(null);
 	let selectedDay = $state<number>(0);
 	let showDayPicker = $state(false);
 	let isSubmitting = $state(false);
@@ -44,11 +44,11 @@
 	let customModalDay = $state(0);
 
 	// Variations state
-	let variationsList = $state<MealSuggestion[] | null>(null);
+	let variationsList = $state<Suggestion[] | null>(null);
 	let variationsDay = $state<number | null>(null);
 	let variationsMealName = $state('');
 	let variationsLoading = $state(false);
-	let drawerSuggestion = $state<MealSuggestion | null>(null);
+	let drawerSuggestion = $state<Suggestion | null>(null);
 	// A planned meal opened from the board is already on it, so its drawer has no save action,
 	// but it can be edited. Tracked by id so the drawer picks up the saved recipe after a reload.
 	let plannedEntryId = $state<string | null>(null);
@@ -67,7 +67,7 @@
 		const stored = sessionStorage.getItem('pendingSuggestion');
 		if (stored) {
 			try {
-				const parsed = mealSuggestionSchema.safeParse(JSON.parse(stored));
+				const parsed = suggestionSchema.safeParse(JSON.parse(stored));
 				if (parsed.success) {
 					pendingSuggestion = parsed.data;
 					showDayPicker = true;
@@ -130,7 +130,7 @@
 				data?: unknown;
 				error?: { code: string; message: string };
 			};
-			const parsed = mealSuggestionListSchema.safeParse(body.data);
+			const parsed = suggestionListSchema.safeParse(body.data);
 			if (res.ok && parsed.success) {
 				variationsList = parsed.data;
 			} else {
@@ -144,7 +144,7 @@
 		}
 	}
 
-	async function handleVariationAddToPlanner(suggestion: MealSuggestion): Promise<void> {
+	async function handleVariationAddToPlanner(suggestion: Suggestion): Promise<void> {
 		if (variationsDay === null) {
 			actionError = 'Pick a day first: open variations from a planned dinner.';
 			return;

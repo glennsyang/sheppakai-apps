@@ -79,7 +79,7 @@ export async function saveRecipe(
 		instructionsJson: JSON.stringify(data.instructionsJson),
 		prepTimeMinutes: data.prepTimeMinutes,
 		servings: data.servings,
-		source: data.source ?? 'ai',
+		source: data.source ?? 'suggested',
 		sourceUrl: data.sourceUrl ?? null,
 		...withTimestampsForCreate()
 	});

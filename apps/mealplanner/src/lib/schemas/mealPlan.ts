@@ -95,7 +95,7 @@ const wholePositive = z
 	.positive()
 	.transform((n) => Math.max(1, Math.round(n)));
 
-export const mealSuggestionSchema = z.object({
+export const suggestionSchema = z.object({
 	name: z.string().trim().min(1).max(200),
 	description: z.string().trim().min(1).max(2000),
 	ingredients: ingredientListSchema,
@@ -104,19 +104,19 @@ export const mealSuggestionSchema = z.object({
 	servings: wholePositive
 });
 
-export const mealSuggestionListSchema = z.array(mealSuggestionSchema);
+export const suggestionListSchema = z.array(suggestionSchema);
 
 /**
  * Keep the valid suggestions from untrusted model output, so one malformed item doesn't
  * sink the whole response. Callers decide what an empty result means.
  */
 export function pickValidSuggestions(raw: unknown): {
-	suggestions: z.output<typeof mealSuggestionSchema>[];
+	suggestions: z.output<typeof suggestionSchema>[];
 	rejected: number;
 } {
 	const items: unknown[] = Array.isArray(raw) ? raw : [];
 	const suggestions = items.flatMap((item) => {
-		const result = mealSuggestionSchema.safeParse(item);
+		const result = suggestionSchema.safeParse(item);
 		return result.success ? [result.data] : [];
 	});
 	return { suggestions, rejected: items.length - suggestions.length };

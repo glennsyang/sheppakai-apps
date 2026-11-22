@@ -236,7 +236,7 @@ describe('getMealPlanWithEntries (#170)', () => {
 		expect(result[0].recipe).toMatchObject({
 			ingredientsJson: [{ name: 'rice', quantity: '1', unit: 'cup' }],
 			instructionsJson: ['Cook'],
-			source: 'ai',
+			source: 'suggested',
 			userId: 'u1'
 		});
 	});

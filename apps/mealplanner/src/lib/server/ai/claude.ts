@@ -4,7 +4,7 @@ import { isRecord } from '@sheppakai/shared/guards';
 
 import { pickValidSuggestions } from '#lib/schemas/mealPlan.js';
 import { logger } from '#lib/server/logger.js';
-import type { MealSuggestion } from '#lib/types.js';
+import type { Suggestion } from '#lib/types.js';
 
 import { sanitizePromptText } from './promptSafety';
 
@@ -78,7 +78,7 @@ const variationsTool: Anthropic.Tool = {
 	}
 };
 
-export async function suggestVariations(mealName: string): Promise<MealSuggestion[]> {
+export async function suggestVariations(mealName: string): Promise<Suggestion[]> {
 	const sanitizedMealName = sanitizePromptText(mealName, MAX_MEAL_NAME_LENGTH);
 
 	logger.info('Requesting meal variations', { mealName: sanitizedMealName });

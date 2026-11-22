@@ -4,7 +4,7 @@ import { isRecord } from '@sheppakai/shared/guards';
 
 import { pickValidSuggestions } from '#lib/schemas/mealPlan.js';
 import { logger } from '#lib/server/logger.js';
-import type { MealSuggestion } from '#lib/types.js';
+import type { Suggestion } from '#lib/types.js';
 
 import { GEMINI_API_VERSION, GEMINI_MODEL } from './models';
 import { sanitizePromptText } from './promptSafety';
@@ -108,7 +108,7 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
 export async function suggestMeals(
 	pantryItems: string[],
 	history?: SuggestionHistory
-): Promise<MealSuggestion[]> {
+): Promise<Suggestion[]> {
 	if (pantryItems.length === 0 || pantryItems.length > MAX_PANTRY_ITEMS) {
 		throw new Error(`Expected 1-${MAX_PANTRY_ITEMS} pantry items, got ${pantryItems.length}`);
 	}

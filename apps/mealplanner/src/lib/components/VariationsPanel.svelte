@@ -1,16 +1,16 @@
 <script lang="ts">
 	import Icon from '#lib/components/Icon.svelte';
-	import type { MealSuggestion } from '#lib/types.js';
+	import type { Suggestion } from '#lib/types.js';
 
 	import Modal from './Modal.svelte';
 	import SuggestionCard from './SuggestionCard.svelte';
 
 	interface Props {
-		variations: MealSuggestion[] | null;
+		variations: Suggestion[] | null;
 		mealName: string;
 		onClose: () => void;
-		onViewRecipe: (suggestion: MealSuggestion) => void;
-		onAddToPlanner: (suggestion: MealSuggestion) => void;
+		onViewRecipe: (suggestion: Suggestion) => void;
+		onAddToPlanner: (suggestion: Suggestion) => void;
 	}
 
 	let { variations, mealName, onClose, onViewRecipe, onAddToPlanner }: Props = $props();

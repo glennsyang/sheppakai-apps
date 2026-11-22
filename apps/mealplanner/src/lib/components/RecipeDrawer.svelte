@@ -3,16 +3,16 @@
 
 	import Icon from '#lib/components/Icon.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import type { MealSuggestion } from '#lib/types.js';
+	import type { Suggestion } from '#lib/types.js';
 
 	import Modal from './Modal.svelte';
 	import RecipeDrawerEditor from './RecipeDrawerEditor.svelte';
 
 	interface Props {
-		suggestion: MealSuggestion | null;
+		suggestion: Suggestion | null;
 		onClose: () => void;
 		/** Omitted when the recipe is already on the board. */
-		onSaveToPlanner?: (suggestion: MealSuggestion) => void;
+		onSaveToPlanner?: (suggestion: Suggestion) => void;
 		/** The saved recipe behind `suggestion`; when set, the drawer can edit it via `/recipes/[id]?/update`. */
 		recipeId?: string;
 		/** Called after an edit is saved. */

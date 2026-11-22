@@ -30,7 +30,7 @@ vi.mock('@google/genai', () => ({
 }));
 
 import {
-	mealSuggestionSchema,
+	suggestionSchema,
 	pickValidSuggestions,
 	saveRecipeSchema
 } from '../../lib/schemas/mealPlan';
@@ -48,11 +48,9 @@ const valid = {
 
 beforeEach(() => vi.clearAllMocks());
 
-describe('mealSuggestionSchema (#171)', () => {
+describe('suggestionSchema (#171)', () => {
 	it('accepts a well-formed suggestion and rounds fractional numbers', () => {
-		expect(mealSuggestionSchema.parse({ ...valid, prepTimeMinutes: 37.5 }).prepTimeMinutes).toBe(
-			38
-		);
+		expect(suggestionSchema.parse({ ...valid, prepTimeMinutes: 37.5 }).prepTimeMinutes).toBe(38);
 	});
 
 	it.each([
@@ -63,11 +61,11 @@ describe('mealSuggestionSchema (#171)', () => {
 		['overlong name', { ...valid, name: 'x'.repeat(201) }],
 		['too many steps', { ...valid, steps: Array(51).fill('step') }]
 	])('rejects %s', (_label, input) => {
-		expect(mealSuggestionSchema.safeParse(input).success).toBe(false);
+		expect(suggestionSchema.safeParse(input).success).toBe(false);
 	});
 
 	it('anything it accepts also passes saveRecipe validation', () => {
-		const s = mealSuggestionSchema.parse(valid);
+		const s = suggestionSchema.parse(valid);
 		const result = saveRecipeSchema.safeParse({
 			name: s.name,
 			description: s.description,
