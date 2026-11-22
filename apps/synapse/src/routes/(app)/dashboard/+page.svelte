@@ -372,7 +372,7 @@
 							{data.visitHealthCounts.critical + data.visitHealthCounts.overdue}
 						</span>
 						<div class="min-w-0 flex-1">
-							<span class="font-bold group-hover:underline">People to see</span>
+							<span class="font-bold group-hover:underline">Members to visit</span>
 							<p class="text-muted-foreground mt-0.5 truncate text-sm">
 								{[...data.visitHealthNames.critical, ...data.visitHealthNames.overdue].join(', ') ||
 									'Everyone is up to date'}

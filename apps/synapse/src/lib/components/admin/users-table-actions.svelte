@@ -42,7 +42,7 @@
 			title: nextRole === 'admin' ? 'Make Admin' : 'Remove Admin',
 			description:
 				nextRole === 'admin'
-					? `Give ${user.email} admin access? They'll be able to manage users, API keys and archived contacts.`
+					? `Give ${user.email} admin access? They'll be able to manage users, API keys and archived group members.`
 					: `Remove admin access from ${user.email}? They'll become a regular user.`,
 			confirm: nextRole === 'admin' ? 'Make admin' : 'Make user',
 			success: `Role changed to ${nextRole}.`,
@@ -64,7 +64,7 @@
 		},
 		removeUser: {
 			title: 'Remove User',
-			description: `Permanently delete ${user.email} and all of their data (journal, tasks, contacts, fitness, everything)? This cannot be undone.`,
+			description: `Permanently delete ${user.email} and all of their data (journal, tasks, group members, fitness, everything)? This cannot be undone.`,
 			confirm: 'Remove',
 			success: 'User removed.',
 			error: 'Failed to remove user'

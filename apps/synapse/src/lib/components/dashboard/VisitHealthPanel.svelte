@@ -52,7 +52,7 @@
 			valueClass: 'text-[oklch(var(--color-green))]'
 		},
 		{
-			label: 'No Visits',
+			label: 'Never Visited',
 			value: counts.noVisits,
 			names: names.noVisits,
 			href: '/visits?status=none',
@@ -71,7 +71,7 @@
 				{counts.total}
 			</span>
 			<span class="text-muted-foreground mb-1 text-sm">
-				{counts.total === 1 ? 'person' : 'people'}
+				{counts.total === 1 ? 'member' : 'members'}
 				tracked
 			</span>
 		</div>

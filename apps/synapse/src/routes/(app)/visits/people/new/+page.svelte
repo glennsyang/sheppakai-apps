@@ -31,7 +31,7 @@
 
 <div class="container mx-auto max-w-2xl p-6">
 	<div class="mb-6">
-		<h1 class="text-3xl font-bold">Add Person</h1>
+		<h1 class="text-3xl font-bold">Add Group Member</h1>
 		<p class="text-muted-foreground mt-1">Add someone to track visits with</p>
 	</div>
 
@@ -46,7 +46,7 @@
 							name="name"
 							type="text"
 							bind:value={$form.name}
-							placeholder="Enter person's name"
+							placeholder="Enter group member's name"
 							required
 							aria-invalid={$errors.name ? 'true' : undefined}
 						/>

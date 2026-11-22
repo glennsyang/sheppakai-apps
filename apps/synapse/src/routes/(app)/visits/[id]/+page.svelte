@@ -162,8 +162,8 @@
 
 	function getEditStatusDescription(isExempt: boolean): string {
 		return isExempt
-			? 'This person is exempt from yellow/critical visit warnings when no Next Visit is set.'
-			: 'This person will follow normal yellow/critical visit warning rules.';
+			? 'This group member is exempt from Overdue/Critical visit warnings when no Next Visit is set.'
+			: 'This group member follows the normal Overdue/Critical visit warning rules.';
 	}
 </script>
 
@@ -238,7 +238,7 @@
 								{...props}
 								size="icon"
 								variant="outline"
-								aria-label="Edit Person"
+								aria-label="Edit Group Member"
 								onclick={() => (showEditPersonDialog = true)}
 							>
 								<Pencil class="h-4 w-4" />
@@ -255,7 +255,7 @@
 								{...props}
 								size="icon"
 								variant="secondary"
-								aria-label="Archive Person"
+								aria-label="Archive Group Member"
 								onclick={() => (showArchivePersonDialog = true)}
 							>
 								<Archive class="h-4 w-4" />
@@ -272,7 +272,7 @@
 								{...props}
 								size="icon"
 								variant="destructive"
-								aria-label="Delete Person"
+								aria-label="Delete Group Member"
 								onclick={() => (showDeletePersonDialog = true)}
 							>
 								<Trash2 class="h-4 w-4" />
@@ -490,8 +490,8 @@
 <Dialog.Root bind:open={showEditPersonDialog}>
 	<Dialog.Content>
 		<Dialog.Header>
-			<Dialog.Title>Edit Person</Dialog.Title>
-			<Dialog.Description>Update person's name</Dialog.Description>
+			<Dialog.Title>Edit Group Member</Dialog.Title>
+			<Dialog.Description>Update the group member's name</Dialog.Description>
 		</Dialog.Header>
 
 		<form method="POST" action="?/updatePerson" use:editEnhance>
@@ -609,9 +609,9 @@
 <!-- Archive Person Confirmation -->
 <ConfirmDialog
 	bind:open={showArchivePersonDialog}
-	title="Archive Person"
+	title="Archive Group Member"
 	message="Are you sure you want to archive {data.person
-		.name}? Archived people no longer appear in visits views and tabs."
+		.name}? Archived group members no longer appear in visits views and tabs."
 	confirmButtonText="Archive"
 	actionUrl="?/archivePerson"
 />
@@ -619,7 +619,7 @@
 <!-- Delete Person Confirmation -->
 <ConfirmDialog
 	bind:open={showDeletePersonDialog}
-	title="Delete Person"
+	title="Delete Group Member"
 	message="Are you sure you want to delete {data.person
 		.name}? This will also delete all associated visits. This action cannot be undone."
 	confirmButtonText="Delete"

@@ -114,13 +114,13 @@
 				<p class="text-muted-foreground mt-1">Track visits made with your group</p>
 			</div>
 			<Button
-				title="Add Person"
-				aria-label="Add Person"
+				title="Add Group Member"
+				aria-label="Add Group Member"
 				href="/visits/people/new"
 				class="bg-pen-people hover:bg-pen-people"
 			>
 				<Plus class="mr-2 h-4 w-4" />
-				Add Person
+				Add Group Member
 			</Button>
 		</div>
 
@@ -162,7 +162,7 @@
 						class="data-[state=active]:border-border border-b-2 border-transparent"
 					>
 						<span class="bg-muted mr-1 inline-block h-2 w-2 rounded-full"></span>
-						No Visits ({noVisitsCount})
+						Never Visited ({noVisitsCount})
 					</Tabs.Trigger>
 					<Tabs.Trigger
 						value="exempt"
@@ -187,9 +187,9 @@
 					{#if peopleInTab.length === 0}
 						<div class="border-rule border-y border-dashed py-12 text-center">
 							<p class="text-muted-foreground mb-4">
-								{isScheduledTab ? 'No Next Visits set.' : 'No people found.'}
+								{isScheduledTab ? 'No Next Visits set.' : 'No group members found.'}
 							</p>
-							<Button href="/visits/people/new">Add Your First Person</Button>
+							<Button href="/visits/people/new">Add Your First Group Member</Button>
 						</div>
 					{:else}
 						<!-- A ruled register: one line per person, like a planner's address page. -->

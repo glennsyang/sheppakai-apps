@@ -83,7 +83,7 @@
 	<div class="ruled mb-6 pb-4">
 		<h1 class="page-title" style="--pen: oklch(var(--color-teal))">Admin</h1>
 		<p class="text-muted-foreground text-sm sm:text-base">
-			Manage users, archived contacts, and API keys
+			Manage users, archived group members, and API keys
 		</p>
 	</div>
 
@@ -108,7 +108,7 @@
 						if (activeTab !== 'archived-persons') void switchTab('archived-persons');
 					}}
 				>
-					Archived Persons
+					Archived Members
 				</Tabs.Trigger>
 				<Tabs.Trigger
 					value="api-keys"

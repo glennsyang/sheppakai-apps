@@ -42,7 +42,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 				db.query.people.findFirst({
 					where: and(eq(people.id, params.id), eq(people.userId, userId))
 				}),
-			{ type: 'error', message: 'Person not found', status: 404 }
+			{ type: 'error', message: 'Group member not found', status: 404 }
 		);
 
 		if (person.isArchived) {
@@ -117,7 +117,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
+				return message(form, { type: 'error', text: 'Group member not found' }, { status: 404 });
 			}
 
 			const companions = toCommaSeparatedJson(form.data.companions);
@@ -251,7 +251,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
+				return message(form, { type: 'error', text: 'Group member not found' }, { status: 404 });
 			}
 
 			await db
@@ -267,7 +267,7 @@ export const actions = {
 
 			return message(form, {
 				type: 'success',
-				text: 'Person updated successfully!'
+				text: 'Group member updated successfully!'
 			});
 		} catch (err) {
 			logger.error('Failed to update person', err);
@@ -275,7 +275,7 @@ export const actions = {
 				form,
 				{
 					type: 'error',
-					text: 'An error occurred while updating the person. Please try again.'
+					text: 'An error occurred while updating the group member. Please try again.'
 				},
 				{ status: 500 }
 			);
@@ -301,7 +301,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
+				return message(form, { type: 'error', text: 'Group member not found' }, { status: 404 });
 			}
 
 			await db
@@ -345,7 +345,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
+				return message(form, { type: 'error', text: 'Group member not found' }, { status: 404 });
 			}
 
 			await db
@@ -376,7 +376,7 @@ export const actions = {
 			);
 
 			if (!person) {
-				return message(form, { type: 'error', text: 'Person not found' }, { status: 404 });
+				return message(form, { type: 'error', text: 'Group member not found' }, { status: 404 });
 			}
 
 			const now = new Date();
@@ -392,7 +392,11 @@ export const actions = {
 			logger.info('Person archived', { personId: params.id, userId: user.id });
 		} catch (err) {
 			logger.error('Failed to archive person', err);
-			return message(form, { type: 'error', text: 'Failed to archive person' }, { status: 500 });
+			return message(
+				form,
+				{ type: 'error', text: 'Failed to archive group member' },
+				{ status: 500 }
+			);
 		}
 
 		throw redirect(303, '/visits');
@@ -401,7 +405,7 @@ export const actions = {
 	deletePerson: deleteAction({
 		schema: noFieldsSchema,
 		table: people,
-		entityName: 'Person',
+		entityName: 'Group member',
 		// Visits cascade with the person.
 		getId: (_form, { params }) => params.id ?? '',
 		onSuccess: () => {

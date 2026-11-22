@@ -78,6 +78,13 @@ describe('visit status exemptions', () => {
 		expect(result.status).toBe('red');
 	});
 
+	it('labels every status with its glossary term', () => {
+		expect(getStatusLabel('green')).toBe('Recent');
+		expect(getStatusLabel('yellow')).toBe('Overdue');
+		expect(getStatusLabel('red')).toBe('Critical');
+		expect(getStatusLabel('none')).toBe('Never Visited');
+	});
+
 	it('exposes scheduled label and priority ordering', () => {
 		expect(getStatusLabel('scheduled')).toBe('Scheduled');
 		expect(getStatusPriority('scheduled')).toBeGreaterThan(getStatusPriority('green'));

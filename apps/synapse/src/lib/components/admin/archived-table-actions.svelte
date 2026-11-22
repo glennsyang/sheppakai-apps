@@ -29,10 +29,10 @@
 <Dialog.Root bind:open={openUnarchiveDialog}>
 	<Dialog.Content>
 		<Dialog.Header>
-			<Dialog.Title>Unarchive Archived Person</Dialog.Title>
+			<Dialog.Title>Unarchive Group Member</Dialog.Title>
 			<Dialog.Description>
 				Are you sure you want to unarchive "{archivedPerson.name}" for {archivedPerson.ownerEmail}?
-				The person will be set to active status.
+				The group member will be set back to active.
 			</Dialog.Description>
 		</Dialog.Header>
 		<form
@@ -43,8 +43,8 @@
 
 				return async ({ result, update }) => {
 					const resultMessage = actionMessage(result, {
-						success: 'Person unarchived.',
-						error: 'Failed to unarchive person'
+						success: 'Group member unarchived.',
+						error: 'Failed to unarchive group member'
 					});
 					if (resultMessage.type === 'success') {
 						toast.success(resultMessage.text);
