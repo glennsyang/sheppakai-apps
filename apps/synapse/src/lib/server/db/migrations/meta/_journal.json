@@ -253,6 +253,13 @@
 			"when": 1795308779839,
 			"tag": "0035_next_visit_on_member",
 			"breakpoints": true
+		},
+		{
+			"idx": 36,
+			"version": "6",
+			"when": 1795309638295,
+			"tag": "0036_drop_visit_follow_up_date",
+			"breakpoints": true
 		}
 	]
 }
