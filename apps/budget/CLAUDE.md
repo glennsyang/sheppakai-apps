@@ -72,9 +72,9 @@ This repo already has a shared helper for the repeated "list page + form + serve
 - Month-scoped pages read `?month=&year=` through `getMonthRangeFromUrl(url)`
   (`src/lib/utils/dates.ts`). Categories load once in `(app)/+layout.server.ts` and reach every
   child route.
-- This shape repeats across `transactions`, `categories`, `recurring-bills`, `savings`, `income`,
+- This shape repeats across `expenses`, `categories`, `recurring-bills`, `savings`, `income`,
   `budget`, `receipts/*`, `window-cleaning`, and the `admin` routes. When adding a new one, follow
-  an existing route (e.g. `transactions/+page.server.ts`) rather than inventing a new shape.
+  an existing route (e.g. `expenses/+page.server.ts`) rather than inventing a new shape.
 
 ---
 
@@ -101,12 +101,12 @@ This repo already has a shared helper for the repeated "list page + form + serve
 
 - **`window-cleaning`** and **`receipts` (fuel + business)** are real side-business bookkeeping
   features, not demo data — treat them as first-class, not throwaway.
-- **Receipt scanning** (`src/lib/server/receipt-scan/`): the **Scan receipt** button on
-  `/transactions` posts a photo to `?/scanReceipt`, which sends it to Gemini or Claude
-  (`RECEIPT_SCAN_PROVIDER`) over plain `fetch` (no SDKs) and returns the fields to prefill
-  `TransactionModal`. Nothing saves until the user confirms. Both providers implement
-  `ReceiptExtractor` and are validated by the same `receiptScanResultSchema`; add a provider by
-  adding one file plus an entry in `providers` in `index.ts`. Photos are never stored.
+- **Receipt scanning** (`src/lib/server/receipt-scan/`): the **Scan receipt** button on `/expenses`
+  posts a photo to `?/scanReceipt`, which sends it to Gemini or Claude (`RECEIPT_SCAN_PROVIDER`)
+  over plain `fetch` (no SDKs) and returns the fields to prefill `TransactionModal`. Nothing saves
+  until the user confirms. Both providers implement `ReceiptExtractor` and are validated by the same
+  `receiptScanResultSchema`; add a provider by adding one file plus an entry in `providers` in
+  `index.ts`. Photos are never stored.
 - **Sentry** is wired in `hooks.server.ts` via `sentryHandle()` in the `handle` sequence, with
   `handleError` intentionally left unwrapped (the structured logger already forwards to Sentry) —
   read `docs/SENTRY.md` at the repo root (the cross-app single source of truth) before changing

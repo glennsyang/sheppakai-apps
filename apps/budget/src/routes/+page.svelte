@@ -13,7 +13,7 @@
 	const areas = [
 		{
 			name: 'Spending',
-			text: 'Transactions, a budget for each category, and what is safe to spend today.'
+			text: 'Expenses, a budget for each category, and what is safe to spend today.'
 		},
 		{
 			name: 'Bills and income',

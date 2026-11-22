@@ -19,7 +19,7 @@
 		openSheet: boolean;
 		transactions: SheetTransaction[];
 		category?: Category | null;
-		/** Overrides the "<category> Transactions" title. */
+		/** Overrides the "<category> Expenses" title. */
 		title?: string;
 		/** Adds a Category column and shows notes under the description (multi-category lists). */
 		showCategory?: boolean;
@@ -47,12 +47,12 @@
 <Sheet.Root bind:open={openSheet}>
 	<Sheet.Content side="right" class="flex w-full flex-col sm:max-w-lg">
 		<Sheet.Header>
-			<Sheet.Title>{title ?? `${category?.name} Transactions`}</Sheet.Title>
+			<Sheet.Title>{title ?? `${category?.name} Expenses`}</Sheet.Title>
 			<Sheet.Description>
 				{#if timeRange}
 					{timeRange}
 				{:else}
-					Transactions for {month ? months.find((m) => m.value === month)?.label : ''}
+					Expenses for {month ? months.find((m) => m.value === month)?.label : ''}
 					{year || ''}
 				{/if}
 			</Sheet.Description>
@@ -61,7 +61,7 @@
 		<div class="flex-1 overflow-y-auto px-4 py-4">
 			{#if transactions.length === 0}
 				<div class="text-muted-foreground flex h-32 items-center justify-center">
-					No transactions yet
+					No expenses yet
 				</div>
 			{:else}
 				<Table.Root>
@@ -112,7 +112,7 @@
 				<div class="flex w-full justify-between font-semibold">
 					<span>
 						{transactions.length}
-						{transactions.length === 1 ? 'transaction' : 'transactions'}
+						{transactions.length === 1 ? 'expense' : 'expenses'}
 					</span>
 					<span>
 						${categoryTotal.toLocaleString('en-US', {

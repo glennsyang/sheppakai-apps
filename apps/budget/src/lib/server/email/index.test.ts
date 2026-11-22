@@ -136,7 +136,7 @@ describe('sendWeeklySummaryEmail', () => {
 			excludedTransactions: []
 		});
 
-		expect(sentHtml()).toContain('No transactions were excluded from the budget this month.');
+		expect(sentHtml()).toContain('No expenses were excluded from the budget this month.');
 	});
 });
 

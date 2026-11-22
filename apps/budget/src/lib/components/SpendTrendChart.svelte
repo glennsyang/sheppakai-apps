@@ -197,7 +197,7 @@
 						{selectedRangeLabel} avg spend: {formatCurrency(avgSpend)}
 						<InfoTooltip
 							size="sm"
-							text="Average actual spend across completed months with transactions in the selected range, excluding the current (partial) month."
+							text="Average actual spend across completed months with expenses in the selected range, excluding the current (partial) month."
 						/>
 					</div>
 				{/if}

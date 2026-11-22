@@ -29,7 +29,7 @@ export async function getReceiptLoadContext(url: URL, categories: Category[] | u
 export const receiptActions = createCrudActions({
 	schema: transactionSchema,
 	table: transaction,
-	entityName: 'Transaction',
+	entityName: 'Expense',
 	...transactionBudgetAlertHooks,
 	transformCreate: (data, userId) => ({ ...toTransactionRow(data), userId }),
 	transformUpdate: (data) => toTransactionRow(data)

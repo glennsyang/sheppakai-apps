@@ -49,13 +49,13 @@ function scanEvent(receipt: File | null, userId = `user-${++userCounter}`) {
 	const body = new FormData();
 	if (receipt) body.set('receipt', receipt);
 	return {
-		request: new Request('https://budget.example.com/transactions?/scanReceipt', {
+		request: new Request('https://budget.example.com/expenses?/scanReceipt', {
 			method: 'POST',
 			body
 		}),
 		locals: { user: { id: userId } },
 		getClientAddress: () => '127.0.0.1',
-		url: new URL('https://budget.example.com/transactions?/scanReceipt'),
+		url: new URL('https://budget.example.com/expenses?/scanReceipt'),
 		cookies: { get: () => undefined, set: () => undefined }
 	} as never;
 }
@@ -72,7 +72,7 @@ async function runScan(event: never): Promise<ActionOutcome> {
 	return (await actions.scanReceipt(event)) as ActionOutcome;
 }
 
-describe('transactions scanReceipt action', () => {
+describe('expenses scanReceipt action', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		isEnabledMock.mockReturnValue(true);
