@@ -81,7 +81,7 @@ export const saveRecipeSchema = z.object({
 export const saveAndAddSchema = saveRecipeSchema.extend(addMealPlanEntrySchema.shape);
 
 export const addCustomMealSchema = z.object({
-	name: z.string().min(1, 'Meal name is required').max(200),
+	name: z.string().min(1, 'Dinner name is required').max(200),
 	notes: z.string().max(2000).optional().default(''),
 	...addMealPlanEntrySchema.shape
 });
@@ -123,5 +123,5 @@ export function pickValidSuggestions(raw: unknown): {
 }
 
 export const suggestVariationsSchema = z.object({
-	meal: z.string().trim().min(1, 'Meal name is required').max(200, 'Meal name too long')
+	meal: z.string().trim().min(1, 'Dinner name is required').max(200, 'Dinner name too long')
 });

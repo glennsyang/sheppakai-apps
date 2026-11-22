@@ -146,7 +146,7 @@
 
 	async function handleVariationAddToPlanner(suggestion: MealSuggestion): Promise<void> {
 		if (variationsDay === null) {
-			actionError = 'Pick a day first: open variations from a meal in the planner.';
+			actionError = 'Pick a day first: open variations from a planned dinner.';
 			return;
 		}
 		const fd = new FormData();
@@ -176,7 +176,7 @@
 		if (result.type !== 'success') {
 			actionError = actionFailureText(
 				result,
-				'Could not add that meal to the planner. Please try again.'
+				'Could not add that dinner to the week plan. Please try again.'
 			);
 			return;
 		}
@@ -235,7 +235,7 @@
 					} else {
 						actionError = actionFailureText(
 							result,
-							'Could not add that meal to the planner. Please try again.'
+							'Could not add that dinner to the week plan. Please try again.'
 						);
 					}
 				};
@@ -293,9 +293,13 @@
 	{/if}
 </Modal>
 
-<!-- Write in a meal by hand -->
+<!-- Write in a dinner by hand -->
 
-<Modal open={showCustomModal} onClose={() => (showCustomModal = false)} ariaLabel="Write in a meal">
+<Modal
+	open={showCustomModal}
+	onClose={() => (showCustomModal = false)}
+	ariaLabel="Write in a dinner"
+>
 	<div class="card-head -mx-6 px-6 pb-3">
 		<h2 class="text-xl leading-snug font-bold">
 			Write in <span class="marker ink-blue">{DAY_LABELS[customModalDay]}</span>
@@ -370,7 +374,7 @@
 	onSaveToPlanner={handleVariationAddToPlanner}
 />
 
-<!-- Recipe for a meal already on the board -->
+<!-- Recipe for a planned dinner already on the board -->
 <RecipeDrawer
 	suggestion={plannedRecipe}
 	onClose={() => (plannedEntryId = null)}

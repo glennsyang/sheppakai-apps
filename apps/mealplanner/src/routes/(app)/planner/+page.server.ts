@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		return {
 			entries: [],
 			weekStartDate,
-			loadError: 'Failed to load your meal plan. Please try refreshing the page.',
+			loadError: 'Failed to load your week plan. Please try refreshing the page.',
 			addCustomForm
 		};
 	}
@@ -61,7 +61,7 @@ export const actions: Actions = {
 			},
 			{
 				loggerContext: 'Failed to save recipe and add to planner',
-				fallbackMessage: 'Could not add that meal to the planner. Please try again.',
+				fallbackMessage: 'Could not add that dinner to the week plan. Please try again.',
 				successMessage: `Added ${form.data.name} to the planner.`,
 				logFields: { userId: user.id }
 			}
@@ -74,8 +74,8 @@ export const actions: Actions = {
 
 		return handleDomainAction(form, () => removeMealPlanEntry(form.data.entryId), {
 			loggerContext: 'Failed to remove meal plan entry',
-			fallbackMessage: 'Could not remove that meal. Please try again.',
-			successMessage: 'Meal removed.',
+			fallbackMessage: 'Could not remove that planned dinner. Please try again.',
+			successMessage: 'Planned dinner removed.',
 			logFields: { userId: user.id }
 		});
 	}),
@@ -100,7 +100,7 @@ export const actions: Actions = {
 			},
 			{
 				loggerContext: 'Failed to add custom meal',
-				fallbackMessage: 'Could not add your meal. Please try again.',
+				fallbackMessage: 'Could not add your dinner. Please try again.',
 				successMessage: `Added ${form.data.name} to the planner.`,
 				logFields: { userId: user.id }
 			}

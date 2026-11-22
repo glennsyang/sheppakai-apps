@@ -1,7 +1,7 @@
 # Meal Planner — Claude Code Guide
 
 A dinner-focused meal planner. Users enter pantry ingredients → Gemini suggests dinners with full
-recipes → meals slot into a Monday–Sunday weekly planner.
+recipes → planned dinners go on the Monday–Sunday week plan.
 
 ---
 

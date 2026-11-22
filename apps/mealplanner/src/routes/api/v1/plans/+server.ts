@@ -25,6 +25,6 @@ export const GET: RequestHandler = async ({ request, url }) => {
 		return apiSuccess(toApiWeek(weekStartDate, await getMealPlanWithEntries(weekStartDate)));
 	} catch (error) {
 		logger.error('API: failed to load meal plan', error);
-		return apiError('internal_error', 'Failed to load meal plan.', 500);
+		return apiError('internal_error', 'Failed to load week plan.', 500);
 	}
 };
