@@ -39,11 +39,11 @@ describe('visit warning utilities', () => {
 		expect(getVisitWarningStatus(nowCriticalByCustomRules, null, thresholds)).toBe('critical');
 	});
 
-	it('suppresses warnings when latest visit has a scheduled follow-up', () => {
+	it('suppresses warnings when the member has an upcoming Next Visit', () => {
 		const redVisitDate = dateDaysAgo(400);
-		const futureFollowUpDate = dateDaysAgo(-10);
+		const futureNextVisitDate = dateDaysAgo(-10);
 
-		expect(getVisitWarningStatus(redVisitDate, futureFollowUpDate)).toBeNull();
+		expect(getVisitWarningStatus(redVisitDate, futureNextVisitDate)).toBeNull();
 	});
 
 	it('formats visit date as Month D, YYYY', () => {

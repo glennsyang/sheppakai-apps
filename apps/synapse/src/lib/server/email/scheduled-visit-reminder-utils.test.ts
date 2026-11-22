@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-	buildScheduledVisitReminderEntityId,
 	buildScheduledVisitReminderEntityIdForPerson,
 	buildScheduledVisitReminderSubject,
-	buildVisitTodayReminderEntityId,
 	buildVisitTodayReminderEntityIdForPerson,
 	buildVisitTodayReminderSubject,
 	formatReminderDate,
@@ -44,40 +42,13 @@ describe('formatReminderDate', () => {
 	});
 });
 
-describe('buildScheduledVisitReminderEntityId', () => {
-	it('prefixes the visit id with the reminder namespace', () => {
-		expect(buildScheduledVisitReminderEntityId('visit_abc123')).toBe(
-			'scheduled_visit:visit_abc123'
-		);
-	});
-});
-
-describe('buildScheduledVisitReminderEntityIdForPerson', () => {
-	it('prefixes the person id with a distinct namespace from the visit-based id', () => {
+describe('reminder entity ids', () => {
+	it('namespaces the member id per reminder type', () => {
 		expect(buildScheduledVisitReminderEntityIdForPerson('person_abc123')).toBe(
 			'scheduled_visit:person:person_abc123'
 		);
-	});
-
-	it('never collides with a visit-based entity id sharing the same raw id', () => {
-		const sharedId = 'shared_id_123';
-		expect(buildScheduledVisitReminderEntityIdForPerson(sharedId)).not.toBe(
-			buildScheduledVisitReminderEntityId(sharedId)
-		);
-	});
-});
-
-describe('buildVisitTodayReminderEntityIdForPerson', () => {
-	it('prefixes the person id with a distinct namespace from the visit-based id', () => {
 		expect(buildVisitTodayReminderEntityIdForPerson('person_abc123')).toBe(
 			'visit_today:person:person_abc123'
-		);
-	});
-
-	it('never collides with a visit-based entity id sharing the same raw id', () => {
-		const sharedId = 'shared_id_123';
-		expect(buildVisitTodayReminderEntityIdForPerson(sharedId)).not.toBe(
-			buildVisitTodayReminderEntityId(sharedId)
 		);
 	});
 });

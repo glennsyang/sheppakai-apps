@@ -4,7 +4,6 @@ import { getDb } from '#lib/server/db/index.js';
 import { visits } from '#lib/server/db/schema/index.js';
 import {
 	calculatePersonVisitStatus,
-	getEffectiveFollowUpDate,
 	type VisitStatus,
 	type VisitStatusThresholds
 } from '#lib/utils/visit-status.js';
@@ -41,32 +40,28 @@ export async function getLatestVisitsByPersonId(
 }
 
 /**
- * Visit status for one person from their latest visit (if any), applying the
- * effective follow-up date rule so every view agrees.
+ * Visit status for one group member from their latest visit (if any) and their Next Visit,
+ * stored on the member (`people.scheduledVisitDate`), so every view agrees.
  */
 export function getPersonVisitStatus(
 	person: { isExempt: boolean; scheduledVisitDate: string | null },
-	latestVisit: { date: string; followUpDate: string | null } | undefined,
+	latestVisit: { date: string } | undefined,
 	today: string,
 	thresholds: VisitStatusThresholds
 ): {
 	status: VisitStatus;
 	daysSinceLastVisit: number | null;
 	daysUntilStatusChange: number | null;
-	effectiveFollowUpDate: string | null;
+	nextVisitDate: string | null;
 } {
-	const effectiveFollowUpDate = getEffectiveFollowUpDate(
-		latestVisit !== undefined,
-		latestVisit?.followUpDate,
-		person.scheduledVisitDate
-	);
+	const nextVisitDate = person.scheduledVisitDate;
 	const statusInfo = calculatePersonVisitStatus(
 		latestVisit?.date ?? null,
 		person.isExempt,
-		effectiveFollowUpDate,
+		nextVisitDate,
 		today,
 		thresholds
 	);
 
-	return { ...statusInfo, effectiveFollowUpDate };
+	return { ...statusInfo, nextVisitDate };
 }

@@ -42,8 +42,7 @@ export async function runDashboardQueries(
 		recentTaskRaw,
 		recentVisitRaw,
 		upcomingVisitsByDateRaw,
-		upcomingFollowUpsByDateRaw,
-		upcomingScheduledOnlyRaw,
+		upcomingNextVisitsRaw,
 		todayMealsRaw,
 		calorieTargetRaw
 	] = await Promise.all([
@@ -179,7 +178,6 @@ export async function runDashboardQueries(
 				.select({
 					personId: visits.personId,
 					date: visits.date,
-					followUpDate: visits.followUpDate,
 					rn: sql<number>`row_number() over (partition by ${visits.personId} order by ${visits.date} desc, ${visits.createdAt} desc)`.as(
 						'rn'
 					)
@@ -189,7 +187,7 @@ export async function runDashboardQueries(
 				.where(eq(visits.userId, userId))
 				.as('latest_visits_subq');
 			return db
-				.select({ personId: subq.personId, date: subq.date, followUpDate: subq.followUpDate })
+				.select({ personId: subq.personId, date: subq.date })
 				.from(subq)
 				.where(sql`${subq.rn} = 1`);
 		})(),
@@ -216,22 +214,6 @@ export async function runDashboardQueries(
 				)
 			)
 			.orderBy(visits.date),
-		db
-			.select({
-				personId: visits.personId,
-				personName: people.name,
-				followUpDate: visits.followUpDate
-			})
-			.from(visits)
-			.innerJoin(people, and(eq(visits.personId, people.id), eq(people.isArchived, false)))
-			.where(
-				and(
-					eq(visits.userId, userId),
-					gte(visits.followUpDate, r.today),
-					lte(visits.followUpDate, r.upcomingEndDate)
-				)
-			)
-			.orderBy(visits.followUpDate),
 		db
 			.select({
 				personId: people.id,
@@ -285,8 +267,7 @@ export async function runDashboardQueries(
 		recentTaskRaw,
 		recentVisitRaw,
 		upcomingVisitsByDateRaw,
-		upcomingFollowUpsByDateRaw,
-		upcomingScheduledOnlyRaw,
+		upcomingNextVisitsRaw,
 		todayMealsRaw,
 		calorieTargetRaw
 	};

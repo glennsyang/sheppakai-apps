@@ -69,7 +69,7 @@ export async function loadVisitWarningCandidates(): Promise<VisitWarningCandidat
 
 		const warningStatus = getVisitWarningStatus(
 			lastVisit.date,
-			lastVisit.followUpDate,
+			person.scheduledVisitDate,
 			visitThresholdsByUserId.get(userData.id)
 		);
 		if (!warningStatus) {
@@ -138,8 +138,8 @@ export async function processVisitWarnings(): Promise<void> {
 
 			const visitNotificationMessage =
 				warningStatus === 'critical'
-					? `Critical visit warning: ${person.name} needs follow-up.`
-					: `Visit warning: ${person.name} is due for follow-up.`;
+					? `Critical visit warning: ${person.name} needs a visit.`
+					: `Visit warning: ${person.name} is due for a visit.`;
 
 			await sendReminderNotification(
 				visitNotificationMessage,

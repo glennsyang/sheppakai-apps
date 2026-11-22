@@ -26,7 +26,7 @@ export interface PersonWithStatus {
 	id: string;
 	name: string;
 	isExempt: boolean;
-	nextFollowUpDate: string | null;
+	nextVisitDate: string | null;
 	lastVisit: {
 		date: string;
 		companions: string[] | null;
@@ -135,7 +135,7 @@ export function calculateVisitStatus(
 export function calculatePersonVisitStatus(
 	lastVisitDate: string | null,
 	isExempt: boolean,
-	latestFollowUpDate: string | null = null,
+	nextVisitDate: string | null = null,
 	today: string = getTodayString(),
 	thresholds?: Partial<VisitStatusThresholds> | null
 ): {
@@ -144,10 +144,10 @@ export function calculatePersonVisitStatus(
 	daysUntilStatusChange: number | null;
 } {
 	const baseStatus = calculateVisitStatus(lastVisitDate, today, thresholds);
-	const normalizedFollowUpDate = latestFollowUpDate ? latestFollowUpDate.split('T')[0] : null;
-	const hasScheduledFollowUp = normalizedFollowUpDate !== null && normalizedFollowUpDate >= today;
+	const normalizedNextVisitDate = nextVisitDate ? nextVisitDate.split('T')[0] : null;
+	const hasUpcomingNextVisit = normalizedNextVisitDate !== null && normalizedNextVisitDate >= today;
 
-	if (hasScheduledFollowUp) {
+	if (hasUpcomingNextVisit) {
 		return {
 			status: 'scheduled',
 			daysSinceLastVisit: baseStatus.daysSinceLastVisit,
@@ -164,24 +164,6 @@ export function calculatePersonVisitStatus(
 		daysSinceLastVisit: baseStatus.daysSinceLastVisit,
 		daysUntilStatusChange: null
 	};
-}
-
-/**
- * The follow-up date that should drive a person's "scheduled" status.
- * Once a person has at least one logged visit, that visit's own follow-up
- * date is authoritative. Otherwise, fall back to the person-level scheduled
- * visit date (set without ever logging a visit).
- */
-export function getEffectiveFollowUpDate(
-	hasVisits: boolean,
-	latestVisitFollowUpDate: string | null | undefined,
-	personScheduledVisitDate: string | null | undefined
-): string | null {
-	if (hasVisits) {
-		return latestVisitFollowUpDate ?? null;
-	}
-
-	return personScheduledVisitDate ?? null;
 }
 
 export function getStatusPriority(status: VisitStatus): number {

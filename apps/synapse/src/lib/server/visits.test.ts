@@ -55,18 +55,18 @@ describe('getPersonVisitStatus', () => {
 			thresholds
 		);
 		expect(result.status).toBe('scheduled');
-		expect(result.effectiveFollowUpDate).toBe('2026-10-30');
+		expect(result.nextVisitDate).toBe('2026-10-30');
 	});
 
-	it("uses the latest visit's follow-up over the person schedule", () => {
+	it("uses the member's Next Visit even after a visit is logged", () => {
 		const result = getPersonVisitStatus(
 			{ isExempt: false, scheduledVisitDate: '2026-10-30' },
-			{ date: '2026-10-20', followUpDate: null },
+			{ date: '2026-10-20' },
 			today,
 			thresholds
 		);
-		expect(result.status).toBe('green');
-		expect(result.effectiveFollowUpDate).toBeNull();
+		expect(result.status).toBe('scheduled');
+		expect(result.nextVisitDate).toBe('2026-10-30');
 		expect(result.daysSinceLastVisit).toBe(2);
 	});
 
@@ -83,7 +83,7 @@ describe('getPersonVisitStatus', () => {
 	it('marks exempt people as exempt', () => {
 		const result = getPersonVisitStatus(
 			{ isExempt: true, scheduledVisitDate: null },
-			{ date: '2025-01-01', followUpDate: null },
+			{ date: '2025-01-01' },
 			today,
 			thresholds
 		);

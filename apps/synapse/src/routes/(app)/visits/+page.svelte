@@ -76,10 +76,10 @@
 			return data.people
 				.filter((person) => person.status === 'scheduled')
 				.sort((a, b) => {
-					if (!a.nextFollowUpDate || !b.nextFollowUpDate) {
+					if (!a.nextVisitDate || !b.nextVisitDate) {
 						return 0;
 					}
-					return a.nextFollowUpDate.localeCompare(b.nextFollowUpDate);
+					return a.nextVisitDate.localeCompare(b.nextVisitDate);
 				});
 		}
 
@@ -187,7 +187,7 @@
 					{#if peopleInTab.length === 0}
 						<div class="border-rule border-y border-dashed py-12 text-center">
 							<p class="text-muted-foreground mb-4">
-								{isScheduledTab ? 'No scheduled follow-up visits found.' : 'No people found.'}
+								{isScheduledTab ? 'No Next Visits set.' : 'No people found.'}
 							</p>
 							<Button href="/visits/people/new">Add Your First Person</Button>
 						</div>
@@ -240,9 +240,9 @@
 										>
 
 										<span class="text-muted-foreground col-span-2 min-w-0 md:col-span-1">
-											{#if isScheduledTab && person.nextFollowUpDate}
+											{#if isScheduledTab && person.nextVisitDate}
 												<span class="text-pen-mind font-bold">
-													Follow-up {formatDateHeuristic(person.nextFollowUpDate, {
+													Next Visit {formatDateHeuristic(person.nextVisitDate, {
 														fallback: 'short'
 													})}
 												</span>
