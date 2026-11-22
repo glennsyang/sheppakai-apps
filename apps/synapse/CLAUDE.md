@@ -1,7 +1,7 @@
 # Synapse — Claude Code Guide
 
-A personal life-management app: fitness (workouts/weight/meals), journal, meditation, tasks, visits,
-and an admin dashboard, gated behind auth. Not fitness-only despite the name.
+A personal life-management app: fitness (workouts, weigh-ins, food log), journal, meditation, tasks,
+shepherding visits, and an admin dashboard, gated behind auth. Not fitness-only despite the name.
 
 ---
 

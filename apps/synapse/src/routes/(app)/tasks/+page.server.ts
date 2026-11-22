@@ -281,12 +281,12 @@ export const actions = {
 
 			return buildAgendaActionPayload('create-template', {
 				type: 'success',
-				text: 'Default item added.'
+				text: 'Standing item added.'
 			});
 		} catch (error) {
 			return failAgendaMutation('create-template', error, {
 				userId: user.id,
-				message: 'Failed to add default item.',
+				message: 'Failed to add standing item.',
 				logMessage: 'Failed to create Daily Agenda template'
 			});
 		}
@@ -303,14 +303,14 @@ export const actions = {
 
 			return buildAgendaActionPayload('update-template', {
 				type: 'success',
-				text: 'Default item updated.',
+				text: 'Standing item updated.',
 				entityId: form.data.id
 			});
 		} catch (error) {
 			return failAgendaMutation('update-template', error, {
 				userId: user.id,
 				entityId: form.data.id,
-				message: 'Failed to update default item.',
+				message: 'Failed to update standing item.',
 				logMessage: 'Failed to update Daily Agenda template'
 			});
 		}
@@ -327,14 +327,14 @@ export const actions = {
 
 			return buildAgendaActionPayload('delete-template', {
 				type: 'success',
-				text: 'Default item deleted.',
+				text: 'Standing item deleted.',
 				entityId: form.data.id
 			});
 		} catch (error) {
 			return failAgendaMutation('delete-template', error, {
 				userId: user.id,
 				entityId: form.data.id,
-				message: 'Failed to delete default item.',
+				message: 'Failed to delete standing item.',
 				logMessage: 'Failed to delete Daily Agenda template'
 			});
 		}

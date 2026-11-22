@@ -139,7 +139,7 @@ export function buildMorningDigestMessage(
 
 	if (sections.bills.length > 0) {
 		const lines = sections.bills.map((bill) => formatBillLine(bill, dateString));
-		blocks.push(`💸 Bills due this week\n${lines.join('\n')}`);
+		blocks.push(`💸 Recurring bills due this week\n${lines.join('\n')}`);
 	}
 
 	if (sections.visits.length > 0) {

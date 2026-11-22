@@ -89,7 +89,7 @@
 			<CalendarIcon class="h-4 w-4 text-[oklch(var(--color-orange))]" />
 			{monthName}
 		</Card.Title>
-		<Card.Description>Daily mood log — current month</Card.Description>
+		<Card.Description>Mood entries — current month</Card.Description>
 	</Card.Header>
 	<Card.Content>
 		<div class="space-y-2">

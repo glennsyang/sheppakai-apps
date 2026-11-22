@@ -283,10 +283,7 @@
 									>
 										{routine.title}
 										{#if routine.isPredefined}
-											<Sparkles
-												class="text-pen-mind h-3.5 w-3.5 shrink-0"
-												aria-label="Predefined"
-											/>
+											<Sparkles class="text-pen-mind h-3.5 w-3.5 shrink-0" aria-label="Built-in" />
 										{/if}
 									</a>
 									{#if routine.description}
