@@ -200,9 +200,9 @@ export const recipes = sqliteTable('recipes', {
 	instructionsJson: text('instructions_json').notNull(),
 	prepTimeMinutes: integer('prep_time_minutes').notNull(),
 	servings: integer('servings').notNull(),
-	source: text('source', { enum: ['ai', 'custom', 'imported'] })
+	source: text('source', { enum: ['suggested', 'custom', 'imported'] })
 		.notNull()
-		.default('ai'),
+		.default('suggested'),
 	// 1–5 stars, null until someone rates it.
 	rating: integer('rating'),
 	// Where an imported recipe came from; null for everything else.

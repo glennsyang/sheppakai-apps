@@ -1,13 +1,13 @@
 <script lang="ts">
 	import Icon from '#lib/components/Icon.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import type { MealSuggestion } from '#lib/types.js';
+	import type { Suggestion } from '#lib/types.js';
 
 	interface Props {
-		suggestion: MealSuggestion;
+		suggestion: Suggestion;
 		index: number;
-		onViewRecipe: (suggestion: MealSuggestion) => void;
-		onSaveToPlanner: (suggestion: MealSuggestion) => void;
+		onViewRecipe: (suggestion: Suggestion) => void;
+		onSaveToPlanner: (suggestion: Suggestion) => void;
 	}
 
 	let { suggestion, index, onViewRecipe, onSaveToPlanner }: Props = $props();

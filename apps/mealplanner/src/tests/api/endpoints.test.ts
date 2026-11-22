@@ -72,7 +72,7 @@ const RECIPE = {
 	instructionsJson: ['Roast it'],
 	prepTimeMinutes: 40,
 	servings: 4,
-	source: 'ai',
+	source: 'suggested',
 	createdAt: new Date(0),
 	updatedAt: new Date(0)
 };
@@ -189,12 +189,24 @@ describe('recipes', () => {
 		mocks.recipes.listRecipes.mockResolvedValue([RECIPE]);
 		const res = await call(recipes.GET, '/api/v1/recipes?source=ai&limit=5');
 		const { data } = await res.json();
-		expect(mocks.recipes.listRecipes).toHaveBeenCalledWith({ source: 'ai', limit: 5 });
+		expect(mocks.recipes.listRecipes).toHaveBeenCalledWith({ source: 'suggested', limit: 5 });
 		expect(data[0]).toMatchObject({
 			ingredients: RECIPE.ingredientsJson,
 			instructions: ['Roast it']
 		});
 		expect(data[0]).not.toHaveProperty('ingredientsJson');
+	});
+
+	it('filters by the suggested source', async () => {
+		mocks.recipes.listRecipes.mockResolvedValue([RECIPE]);
+		const res = await call(recipes.GET, '/api/v1/recipes?source=suggested');
+		expect(res.status).toBe(200);
+		expect(mocks.recipes.listRecipes).toHaveBeenCalledWith({ source: 'suggested', limit: 50 });
+	});
+
+	it('rejects an unknown source', async () => {
+		const res = await call(recipes.GET, '/api/v1/recipes?source=robot');
+		expect(res.status).toBe(400);
 	});
 
 	it('creates a custom recipe with defaults', async () => {

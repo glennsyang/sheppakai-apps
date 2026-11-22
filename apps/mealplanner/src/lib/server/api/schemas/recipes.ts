@@ -26,6 +26,10 @@ export const apiUpdateRecipeSchema = z
 	.refine((patch) => Object.keys(patch).length > 0, 'Provide at least one field to update');
 
 export const apiRecipeListQuerySchema = z.object({
-	source: z.enum(['ai', 'custom', 'imported']).optional(),
+	// 'ai' is the pre-#315 name for 'suggested'; still accepted so existing clients keep working.
+	source: z
+		.enum(['suggested', 'custom', 'imported', 'ai'])
+		.transform((source) => (source === 'ai' ? 'suggested' : source))
+		.optional(),
 	limit: z.coerce.number().int().min(1).max(200).default(50)
 });

@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-import type { mealSuggestionSchema } from '#lib/schemas/mealPlan.js';
+import type { suggestionSchema } from '#lib/schemas/mealPlan.js';
 
 export interface PantryItem {
 	id: string;
@@ -30,9 +30,9 @@ export interface Ingredient {
 }
 
 // Derived from the runtime schema so the type and the validation can't drift (#171).
-export type MealSuggestion = z.output<typeof mealSuggestionSchema>;
+export type Suggestion = z.output<typeof suggestionSchema>;
 
-export type RecipeSource = 'ai' | 'custom' | 'imported';
+export type RecipeSource = 'suggested' | 'custom' | 'imported';
 
 export interface Recipe {
 	id: string;

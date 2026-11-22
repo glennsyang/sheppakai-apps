@@ -7,9 +7,9 @@
 	import SuggestionCard from '#lib/components/SuggestionCard.svelte';
 	import { Alert } from '#lib/components/ui/alert/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import { mealSuggestionListSchema } from '#lib/schemas/mealPlan.js';
+	import { suggestionListSchema } from '#lib/schemas/mealPlan.js';
 	import { magnetTilt } from '#lib/tilt.js';
-	import type { MealSuggestion } from '#lib/types.js';
+	import type { Suggestion } from '#lib/types.js';
 
 	import type { PageData } from './$types';
 
@@ -24,10 +24,10 @@
 	);
 	const allSelected = $derived(data.pantryItems.every((i) => !deselected.has(i.name)));
 
-	let suggestions = $state<MealSuggestion[]>([]);
+	let suggestions = $state<Suggestion[]>([]);
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
-	let drawerSuggestion = $state<MealSuggestion | null>(null);
+	let drawerSuggestion = $state<Suggestion | null>(null);
 
 	function toggleItem(name: string) {
 		const next = new Set(deselected);
@@ -58,7 +58,7 @@
 			};
 			if (!res.ok) throw new Error(body.error?.message ?? 'Failed to get suggestions');
 
-			const parsed = mealSuggestionListSchema.safeParse(body.data);
+			const parsed = suggestionListSchema.safeParse(body.data);
 			if (!parsed.success) throw new Error('Got an unexpected response. Please try again.');
 			suggestions = parsed.data;
 		} catch (err) {
@@ -68,12 +68,12 @@
 		}
 	}
 
-	function handleViewRecipe(suggestion: MealSuggestion) {
+	function handleViewRecipe(suggestion: Suggestion) {
 		drawerSuggestion = suggestion;
 	}
 
 	// The planner page picks the suggestion up from sessionStorage and opens its day picker.
-	function handleSaveToPlanner(suggestion: MealSuggestion) {
+	function handleSaveToPlanner(suggestion: Suggestion) {
 		sessionStorage.setItem('pendingSuggestion', JSON.stringify(suggestion));
 		goto('/planner');
 	}

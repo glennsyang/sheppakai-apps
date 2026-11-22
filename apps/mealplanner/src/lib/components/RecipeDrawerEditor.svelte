@@ -4,12 +4,12 @@
 
 	import RecipeForm from '#lib/components/RecipeForm.svelte';
 	import { recipeFormSchema, suggestionToForm } from '#lib/schemas/recipes.js';
-	import type { MealSuggestion } from '#lib/types.js';
+	import type { Suggestion } from '#lib/types.js';
 
 	interface Props {
 		recipeId: string;
 		/** The meal the drawer shows; seeds the form once, when editing starts. */
-		suggestion: MealSuggestion;
+		suggestion: Suggestion;
 		/** Called after a successful save. */
 		onSaved: () => Promise<void> | void;
 		onCancel: () => void;

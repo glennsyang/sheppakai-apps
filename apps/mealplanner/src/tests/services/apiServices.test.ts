@@ -67,7 +67,7 @@ describe('pantry', () => {
 
 describe('recipes', () => {
 	it('lists by source and limit', async () => {
-		await recipes.saveRecipe('u1', { ...recipeInput, name: 'A', source: 'ai' });
+		await recipes.saveRecipe('u1', { ...recipeInput, name: 'A', source: 'suggested' });
 		await recipes.saveRecipe('u1', { ...recipeInput, name: 'B', source: 'custom' });
 
 		expect((await recipes.listRecipes({ limit: 50 })).map((r) => r.name).sort()).toEqual([
