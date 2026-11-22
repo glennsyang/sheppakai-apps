@@ -102,7 +102,8 @@
 	}
 
 	function formatDue(overdueDays: number) {
-		if (overdueDays > 0) return `${overdueDays} day${overdueDays === 1 ? '' : 's'} overdue`;
+		if (overdueDays > 0)
+			return `Overdue Customer · ${overdueDays} day${overdueDays === 1 ? '' : 's'}`;
 		if (overdueDays === 0) return 'Due today';
 		const left = -overdueDays;
 		return `Due in ${left} day${left === 1 ? '' : 's'}`;
@@ -166,7 +167,7 @@
 			<section class="bg-card rounded-xl border shadow-sm">
 				<div class="flex items-baseline justify-between gap-3 px-4 pt-4 pb-2">
 					<h2 class="text-sm font-medium">Due for a re-clean</h2>
-					<p class="text-muted-foreground text-xs">Overdue or due in the next 2 weeks</p>
+					<p class="text-muted-foreground text-xs">Overdue Customers, or due in the next 2 weeks</p>
 				</div>
 				{#if data.dueCustomers.length === 0}
 					<p class="text-muted-foreground px-4 pb-6 text-sm">Nobody is due right now.</p>

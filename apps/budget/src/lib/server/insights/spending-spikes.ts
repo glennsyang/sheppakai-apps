@@ -1,24 +1,24 @@
-import type { Budget, CategoryAnomaly, Transaction } from '#lib/types.js';
+import type { Budget, SpendingSpike, Transaction } from '#lib/types.js';
 
 // Require at least this many prior months of history before flagging anything, so a
-// category with only 1-2 months on record doesn't produce a noisy "anomaly" on day one.
+// category with only 1-2 months on record doesn't produce a noisy "spike" on day one.
 const MIN_PRIOR_MONTHS = 3;
 // Skip categories whose trailing average is trivially small (e.g. a $5/mo category jumping
-// to $8 isn't a meaningful anomaly, even though it's a large percentage change).
+// to $8 isn't a meaningful spike, even though it's a large percentage change).
 const MIN_BASELINE_AMOUNT = 30;
-const ANOMALY_RATIO = 1.25;
-const MAX_ANOMALIES = 5;
+const SPIKE_RATIO = 1.25;
+const MAX_SPIKES = 5;
 
 export type HistoricalMonthRange = {
 	monthStart: string;
 	monthEnd: string;
 };
 
-export function computeCategoryAnomalies(
+export function computeSpendingSpikes(
 	transactions: Transaction[],
 	historicalMonths: HistoricalMonthRange[],
 	currentBudgets: Budget[] = []
-): CategoryAnomaly[] {
+): SpendingSpike[] {
 	if (historicalMonths.length < MIN_PRIOR_MONTHS + 1) {
 		return [];
 	}
@@ -60,20 +60,20 @@ export function computeCategoryAnomalies(
 		categoryTotals.set(tx.category.id, existing);
 	}
 
-	const anomalies: CategoryAnomaly[] = [];
+	const spikes: SpendingSpike[] = [];
 
 	for (const [categoryId, { name, current, priorTotal }] of categoryTotals) {
 		const trailingAverage = priorTotal / priorRanges.length;
 
 		if (trailingAverage < MIN_BASELINE_AMOUNT) continue;
-		if (current <= trailingAverage * ANOMALY_RATIO) continue;
+		if (current <= trailingAverage * SPIKE_RATIO) continue;
 
 		// Spending within (or exactly at) a budget the user set for this category isn't a
 		// surprise, even if it's a big jump over the historical average.
 		const budgetedAmount = budgetByCategory.get(categoryId) ?? 0;
 		if (budgetedAmount > 0 && current <= budgetedAmount) continue;
 
-		anomalies.push({
+		spikes.push({
 			categoryId,
 			categoryName: name,
 			currentAmount: current,
@@ -82,5 +82,5 @@ export function computeCategoryAnomalies(
 		});
 	}
 
-	return anomalies.sort((a, b) => b.percentOver - a.percentOver).slice(0, MAX_ANOMALIES);
+	return spikes.sort((a, b) => b.percentOver - a.percentOver).slice(0, MAX_SPIKES);
 }
