@@ -447,7 +447,7 @@ export async function updateDailyAgendaTemplate(
 			.get();
 
 		if (!existing) {
-			throw new DailyAgendaMutationError('Default item not found', 'not_found');
+			throw new DailyAgendaMutationError('Standing item not found', 'not_found');
 		}
 
 		if (existing.startsOn === today) {
@@ -572,7 +572,7 @@ export async function deleteDailyAgendaTemplate(userId: string, templateId: stri
 			.get();
 
 		if (!existing) {
-			throw new DailyAgendaMutationError('Default item not found', 'not_found');
+			throw new DailyAgendaMutationError('Standing item not found', 'not_found');
 		}
 
 		tx.delete(dailyAgendaEntries)

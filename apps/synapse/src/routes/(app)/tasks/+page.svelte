@@ -173,7 +173,7 @@
 						onclick={() => (defaultsDialogOpen = true)}
 					>
 						<CalendarCog class="mr-2 h-4 w-4" />
-						Set Defaults
+						Standing Items
 					</Button>
 				{/if}
 				{#if data.activeTab === 'kanban'}

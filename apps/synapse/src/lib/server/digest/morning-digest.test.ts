@@ -143,6 +143,7 @@ describe('buildMorningDigestMessage', () => {
 		expect(message).toContain('🗓️ Agenda\n✅ Stretch\n⚪ Read');
 		expect(message).toContain('🗂️ Tasks due today\n• Submit grocery list');
 		expect(message).toContain('🍽️ Dinner tonight\nChicken tikka masala');
+		expect(message).toContain('💸 Recurring bills due this week\n');
 		expect(message).toContain('• Phone $45.50 — today');
 		expect(message).toContain('• Hydro $120.00 — Oct 30');
 		expect(message).toContain('🚀 ');
@@ -171,7 +172,7 @@ describe('buildMorningDigestMessage', () => {
 		expect(message).toContain('Dinner tonight');
 		expect(message).not.toContain('Agenda');
 		expect(message).not.toContain('Tasks due');
-		expect(message).not.toContain('Bills');
+		expect(message).not.toContain('bills due');
 		expect(message).not.toContain('Visits');
 	});
 });

@@ -768,10 +768,10 @@
 	<Dialog.Root bind:open={defaultsDialogOpen}>
 		<Dialog.Content class="sm:max-w-2xl">
 			<Dialog.Header>
-				<Dialog.Title class="font-display text-2xl">Default Items</Dialog.Title>
+				<Dialog.Title class="font-display text-2xl">Standing Items</Dialog.Title>
 				<Dialog.Description>
-					Manage the recurring agenda items that should appear from today forward. Historical weeks
-					remain view only.
+					Manage the standing items that put agenda items on your chosen days from today forward.
+					Historical weeks remain view only.
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -782,7 +782,7 @@
 						class="bg-[oklch(var(--color-orange)/0.1)] text-[oklch(var(--color-orange))] ring-1 ring-[oklch(var(--color-orange)/0.3)]"
 					>
 						{agenda.templates.length}
-						defaults
+						standing items
 					</Badge>
 					<Badge variant="outline">Future days only</Badge>
 				</div>
@@ -791,8 +791,8 @@
 					method="POST"
 					action={buildAgendaActionHref('createAgendaTemplate')}
 					use:enhance={createAgendaEnhance({
-						successMessage: 'Default item added.',
-						errorMessage: 'Unable to add default item.',
+						successMessage: 'Standing item added.',
+						errorMessage: 'Unable to add standing item.',
 						afterSuccess: () => {
 							newTemplateTitle = '';
 							newTemplateDays = [...allTemplateDays];
@@ -806,7 +806,7 @@
 							<Input
 								name="title"
 								bind:value={newTemplateTitle}
-								placeholder="Add a recurring item"
+								placeholder="Add a standing item"
 								maxlength={200}
 								required
 							/>
@@ -816,7 +816,7 @@
 								disabled={newTemplateDays.length === 0}
 							>
 								<Plus class="mr-2 size-4" />
-								Add Default
+								Add Standing Item
 							</Button>
 						</div>
 						<fieldset class="space-y-2">
@@ -854,8 +854,8 @@
 									method="POST"
 									action={buildAgendaActionHref('updateAgendaTemplate')}
 									use:enhance={createAgendaEnhance({
-										successMessage: 'Default item updated.',
-										errorMessage: 'Unable to update default item.',
+										successMessage: 'Standing item updated.',
+										errorMessage: 'Unable to update standing item.',
 										afterSuccess: cancelTemplateEdit
 									})}
 									class="space-y-3"
@@ -922,7 +922,7 @@
 								<div class="flex items-center justify-between gap-3">
 									<div class="min-w-0">
 										<p class="text-foreground font-medium wrap-break-word">{template.title}</p>
-										<p class="text-muted-foreground mt-1 text-xs">Default item</p>
+										<p class="text-muted-foreground mt-1 text-xs">Standing item</p>
 										<p class="text-muted-foreground mt-1 text-xs">
 											{formatTemplateDays(template.daysOfWeek)}
 										</p>
@@ -942,11 +942,11 @@
 											variant="destructive"
 											size="icon"
 											class="size-8"
-											aria-label="Delete default agenda item"
+											aria-label="Delete standing item"
 											onclick={() =>
 												openAgendaDeleteDialog({
 													id: template.id,
-													title: 'Delete default item',
+													title: 'Delete standing item',
 													message: `Delete "${template.title}" for today and future days? This action cannot be undone.`,
 													actionUrl: buildAgendaActionHref('deleteAgendaTemplate'),
 													confirmButtonText: 'Delete'
@@ -962,7 +962,7 @@
 						<div
 							class="text-muted-foreground border-pen-tasks/35 bg-pen-tasks/8 dark:border-pen-tasks/20 dark:bg-pen-tasks/5 rounded-2xl border border-dashed px-4 py-6 text-center text-sm"
 						>
-							No defaults yet. Add a few recurring items to seed the planner each day.
+							No standing items yet. Add a few to fill in your agenda each day.
 						</div>
 					{/each}
 				</div>
