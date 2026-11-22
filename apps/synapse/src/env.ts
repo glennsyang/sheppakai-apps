@@ -34,7 +34,7 @@ export const variables = defineEnvVars({
 	},
 	MEAL_ESTIMATE_PROVIDER: {
 		description:
-			'AI provider that estimates meal calories from a photo or description in Log Meal: ' +
+			'AI provider that estimates meal calories from a photo or description in Log Food: ' +
 			"gemini or claude. Estimating is off (buttons hidden) until the chosen provider's API key is set.",
 		schema: z.enum(['gemini', 'claude']).default('gemini')
 	},

@@ -435,8 +435,8 @@
 		{#if weightEntryToDelete}
 			<ConfirmDialog
 				bind:open={showDeleteWeightDialog}
-				title="Delete Weight Entry"
-				message="Are you sure you want to delete this weight entry? This action cannot be undone."
+				title="Delete Weigh-in"
+				message="Are you sure you want to delete this weigh-in? This action cannot be undone."
 				confirmButtonText="Delete"
 				actionUrl="?/deleteWeight"
 				id={weightEntryToDelete}
@@ -446,8 +446,8 @@
 		{#if mealToDelete}
 			<ConfirmDialog
 				bind:open={showDeleteMealDialog}
-				title="Delete Meal"
-				message="Are you sure you want to delete this meal entry? This action cannot be undone."
+				title="Delete Food Entry"
+				message="Are you sure you want to delete this food entry? This action cannot be undone."
 				confirmButtonText="Delete"
 				actionUrl="?/deleteMeal"
 				id={mealToDelete}

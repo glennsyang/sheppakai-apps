@@ -55,7 +55,7 @@ const outputSchemas = {
 /** The provider answered, but not with a usable estimate (not food, unreadable, off-schema). */
 export class UnreadableMealError extends Error {}
 
-/** False until the selected provider's API key is set; Log Meal hides the estimate buttons. */
+/** False until the selected provider's API key is set; Log Food hides the estimate buttons. */
 export function isMealEstimateEnabled(): boolean {
 	return Boolean(providers[MEAL_ESTIMATE_PROVIDER].apiKey());
 }

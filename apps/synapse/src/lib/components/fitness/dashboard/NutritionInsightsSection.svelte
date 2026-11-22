@@ -146,9 +146,9 @@
 				: 'neutral'}
 		/>
 		<FitnessStatusCard
-			label="Top meal"
+			label="Top food"
 			value={topMealPeriod ? topMealPeriod.charAt(0).toUpperCase() + topMealPeriod.slice(1) : '—'}
-			trendLabel={topMealPeriod ? 'Most logged meal' : 'Log meals to see'}
+			trendLabel={topMealPeriod ? 'Most logged food' : 'Log food to see'}
 		/>
 	</div>
 

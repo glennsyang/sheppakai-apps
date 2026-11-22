@@ -34,7 +34,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const today = getTodayString();
 	const ranges = buildDateRanges(today);
-	// The dashboard's Log Meal dialog posts to /fitness; it reads mealEstimateEnabled from page data.
+	// The dashboard's Log Food dialog posts to /fitness; it reads mealEstimateEnabled from page data.
 	const mealLogging = {
 		mealForm: await superValidate(zod4(logMealSchema)),
 		mealEstimateEnabled: isMealEstimateEnabled()

@@ -131,7 +131,7 @@ export const updateMealSchema = logMealSchema.extend({
 
 /**
  * Schema for an AI meal estimate (from a photo and/or description). Nothing is saved from it
- * directly: it prefills the Log Meal form for review.
+ * directly: it prefills the Log Food form for review.
  */
 export const mealEstimateResultSchema = z
 	.object({

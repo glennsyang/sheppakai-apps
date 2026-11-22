@@ -30,7 +30,7 @@ export const navItems: SidebarNav = {
 		},
 		{
 			title: 'Fitness',
-			description: 'Track workouts, meals, and weight progress',
+			description: 'Track workouts, food log, and weigh-ins',
 			url: '/fitness',
 			icon: Dumbbell,
 			pen: 'green',
