@@ -1,4 +1,4 @@
-import { and, desc, eq, gte } from 'drizzle-orm';
+import { and, desc, eq, gte, lte } from 'drizzle-orm';
 
 import type { getDb } from '#lib/server/db/index.js';
 import {
@@ -62,7 +62,8 @@ export async function loadFamilyWorship(
 		db.query.familyWorshipSchedule.findMany({
 			where: and(
 				eq(familyWorshipSchedule.userId, userId),
-				gte(familyWorshipSchedule.weekOf, weeks[0])
+				gte(familyWorshipSchedule.weekOf, weeks[0]),
+				lte(familyWorshipSchedule.weekOf, weeks[weeks.length - 1])
 			)
 		})
 	]);

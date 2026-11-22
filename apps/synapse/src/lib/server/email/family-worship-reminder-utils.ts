@@ -23,5 +23,6 @@ export function getReminderTopic(week: WeekPlan | undefined): TopicRef | null {
 }
 
 export function buildFamilyWorshipReminderSubject(topicTitle: string): string {
-	return `[Synapse] 📖 Family worship tonight: ${topicTitle}`;
+	const safeTitle = topicTitle.replace(/[\r\n]+/g, ' ').trim();
+	return `[Synapse] 📖 Family worship tonight: ${safeTitle}`;
 }

@@ -60,4 +60,10 @@ describe('buildFamilyWorshipReminderSubject', () => {
 			'[Synapse] 📖 Family worship tonight: Jonah'
 		);
 	});
+
+	it('strips line breaks from the topic title', () => {
+		expect(buildFamilyWorshipReminderSubject(' Jonah\r\nBcc: x@example.com\n')).toBe(
+			'[Synapse] 📖 Family worship tonight: Jonah Bcc: x@example.com'
+		);
+	});
 });
