@@ -3,7 +3,7 @@ export { categoryQueries } from './categories';
 export { contributionQueries } from './contributions';
 export { dashboardPreferenceQueries } from './dashboardPreferences';
 export { incomeQueries } from './income';
-export { recurringQueries } from './recurring';
+export { recurringBillQueries } from './recurring-bills';
 export { savingsAccountQueries } from './savings-accounts';
 export { savingsGoalQueries } from './savings-goals';
 export { transactionQueries } from './transactions';

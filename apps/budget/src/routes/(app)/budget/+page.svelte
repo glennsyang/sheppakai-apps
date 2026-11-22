@@ -28,7 +28,7 @@
 	>({});
 
 	// Recurring total for the selected month (Yearly bills spread as amount / 12)
-	let totalRecurring = $derived(data.recurringTotal || 0);
+	let totalRecurringBills = $derived(data.recurringBillsTotal || 0);
 
 	const monthYear = useMonthYearParams('/budget');
 	let selectedMonth = $derived(monthYear.month);
@@ -251,10 +251,10 @@
 
 	let stats = $derived<Stat[]>([
 		{ label: `Budgeted for ${monthName}`, value: formatCurrency(totalBudget) },
-		{ label: 'Recurring bills', value: formatCurrency(totalRecurring) },
+		{ label: 'Recurring bills', value: formatCurrency(totalRecurringBills) },
 		{
 			label: 'Expected spending',
-			value: formatCurrency(totalRecurring + totalBudget),
+			value: formatCurrency(totalRecurringBills + totalBudget),
 			tooltip: 'Category budgets plus recurring bills.'
 		},
 		{

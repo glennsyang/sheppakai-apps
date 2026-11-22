@@ -13,7 +13,7 @@ export type {
 	MonthEndForecast,
 	MonthlyNetflowData,
 	MonthlySpentChartData,
-	Recurring,
+	RecurringBill,
 	SavingsAccount,
 	SavingsGoal,
 	SavingsGoalWithEta,

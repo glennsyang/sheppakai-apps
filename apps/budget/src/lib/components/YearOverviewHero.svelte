@@ -41,7 +41,7 @@
 					<h2>{progress.status === 'past' ? `${year} finished` : `${year} so far`}</h2>
 					<InfoTooltip
 						size="sm"
-						text="Year-to-date income minus all spending, recurring included. Excluded categories are not counted."
+						text="Year-to-date income minus all spending, recurring bills included. Excluded categories are not counted."
 					/>
 				</div>
 				<p

@@ -6,9 +6,9 @@ import {
 	nextMonthKey,
 	periodKey,
 	previousMonthKey,
-	recurringTotalForMonth,
+	recurringBillsTotalForMonth,
 	toMonthKey
-} from './recurring-history';
+} from './recurring-bill-history';
 
 describe('month keys', () => {
 	it('pads the month', () => {
@@ -43,20 +43,20 @@ describe('isActiveIn', () => {
 		expect(isActiveIn(closed, '2026-05')).toBe(false);
 	});
 
-	it('treats an open version as active from its start on', () => {
+	it('treats an open price as active from its start on', () => {
 		expect(isActiveIn({ effectiveFrom: '2026-02', effectiveTo: null }, '2030-01')).toBe(true);
 	});
 });
 
-describe('recurringTotalForMonth', () => {
+describe('recurringBillsTotalForMonth', () => {
 	it('counts monthly bills in full and spreads yearly bills over 12 months', () => {
-		const versions = [
+		const prices = [
 			{ amount: 80, cadence: 'Monthly' as const, effectiveFrom: '2026-01', effectiveTo: null },
 			{ amount: 120, cadence: 'Yearly' as const, effectiveFrom: '2026-01', effectiveTo: null },
 			{ amount: 50, cadence: 'Monthly' as const, effectiveFrom: '2025-01', effectiveTo: '2025-12' }
 		];
 
-		expect(recurringTotalForMonth(versions, '2026-03')).toBe(90);
-		expect(recurringTotalForMonth(versions, '2025-06')).toBe(50);
+		expect(recurringBillsTotalForMonth(prices, '2026-03')).toBe(90);
+		expect(recurringBillsTotalForMonth(prices, '2025-06')).toBe(50);
 	});
 });

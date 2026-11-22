@@ -4,7 +4,7 @@
 	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 
-	import type { Recurring } from '#lib';
+	import type { RecurringBill } from '#lib';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Dialog from '#lib/components/ui/dialog/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
@@ -12,10 +12,10 @@
 
 	// Corrects one past month's amount; every other month keeps its own.
 	let {
-		recurring,
+		recurringBill,
 		monthKey,
 		periodLabel
-	}: { recurring: Recurring; monthKey: string; periodLabel: string } = $props();
+	}: { recurringBill: RecurringBill; monthKey: string; periodLabel: string } = $props();
 
 	let open = $state(false);
 	let saving = $state(false);
@@ -25,7 +25,7 @@
 <Button
 	variant="ghost"
 	size="icon"
-	aria-label="Edit {periodLabel} amount: {recurring.merchant}"
+	aria-label="Edit {periodLabel} bill price: {recurringBill.merchant}"
 	onclick={() => (open = true)}
 >
 	<PencilIcon class="size-4" />
@@ -34,9 +34,9 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-106.25">
 		<Dialog.Header>
-			<Dialog.Title>Edit {periodLabel} amount</Dialog.Title>
+			<Dialog.Title>Edit {periodLabel} bill price</Dialog.Title>
 			<Dialog.Description>
-				Changes what {recurring.merchant} cost in {periodLabel} only. Other months keep their amounts.
+				Changes what {recurringBill.merchant} cost in {periodLabel} only. Other months keep their amounts.
 			</Dialog.Description>
 		</Dialog.Header>
 		<form
@@ -47,8 +47,8 @@
 				saving = true;
 				return async ({ result, update }) => {
 					const { type, text } = actionMessage(result, {
-						success: 'Amount updated for that month',
-						error: 'Failed to update the amount'
+						success: 'Bill price updated for that month',
+						error: 'Failed to update the bill price'
 					});
 					toast[type](text);
 					if (result.type === 'success') open = false;
@@ -57,7 +57,7 @@
 				};
 			}}
 		>
-			<input type="hidden" name="id" value={recurring.id} />
+			<input type="hidden" name="id" value={recurringBill.id} />
 			<input type="hidden" name="month" value={monthKey} />
 			<div class="grid gap-2">
 				<Label for={inputId}>Amount</Label>
@@ -69,7 +69,7 @@
 					step="0.01"
 					min="0.01"
 					required
-					value={recurring.amount}
+					value={recurringBill.amount}
 				/>
 			</div>
 			<Dialog.Footer>

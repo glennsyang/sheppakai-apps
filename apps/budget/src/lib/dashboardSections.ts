@@ -13,7 +13,7 @@ const dashboardSections: DashboardSectionDefinition[] = [
 	{ key: 'cashFlowProjection', label: 'Month-end projection', mode: 'monthly' },
 	{ key: 'categoryOverview', label: 'Category overview (top at-risk)', mode: 'monthly' },
 	{ key: 'upcomingBills', label: 'Upcoming recurring bills', mode: 'monthly' },
-	{ key: 'recurringExpenses', label: 'Recurring expenses', mode: 'monthly' },
+	{ key: 'recurringBills', label: 'Recurring bills', mode: 'monthly' },
 	{ key: 'allCategories', label: 'All categories', mode: 'monthly' },
 	{ key: 'ytdStats', label: 'Year-to-date figures', mode: 'yearly' },
 	{ key: 'netSavingsTable', label: 'Month by month', mode: 'yearly' },

@@ -14,7 +14,7 @@ const MINUTES_PER_DAY = 24 * 60;
 /** Days in the "due this week" bill window, today included. */
 const BILL_WINDOW_DAYS = 7;
 
-/** A budget recurring expense, as the digest reads it from budget's /api/v1/recurring. */
+/** A budget recurring bill, as the digest reads it from budget's /api/v1/recurring-bills. */
 export type DigestRecurring = {
 	merchant: string;
 	description: string;

@@ -9,7 +9,7 @@ describe('computeCashFlowProjection', () => {
 		const result = computeCashFlowProjection({
 			totalIncome: 5000,
 			actualSpent: 1950, // 150 non-recurring + 1800 recurring
-			recurringMonthlyTotal: 1800,
+			recurringBillsMonthlyTotal: 1800,
 			plannedExpensesTotal: 4000,
 			month: 8,
 			year: 2026,
@@ -25,7 +25,7 @@ describe('computeCashFlowProjection', () => {
 		const result = computeCashFlowProjection({
 			totalIncome: 5000,
 			actualSpent: 310,
-			recurringMonthlyTotal: 0,
+			recurringBillsMonthlyTotal: 0,
 			plannedExpensesTotal: 4000,
 			month: 8,
 			year: 2026,
@@ -40,7 +40,7 @@ describe('computeCashFlowProjection', () => {
 		const result = computeCashFlowProjection({
 			totalIncome: 5000,
 			actualSpent: 3200,
-			recurringMonthlyTotal: 1800,
+			recurringBillsMonthlyTotal: 1800,
 			plannedExpensesTotal: 4000,
 			month: 8,
 			year: 2026,
@@ -55,7 +55,7 @@ describe('computeCashFlowProjection', () => {
 		const pastMonth = computeCashFlowProjection({
 			totalIncome: 5000,
 			actualSpent: 2500,
-			recurringMonthlyTotal: 1800,
+			recurringBillsMonthlyTotal: 1800,
 			plannedExpensesTotal: 4000,
 			month: 6,
 			year: 2026,
@@ -68,7 +68,7 @@ describe('computeCashFlowProjection', () => {
 		const futureMonth = computeCashFlowProjection({
 			totalIncome: 5000,
 			actualSpent: 0,
-			recurringMonthlyTotal: 1800,
+			recurringBillsMonthlyTotal: 1800,
 			plannedExpensesTotal: 4000,
 			month: 12,
 			year: 2026,
@@ -83,7 +83,7 @@ describe('computeCashFlowProjection', () => {
 		const result = computeCashFlowProjection({
 			totalIncome: 1000,
 			actualSpent: 2100, // 100 non-recurring + 2000 recurring
-			recurringMonthlyTotal: 2000,
+			recurringBillsMonthlyTotal: 2000,
 			plannedExpensesTotal: 2500,
 			month: 8,
 			year: 2026,
@@ -94,7 +94,7 @@ describe('computeCashFlowProjection', () => {
 		expect(result.projectedEnd).toBeCloseTo(2620);
 		expect(result.projectionPercent).toBe(100);
 
-		// discretionaryRemaining = totalIncome - nonRecurringSpent - recurringMonthlyTotal
+		// discretionaryRemaining = totalIncome - nonRecurringSpent - recurringBillsMonthlyTotal
 		expect(result.discretionaryRemaining).toBeCloseTo(1000 - 100 - 2000);
 
 		// budgetRemaining = max(0, plannedExpensesTotal - actualSpent) = max(0, 2500 - 2100)

@@ -5,15 +5,16 @@
 	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 
-	import type { Recurring } from '#lib';
+	import type { RecurringBill } from '#lib';
 
 	// `readonly` shows the paid state of a past or future month without a toggle.
-	let { recurring, readonly = false }: { recurring: Recurring; readonly?: boolean } = $props();
+	let { recurringBill, readonly = false }: { recurringBill: RecurringBill; readonly?: boolean } =
+		$props();
 
 	let pending = $state(false);
 	// Optimistic: flip straight away, settle to the server's value once it answers.
 	let optimisticPaid = $state<boolean | null>(null);
-	let paid = $derived(optimisticPaid ?? recurring.paid);
+	let paid = $derived(optimisticPaid ?? recurringBill.paid);
 </script>
 
 {#snippet indicator(isPaid: boolean)}
@@ -34,10 +35,10 @@
 {#if readonly}
 	<span
 		role="img"
-		aria-label="{recurring.paid ? 'Paid' : 'Unpaid'}: {recurring.merchant}"
+		aria-label="{recurringBill.paid ? 'Paid' : 'Unpaid'}: {recurringBill.merchant}"
 		class="flex size-11 items-center justify-center md:size-8"
 	>
-		{@render indicator(recurring.paid)}
+		{@render indicator(recurringBill.paid)}
 	</span>
 {:else}
 	<form
@@ -45,7 +46,7 @@
 		action="?/togglePaid"
 		use:enhance={() => {
 			pending = true;
-			optimisticPaid = !recurring.paid;
+			optimisticPaid = !recurringBill.paid;
 			return async ({ result, update }) => {
 				if (result.type === 'success') {
 					// Silent on success — a toast on every tick would be noise.
@@ -63,13 +64,13 @@
 			};
 		}}
 	>
-		<input type="hidden" name="id" value={recurring.id} />
-		<input type="hidden" name="paid" value={recurring.paid ? 'false' : 'true'} />
+		<input type="hidden" name="id" value={recurringBill.id} />
+		<input type="hidden" name="paid" value={recurringBill.paid ? 'false' : 'true'} />
 		<button
 			type="submit"
 			disabled={pending}
 			aria-pressed={paid}
-			aria-label="{paid ? 'Mark unpaid' : 'Mark paid'}: {recurring.merchant}"
+			aria-label="{paid ? 'Mark unpaid' : 'Mark paid'}: {recurringBill.merchant}"
 			class="group focus-visible:ring-ring/50 flex size-11 items-center justify-center rounded-full outline-none focus-visible:ring-[3px] md:size-8"
 		>
 			{@render indicator(paid)}

@@ -20,7 +20,7 @@ import { getDb } from '#lib/server/db/index.js';
 import {
 	budgetQueries,
 	incomeQueries,
-	recurringQueries,
+	recurringBillQueries,
 	savingsGoalQueries,
 	savingsAccountQueries,
 	transactionQueries
@@ -28,10 +28,10 @@ import {
 import { contribution } from '#lib/server/db/schema/index.js';
 import { computeSpendingSpikes } from '#lib/server/insights/spending-spikes.js';
 import {
-	recurringForMonth,
-	recurringTotalForMonth,
+	recurringBillsForMonth,
+	recurringBillsTotalForMonth,
 	toMonthKey
-} from '#lib/server/recurring-history.js';
+} from '#lib/server/recurring-bill-history.js';
 import { monthNames } from '#lib/utils.js';
 import {
 	filterByDateRange,
@@ -152,7 +152,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		actualExpenses,
 		excludedExpenses,
 		plannedExpenses,
-		recurringHistory,
+		billPriceHistory,
 		incomeRecords,
 		goalsWithProgress,
 		savingsAccountsTotal,
@@ -161,22 +161,25 @@ export async function loadMonthlyDashboard(url: URL) {
 		transactionQueries.findByDateRangeIncludedInBudget(startDate, endDate),
 		transactionQueries.findByDateRangeExcludedFromBudget(startDate, endDate),
 		budgetQueries.findByMonthYear(month, year),
-		// Versions in effect over the 6-month chart window, so each month uses its own amounts.
-		recurringQueries.findHistory(chartStartKey, selectedMonthKey),
+		// Prices in effect over the 6-month chart window, so each month uses its own amounts.
+		recurringBillQueries.findHistory(chartStartKey, selectedMonthKey),
 		incomeQueries.findByDateRange(startDate, endDate),
 		getGoalsWithProgress(),
 		savingsAccountQueries.getTotal(),
 		isCurrentMonth ? loadForecastHistory(startDate, month, year) : null
 	]);
 
-	const recurringExpenses = recurringForMonth(recurringHistory, selectedMonthKey);
-	const recurringMonthlyTotal = recurringTotalForMonth(recurringHistory, selectedMonthKey);
+	const recurringBills = recurringBillsForMonth(billPriceHistory, selectedMonthKey);
+	const recurringBillsMonthlyTotal = recurringBillsTotalForMonth(
+		billPriceHistory,
+		selectedMonthKey
+	);
 	const excludedExpensesTotal = excludedExpenses.reduce((acc, e) => acc + e.amount, 0);
 	const excludedExpensesBreakdown = groupExcludedByCategory(excludedExpenses);
 	const actualExpensesTotal =
-		actualExpenses.reduce((acc, e) => acc + e.amount, 0) + recurringMonthlyTotal;
+		actualExpenses.reduce((acc, e) => acc + e.amount, 0) + recurringBillsMonthlyTotal;
 	const plannedExpensesTotal =
-		plannedExpenses.reduce((acc, b) => acc + b.amount, 0) + recurringMonthlyTotal;
+		plannedExpenses.reduce((acc, b) => acc + b.amount, 0) + recurringBillsMonthlyTotal;
 	const totalIncome = incomeRecords.reduce((acc, inc) => acc + inc.amount, 0);
 	const remainingBalance = totalIncome - plannedExpensesTotal;
 
@@ -186,8 +189,8 @@ export async function loadMonthlyDashboard(url: URL) {
 				monthStart: startDate,
 				daysInMonth: monthProgress.totalUnits,
 				currentDay: monthProgress.elapsedUnits,
-				discretionarySpent: actualExpensesTotal - recurringMonthlyTotal,
-				recurringMonthlyTotal,
+				discretionarySpent: actualExpensesTotal - recurringBillsMonthlyTotal,
+				recurringBillsMonthlyTotal,
 				incomeThisMonth: totalIncome
 			})
 		: null;
@@ -235,7 +238,7 @@ export async function loadMonthlyDashboard(url: URL) {
 				in: monthInc.reduce((acc, inc) => acc + inc.amount, 0),
 				out:
 					monthTx.reduce((acc, t) => acc + t.amount, 0) +
-					recurringTotalForMonth(recurringHistory, toMonthKey(targetMonth, targetYear))
+					recurringBillsTotalForMonth(billPriceHistory, toMonthKey(targetMonth, targetYear))
 			});
 		}
 
@@ -251,8 +254,8 @@ export async function loadMonthlyDashboard(url: URL) {
 		year,
 		actualExpenses,
 		plannedExpenses,
-		recurringExpenses,
-		recurringMonthlyTotal,
+		recurringBills,
+		recurringBillsMonthlyTotal,
 		actualExpensesTotal,
 		excludedExpensesTotal,
 		excludedExpensesBreakdown,
@@ -289,7 +292,7 @@ export async function loadYearlyDashboard(url: URL) {
 		actualExpenses,
 		excludedExpenses,
 		incomeRecords,
-		recurringHistory,
+		billPriceHistory,
 		allYearBudgets,
 		otherYearBudgets,
 		goalsWithProgress,
@@ -298,7 +301,7 @@ export async function loadYearlyDashboard(url: URL) {
 		transactionQueries.findByDateRangeIncludedInBudget(startDate, endDate),
 		transactionQueries.findByDateRangeExcludedFromBudget(startDate, endDate),
 		incomeQueries.findByDateRange(startDate, endDate),
-		recurringQueries.findHistory(historyStartKey, toMonthKey(12, year)),
+		recurringBillQueries.findHistory(historyStartKey, toMonthKey(12, year)),
 		budgetQueries.findByYear(year),
 		Promise.all(otherChartYears.map((y) => budgetQueries.findByYear(y))),
 		getGoalsWithProgress(),
@@ -317,17 +320,17 @@ export async function loadYearlyDashboard(url: URL) {
 	});
 
 	const elapsedMonths = year === currentYear ? new Date().getMonth() + 1 : 12;
-	// Each elapsed month counts the versions in effect that month (Yearly bills as amount / 12).
-	let recurringYearlyTotal = 0;
+	// Each elapsed month counts the prices in effect that month (Yearly bills as amount / 12).
+	let recurringBillsYearlyTotal = 0;
 	for (let m = 1; m <= elapsedMonths; m++) {
-		recurringYearlyTotal += recurringTotalForMonth(recurringHistory, toMonthKey(m, year));
+		recurringBillsYearlyTotal += recurringBillsTotalForMonth(billPriceHistory, toMonthKey(m, year));
 	}
 	const excludedExpensesTotal = excludedExpenses.reduce((acc, e) => acc + e.amount, 0);
 	const excludedExpensesBreakdown = groupExcludedByCategory(excludedExpenses);
 	const actualExpensesTotal =
-		actualExpenses.reduce((acc, e) => acc + e.amount, 0) + recurringYearlyTotal;
+		actualExpenses.reduce((acc, e) => acc + e.amount, 0) + recurringBillsYearlyTotal;
 	const plannedExpensesTotal =
-		yearlyBudgets.reduce((acc, b) => acc + b.amount, 0) + recurringYearlyTotal;
+		yearlyBudgets.reduce((acc, b) => acc + b.amount, 0) + recurringBillsYearlyTotal;
 	const totalIncome = incomeRecords.reduce((acc, inc) => acc + inc.amount, 0);
 	const remainingBalance = totalIncome - plannedExpensesTotal;
 
@@ -352,8 +355,8 @@ export async function loadYearlyDashboard(url: URL) {
 					inc.date.substring(0, 10) >= range.startDate && inc.date.substring(0, 10) <= range.endDate
 			);
 
-			const monthRecurring = recurringTotalForMonth(
-				recurringHistory,
+			const monthRecurringBills = recurringBillsTotalForMonth(
+				billPriceHistory,
 				toMonthKey(range.month, range.year)
 			);
 			// Same definition as the monthly view's planned budget: category budgets + recurring.
@@ -364,8 +367,8 @@ export async function loadYearlyDashboard(url: URL) {
 			timeRangeData.push({
 				month: monthNames[range.month - 1],
 				in: monthInc.reduce((acc, inc) => acc + inc.amount, 0),
-				out: monthTx.reduce((acc, t) => acc + t.amount, 0) + monthRecurring,
-				budgeted: monthBudgeted + monthRecurring
+				out: monthTx.reduce((acc, t) => acc + t.amount, 0) + monthRecurringBills,
+				budgeted: monthBudgeted + monthRecurringBills
 			});
 		}
 	}

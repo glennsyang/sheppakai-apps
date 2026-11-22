@@ -9,21 +9,21 @@
 	import { Input } from '#lib/components/ui/input/index.js';
 	import * as Select from '#lib/components/ui/select/index.js';
 	import { Textarea } from '#lib/components/ui/textarea/index.js';
-	import type { recurringSchema } from '#lib/formSchemas/index.js';
+	import type { recurringBillSchema } from '#lib/formSchemas/index.js';
 
-	interface Props extends BaseModalProps<z.infer<typeof recurringSchema>> {
-		recurringForm: SuperValidated<z.infer<typeof recurringSchema>>;
+	interface Props extends BaseModalProps<z.infer<typeof recurringBillSchema>> {
+		recurringBillForm: SuperValidated<z.infer<typeof recurringBillSchema>>;
 	}
 
 	let {
 		open = $bindable(),
 		initialData = undefined,
 		isEditing = false,
-		recurringForm
+		recurringBillForm
 	}: Props = $props();
 
 	// svelte-ignore state_referenced_locally
-	const { form, errors, enhance, submitting } = superForm(recurringForm, {
+	const { form, errors, enhance, submitting } = superForm(recurringBillForm, {
 		resetForm: true,
 		onUpdate: ({ form }) => {
 			// Read form.message, not $message: superforms clears the store on submit and only
@@ -38,7 +38,7 @@
 		onError: ({ result }) => {
 			// Catastrophic DB crashes (Form data is lost)
 			toast.error(
-				`There was an error ${isEditing ? 'updating' : 'creating'} the recurring expense. Reason: ${result.error.message}`
+				`There was an error ${isEditing ? 'updating' : 'creating'} the recurring bill. Reason: ${result.error.message}`
 			);
 		}
 	});
@@ -90,14 +90,14 @@
 			<Dialog.Title>{isEditing ? 'Edit recurring bill' : 'Add recurring bill'}</Dialog.Title>
 			<Dialog.Description>
 				{isEditing
-					? 'Update this recurring expense entry. Modify the merchant, description, cadence, or amount as needed.'
-					: 'Record a new recurring expense entry. Fill in the merchant, description, cadence, and amount.'}
+					? 'Update this recurring bill. Modify the merchant, description, cadence, or amount as needed.'
+					: 'Record a new recurring bill. Fill in the merchant, description, cadence, and amount.'}
 			</Dialog.Description>
 		</Dialog.Header>
 		<form
 			class="space-y-4"
 			method="POST"
-			action={isEditing ? '/recurring?/update' : '/recurring?/create'}
+			action={isEditing ? '/recurring-bills?/update' : '/recurring-bills?/create'}
 			use:enhance
 		>
 			<input type="hidden" name="id" bind:value={$form.id} />
@@ -108,7 +108,7 @@
 					id="recurring-merchant"
 					name="merchant"
 					bind:value={$form.merchant}
-					placeholder="Where is this recurring expense charged?"
+					placeholder="Where is this recurring bill charged?"
 					class={$errors.merchant ? 'border-destructive' : ''}
 					required
 				/>
@@ -123,7 +123,7 @@
 					id="recurring-description"
 					name="description"
 					bind:value={$form.description}
-					placeholder="What was this recurring expense for?"
+					placeholder="What was this recurring bill for?"
 					class={$errors.description ? 'border-destructive' : ''}
 					rows={2}
 					required

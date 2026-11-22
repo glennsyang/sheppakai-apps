@@ -72,7 +72,7 @@ This repo already has a shared helper for the repeated "list page + form + serve
 - Month-scoped pages read `?month=&year=` through `getMonthRangeFromUrl(url)`
   (`src/lib/utils/dates.ts`). Categories load once in `(app)/+layout.server.ts` and reach every
   child route.
-- This shape repeats across `transactions`, `categories`, `recurring`, `savings`, `income`,
+- This shape repeats across `transactions`, `categories`, `recurring-bills`, `savings`, `income`,
   `budget`, `receipts/*`, `window-cleaning`, and the `admin` routes. When adding a new one, follow
   an existing route (e.g. `transactions/+page.server.ts`) rather than inventing a new shape.
 

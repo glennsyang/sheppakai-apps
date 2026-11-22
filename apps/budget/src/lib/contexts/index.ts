@@ -7,7 +7,7 @@ export {
 	customerFormContext,
 	incomeFormContext,
 	jobFormContext,
-	recurringFormContext,
+	recurringBillFormContext,
 	restoreCustomerFormContext,
 	revokeApiKeyFormContext,
 	savingsAccountFormContext,

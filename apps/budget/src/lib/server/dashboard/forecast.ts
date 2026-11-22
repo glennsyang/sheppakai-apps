@@ -80,7 +80,7 @@ export interface MonthEndForecastInput {
 	currentDay: number;
 	/** Discretionary (non-recurring) spend so far this month. */
 	discretionarySpent: number;
-	recurringMonthlyTotal: number;
+	recurringBillsMonthlyTotal: number;
 	incomeThisMonth: number;
 	/** Income totals for each of the previous full months. */
 	previousMonthsIncome: number[];
@@ -97,7 +97,7 @@ export function computeMonthEndForecast({
 	daysInMonth,
 	currentDay,
 	discretionarySpent,
-	recurringMonthlyTotal,
+	recurringBillsMonthlyTotal,
 	incomeThisMonth,
 	previousMonthsIncome
 }: MonthEndForecastInput): MonthEndForecast {
@@ -123,7 +123,7 @@ export function computeMonthEndForecast({
 		mid: discretionarySpent + rate.mid * daysRemaining,
 		high: discretionarySpent + rate.high * daysRemaining
 	};
-	const totalEnd = discretionaryEnd.mid + recurringMonthlyTotal;
+	const totalEnd = discretionaryEnd.mid + recurringBillsMonthlyTotal;
 	const expectedIncome = Math.max(incomeThisMonth, average(previousMonthsIncome));
 
 	return {
@@ -132,9 +132,9 @@ export function computeMonthEndForecast({
 		totalEnd,
 		expectedIncome,
 		net: {
-			low: expectedIncome - discretionaryEnd.high - recurringMonthlyTotal,
+			low: expectedIncome - discretionaryEnd.high - recurringBillsMonthlyTotal,
 			mid: expectedIncome - totalEnd,
-			high: expectedIncome - discretionaryEnd.low - recurringMonthlyTotal
+			high: expectedIncome - discretionaryEnd.low - recurringBillsMonthlyTotal
 		},
 		baselineWeeks: weeks.length
 	};

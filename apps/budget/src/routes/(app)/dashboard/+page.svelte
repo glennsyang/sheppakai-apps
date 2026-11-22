@@ -19,7 +19,7 @@
 	import MonthDetailCard from '#lib/components/MonthDetailCard.svelte';
 	import MonthlyCategoryChart from '#lib/components/MonthlyCategoryChart.svelte';
 	import MonthlyNetSavingsCard from '#lib/components/MonthlyNetSavingsCard.svelte';
-	import RecurringExpensesCard from '#lib/components/RecurringExpensesCard.svelte';
+	import RecurringBillsCard from '#lib/components/RecurringBillsCard.svelte';
 	import SafeToSpendHeroBand from '#lib/components/SafeToSpendHeroBand.svelte';
 	import SpendingBreakdownChart from '#lib/components/SpendingBreakdownChart.svelte';
 	import SpendingSpikeAlert from '#lib/components/SpendingSpikeAlert.svelte';
@@ -271,15 +271,15 @@
 			.slice(0, 6);
 	});
 
-	// Recurring total for the selected month, from the versions in effect that month.
-	let recurringMonthlyTotal = $derived(data.recurringMonthlyTotal || 0);
+	// Recurring total for the selected month, from the prices in effect that month.
+	let recurringBillsMonthlyTotal = $derived(data.recurringBillsMonthlyTotal || 0);
 
 	// Shared cash-flow projection (monthly only) — feeds the header subtitle, hero band, and waterfall.
 	let projection = $derived(
 		computeCashFlowProjection({
 			totalIncome: data.totalIncome || 0,
 			actualSpent: data.actualExpensesTotal || 0,
-			recurringMonthlyTotal,
+			recurringBillsMonthlyTotal,
 			plannedExpensesTotal: data.plannedExpensesTotal || 0,
 			month: Number(selectedMonth),
 			year: Number(selectedYear)
@@ -335,10 +335,10 @@
 	);
 
 	let nonRecurringActual = $derived(
-		Math.max(0, (data.actualExpensesTotal || 0) - recurringMonthlyTotal)
+		Math.max(0, (data.actualExpensesTotal || 0) - recurringBillsMonthlyTotal)
 	);
 	let nonRecurringBudgetPlanned = $derived(
-		Math.max(0, (data.plannedExpensesTotal || 0) - recurringMonthlyTotal)
+		Math.max(0, (data.plannedExpensesTotal || 0) - recurringBillsMonthlyTotal)
 	);
 
 	let nonRecurringBudgetPct = $derived(
@@ -347,9 +347,9 @@
 			: 0
 	);
 
-	let recurringBurdenPct = $derived(
+	let recurringBillsBurdenPct = $derived(
 		data.totalIncome && data.totalIncome > 0
-			? Math.min((recurringMonthlyTotal / data.totalIncome) * 100, 100)
+			? Math.min((recurringBillsMonthlyTotal / data.totalIncome) * 100, 100)
 			: 0
 	);
 
@@ -385,26 +385,30 @@
 				// A week in, month-over-month spend comparisons are mostly noise.
 				trend: monthStatus === 'current' && projection.daysElapsed < 7 ? undefined : spendTrend,
 				tooltip:
-					"Your discretionary spending vs. planned budget, excluding recurring expenses. More sensitive than the all-in % because the recurring amount isn't cushioning either side."
+					"Your discretionary spending vs. planned budget, excluding recurring bills. More sensitive than the all-in % because the recurring amount isn't cushioning either side."
 			},
 			{
 				label: 'Total budget used',
 				value: `${budgetPct.toFixed(0)}%`,
-				subtext: 'incl. recurring',
+				subtext: 'incl. recurring bills',
 				tone: budgetTone(budgetPct),
 				meter: budgetPct,
 				tooltip:
-					'Your total spending vs. total planned budget, including recurring expenses. Can read lower than the discretionary % because the recurring amount dilutes both sides equally.'
+					'Your total spending vs. total planned budget, including recurring bills. Can read lower than the discretionary % because the recurring amount dilutes both sides equally.'
 			},
 			{
-				label: 'Recurring burden',
-				value: hasIncome ? `${recurringBurdenPct.toFixed(0)}%` : '—',
+				label: 'Recurring bills burden',
+				value: hasIncome ? `${recurringBillsBurdenPct.toFixed(0)}%` : '—',
 				subtext: hasIncome ? 'of income committed' : 'no income logged yet',
 				tone:
-					recurringBurdenPct > 50 ? 'negative' : recurringBurdenPct > 35 ? 'warning' : 'neutral',
-				meter: hasIncome ? recurringBurdenPct : undefined,
+					recurringBillsBurdenPct > 50
+						? 'negative'
+						: recurringBillsBurdenPct > 35
+							? 'warning'
+							: 'neutral',
+				meter: hasIncome ? recurringBillsBurdenPct : undefined,
 				tooltip:
-					'The percentage of your income committed to recurring expenses (subscriptions, bills, etc.). High values leave less room for discretionary spending.'
+					'The percentage of your income committed to recurring bills (subscriptions, bills, etc.). High values leave less room for discretionary spending.'
 			},
 			{
 				label: 'Total in savings accounts',
@@ -492,7 +496,7 @@
 			{
 				label: 'Spent',
 				value: formatCurrency(data.actualExpensesTotal || 0),
-				subtext: 'year to date, incl. recurring'
+				subtext: 'year to date, incl. recurring bills'
 			},
 			{
 				label: 'Total in savings accounts',
@@ -690,7 +694,7 @@
 					actualSpent={data.actualExpensesTotal || 0}
 					plannedBudget={data.plannedExpensesTotal || 0}
 					totalIncome={data.totalIncome || 0}
-					recurringTotal={recurringMonthlyTotal}
+					recurringBillsTotal={recurringBillsMonthlyTotal}
 					excludedSpendTotal={excludedExpensesTotal}
 					excludedSpendBreakdown={data.excludedExpensesBreakdown || []}
 					netTrendLabel={netBalanceTrend?.label}
@@ -716,15 +720,15 @@
 
 		{#if isSectionVisible('upcomingBills') && monthStatus === 'current'}
 			<div class="mb-8">
-				<UpcomingBillsCard recurring={data.recurringExpenses || []} />
+				<UpcomingBillsCard recurringBills={data.recurringBills || []} />
 			</div>
 		{/if}
 
-		{#if isSectionVisible('recurringExpenses')}
+		{#if isSectionVisible('recurringBills')}
 			<div class="mb-8">
-				<RecurringExpensesCard
-					recurring={data.recurringExpenses || []}
-					monthlyTotal={recurringMonthlyTotal}
+				<RecurringBillsCard
+					recurringBills={data.recurringBills || []}
+					monthlyTotal={recurringBillsMonthlyTotal}
 					isCurrentMonth={monthStatus === 'current'}
 				/>
 			</div>

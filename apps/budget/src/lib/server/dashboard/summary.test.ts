@@ -9,12 +9,12 @@ type MockTransaction = {
 	notes?: string;
 };
 type MockBudget = { amount: number; month?: string; year?: string; category?: { id: string } };
-type MockVersion = {
+type MockBillPrice = {
 	amount: number;
 	cadence: 'Monthly' | 'Yearly';
 	effectiveFrom: string;
 	effectiveTo: string | null;
-	recurring: { id: string; merchant: string; payments: Array<{ period: string }> };
+	recurringBill: { id: string; merchant: string; payments: Array<{ period: string }> };
 };
 type MockGoal = { id: string; status: string; targetAmount: number };
 
@@ -30,8 +30,8 @@ const mockBudgetQueries = vi.hoisted(() => ({
 	findByMonthYear: vi.fn<() => Promise<MockBudget[]>>(async () => []),
 	findByYear: vi.fn<(year?: number) => Promise<MockBudget[]>>(async () => [])
 }));
-const mockRecurringQueries = vi.hoisted(() => ({
-	findHistory: vi.fn<(fromKey?: string, toKey?: string) => Promise<MockVersion[]>>(async () => [])
+const mockRecurringBillQueries = vi.hoisted(() => ({
+	findHistory: vi.fn<(fromKey?: string, toKey?: string) => Promise<MockBillPrice[]>>(async () => [])
 }));
 const mockIncomeQueries = vi.hoisted(() => ({
 	findByDateRange: vi.fn<(startDate?: string, endDate?: string) => Promise<MockTransaction[]>>(
@@ -48,7 +48,7 @@ const mockSavingsAccountQueries = vi.hoisted(() => ({
 vi.mock('#lib/server/db/queries/index.js', () => ({
 	transactionQueries: mockTransactionQueries,
 	budgetQueries: mockBudgetQueries,
-	recurringQueries: mockRecurringQueries,
+	recurringBillQueries: mockRecurringBillQueries,
 	incomeQueries: mockIncomeQueries,
 	savingsGoalQueries: mockSavingsGoalQueries,
 	savingsAccountQueries: mockSavingsAccountQueries
@@ -61,27 +61,27 @@ import { getDashboardSummary, loadMonthlyDashboard, loadYearlyDashboard } from '
 // Internet went from $80 to $95 in May 2020; a $20 bill was cancelled after March 2020.
 const internet = { id: 'r1', merchant: 'Internet', payments: [{ period: '2020-06' }] };
 const gym = { id: 'r2', merchant: 'Gym', payments: [] };
-const priceChangeHistory: MockVersion[] = [
+const priceChangeHistory: MockBillPrice[] = [
 	{
 		amount: 80,
 		cadence: 'Monthly',
 		effectiveFrom: '2020-01',
 		effectiveTo: '2020-04',
-		recurring: internet
+		recurringBill: internet
 	},
 	{
 		amount: 95,
 		cadence: 'Monthly',
 		effectiveFrom: '2020-05',
 		effectiveTo: null,
-		recurring: internet
+		recurringBill: internet
 	},
 	{
 		amount: 20,
 		cadence: 'Monthly',
 		effectiveFrom: '2019-06',
 		effectiveTo: '2020-03',
-		recurring: gym
+		recurringBill: gym
 	}
 ];
 
@@ -89,7 +89,7 @@ describe('loadMonthlyDashboard', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockSavingsGoalQueries.findAll.mockResolvedValue([]);
-		mockRecurringQueries.findHistory.mockResolvedValue([]);
+		mockRecurringBillQueries.findHistory.mockResolvedValue([]);
 		mockTransactionQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
 	});
 
@@ -119,31 +119,31 @@ describe('loadMonthlyDashboard', () => {
 		expect(result.forecast).toBeNull();
 	});
 
-	it('uses the recurring versions in effect in each month', async () => {
-		mockRecurringQueries.findHistory.mockResolvedValue(priceChangeHistory);
+	it('uses the bill prices in effect in each month', async () => {
+		mockRecurringBillQueries.findHistory.mockResolvedValue(priceChangeHistory);
 
 		const result = await loadMonthlyDashboard(
 			new URL('https://example.com/dashboard?month=6&year=2020')
 		);
 
-		expect(mockRecurringQueries.findHistory).toHaveBeenCalledWith('2020-01', '2020-06');
-		expect(result.recurringMonthlyTotal).toBe(95);
+		expect(mockRecurringBillQueries.findHistory).toHaveBeenCalledWith('2020-01', '2020-06');
+		expect(result.recurringBillsMonthlyTotal).toBe(95);
 		expect(result.actualExpensesTotal).toBe(95);
 		expect(result.monthlyInOutData.map((d) => d.out)).toEqual([100, 100, 100, 80, 95, 95]);
-		expect(result.recurringExpenses).toEqual([
+		expect(result.recurringBills).toEqual([
 			{ id: 'r1', merchant: 'Internet', amount: 95, cadence: 'Monthly', paid: true }
 		]);
 	});
 
 	it('shows a past month at its own amounts, with that month unpaid', async () => {
-		mockRecurringQueries.findHistory.mockResolvedValue(priceChangeHistory);
+		mockRecurringBillQueries.findHistory.mockResolvedValue(priceChangeHistory);
 
 		const result = await loadMonthlyDashboard(
 			new URL('https://example.com/dashboard?month=3&year=2020')
 		);
 
-		expect(result.recurringMonthlyTotal).toBe(100);
-		expect(result.recurringExpenses).toEqual([
+		expect(result.recurringBillsMonthlyTotal).toBe(100);
+		expect(result.recurringBills).toEqual([
 			{ id: 'r2', merchant: 'Gym', amount: 20, cadence: 'Monthly', paid: false },
 			{ id: 'r1', merchant: 'Internet', amount: 80, cadence: 'Monthly', paid: false }
 		]);
@@ -193,7 +193,7 @@ describe('loadYearlyDashboard', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockSavingsGoalQueries.findAll.mockResolvedValue([]);
-		mockRecurringQueries.findHistory.mockResolvedValue([]);
+		mockRecurringBillQueries.findHistory.mockResolvedValue([]);
 		mockTransactionQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
 	});
 
@@ -211,27 +211,27 @@ describe('loadYearlyDashboard', () => {
 	});
 
 	it('sums each month of a past year at the amounts in effect that month', async () => {
-		mockRecurringQueries.findHistory.mockResolvedValue([
+		mockRecurringBillQueries.findHistory.mockResolvedValue([
 			...priceChangeHistory,
 			{
 				amount: 120,
 				cadence: 'Yearly',
 				effectiveFrom: '2020-01',
 				effectiveTo: null,
-				recurring: gym
+				recurringBill: gym
 			}
 		]);
 
 		const result = await loadYearlyDashboard(new URL('https://example.com/dashboard?year=2020'));
 
-		expect(mockRecurringQueries.findHistory).toHaveBeenCalledWith('2020-01', '2020-12');
+		expect(mockRecurringBillQueries.findHistory).toHaveBeenCalledWith('2020-01', '2020-12');
 		// Internet 4 × 80 + 8 × 95, the cancelled bill 3 × 20, the yearly bill 12 × 10
 		expect(result.actualExpensesTotal).toBe(320 + 760 + 60 + 120);
 		expect(result.timeRangeData.map((d) => d.out).slice(0, 5)).toEqual([110, 110, 110, 90, 105]);
 	});
 
 	it('budgets each month as its category budgets plus recurring', async () => {
-		mockRecurringQueries.findHistory.mockResolvedValue(priceChangeHistory);
+		mockRecurringBillQueries.findHistory.mockResolvedValue(priceChangeHistory);
 		mockBudgetQueries.findByYear.mockResolvedValue([
 			{ amount: 300, month: '03', year: '2020', category: { id: 'c1' } },
 			{ amount: 200, month: '03', year: '2020', category: { id: 'c1' } },
@@ -333,7 +333,7 @@ describe('getDashboardSummary', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockSavingsGoalQueries.findAll.mockResolvedValue([]);
-		mockRecurringQueries.findHistory.mockResolvedValue([]);
+		mockRecurringBillQueries.findHistory.mockResolvedValue([]);
 		mockTransactionQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
 	});
 

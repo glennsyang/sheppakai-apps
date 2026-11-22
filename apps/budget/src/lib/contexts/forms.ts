@@ -7,7 +7,7 @@ import type {
 	categorySchema,
 	contributionSchema,
 	incomeSchema,
-	recurringSchema,
+	recurringBillSchema,
 	restoreCustomerSchema,
 	savingsAccountSchema,
 	setPasswordSchema,
@@ -38,8 +38,8 @@ export const savingsAccountFormContext =
 	createFormContext<z.infer<typeof savingsAccountSchema>>('savingsAccountForm');
 export const categoryFormContext =
 	createFormContext<z.infer<typeof categorySchema>>('categoryForm');
-export const recurringFormContext =
-	createFormContext<z.infer<typeof recurringSchema>>('recurringForm');
+export const recurringBillFormContext =
+	createFormContext<z.infer<typeof recurringBillSchema>>('recurringBillForm');
 export const contributionFormContext =
 	createFormContext<z.infer<typeof contributionSchema>>('contributionForm');
 export const customerFormContext =

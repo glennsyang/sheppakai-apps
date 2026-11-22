@@ -141,7 +141,7 @@ describe('fetchBillsDueThisWeek', () => {
 			value: [{ merchant: 'Hydro', amount: 120, dueDate: '2026-10-30' }]
 		});
 		const [url, init] = fetchMock.mock.calls[0];
-		expect(url.href).toBe('https://budget.example.com/api/v1/recurring');
+		expect(url.href).toBe('https://budget.example.com/api/v1/recurring-bills');
 		expect(init?.headers).toMatchObject({ Authorization: 'Bearer budget-key' });
 	});
 

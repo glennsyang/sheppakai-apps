@@ -7,7 +7,7 @@ import {
 	contributionSchema,
 	incomeSchema,
 	passwordSchema,
-	recurringSchema,
+	recurringBillSchema,
 	resendVerificationSchema,
 	savingsGoalSchema,
 	savingsAccountSchema,
@@ -107,7 +107,7 @@ describe('form schemas', () => {
 
 	it('validates recurring and category required fields', () => {
 		expect(
-			recurringSchema.safeParse({
+			recurringBillSchema.safeParse({
 				amount: 10,
 				description: 'Netflix',
 				merchant: 'Netflix',
@@ -115,8 +115,12 @@ describe('form schemas', () => {
 			}).success
 		).toBe(true);
 		expect(
-			recurringSchema.safeParse({ amount: 10, description: '', merchant: 'N', cadence: 'Monthly' })
-				.success
+			recurringBillSchema.safeParse({
+				amount: 10,
+				description: '',
+				merchant: 'N',
+				cadence: 'Monthly'
+			}).success
 		).toBe(false);
 
 		expect(

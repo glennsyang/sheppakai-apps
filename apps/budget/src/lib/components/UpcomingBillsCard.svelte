@@ -8,24 +8,24 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Separator from '#lib/components/ui/separator/index.js';
-	import type { Recurring } from '#lib/types.js';
+	import type { RecurringBill } from '#lib/types.js';
 	import { formatCurrency } from '#lib/utils.js';
 	import { getCurrentPeriodDueDate, getDaysUntilDue } from '#lib/utils/dates.js';
 
 	interface Props {
-		recurring: Recurring[];
+		recurringBills: RecurringBill[];
 	}
 
-	let { recurring }: Props = $props();
+	let { recurringBills }: Props = $props();
 
 	const UPCOMING_WINDOW_DAYS = 14;
 
-	type UpcomingBill = { item: Recurring; daysUntilDue: number };
+	type UpcomingBill = { item: RecurringBill; daysUntilDue: number };
 
 	let upcoming = $derived.by<UpcomingBill[]>(() => {
 		const now = new Date();
 
-		return recurring
+		return recurringBills
 			.filter((item) => !item.paid && item.dueDay != null)
 			.map((item) => ({
 				item,
@@ -77,7 +77,7 @@
 							<span class="text-sm font-semibold tabular-nums">{formatCurrency(item.amount)}</span>
 							<form
 								method="POST"
-								action="/recurring?/togglePaid"
+								action="/recurring-bills?/togglePaid"
 								use:enhance={() => {
 									togglingId = item.id;
 									return async ({ result, update }) => {

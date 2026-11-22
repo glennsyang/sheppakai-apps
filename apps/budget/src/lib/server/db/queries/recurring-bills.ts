@@ -2,14 +2,14 @@ import { and, asc, eq, gte, inArray, isNull, lte, or } from 'drizzle-orm';
 
 import {
 	currentMonthKey,
-	recurringForMonth,
+	recurringBillsForMonth,
 	toMonthKey,
 	withPaid
-} from '#lib/server/recurring-history.js';
-import type { Recurring } from '#lib/types.js';
+} from '#lib/server/recurring-bill-history.js';
+import type { RecurringBill } from '#lib/types.js';
 
 import { getDb } from '../index';
-import { recurring, recurringPayment, recurringVersion } from '../schema';
+import { billPayment, billPrice, recurringBill } from '../schema';
 
 /** The payment periods a month can match: `YYYY-MM` for Monthly bills, `YYYY` for Yearly. */
 function periodsFor(monthKeys: string[]): string[] {
@@ -19,7 +19,7 @@ function periodsFor(monthKeys: string[]): string[] {
 function paymentsIn(periods: string[]) {
 	return {
 		columns: { period: true },
-		where: inArray(recurringPayment.period, periods)
+		where: inArray(billPayment.period, periods)
 	} as const;
 }
 
@@ -39,18 +39,18 @@ function monthKeysBetween(fromKey: string, toKey: string): string[] {
 }
 
 /**
- * Recurring versions that overlap `fromKey`..`toKey` (inclusive `YYYY-MM`), each with its
+ * RecurringBill prices that overlap `fromKey`..`toKey` (inclusive `YYYY-MM`), each with its
  * bill and the bill's payments for periods in that range. Feed the result to
- * `recurringForMonth` and `recurringTotalForMonth`.
+ * `recurringBillsForMonth` and `recurringBillsTotalForMonth`.
  */
 async function findHistory(fromKey: string, toKey: string) {
-	return getDb().query.recurringVersion.findMany({
+	return getDb().query.billPrice.findMany({
 		where: and(
-			lte(recurringVersion.effectiveFrom, toKey),
-			or(isNull(recurringVersion.effectiveTo), gte(recurringVersion.effectiveTo, fromKey))
+			lte(billPrice.effectiveFrom, toKey),
+			or(isNull(billPrice.effectiveTo), gte(billPrice.effectiveTo, fromKey))
 		),
 		with: {
-			recurring: {
+			recurringBill: {
 				with: { user: true, payments: paymentsIn(periodsFor(monthKeysBetween(fromKey, toKey))) }
 			}
 		}
@@ -58,20 +58,23 @@ async function findHistory(fromKey: string, toKey: string) {
 }
 
 /** Bills that haven't been deleted, with their current values and current-period paid state. */
-async function findActive(now: Date = new Date()): Promise<Recurring[]> {
+async function findActive(now: Date = new Date()): Promise<RecurringBill[]> {
 	const monthKey = currentMonthKey(now);
-	const rows = await getDb().query.recurring.findMany({
-		where: isNull(recurring.endedAt),
+	const rows = await getDb().query.recurringBill.findMany({
+		where: isNull(recurringBill.endedAt),
 		with: { user: true, payments: paymentsIn(periodsFor([monthKey])) },
-		orderBy: [asc(recurring.merchant)]
+		orderBy: [asc(recurringBill.merchant)]
 	});
 	return rows.map((row) => withPaid(row, row.cadence, monthKey));
 }
 
-async function findActiveById(id: string, now: Date = new Date()): Promise<Recurring | undefined> {
+async function findActiveById(
+	id: string,
+	now: Date = new Date()
+): Promise<RecurringBill | undefined> {
 	const monthKey = currentMonthKey(now);
-	const row = await getDb().query.recurring.findFirst({
-		where: and(eq(recurring.id, id), isNull(recurring.endedAt)),
+	const row = await getDb().query.recurringBill.findFirst({
+		where: and(eq(recurringBill.id, id), isNull(recurringBill.endedAt)),
 		with: { user: true, payments: paymentsIn(periodsFor([monthKey])) }
 	});
 	return row ? withPaid(row, row.cadence, monthKey) : undefined;
@@ -79,14 +82,14 @@ async function findActiveById(id: string, now: Date = new Date()): Promise<Recur
 
 /**
  * The bills in effect in `monthKey`. The current month reads live bills; any other month is
- * rebuilt from version history, at that month's amount, cadence and paid state.
+ * rebuilt from bill price history, at that month's amount, cadence and paid state.
  */
-async function findForMonth(monthKey: string, now: Date = new Date()): Promise<Recurring[]> {
+async function findForMonth(monthKey: string, now: Date = new Date()): Promise<RecurringBill[]> {
 	if (monthKey === currentMonthKey(now)) return findActive(now);
-	return recurringForMonth(await findHistory(monthKey, monthKey), monthKey);
+	return recurringBillsForMonth(await findHistory(monthKey, monthKey), monthKey);
 }
 
-export const recurringQueries = {
+export const recurringBillQueries = {
 	findActive,
 	findActiveById,
 	findForMonth,
