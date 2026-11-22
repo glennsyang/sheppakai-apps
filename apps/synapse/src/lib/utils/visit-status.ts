@@ -184,7 +184,7 @@ export function getStatusLabel(status: VisitStatus): string {
 		case 'scheduled':
 			return 'Scheduled';
 		case 'none':
-			return 'No Visits';
+			return 'Never Visited';
 		case 'exempt':
 			return 'Exempt';
 	}

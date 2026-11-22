@@ -54,7 +54,7 @@ export const navItems: SidebarNav = {
 		},
 		{
 			title: 'Admin',
-			description: 'Manage users and archived contacts',
+			description: 'Manage users and archived group members',
 			url: '/admin',
 			icon: Shield,
 			pen: 'teal',

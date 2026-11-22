@@ -8,8 +8,8 @@
 <DataTable
 	{columns}
 	data={archivedPeople}
-	searchPlaceholder="Search archived persons..."
+	searchPlaceholder="Search archived group members..."
 	defaultPageSize={10}
 	defaultSorting={[{ id: 'name', desc: false }]}
-	emptyMessage="No archived persons found."
+	emptyMessage="No archived group members found."
 />

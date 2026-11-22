@@ -47,7 +47,7 @@ export const actions = {
 				form,
 				{
 					type: 'error',
-					text: 'An error occurred while adding the person. Please try again.'
+					text: 'An error occurred while adding the group member. Please try again.'
 				},
 				{ status: 500 }
 			);

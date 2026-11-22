@@ -77,6 +77,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		return { people: peopleWithStatus };
 	} catch (error) {
 		logger.error('Failed to load people', error);
-		return { people: [], loadError: 'Failed to load people. Please try refreshing the page.' };
+		return {
+			people: [],
+			loadError: 'Failed to load group members. Please try refreshing the page.'
+		};
 	}
 };

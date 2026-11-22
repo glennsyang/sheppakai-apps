@@ -120,7 +120,7 @@ export const actions = {
 		const form = await superValidate(request, zod4(unarchivePersonSchema));
 
 		if (!form.valid) {
-			return invalidForm(form, 'Person ID is required');
+			return invalidForm(form, 'Group member ID is required');
 		}
 
 		const { personId } = form.data;
@@ -136,10 +136,14 @@ export const actions = {
 			logger.info('Person unarchived', { personId });
 		} catch (err) {
 			logger.error('Failed to unarchive person', err);
-			return message(form, { type: 'error', text: 'Failed to unarchive person' }, { status: 500 });
+			return message(
+				form,
+				{ type: 'error', text: 'Failed to unarchive group member' },
+				{ status: 500 }
+			);
 		}
 
-		return message(form, { type: 'success', text: 'Person unarchived.' });
+		return message(form, { type: 'success', text: 'Group member unarchived.' });
 	}),
 
 	...apiKeyActions
