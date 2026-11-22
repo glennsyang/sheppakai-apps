@@ -51,7 +51,7 @@ export const visitSchema = z.object({
 	),
 	companions: z.string().optional(),
 	notes: z.string().optional(),
-	followUpDate: z.preprocess(
+	nextVisitDate: z.preprocess(
 		(value) => (value === '' ? undefined : value),
 		z
 			.string()

@@ -229,7 +229,7 @@ export async function sendScheduledVisitReminderEmail(
 	to: string,
 	name: string,
 	personName: string,
-	followUpDate: string
+	nextVisitDate: string
 ) {
 	await mailer.send({
 		to,
@@ -242,11 +242,11 @@ export async function sendScheduledVisitReminderEmail(
 			`
 		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
 		<p style="font-size: 16px; margin-bottom: 20px;">
-			Just a reminder that you have a scheduled visit with <strong>${escapeHtml(personName)}</strong> coming up on <strong>${escapeHtml(followUpDate)}</strong> — that's one week from today!
+			Just a reminder that you have a scheduled visit with <strong>${escapeHtml(personName)}</strong> coming up on <strong>${escapeHtml(nextVisitDate)}</strong> — that's one week from today!
 		</p>
 		<div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
 			<p style="margin: 0; font-size: 16px; font-weight: 600; color: #1e40af;">
-				📅 Visit scheduled for ${escapeHtml(followUpDate)}
+				📅 Visit scheduled for ${escapeHtml(nextVisitDate)}
 			</p>
 		</div>
 		<p style="font-size: 16px; margin-bottom: 20px;">

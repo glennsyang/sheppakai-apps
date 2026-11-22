@@ -60,7 +60,7 @@ describe('visitSchema', () => {
 				time: '14:00',
 				companions: 'Bob, Carol',
 				notes: 'Good visit',
-				followUpDate: '2026-06-15'
+				nextVisitDate: '2026-06-15'
 			})
 		).not.toThrow();
 	});
@@ -73,8 +73,8 @@ describe('visitSchema', () => {
 		expect(visitSchema.safeParse({ date: '2026-03-15', time: '2pm' }).success).toBe(false);
 	});
 
-	it('rejects an invalid followUpDate format', () => {
-		expect(visitSchema.safeParse({ date: '2026-03-15', followUpDate: 'next-week' }).success).toBe(
+	it('rejects an invalid nextVisitDate format', () => {
+		expect(visitSchema.safeParse({ date: '2026-03-15', nextVisitDate: 'next-week' }).success).toBe(
 			false
 		);
 	});
@@ -84,9 +84,9 @@ describe('visitSchema', () => {
 		expect(result.time).toBeUndefined();
 	});
 
-	it('treats an empty string followUpDate as undefined (no Next Visit)', () => {
-		const result = visitSchema.parse({ date: '2026-03-15', followUpDate: '' });
-		expect(result.followUpDate).toBeUndefined();
+	it('treats an empty string nextVisitDate as undefined (no Next Visit)', () => {
+		const result = visitSchema.parse({ date: '2026-03-15', nextVisitDate: '' });
+		expect(result.nextVisitDate).toBeUndefined();
 	});
 });
 

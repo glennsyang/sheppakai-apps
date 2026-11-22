@@ -113,7 +113,7 @@
 		$visitForm.time = '';
 		$visitForm.companions = '';
 		$visitForm.notes = '';
-		$visitForm.followUpDate = '';
+		$visitForm.nextVisitDate = '';
 		showLogVisitDialog = true;
 	}
 
@@ -123,7 +123,7 @@
 		$visitForm.time = visit.time ?? '';
 		$visitForm.companions = visit.companions?.join(', ') ?? '';
 		$visitForm.notes = visit.notes ?? '';
-		$visitForm.followUpDate = '';
+		$visitForm.nextVisitDate = '';
 		showLogVisitDialog = true;
 	}
 
@@ -452,19 +452,19 @@
 
 				{#if !isEditingVisit}
 					<div class="space-y-2">
-						<Label for="followUpDate">Next Visit</Label>
+						<Label for="nextVisitDate">Next Visit</Label>
 						<Input
-							id="followUpDate"
-							name="followUpDate"
+							id="nextVisitDate"
+							name="nextVisitDate"
 							type="date"
-							bind:value={$visitForm.followUpDate}
-							aria-invalid={$visitErrors.followUpDate ? 'true' : undefined}
+							bind:value={$visitForm.nextVisitDate}
+							aria-invalid={$visitErrors.nextVisitDate ? 'true' : undefined}
 						/>
 						<p class="text-muted-foreground text-xs">
 							Leave blank if no next visit is planned. This replaces any Next Visit already set.
 						</p>
-						{#if $visitErrors.followUpDate}
-							<p class="text-destructive mt-1 text-sm">{$visitErrors.followUpDate}</p>
+						{#if $visitErrors.nextVisitDate}
+							<p class="text-destructive mt-1 text-sm">{$visitErrors.nextVisitDate}</p>
 						{/if}
 					</div>
 				{/if}
