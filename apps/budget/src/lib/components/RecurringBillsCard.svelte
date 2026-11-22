@@ -5,27 +5,27 @@
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
 	import * as Separator from '#lib/components/ui/separator/index.js';
-	import type { Recurring } from '#lib/types.js';
+	import type { RecurringBill } from '#lib/types.js';
 	import { formatCurrency } from '#lib/utils.js';
 
 	interface Props {
-		recurring: Recurring[];
+		recurringBills: RecurringBill[];
 		monthlyTotal: number;
 		isCurrentMonth: boolean;
 	}
 
-	let { recurring, monthlyTotal, isCurrentMonth }: Props = $props();
+	let { recurringBills, monthlyTotal, isCurrentMonth }: Props = $props();
 
 	let open = $state(true);
 
-	let sorted = $derived([...recurring].toSorted((a, b) => b.amount - a.amount));
+	let sorted = $derived([...recurringBills].toSorted((a, b) => b.amount - a.amount));
 </script>
 
 <Card.Root>
 	<Collapsible.Root bind:open>
 		<Card.Header class="pb-3">
 			<div class="flex items-center justify-between">
-				<Card.Title class="text-base tracking-tight">Recurring expenses</Card.Title>
+				<Card.Title class="text-base tracking-tight">Recurring bills</Card.Title>
 				<div class="flex items-center gap-3">
 					<span class="text-sm font-semibold tabular-nums">{formatCurrency(monthlyTotal)}/mo</span>
 					<Collapsible.Trigger class="group flex cursor-pointer items-center">
@@ -41,7 +41,7 @@
 		<Collapsible.Content>
 			<Card.Content class="pt-0">
 				{#if sorted.length === 0}
-					<p class="text-muted-foreground py-4 text-center text-sm">No recurring expenses</p>
+					<p class="text-muted-foreground py-4 text-center text-sm">No recurring bills</p>
 				{:else}
 					<div>
 						{#each sorted as item, i (item.id)}

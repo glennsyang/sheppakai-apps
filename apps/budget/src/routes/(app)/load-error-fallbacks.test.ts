@@ -26,7 +26,7 @@ vi.mock('#lib/server/db/queries/index.js', () => ({
 	budgetQueries: mockState.failingQueries,
 	contributionQueries: mockState.failingQueries,
 	dashboardPreferenceQueries: mockState.failingQueries,
-	recurringQueries: mockState.failingQueries,
+	recurringBillQueries: mockState.failingQueries,
 	savingsGoalQueries: mockState.failingQueries,
 	transactionQueries: mockState.failingQueries,
 	userQueries: mockState.failingQueries,
@@ -54,7 +54,7 @@ vi.mock('#lib/server/logger.js', () => ({
 import { load as budgetLoad } from './budget/+page.server';
 import { load as dashboardLoad } from './dashboard/+page.server';
 import { load as profileLoad } from './profile/+page.server';
-import { load as recurringLoad } from './recurring/+page.server';
+import { load as recurringBillsLoad } from './recurring-bills/+page.server';
 import { load as savingsGoalsLoad } from './savings/goals/+page.server';
 import { load as windowCleaningLoad } from './window-cleaning/+page.server';
 import { load as windowCleaningJobsLoad } from './window-cleaning/jobs/+page.server';
@@ -79,14 +79,19 @@ const cases: LoadCase[] = [
 		name: 'budget',
 		load: budgetLoad,
 		path: '/budget?month=03&year=2026',
-		fallback: { budget: [], historicalBudgets: [], historicalTransactions: [], recurringTotal: 0 },
+		fallback: {
+			budget: [],
+			historicalBudgets: [],
+			historicalTransactions: [],
+			recurringBillsTotal: 0
+		},
 		forms: []
 	},
 	{
-		name: 'recurring',
-		load: recurringLoad,
-		path: '/recurring',
-		fallback: { recurrings: [] },
+		name: 'recurring bills',
+		load: recurringBillsLoad,
+		path: '/recurring-bills',
+		fallback: { recurringBills: [] },
 		forms: ['form']
 	},
 	{

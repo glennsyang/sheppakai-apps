@@ -2,16 +2,16 @@ import { relations } from 'drizzle-orm';
 import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 import { generateId } from '../utils';
-import recurringPayment from './recurringPayment';
-import recurringVersion from './recurringVersion';
+import billPayment from './billPayment';
+import billPrice from './billPrice';
 import user from './user';
 
 /**
  * A recurring bill's identity. `amount` and `cadence` hold the *current* values; the history
- * that dashboard totals read lives in `recurring_version`, and paid state per period lives in
- * `recurring_payment`. Write all three through `#lib/server/db/writes/recurring.ts`.
+ * that dashboard totals read lives in `bill_prices`, and paid state per period lives in
+ * `bill_payments`. Write all three through `#lib/server/db/writes/recurring-bills.ts`.
  */
-const recurring = sqliteTable('recurring', {
+const recurringBill = sqliteTable('recurring_bills', {
 	id: text('id').primaryKey().$defaultFn(generateId),
 	merchant: text('merchant').notNull(),
 	description: text('description').notNull(),
@@ -32,10 +32,10 @@ const recurring = sqliteTable('recurring', {
 		.$defaultFn(() => new Date())
 });
 
-export const recurringRelations = relations(recurring, ({ one, many }) => ({
-	user: one(user, { fields: [recurring.userId], references: [user.id] }),
-	versions: many(recurringVersion),
-	payments: many(recurringPayment)
+export const recurringBillRelations = relations(recurringBill, ({ one, many }) => ({
+	user: one(user, { fields: [recurringBill.userId], references: [user.id] }),
+	prices: many(billPrice),
+	payments: many(billPayment)
 }));
 
-export default recurring;
+export default recurringBill;

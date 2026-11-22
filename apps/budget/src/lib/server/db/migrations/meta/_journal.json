@@ -183,6 +183,13 @@
 			"when": 1795326790015,
 			"tag": "0025_rename_savings_accounts",
 			"breakpoints": true
+		},
+		{
+			"idx": 26,
+			"version": "6",
+			"when": 1795327629181,
+			"tag": "0026_rename_recurring_bills",
+			"breakpoints": true
 		}
 	]
 }

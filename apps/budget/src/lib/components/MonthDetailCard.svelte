@@ -11,7 +11,7 @@
 		actualSpent: number;
 		plannedBudget: number;
 		totalIncome: number;
-		recurringTotal?: number;
+		recurringBillsTotal?: number;
 		excludedSpendTotal?: number;
 		excludedSpendBreakdown?: ExcludedSpendCategory[];
 		netTrendLabel?: string;
@@ -27,7 +27,7 @@
 		actualSpent,
 		plannedBudget,
 		totalIncome,
-		recurringTotal = 0,
+		recurringBillsTotal = 0,
 		excludedSpendTotal = 0,
 		excludedSpendBreakdown = [],
 		netTrendLabel,
@@ -39,8 +39,8 @@
 	}: Props = $props();
 
 	let monthStatus = $derived(getMonthProgress(month, year).status);
-	let discretionarySpent = $derived(Math.max(0, actualSpent - recurringTotal));
-	let discretionaryBudget = $derived(Math.max(0, plannedBudget - recurringTotal));
+	let discretionarySpent = $derived(Math.max(0, actualSpent - recurringBillsTotal));
+	let discretionaryBudget = $derived(Math.max(0, plannedBudget - recurringBillsTotal));
 	let budgetPct = $derived(
 		discretionaryBudget > 0 ? (discretionarySpent / discretionaryBudget) * 100 : 0
 	);
@@ -51,7 +51,7 @@
 		computeCashFlowProjection({
 			totalIncome,
 			actualSpent,
-			recurringMonthlyTotal: recurringTotal,
+			recurringBillsMonthlyTotal: recurringBillsTotal,
 			plannedExpensesTotal: plannedBudget,
 			month,
 			year
@@ -100,9 +100,9 @@
 					<dd class="font-medium tabular-nums">{formatCurrency(totalIncome)}</dd>
 				</div>
 				<div class="flex justify-between py-1.5">
-					<dt class="text-muted-foreground">Recurring</dt>
+					<dt class="text-muted-foreground">Recurring bills</dt>
 					<dd class="font-medium tabular-nums">
-						{recurringTotal > 0 ? '−' : ''}{formatCurrency(recurringTotal)}
+						{recurringBillsTotal > 0 ? '−' : ''}{formatCurrency(recurringBillsTotal)}
 					</dd>
 				</div>
 				<div class="flex justify-between py-1.5">
@@ -186,7 +186,7 @@
 							Month-end
 							<InfoTooltip
 								size="sm"
-								text="Projected total spend at month end, recurring included. The daily rate blends this month's pace with your last 13 weeks, leaning on this month more as it goes on."
+								text="Projected total spend at month end, recurring bills included. The daily rate blends this month's pace with your last 13 weeks, leaning on this month more as it goes on."
 							/>
 						</dt>
 						<dd

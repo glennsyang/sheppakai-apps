@@ -11,9 +11,9 @@ export {
 export { default as income } from './income';
 export { default as passkey, passkeyRelations } from './passkey';
 export { default as rateLimit } from './rateLimit';
-export { default as recurring, recurringRelations } from './recurring';
-export { default as recurringPayment, recurringPaymentRelations } from './recurringPayment';
-export { default as recurringVersion, recurringVersionRelations } from './recurringVersion';
+export { default as recurringBill, recurringBillRelations } from './recurringBill';
+export { default as billPayment, billPaymentRelations } from './billPayment';
+export { default as billPrice, billPriceRelations } from './billPrice';
 export { default as savingsAccount, savingsAccountRelations } from './savingsAccount';
 export { default as savingsGoal, savingsGoalRelations } from './savingsGoal';
 export { default as session, sessionRelations } from './session';

@@ -4,12 +4,12 @@ import { budgetSchema } from '#lib/formSchemas/index.js';
 import { createAction, updateAction } from '#lib/server/actions/crud-helpers.js';
 import {
 	budgetQueries,
-	recurringQueries,
+	recurringBillQueries,
 	transactionQueries
 } from '#lib/server/db/queries/index.js';
 import { budget } from '#lib/server/db/schema/index.js';
 import { logger } from '#lib/server/logger.js';
-import { recurringTotalForMonth, toMonthKey } from '#lib/server/recurring-history.js';
+import { recurringBillsTotalForMonth, toMonthKey } from '#lib/server/recurring-bill-history.js';
 import { getMonthYearFromUrl, padMonth } from '#lib/utils/dates.js';
 
 import type { Actions, PageServerLoad } from './$types';
@@ -64,14 +64,14 @@ export const load: PageServerLoad = async ({ url }) => {
 	const endDateStr = `${latestMonth.year}-${latestMonth.month}-${padMonth(endDate.getDate().toString())}`;
 
 	try {
-		// Chart-window history plus the selected month's budget and recurring versions.
+		// Chart-window history plus the selected month's budget and bill prices.
 		const monthKey = toMonthKey(month, year);
-		const [historicalBudgets, historicalTransactions, monthBudget, recurringHistory] =
+		const [historicalBudgets, historicalTransactions, monthBudget, billPriceHistory] =
 			await Promise.all([
 				budgetQueries.findHistory(earliestMonth, latestMonth),
 				transactionQueries.sumByCategoryMonth(startDate, endDateStr),
 				budgetQueries.findByMonthYear(month, year),
-				recurringQueries.findHistory(monthKey, monthKey)
+				recurringBillQueries.findHistory(monthKey, monthKey)
 			]);
 
 		return {
@@ -79,7 +79,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			historicalBudgets,
 			historicalTransactions,
 			last12Months,
-			recurringTotal: recurringTotalForMonth(recurringHistory, monthKey)
+			recurringBillsTotal: recurringBillsTotalForMonth(billPriceHistory, monthKey)
 		};
 	} catch (error) {
 		logger.error('Failed to load budget:', error);
@@ -88,7 +88,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			historicalBudgets: [],
 			historicalTransactions: [],
 			last12Months,
-			recurringTotal: 0,
+			recurringBillsTotal: 0,
 			loadError: 'Failed to load budget. Please try refreshing the page.'
 		};
 	}

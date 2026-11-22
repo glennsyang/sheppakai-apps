@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { Recurring, Transaction } from '#lib/types.js';
+import type { RecurringBill, Transaction } from '#lib/types.js';
 import { getTodayDate } from '#lib/utils/dates.js';
 
 export const transactionSchema = z.object({
@@ -44,7 +44,7 @@ export const incomeSchema = z.object({
 	amount: z.number().positive('Amount must be positive')
 });
 
-export const recurringSchema = z
+export const recurringBillSchema = z
 	.object({
 		id: z.string().optional(),
 		amount: z.number().positive('Amount must be positive'),
@@ -72,13 +72,13 @@ export const recurringSchema = z
 
 /** Change one past month's amount for a recurring bill; that month only. */
 export const pastAmountSchema = z.object({
-	id: z.string().min(1, 'Recurring ID is required'),
+	id: z.string().min(1, 'Recurring bill ID is required'),
 	month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM'),
 	amount: z.number().positive('Amount must be positive')
 });
 
 export const togglePaidSchema = z.object({
-	id: z.string().min(1, 'Recurring ID is required'),
+	id: z.string().min(1, 'Recurring bill ID is required'),
 	paid: z.boolean()
 });
 
@@ -100,7 +100,7 @@ export function toDuplicateTransactionFormData(t: Transaction): z.input<typeof t
 	return { ...toTransactionFormData(t), id: '', date: getTodayDate() };
 }
 
-export function toRecurringFormData(r: Recurring): z.input<typeof recurringSchema> {
+export function toRecurringBillFormData(r: RecurringBill): z.input<typeof recurringBillSchema> {
 	return {
 		id: r.id,
 		amount: r.amount,

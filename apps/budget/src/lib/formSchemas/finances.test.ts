@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Recurring, Transaction } from '#lib/types.js';
+import type { RecurringBill, Transaction } from '#lib/types.js';
 import { getTodayDate } from '#lib/utils/dates.js';
 
 import {
-	recurringSchema,
-	toRecurringFormData,
+	recurringBillSchema,
+	toRecurringBillFormData,
 	toDuplicateTransactionFormData,
 	toTransactionFormData,
 	transactionSchema
@@ -42,7 +42,7 @@ const transaction: Transaction = {
 	user
 };
 
-const recurring: Recurring = {
+const recurringBill: RecurringBill = {
 	id: 'r1',
 	merchant: 'Netflix',
 	description: 'Streaming',
@@ -84,17 +84,17 @@ describe('toDuplicateTransactionFormData', () => {
 	});
 });
 
-describe('toRecurringFormData', () => {
-	it('covers every recurringSchema key', () => {
-		expect(Object.keys(toRecurringFormData(recurring)).sort()).toEqual(
-			Object.keys(recurringSchema.shape).sort()
+describe('toRecurringBillFormData', () => {
+	it('covers every recurringBillSchema key', () => {
+		expect(Object.keys(toRecurringBillFormData(recurringBill)).sort()).toEqual(
+			Object.keys(recurringBillSchema.shape).sort()
 		);
 	});
 
 	it('preserves dueDay/dueMonth and passes validation', () => {
-		const data = toRecurringFormData(recurring);
+		const data = toRecurringBillFormData(recurringBill);
 		expect(data.dueDay).toBe(15);
 		expect(data.dueMonth).toBe(3);
-		expect(recurringSchema.safeParse(data).success).toBe(true);
+		expect(recurringBillSchema.safeParse(data).success).toBe(true);
 	});
 });

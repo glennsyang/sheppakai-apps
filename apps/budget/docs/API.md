@@ -29,8 +29,8 @@ This is intentional for the budget app's collaborative household model.
 | `dashboard:read`                | `GET /api/v1/dashboard`                                                                 |
 | `income:read`                   | `GET /api/v1/income`                                                                    |
 | `income:write`                  | `POST /api/v1/income`                                                                   |
-| `recurring:read`                | `GET /api/v1/recurring`                                                                 |
-| `recurring:markPaid`            | `PATCH /api/v1/recurring/:id`                                                           |
+| `recurring:read`                | `GET /api/v1/recurring-bills`                                                           |
+| `recurring:markPaid`            | `PATCH /api/v1/recurring-bills/:id`                                                     |
 | `windowCleaningCustomers:read`  | `GET /api/v1/window-cleaning/customers`                                                 |
 | `windowCleaningCustomers:write` | `POST /api/v1/window-cleaning/customers`, `PATCH /api/v1/window-cleaning/customers/:id` |
 | `windowCleaningJobs:read`       | `GET /api/v1/window-cleaning/jobs`                                                      |
@@ -143,15 +143,19 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
   "https://budget.example.com/api/v1/income"
 ```
 
-### `GET /api/v1/recurring`
+### `GET /api/v1/recurring-bills`
 
-Requires `recurring:read`. No parameters — returns every recurring expense.
+Requires `recurring:read`. No parameters — returns every active recurring bill.
 
 ```bash
-curl -H "Authorization: Bearer sk_live_xxx" "https://budget.example.com/api/v1/recurring"
+curl -H "Authorization: Bearer sk_live_xxx" "https://budget.example.com/api/v1/recurring-bills"
 ```
 
-### `PATCH /api/v1/recurring/:id`
+> **Deprecated alias:** `GET /api/v1/recurring` and `PATCH /api/v1/recurring/:id` still work and
+> return the same responses, but will be removed after one release. Switch callers to
+> `/api/v1/recurring-bills`. The scope names (`recurring:read`, `recurring:markPaid`) are unchanged.
+
+### `PATCH /api/v1/recurring-bills/:id`
 
 Requires `recurring:markPaid` — a narrower scope than a general write, so a key can be issued that
 only toggles paid status. Body:
@@ -159,7 +163,7 @@ only toggles paid status. Body:
 ```bash
 curl -X PATCH -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: application/json" \
   -d '{ "paid": true }' \
-  "https://budget.example.com/api/v1/recurring/rec_123"
+  "https://budget.example.com/api/v1/recurring-bills/rec_123"
 ```
 
 Returns `404` (`not_found`) if the id doesn't exist.

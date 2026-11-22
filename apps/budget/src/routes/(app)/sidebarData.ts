@@ -37,8 +37,8 @@ export const sidebarData: SidebarData = {
 			icon: DollarSignIcon
 		},
 		{
-			title: 'Recurring',
-			url: '/recurring',
+			title: 'Recurring bills',
+			url: '/recurring-bills',
 			icon: RepeatIcon
 		}
 	],

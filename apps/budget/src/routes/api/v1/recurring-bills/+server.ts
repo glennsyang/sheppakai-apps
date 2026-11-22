@@ -1,0 +1,19 @@
+import { requireApiKey } from '#lib/server/api/require-api-key.js';
+import { apiError, apiSuccess } from '#lib/server/api/response.js';
+import { recurringBillQueries } from '#lib/server/db/queries/index.js';
+import { logger } from '#lib/server/logger.js';
+
+import type { RequestHandler } from './$types';
+
+export const GET: RequestHandler = async ({ request }) => {
+	const auth = await requireApiKey(request, 'recurring:read');
+	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
+
+	try {
+		const recurringBills = await recurringBillQueries.findActive();
+		return apiSuccess(recurringBills);
+	} catch (error) {
+		logger.error('API: failed to list recurring bills', error);
+		return apiError('internal_error', 'Failed to load recurring bills.', 500);
+	}
+};

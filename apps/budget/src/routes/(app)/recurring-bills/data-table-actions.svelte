@@ -4,18 +4,18 @@
 	import { actionMessage } from '@sheppakai/shared/action-message';
 	import { toast } from 'svelte-sonner';
 
-	import type { Recurring } from '#lib';
+	import type { RecurringBill } from '#lib';
 	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
-	import RecurringModal from '#lib/components/RecurringModal.svelte';
+	import RecurringBillModal from '#lib/components/RecurringBillModal.svelte';
 	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
 	import { Button, buttonVariants } from '#lib/components/ui/button/index.js';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
-	import { recurringFormContext } from '#lib/contexts/index.js';
-	import { toRecurringFormData } from '#lib/formSchemas/index.js';
+	import { recurringBillFormContext } from '#lib/contexts/index.js';
+	import { toRecurringBillFormData } from '#lib/formSchemas/index.js';
 
-	let { id, recurringData }: { id: string; recurringData: Recurring } = $props();
+	let { id, recurringBill }: { id: string; recurringBill: RecurringBill } = $props();
 
-	const recurringForm = recurringFormContext.get();
+	const recurringBillForm = recurringBillFormContext.get();
 
 	let openEditModal = $state<boolean>(false);
 	let openDeleteModal = $state<boolean>(false);
@@ -48,18 +48,18 @@
 			}}
 		>
 			<input type="hidden" name="id" value={id} />
-			<input type="hidden" name="paid" value={recurringData?.paid ? 'false' : 'true'} />
+			<input type="hidden" name="paid" value={recurringBill?.paid ? 'false' : 'true'} />
 			<Button type="submit" size="sm" variant="ghost" disabled={togglingPaid}
-				>{recurringData?.paid ? 'Mark Unpaid' : 'Mark Paid'}</Button
+				>{recurringBill?.paid ? 'Mark Unpaid' : 'Mark Paid'}</Button
 			>
 		</form>
 	</DropdownMenu.Item>
 </RowActionsMenu>
 
-<RecurringModal
+<RecurringBillModal
 	bind:open={openEditModal}
-	initialData={toRecurringFormData(recurringData)}
-	{recurringForm}
+	initialData={toRecurringBillFormData(recurringBill)}
+	{recurringBillForm}
 	isEditing
 />
 
@@ -68,7 +68,7 @@
 	{id}
 	actionUrl="?/delete"
 	title="Delete recurring bill"
-	message="Are you sure you want to delete this recurring expense?"
+	message="Are you sure you want to delete this recurring bill?"
 	confirmButtonText="Delete"
 />
 

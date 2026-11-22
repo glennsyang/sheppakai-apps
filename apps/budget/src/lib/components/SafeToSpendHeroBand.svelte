@@ -54,7 +54,7 @@
 					<h2>Safe to spend today</h2>
 					<InfoTooltip
 						size="sm"
-						text="Discretionary left (income − spent − recurring) divided by days remaining in the month. What your actual cash position allows you to spend per day."
+						text="Discretionary left (income − spent − recurring bills) divided by days remaining in the month. What your actual cash position allows you to spend per day."
 					/>
 				</div>
 				<p

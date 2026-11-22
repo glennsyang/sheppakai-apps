@@ -20,9 +20,9 @@ export {
 	incomeSchema,
 	receiptScanResultSchema,
 	pastAmountSchema,
-	recurringSchema,
+	recurringBillSchema,
 	togglePaidSchema,
-	toRecurringFormData,
+	toRecurringBillFormData,
 	toDuplicateTransactionFormData,
 	toTransactionFormData,
 	transactionSchema

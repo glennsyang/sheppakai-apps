@@ -26,7 +26,7 @@ const baseInput: MonthEndForecastInput = {
 	daysInMonth: 31,
 	currentDay: 10,
 	discretionarySpent: 2000, // $200/day so far
-	recurringMonthlyTotal: 500,
+	recurringBillsMonthlyTotal: 500,
 	incomeThisMonth: 6000,
 	previousMonthsIncome: [5000, 5000, 5000]
 };

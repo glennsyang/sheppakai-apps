@@ -101,7 +101,7 @@ export async function fetchBillsDueThisWeek(today: string): Promise<RemoteSectio
 		'budget',
 		BUDGET_API_URL,
 		BUDGET_API_KEY,
-		'/api/v1/recurring',
+		'/api/v1/recurring-bills',
 		recurringListSchema
 	);
 	if (!result.ok) return result;

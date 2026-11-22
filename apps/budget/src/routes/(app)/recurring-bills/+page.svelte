@@ -1,13 +1,13 @@
 <script lang="ts">
 	import PlusIcon from '@lucide/svelte/icons/plus';
 
-	import type { Recurring } from '#lib';
+	import type { RecurringBill } from '#lib';
 	import type { Stat } from '#lib/components/DashboardStatStrip.svelte';
 	import MonthlyTablePageShell from '#lib/components/MonthlyTablePageShell.svelte';
-	import RecurringModal from '#lib/components/RecurringModal.svelte';
+	import RecurringBillModal from '#lib/components/RecurringBillModal.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { DataTable } from '#lib/components/ui/data-table/index.js';
-	import { recurringFormContext } from '#lib/contexts/index.js';
+	import { recurringBillFormContext } from '#lib/contexts/index.js';
 	import { formatCurrency, monthNames } from '#lib/utils.js';
 	import { useMonthYearParams } from '#lib/utils/monthYearParams.svelte.js';
 
@@ -17,7 +17,7 @@
 	let { data }: PageProps = $props();
 
 	// svelte-ignore state_referenced_locally
-	recurringFormContext.set(data.form);
+	recurringBillFormContext.set(data.form);
 
 	let openModal = $state<boolean>(false);
 	const unpaidAsOf = new Intl.DateTimeFormat('en-US', {
@@ -25,7 +25,7 @@
 		day: 'numeric'
 	}).format(new Date());
 
-	const monthYear = useMonthYearParams('/recurring');
+	const monthYear = useMonthYearParams('/recurring-bills');
 	let periodLabel = $derived(`${monthNames[monthYear.month - 1]} ${monthYear.year}`);
 
 	// Only the current month is fully editable; past months allow a one-month amount fix.
@@ -40,36 +40,38 @@
 	);
 
 	// Paid bills recede so what is still owed stands out.
-	const getRecurringRowClass = (recurring: Recurring) =>
-		recurring.paid ? 'text-muted-foreground' : '';
+	const getRecurringBillRowClass = (bill: RecurringBill) =>
+		bill.paid ? 'text-muted-foreground' : '';
 
-	let totalRecurring = $derived(data.recurrings.reduce((sum, item) => sum + item.amount, 0));
-	let totalUnpaidRecurring = $derived(
-		data.recurrings.filter((item) => !item.paid).reduce((sum, item) => sum + item.amount, 0)
+	let totalRecurringBills = $derived(
+		data.recurringBills.reduce((sum, item) => sum + item.amount, 0)
 	);
-	let paidCount = $derived(data.recurrings.filter((item) => item.paid).length);
+	let totalUnpaidRecurringBills = $derived(
+		data.recurringBills.filter((item) => !item.paid).reduce((sum, item) => sum + item.amount, 0)
+	);
+	let paidCount = $derived(data.recurringBills.filter((item) => item.paid).length);
 
 	let stats = $derived<Stat[]>([
-		{ label: 'Recurring total', value: formatCurrency(totalRecurring) },
+		{ label: 'Recurring bills total', value: formatCurrency(totalRecurringBills) },
 		{
 			label: 'Left to pay',
-			value: formatCurrency(totalUnpaidRecurring),
+			value: formatCurrency(totalUnpaidRecurringBills),
 			subtext: data.isCurrentMonth ? `Unpaid as of ${unpaidAsOf}` : `Unpaid in ${periodLabel}`
 		},
 		{
 			label: 'Paid',
-			value: `${paidCount} of ${data.recurrings.length}`,
-			meter: data.recurrings.length > 0 ? (paidCount / data.recurrings.length) * 100 : 0
+			value: `${paidCount} of ${data.recurringBills.length}`,
+			meter: data.recurringBills.length > 0 ? (paidCount / data.recurringBills.length) * 100 : 0
 		}
 	]);
 </script>
 
 <svelte:head>
-	<title>Recurring</title>
+	<title>Recurring bills</title>
 </svelte:head>
 
 <MonthlyTablePageShell
-	title="Recurring"
+	title="Recurring bills"
 	subtitle={data.isCurrentMonth
 		? 'Bills and subscriptions that come around every month or year'
 		: data.isPastMonth
@@ -86,7 +88,7 @@
 		{#if data.isCurrentMonth}
 			<Button onclick={() => (openModal = true)}>
 				<PlusIcon />
-				Add recurring
+				Add recurring bill
 			</Button>
 		{/if}
 	{/snippet}
@@ -94,9 +96,9 @@
 	{#snippet tableContent()}
 		<DataTable
 			{columns}
-			data={data.recurrings}
+			data={data.recurringBills}
 			defaultPageSize={20}
-			rowClassName={getRecurringRowClass}
+			rowClassName={getRecurringBillRowClass}
 			searchPlaceholder="Search bills…"
 			emptyMessage={data.isCurrentMonth
 				? 'No recurring bills yet. Add rent, subscriptions or insurance to see what is still owed each month.'
@@ -105,4 +107,4 @@
 	{/snippet}
 </MonthlyTablePageShell>
 
-<RecurringModal bind:open={openModal} recurringForm={data.form} />
+<RecurringBillModal bind:open={openModal} recurringBillForm={data.form} />

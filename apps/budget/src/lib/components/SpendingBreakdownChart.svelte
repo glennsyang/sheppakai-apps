@@ -28,7 +28,7 @@
 		<Card.Title class="text-base tracking-tight">Spending by category</Card.Title>
 		<Card.Description>
 			{#if hasData}
-				{formatCurrency(categoryTotal)} of discretionary spending, recurring excluded.
+				{formatCurrency(categoryTotal)} of discretionary spending, recurring bills excluded.
 			{:else}
 				Where discretionary spending goes this month.
 			{/if}
