@@ -26,6 +26,13 @@ import { GET as aliasGet, POST as aliasPost } from '../transactions/+server';
 import { GET, POST } from './+server';
 
 const expense = { id: 'tx1', amount: 42.5, payee: 'Grocery Store', date: '2026-08-12' };
+const owner = {
+	id: 'user1',
+	name: 'Glenn',
+	email: 'someone@example.com',
+	role: 'admin',
+	banned: false
+};
 const body = {
 	amount: 42.5,
 	payee: 'Grocery Store',
@@ -81,6 +88,16 @@ describe('GET /api/v1/expenses', () => {
 
 		expect(await alias.json()).toEqual(await current.json());
 	});
+
+	it('returns only the owner’s id and name, never their email or role', async () => {
+		mockFindAll.mockResolvedValue([{ ...expense, user: owner }]);
+
+		const response = await call(GET, '/api/v1/expenses');
+
+		expect(await response.json()).toEqual({
+			data: [{ ...expense, user: { id: 'user1', name: 'Glenn' } }]
+		});
+	});
 });
 
 describe('POST /api/v1/expenses', () => {
@@ -97,6 +114,16 @@ describe('POST /api/v1/expenses', () => {
 		expect(mockRequireApiKey).toHaveBeenCalledWith(expect.any(Request), 'transactions:write');
 		expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining(body), 'user1');
 		expect(mockRecordApiWrite).toHaveBeenCalledWith(expect.objectContaining({ path }));
+	});
+
+	it('returns only the owner’s id and name for the created expense', async () => {
+		mockCreate.mockResolvedValue({ ...expense, user: owner });
+
+		const response = await post(POST, '/api/v1/expenses');
+
+		expect(await response.json()).toEqual({
+			data: { ...expense, user: { id: 'user1', name: 'Glenn' } }
+		});
 	});
 
 	it('rejects an invalid body on both paths', async () => {

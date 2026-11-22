@@ -4,5 +4,10 @@ import { createHandleApiWrite } from '@sheppakai/shared/api-write';
 import { logger } from '#lib/server/logger.js';
 
 import { recordApiWrite } from './audit-log';
+import { withPublicUsers } from './public-user';
 
-export const handleApiWrite = createHandleApiWrite({ recordApiWrite, logger });
+const sharedHandleApiWrite = createHandleApiWrite({ recordApiWrite, logger });
+
+/** The shared write envelope, with each record's `user` cut down to `id` and `name`. */
+export const handleApiWrite: typeof sharedHandleApiWrite = (context, perform, options) =>
+	sharedHandleApiWrite(context, async () => withPublicUsers(await perform()), options);

@@ -18,6 +18,9 @@ Budget's API is intentionally **shared-household**, not user-isolated:
 
 This is intentional for the budget app's collaborative household model.
 
+Records that belong to someone include their owner as `user`, with only `id` and `name`. Email, role
+and ban details are never returned (`src/lib/server/api/public-user.ts`).
+
 ## Scopes
 
 | Scope                           | Grants                                                                                  |
