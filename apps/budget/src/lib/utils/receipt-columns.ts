@@ -1,9 +1,9 @@
 import type { ColumnDef } from '@tanstack/table-core';
 
-import type { Transaction } from '#lib';
+import type { Expense } from '#lib';
 import DataTableSortButton from '#lib/components/DataTableSortButton.svelte';
+import ExpenseRowActions from '#lib/components/ExpenseRowActions.svelte';
 import { moneyCell } from '#lib/components/table/cells.js';
-import TransactionRowActions from '#lib/components/TransactionRowActions.svelte';
 import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
 import { formatCurrency } from '#lib/utils.js';
 import { formatLocalTimestamp } from '#lib/utils/dates.js';
@@ -11,7 +11,7 @@ import { formatLocalTimestamp } from '#lib/utils/dates.js';
 export function createReceiptColumns(
 	actionUrl: string,
 	deleteMessage: string
-): ColumnDef<Features, Transaction>[] {
+): ColumnDef<Features, Expense>[] {
 	return [
 		{
 			accessorKey: 'date',
@@ -67,9 +67,9 @@ export function createReceiptColumns(
 		{
 			id: 'actions',
 			cell: ({ row }) =>
-				renderComponent(TransactionRowActions, {
+				renderComponent(ExpenseRowActions, {
 					id: row.original.id,
-					transactionData: row.original,
+					expenseData: row.original,
 					actionUrl,
 					deleteMessage
 				})

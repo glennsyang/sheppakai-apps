@@ -12,7 +12,7 @@ import type * as schema from '../schema';
 type Schema = ExtractTablesWithRelations<typeof schema>;
 type QueryConfig<T extends TableName> = DBQueryConfig<'many', true, Schema, Schema[T]>;
 
-/** Relational-query key of a table, e.g. `'transaction'` — the keys of `db.query`. */
+/** Relational-query key of a table, e.g. `'expense'` — the keys of `db.query`. */
 export type TableName = keyof Schema;
 /** Tables with an `id` primary key — the only ones `findById` makes sense for. */
 type IdTableName = {

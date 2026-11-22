@@ -3,7 +3,7 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 import { generateId } from '../utils';
 import budget from './budget';
-import expense from './transaction';
+import expense from './expense';
 
 const user = sqliteTable('users', {
 	id: text('id').primaryKey().$defaultFn(generateId),

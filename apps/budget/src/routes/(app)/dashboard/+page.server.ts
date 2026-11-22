@@ -1,7 +1,7 @@
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import { dashboardVisibilitySchema, transactionSchema } from '#lib/formSchemas/index.js';
+import { dashboardVisibilitySchema, expenseSchema } from '#lib/formSchemas/index.js';
 import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { loadMonthlyDashboard, loadYearlyDashboard } from '#lib/server/dashboard/summary.js';
@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const user = getUser(locals);
 	const mode = url.searchParams.get('mode') === 'yearly' ? 'yearly' : 'monthly';
 
-	const transactionForm = await superValidate(zod4(transactionSchema));
+	const expenseForm = await superValidate(zod4(expenseSchema));
 
 	try {
 		const [dashboardData, hiddenSections] = await Promise.all([
@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			zod4(dashboardVisibilitySchema)
 		);
 
-		return { ...dashboardData, hiddenSections, dashboardVisibilityForm, transactionForm };
+		return { ...dashboardData, hiddenSections, dashboardVisibilityForm, expenseForm };
 	} catch (error) {
 		logger.error('Failed to load dashboard:', error);
 		const hiddenSections: string[] = [];
@@ -39,7 +39,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			mode,
 			hiddenSections,
 			dashboardVisibilityForm,
-			transactionForm,
+			expenseForm,
 			loadError: 'Failed to load dashboard. Please try refreshing the page.'
 		};
 	}

@@ -5,22 +5,22 @@
 	import XIcon from '@lucide/svelte/icons/x';
 	import type { z } from 'zod';
 
-	import type { Budget, Transaction } from '#lib';
+	import type { Budget, Expense } from '#lib';
 	import CategoryBudgetProgress from '#lib/components/CategoryBudgetProgress.svelte';
 	import type { Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import ExpenseModal from '#lib/components/ExpenseModal.svelte';
 	import MonthlyTablePageShell from '#lib/components/MonthlyTablePageShell.svelte';
 	import ReceiptScanButton from '#lib/components/ReceiptScanButton.svelte';
-	import TransactionModal from '#lib/components/TransactionModal.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { DataTable } from '#lib/components/ui/data-table/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
-	import { getCategoriesContext, transactionFormContext } from '#lib/contexts/index.js';
-	import type { transactionSchema } from '#lib/formSchemas/index.js';
+	import { getCategoriesContext, expenseFormContext } from '#lib/contexts/index.js';
+	import type { expenseSchema } from '#lib/formSchemas/index.js';
 	import { formatCurrency, monthNames } from '#lib/utils.js';
 	import { categoryColorMap } from '#lib/utils/categoryColors.js';
 	import { formatDayHeading } from '#lib/utils/dates.js';
+	import { calculateExpenseSummary } from '#lib/utils/expense-summary.js';
 	import { useMonthYearParams } from '#lib/utils/monthYearParams.svelte.js';
-	import { calculateTransactionSummary } from '#lib/utils/transaction-summary.js';
 
 	import type { PageProps } from './$types';
 	import { createColumns } from './columns';
@@ -29,12 +29,12 @@
 
 	// svelte-ignore state_referenced_locally
 	if (data.form) {
-		transactionFormContext.set(data.form);
+		expenseFormContext.set(data.form);
 	}
 
 	let openModal = $state<boolean>(false);
 	// Set by a receipt scan so the modal opens prefilled; cleared for a blank "Add".
-	let scanInitialData = $state<Partial<z.infer<typeof transactionSchema>>>();
+	let scanInitialData = $state<Partial<z.infer<typeof expenseSchema>>>();
 
 	// svelte-ignore state_referenced_locally
 	let searchInput = $state(data.searchQuery ?? '');
@@ -50,7 +50,7 @@
 		if (debounceTimer) clearTimeout(debounceTimer);
 	});
 
-	// Matches the longest searchable transaction field max length defined in the transaction
+	// Matches the longest searchable expense field max length defined in the expense
 	// schema. Payee is capped at 100 characters, but notes can be up to 800 characters, so the
 	// search query must allow up to 800 characters to avoid truncating valid note searches before
 	// they reach the server.
@@ -83,9 +83,9 @@
 	let categoryColors = $derived(categoryColorMap(categories()));
 	let columns = $derived(createColumns(categoryColors));
 
-	// Excluded transactions stay listed but read as secondary to the budgeted ones.
-	function getTransactionRowClass(transaction: Transaction) {
-		return transaction.excludedFromBudget ? 'text-muted-foreground' : '';
+	// Excluded expenses stay listed but read as secondary to the budgeted ones.
+	function getExpenseRowClass(expense: Expense) {
+		return expense.excludedFromBudget ? 'text-muted-foreground' : '';
 	}
 
 	// Sort budgets alphabetically by category name
@@ -101,20 +101,16 @@
 
 	let subtitle = $derived.by(() => {
 		if (data.searchQuery) {
-			const n = data.transactions.length;
+			const n = data.expenses.length;
 			const more = data.searchLimitReached ? ' (first results only, refine to see more)' : '';
 			return `${n} ${n === 1 ? 'result' : 'results'} for “${data.searchQuery}” across all months${more}`;
 		}
-		const n = data.transactions.length;
+		const n = data.expenses.length;
 		return `${n} ${n === 1 ? 'expense' : 'expenses'} in ${periodLabel}`;
 	});
 
 	let summary = $derived(
-		calculateTransactionSummary(
-			data.transactions,
-			data.yearlyTransactions,
-			data.completedMonthsSinceJanuary
-		)
+		calculateExpenseSummary(data.expenses, data.yearlyExpenses, data.completedMonthsSinceJanuary)
 	);
 
 	let stats = $derived<Stat[]>([
@@ -185,10 +181,10 @@
 	{#snippet tableContent()}
 		<DataTable
 			{columns}
-			data={data.transactions}
+			data={data.expenses}
 			defaultPageSize={20}
 			searchable={false}
-			rowClassName={getTransactionRowClass}
+			rowClassName={getExpenseRowClass}
 			mobileGroupBy={(t) => formatDayHeading(t.date)}
 			emptyMessage={data.searchQuery
 				? 'No expenses match that search.'
@@ -252,9 +248,9 @@
 	{/snippet}
 </MonthlyTablePageShell>
 
-<TransactionModal
+<ExpenseModal
 	bind:open={openModal}
 	initialData={scanInitialData}
-	transactionForm={data.form}
+	expenseForm={data.form}
 	categories={categories()}
 />

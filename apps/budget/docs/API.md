@@ -111,7 +111,7 @@ Yearly-only fields include:
 - `timeRangeData[]` — `{ month, in, out, budgeted }` per chart month. `budgeted` is that month's
   category budgets plus recurring, matching the monthly `plannedExpensesTotal`.
 - `excludedExpenses[]` — `{ id, date, payee, notes, amount, categoryName }` for every
-  excluded-from-budget transaction in the calendar year, newest first. They sum to
+  excluded-from-budget expense in the calendar year, newest first. They sum to
   `excludedExpensesTotal`.
 
 ```bash

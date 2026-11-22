@@ -75,25 +75,25 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 ```typescript
 export const load: PageServerLoad = async ({ url }) => {
   const { startDate, endDate } = getMonthRangeFromUrl(url);
-  const form = await superValidate(zod4(transactionSchema));
+  const form = await superValidate(zod4(expenseSchema));
 
   try {
-    const [transactions, budgets] = await Promise.all([
-      transactionQueries.findByDateRange(startDate, endDate),
+    const [expenses, budgets] = await Promise.all([
+      expenseQueries.findByDateRange(startDate, endDate),
       budgetQueries.findByMonthYear(month, year),
     ]);
 
     return {
-      transactions,
+      expenses,
       budgets,
       form,
     };
   } catch (error) {
-    logger.error("Failed to load transactions and budgets:", error);
+    logger.error("Failed to load expenses and budgets:", error);
     return {
-      transactions: [],
+      expenses: [],
       budgets: [],
-      loadError: "Failed to load transaction data. Please try refreshing the page.",
+      loadError: "Failed to load expense data. Please try refreshing the page.",
       form,
     };
   }

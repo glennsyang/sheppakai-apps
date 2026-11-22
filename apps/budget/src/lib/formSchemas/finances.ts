@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-import type { RecurringBill, Transaction } from '#lib/types.js';
+import type { RecurringBill, Expense } from '#lib/types.js';
 import { getTodayDate } from '#lib/utils/dates.js';
 
-export const transactionSchema = z.object({
+export const expenseSchema = z.object({
 	id: z.string().optional(),
 	amount: z.number().positive('Amount must be positive'),
 	payee: z.string().min(1, 'Payee is required').max(100, 'Payee must be at most 100 characters'),
@@ -18,7 +18,7 @@ export const transactionSchema = z.object({
 });
 
 /**
- * What a receipt scan returns: the AI provider's extraction, used to prefill the transaction
+ * What a receipt scan returns: the AI provider's extraction, used to prefill the expense
  * form. Both providers (src/lib/server/receipt-scan) must produce this shape.
  */
 export const receiptScanResultSchema = z.object({
@@ -82,7 +82,7 @@ export const togglePaidSchema = z.object({
 	paid: z.boolean()
 });
 
-export function toTransactionFormData(t: Transaction): z.input<typeof transactionSchema> {
+export function toExpenseFormData(t: Expense): z.input<typeof expenseSchema> {
 	return {
 		id: t.id,
 		amount: t.amount,
@@ -96,8 +96,8 @@ export function toTransactionFormData(t: Transaction): z.input<typeof transactio
 }
 
 /** A fresh, unsaved copy of `t` for the Duplicate action: no id, dated today. */
-export function toDuplicateTransactionFormData(t: Transaction): z.input<typeof transactionSchema> {
-	return { ...toTransactionFormData(t), id: '', date: getTodayDate() };
+export function toDuplicateExpenseFormData(t: Expense): z.input<typeof expenseSchema> {
+	return { ...toExpenseFormData(t), id: '', date: getTodayDate() };
 }
 
 export function toRecurringBillFormData(r: RecurringBill): z.input<typeof recurringBillSchema> {

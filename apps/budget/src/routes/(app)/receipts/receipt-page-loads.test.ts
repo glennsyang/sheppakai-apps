@@ -8,7 +8,7 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock('#lib/server/db/queries/index.js', () => ({
-	transactionQueries: {
+	expenseQueries: {
 		findByCategory: mockState.findByCategory,
 		findByDateRangeExcludingCategory: mockState.findByDateRangeExcludingCategory
 	}
@@ -82,7 +82,7 @@ describe.each(Object.entries(loads))('receipts/%s load', (_name, load) => {
 		expect(isRedirect(caught)).toBe(true);
 	});
 
-	it('returns loadError when the transaction queries fail', async () => {
+	it('returns loadError when the expense queries fail', async () => {
 		mockState.findByCategory.mockRejectedValue(new Error('db down'));
 		mockState.findByDateRangeExcludingCategory.mockRejectedValue(new Error('db down'));
 
@@ -92,8 +92,8 @@ describe.each(Object.entries(loads))('receipts/%s load', (_name, load) => {
 		>;
 
 		expect(result.loadError).toEqual(expect.any(String));
-		expect(result.monthlyTransactions).toEqual([]);
-		expect(result.yearlyTransactions).toEqual([]);
+		expect(result.monthlyExpenses).toEqual([]);
+		expect(result.yearlyExpenses).toEqual([]);
 		expect(result.form).toBeDefined();
 		expect(mockState.loggerError).toHaveBeenCalledOnce();
 	});

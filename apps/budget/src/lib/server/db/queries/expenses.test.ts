@@ -23,14 +23,14 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 vi.mock('../schema', () => ({
-	transaction: {
-		date: 'transaction.date',
-		categoryId: 'transaction.category_id',
-		excludedFromBudget: 'transaction.excluded_from_budget',
-		gstAmount: 'transaction.gst_amount',
-		payee: 'transaction.payee',
-		notes: 'transaction.notes',
-		amount: 'transaction.amount'
+	expense: {
+		date: 'expense.date',
+		categoryId: 'expense.category_id',
+		excludedFromBudget: 'expense.excluded_from_budget',
+		gstAmount: 'expense.gst_amount',
+		payee: 'expense.payee',
+		notes: 'expense.notes',
+		amount: 'expense.amount'
 	}
 }));
 
@@ -65,37 +65,37 @@ vi.mock('./factory', () => ({
 	}
 }));
 
-import { transactionQueries } from './transactions';
+import { expenseQueries } from './expenses';
 
-describe('transactionQueries', () => {
+describe('expenseQueries', () => {
 	beforeEach(() => {
 		mockState.findAll.mockClear();
 		mockState.findAll.mockResolvedValue([]);
 	});
 
 	it('findByMonth calculates month boundaries and delegates to findByDateRange', async () => {
-		const spy = vi.spyOn(transactionQueries, 'findByDateRange').mockResolvedValue([]);
+		const spy = vi.spyOn(expenseQueries, 'findByDateRange').mockResolvedValue([]);
 
-		await transactionQueries.findByMonth(2, 2024);
+		await expenseQueries.findByMonth(2, 2024);
 
 		expect(spy).toHaveBeenCalledWith('2024-02-01', '2024-02-29');
 		spy.mockRestore();
 	});
 
 	it('findByCategory without range filters by category only', async () => {
-		await transactionQueries.findByCategory('cat-1');
+		await expenseQueries.findByCategory('cat-1');
 
 		expect(mockState.findAll).toHaveBeenCalledWith({
 			where: {
 				type: 'eq',
-				field: 'transaction.category_id',
+				field: 'expense.category_id',
 				value: 'cat-1'
 			}
 		});
 	});
 
 	it('findByCategory with range builds compound condition', async () => {
-		await transactionQueries.findByCategory('cat-2', {
+		await expenseQueries.findByCategory('cat-2', {
 			start: '2026-01-01',
 			end: '2026-01-31'
 		});
@@ -108,7 +108,7 @@ describe('transactionQueries', () => {
 	});
 
 	it('findByDateRangeExcludingCategory adds gst constraints when required', async () => {
-		await transactionQueries.findByDateRangeExcludingCategory(
+		await expenseQueries.findByDateRangeExcludingCategory(
 			'2026-01-01',
 			'2026-01-31',
 			'business',
@@ -122,11 +122,7 @@ describe('transactionQueries', () => {
 	});
 
 	it('findByDateRangeExcludingCategory omits gst constraints by default', async () => {
-		await transactionQueries.findByDateRangeExcludingCategory(
-			'2026-01-01',
-			'2026-01-31',
-			'business'
-		);
+		await expenseQueries.findByDateRangeExcludingCategory('2026-01-01', '2026-01-31', 'business');
 
 		const call = mockState.findAll.mock.lastCall;
 		expect(call).toBeDefined();
@@ -135,7 +131,7 @@ describe('transactionQueries', () => {
 	});
 
 	it('findByDateRangeIncludedInBudget enforces excludedFromBudget=false', async () => {
-		await transactionQueries.findByDateRangeIncludedInBudget('2026-01-01', '2026-01-31');
+		await expenseQueries.findByDateRangeIncludedInBudget('2026-01-01', '2026-01-31');
 
 		const call = mockState.findAll.mock.lastCall;
 		expect(call).toBeDefined();
@@ -143,13 +139,13 @@ describe('transactionQueries', () => {
 		expect(arg.where.conditions).toHaveLength(3);
 		expect(arg.where.conditions[2]).toEqual({
 			type: 'eq',
-			field: 'transaction.excluded_from_budget',
+			field: 'expense.excluded_from_budget',
 			value: false
 		});
 	});
 
 	it('findByDateRangeExcludedFromBudget enforces excludedFromBudget=true', async () => {
-		await transactionQueries.findByDateRangeExcludedFromBudget('2026-01-01', '2026-01-31');
+		await expenseQueries.findByDateRangeExcludedFromBudget('2026-01-01', '2026-01-31');
 
 		const call = mockState.findAll.mock.lastCall;
 		expect(call).toBeDefined();
@@ -157,7 +153,7 @@ describe('transactionQueries', () => {
 		expect(arg.where.conditions).toHaveLength(3);
 		expect(arg.where.conditions[2]).toEqual({
 			type: 'eq',
-			field: 'transaction.excluded_from_budget',
+			field: 'expense.excluded_from_budget',
 			value: true
 		});
 	});
@@ -177,7 +173,7 @@ describe('transactionQueries', () => {
 		}
 
 		it('builds an OR condition spanning payee and notes columns', async () => {
-			await transactionQueries.search('coffee');
+			await expenseQueries.search('coffee');
 
 			const where = getWhere();
 			expect(where.type).toBe('or');
@@ -185,15 +181,15 @@ describe('transactionQueries', () => {
 		});
 
 		it('targets the payee column first and notes column second', async () => {
-			await transactionQueries.search('coffee');
+			await expenseQueries.search('coffee');
 
 			const where = getWhere();
-			expect(where.conditions[0].values[0]).toBe('transaction.payee');
-			expect(where.conditions[1].values[0]).toBe('transaction.notes');
+			expect(where.conditions[0].values[0]).toBe('expense.payee');
+			expect(where.conditions[1].values[0]).toBe('expense.notes');
 		});
 
 		it('wraps the search term in % wildcards for a contains match', async () => {
-			await transactionQueries.search('coffee');
+			await expenseQueries.search('coffee');
 
 			const where = getWhere();
 			expect(where.conditions[0].values[1]).toBe('%coffee%');
@@ -201,7 +197,7 @@ describe('transactionQueries', () => {
 		});
 
 		it('includes an ESCAPE clause in both SQL conditions', async () => {
-			await transactionQueries.search('coffee');
+			await expenseQueries.search('coffee');
 
 			const where = getWhere();
 			for (const condition of where.conditions) {
@@ -211,7 +207,7 @@ describe('transactionQueries', () => {
 		});
 
 		it('escapes % to prevent wildcard injection', async () => {
-			await transactionQueries.search('100%off');
+			await expenseQueries.search('100%off');
 
 			const where = getWhere();
 			expect(where.conditions[0].values[1]).toBe(String.raw`%100\%off%`);
@@ -219,7 +215,7 @@ describe('transactionQueries', () => {
 		});
 
 		it('escapes _ to prevent single-character wildcard injection', async () => {
-			await transactionQueries.search('a_b');
+			await expenseQueries.search('a_b');
 
 			const where = getWhere();
 			expect(where.conditions[0].values[1]).toBe(String.raw`%a\_b%`);
@@ -227,7 +223,7 @@ describe('transactionQueries', () => {
 		});
 
 		it('escapes backslashes to prevent corruption of the LIKE escape sequence', async () => {
-			await transactionQueries.search(String.raw`a\b`);
+			await expenseQueries.search(String.raw`a\b`);
 
 			const where = getWhere();
 			expect(where.conditions[0].values[1]).toBe(String.raw`%a\\b%`);
@@ -235,7 +231,7 @@ describe('transactionQueries', () => {
 		});
 
 		it('handles all three special characters in a single query', async () => {
-			await transactionQueries.search(String.raw`50%_off\deal`);
+			await expenseQueries.search(String.raw`50%_off\deal`);
 
 			const where = getWhere();
 			expect(where.conditions[0].values[1]).toBe(String.raw`%50\%\_off\\deal%`);
@@ -243,7 +239,7 @@ describe('transactionQueries', () => {
 		});
 
 		it('caps the query at 200 rows', async () => {
-			await transactionQueries.search('coffee');
+			await expenseQueries.search('coffee');
 
 			const call = mockState.findAll.mock.lastCall;
 			expect(call).toBeDefined();
@@ -254,25 +250,25 @@ describe('transactionQueries', () => {
 			const rows = makeRows(199);
 			mockState.findAll.mockResolvedValue(rows);
 
-			const result = await transactionQueries.search('coffee');
+			const result = await expenseQueries.search('coffee');
 
-			expect(result.transactions).toEqual(rows);
+			expect(result.expenses).toEqual(rows);
 			expect(result.limitReached).toBe(false);
 		});
 
 		it('flags limitReached when the result set fills the cap', async () => {
 			mockState.findAll.mockResolvedValue(makeRows(200));
 
-			const result = await transactionQueries.search('coffee');
+			const result = await expenseQueries.search('coffee');
 
 			expect(result.limitReached).toBe(true);
 		});
 	});
 });
 
-describe('transactionQueries.sumByCategoryMonth', () => {
+describe('expenseQueries.sumByCategoryMonth', () => {
 	it('filters to the date range and budget-counted rows, grouped by category and month', async () => {
-		const result = await transactionQueries.sumByCategoryMonth('2026-01-01', '2026-03-31');
+		const result = await expenseQueries.sumByCategoryMonth('2026-01-01', '2026-03-31');
 
 		const where = mockAggregate.where.mock.lastCall![0] as {
 			type: string;
@@ -283,10 +279,10 @@ describe('transactionQueries.sumByCategoryMonth', () => {
 		expect(where.conditions[1].values).toContain('2026-03-31');
 		expect(where.conditions[2]).toEqual({
 			type: 'eq',
-			field: 'transaction.excluded_from_budget',
+			field: 'expense.excluded_from_budget',
 			value: false
 		});
-		expect(mockAggregate.groupBy.mock.lastCall![0]).toBe('transaction.category_id');
+		expect(mockAggregate.groupBy.mock.lastCall![0]).toBe('expense.category_id');
 		expect(result).toEqual([{ categoryId: 'cat-1', month: '03', year: '2026', total: 42 }]);
 	});
 });

@@ -10,7 +10,7 @@
 	function averagePerMonth(yearlyTotalAmount: number) {
 		const completedMonthsSinceJanuary = data.completedMonthsSinceJanuary ?? 0;
 		const average =
-			data.yearlyTransactions.length === 0 || completedMonthsSinceJanuary <= 0
+			data.yearlyExpenses.length === 0 || completedMonthsSinceJanuary <= 0
 				? null
 				: yearlyTotalAmount / completedMonthsSinceJanuary;
 
@@ -31,8 +31,8 @@
 	{columns}
 	amountLabel="Fuel"
 	addLabel="Add fuel receipt"
-	monthlyTransactions={data.monthlyTransactions}
-	yearlyTransactions={data.yearlyTransactions}
+	monthlyExpenses={data.monthlyExpenses}
+	yearlyExpenses={data.yearlyExpenses}
 	form={data.form}
 	loadError={data.loadError}
 	yearlyExtra={averagePerMonth}

@@ -22,7 +22,7 @@ export type {
 	SpendingBreakdownData,
 	SpendingSpike,
 	TimeRangeInOutData,
-	Transaction,
+	Expense,
 	User,
 	AdminSessionSummary,
 	UserWithSessions,

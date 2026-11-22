@@ -56,7 +56,7 @@ describe('sendWeeklySummaryEmail', () => {
 				}
 			],
 			nearLimitCategories: [],
-			excludedTransactions: []
+			excludedExpenses: []
 		});
 
 		const html = sentHtml();
@@ -71,7 +71,7 @@ describe('sendWeeklySummaryEmail', () => {
 			monthLabel: 'August 2026',
 			overBudgetCategories: [],
 			nearLimitCategories: [],
-			excludedTransactions: []
+			excludedExpenses: []
 		});
 
 		const html = sentHtml();
@@ -79,14 +79,14 @@ describe('sendWeeklySummaryEmail', () => {
 		expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
 	});
 
-	it('lists excluded transactions with escaped payee and category', async () => {
+	it('lists excluded expenses with escaped payee and category', async () => {
 		await sendWeeklySummaryEmail({
 			to: 'user@example.com',
 			name: 'Glenn',
 			monthLabel: 'August 2026',
 			overBudgetCategories: [],
 			nearLimitCategories: [],
-			excludedTransactions: [
+			excludedExpenses: [
 				{
 					date: '2026-08-03',
 					payee: '<b>Airline</b>',
@@ -104,14 +104,14 @@ describe('sendWeeklySummaryEmail', () => {
 		expect(html).toContain('&lt;i&gt;Travel&lt;/i&gt;');
 	});
 
-	it('shows only the date for excluded transactions stored with a time', async () => {
+	it('shows only the date for excluded expenses stored with a time', async () => {
 		await sendWeeklySummaryEmail({
 			to: 'user@example.com',
 			name: 'Glenn',
 			monthLabel: 'August 2026',
 			overBudgetCategories: [],
 			nearLimitCategories: [],
-			excludedTransactions: [
+			excludedExpenses: [
 				{
 					date: '2026-08-03 14:22:05',
 					payee: 'Airline',
@@ -133,7 +133,7 @@ describe('sendWeeklySummaryEmail', () => {
 			monthLabel: 'August 2026',
 			overBudgetCategories: [],
 			nearLimitCategories: [],
-			excludedTransactions: []
+			excludedExpenses: []
 		});
 
 		expect(sentHtml()).toContain('No expenses were excluded from the budget this month.');

@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
 	budgetFindMany: vi.fn<() => Promise<unknown[]>>(),
-	transactionSpendTotal: vi.fn<() => Promise<unknown[]>>(),
-	transactionFindFirst: vi.fn<() => Promise<unknown>>(),
+	expenseSpendTotal: vi.fn<() => Promise<unknown[]>>(),
+	expenseFindFirst: vi.fn<() => Promise<unknown>>(),
 	sendBudgetAlerts: vi.fn<() => Promise<boolean>>(),
 	loggerInfo: vi.fn<() => void>(),
 	loggerError: vi.fn<() => void>()
@@ -11,13 +11,13 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock('#lib/server/db/index.js', () => ({
 	getDb: () => ({
-		select: () => ({ from: () => ({ where: mockState.transactionSpendTotal }) }),
+		select: () => ({ from: () => ({ where: mockState.expenseSpendTotal }) }),
 		query: {
 			budget: {
 				findMany: mockState.budgetFindMany
 			},
-			transaction: {
-				findFirst: mockState.transactionFindFirst
+			expense: {
+				findFirst: mockState.expenseFindFirst
 			}
 		}
 	})
@@ -35,9 +35,9 @@ vi.mock('./index', () => ({
 }));
 
 import {
-	buildTransactionBudgetAlertUpdateContext,
-	evaluateCreatedTransactionBudgetAlert,
-	evaluateUpdatedTransactionBudgetAlert,
+	buildExpenseBudgetAlertUpdateContext,
+	evaluateCreatedExpenseBudgetAlert,
+	evaluateUpdatedExpenseBudgetAlert,
 	getBudgetThresholdAlertType,
 	getBudgetThresholdState
 } from './budget-threshold-alerts';
@@ -45,8 +45,8 @@ import {
 describe('budget-threshold-alerts', () => {
 	beforeEach(() => {
 		mockState.budgetFindMany.mockReset();
-		mockState.transactionSpendTotal.mockReset();
-		mockState.transactionFindFirst.mockReset();
+		mockState.expenseSpendTotal.mockReset();
+		mockState.expenseFindFirst.mockReset();
 		mockState.sendBudgetAlerts.mockReset();
 		mockState.loggerInfo.mockReset();
 		mockState.loggerError.mockReset();
@@ -71,9 +71,9 @@ describe('budget-threshold-alerts', () => {
 
 	it('sends a 90 percent alert when a create crosses into the near-threshold range', async () => {
 		mockState.budgetFindMany.mockResolvedValue([{ amount: 100, category: { name: 'Groceries' } }]);
-		mockState.transactionSpendTotal.mockResolvedValue([{ total: 90 }]);
+		mockState.expenseSpendTotal.mockResolvedValue([{ total: 90 }]);
 
-		await evaluateCreatedTransactionBudgetAlert({
+		await evaluateCreatedExpenseBudgetAlert({
 			id: 'tx-1',
 			userId: 'user-1',
 			categoryId: 'cat-1',
@@ -91,9 +91,9 @@ describe('budget-threshold-alerts', () => {
 
 	it('sends only the over-budget alert when a create jumps from below 90 to above 100', async () => {
 		mockState.budgetFindMany.mockResolvedValue([{ amount: 100, category: { name: 'Groceries' } }]);
-		mockState.transactionSpendTotal.mockResolvedValue([{ total: 110 }]);
+		mockState.expenseSpendTotal.mockResolvedValue([{ total: 110 }]);
 
-		await evaluateCreatedTransactionBudgetAlert({
+		await evaluateCreatedExpenseBudgetAlert({
 			id: 'tx-2',
 			userId: 'user-1',
 			categoryId: 'cat-1',
@@ -111,9 +111,9 @@ describe('budget-threshold-alerts', () => {
 
 	it('skips notifications when no budget exists for the category-month', async () => {
 		mockState.budgetFindMany.mockResolvedValue([]);
-		mockState.transactionSpendTotal.mockResolvedValue([{ total: 25 }]);
+		mockState.expenseSpendTotal.mockResolvedValue([{ total: 25 }]);
 
-		await evaluateCreatedTransactionBudgetAlert({
+		await evaluateCreatedExpenseBudgetAlert({
 			id: 'tx-3',
 			userId: 'user-1',
 			categoryId: 'cat-1',
@@ -125,8 +125,8 @@ describe('budget-threshold-alerts', () => {
 		expect(mockState.sendBudgetAlerts).not.toHaveBeenCalled();
 	});
 
-	it('skips threshold alerts for transactions marked as excluded from budget', async () => {
-		await evaluateCreatedTransactionBudgetAlert({
+	it('skips threshold alerts for expenses marked as excluded from budget', async () => {
+		await evaluateCreatedExpenseBudgetAlert({
 			id: 'tx-3b',
 			userId: 'user-1',
 			categoryId: 'cat-1',
@@ -138,8 +138,8 @@ describe('budget-threshold-alerts', () => {
 		expect(mockState.sendBudgetAlerts).not.toHaveBeenCalled();
 	});
 
-	it('passes through the previous transaction snapshot for update evaluation', async () => {
-		mockState.transactionFindFirst.mockResolvedValue({
+	it('passes through the previous expense snapshot for update evaluation', async () => {
+		mockState.expenseFindFirst.mockResolvedValue({
 			id: 'tx-4',
 			userId: 'user-1',
 			categoryId: 'cat-1',
@@ -148,10 +148,10 @@ describe('budget-threshold-alerts', () => {
 			excludedFromBudget: false
 		});
 
-		const result = await buildTransactionBudgetAlertUpdateContext('tx-4');
+		const result = await buildExpenseBudgetAlertUpdateContext('tx-4');
 
 		expect(result).toEqual({
-			previousTransaction: {
+			previousExpense: {
 				id: 'tx-4',
 				userId: 'user-1',
 				categoryId: 'cat-1',
@@ -164,16 +164,16 @@ describe('budget-threshold-alerts', () => {
 
 	it('sends a 90 percent alert when an update increases spend in the same bucket across the threshold', async () => {
 		mockState.budgetFindMany.mockResolvedValue([{ amount: 100, category: { name: 'Groceries' } }]);
-		mockState.transactionSpendTotal.mockResolvedValue([{ total: 95 }]);
+		mockState.expenseSpendTotal.mockResolvedValue([{ total: 95 }]);
 
-		await evaluateUpdatedTransactionBudgetAlert(
+		await evaluateUpdatedExpenseBudgetAlert(
 			{
 				amount: 15,
 				categoryId: 'cat-1',
 				date: '2026-03-10 08:15:00'
 			},
 			{
-				previousTransaction: {
+				previousExpense: {
 					id: 'tx-5',
 					userId: 'user-1',
 					categoryId: 'cat-1',
@@ -191,18 +191,18 @@ describe('budget-threshold-alerts', () => {
 		);
 	});
 
-	it('evaluates the new bucket only when an update moves a transaction to another category-month', async () => {
+	it('evaluates the new bucket only when an update moves an expense to another category-month', async () => {
 		mockState.budgetFindMany.mockResolvedValue([{ amount: 100, category: { name: 'Dining Out' } }]);
-		mockState.transactionSpendTotal.mockResolvedValue([{ total: 105 }]);
+		mockState.expenseSpendTotal.mockResolvedValue([{ total: 105 }]);
 
-		await evaluateUpdatedTransactionBudgetAlert(
+		await evaluateUpdatedExpenseBudgetAlert(
 			{
 				amount: 25,
 				categoryId: 'cat-2',
 				date: '2026-04-01 09:00:00'
 			},
 			{
-				previousTransaction: {
+				previousExpense: {
 					id: 'tx-6',
 					userId: 'user-1',
 					categoryId: 'cat-1',
@@ -225,10 +225,10 @@ describe('budget-threshold-alerts', () => {
 		expect(getBudgetThresholdState(0, 0)).toBe('below');
 	});
 
-	it('logs an error and returns early when previousTransaction context is missing', async () => {
-		await evaluateUpdatedTransactionBudgetAlert(
+	it('logs an error and returns early when previousExpense context is missing', async () => {
+		await evaluateUpdatedExpenseBudgetAlert(
 			{ amount: 20, categoryId: 'cat-1', date: '2026-03-15 10:00:00' },
-			{ previousTransaction: null }
+			{ previousExpense: null }
 		);
 
 		expect(mockState.loggerError).toHaveBeenCalled();
@@ -236,7 +236,7 @@ describe('budget-threshold-alerts', () => {
 	});
 
 	it('logs an error and returns early when context is undefined', async () => {
-		await evaluateUpdatedTransactionBudgetAlert({
+		await evaluateUpdatedExpenseBudgetAlert({
 			amount: 20,
 			categoryId: 'cat-1',
 			date: '2026-03-15 10:00:00'

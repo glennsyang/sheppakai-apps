@@ -32,7 +32,7 @@ const DEFAULT_CRUD_MESSAGES = {
  * Get the message text for a CRUD operation.
  *
  * @param operation - The CRUD operation type
- * @param entityName - The entity name (e.g., "Transaction", "Category")
+ * @param entityName - The entity name (e.g., "Expense", "Category")
  * @param customMessages - Optional custom messages to override defaults
  * @returns The message text
  */

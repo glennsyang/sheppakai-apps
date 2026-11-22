@@ -10,7 +10,7 @@ import {
 	type MonthEndForecastInput
 } from './forecast';
 
-/** One transaction per day for the whole 91-day baseline window before `monthStart`. */
+/** One expense per day for the whole 91-day baseline window before `monthStart`. */
 function dailyBaseline(monthStart: string, amountForWeek: (week: number) => number) {
 	const { startDate } = getBaselineRange(monthStart);
 	const start = Date.parse(`${startDate}T00:00:00Z`);
@@ -21,7 +21,7 @@ function dailyBaseline(monthStart: string, amountForWeek: (week: number) => numb
 }
 
 const baseInput: MonthEndForecastInput = {
-	baselineTransactions: dailyBaseline('2026-10-01', () => 700), // $100/day
+	baselineExpenses: dailyBaseline('2026-10-01', () => 700), // $100/day
 	monthStart: '2026-10-01',
 	daysInMonth: 31,
 	currentDay: 10,
@@ -62,7 +62,7 @@ describe('weeklyTotals', () => {
 		expect(totals[12]).toBe(30);
 	});
 
-	it('drops weeks before the first transaction', () => {
+	it('drops weeks before the first expense', () => {
 		expect(weeklyTotals([{ date: '2026-09-20', amount: 50 }], '2026-10-01')).toEqual([50, 0]);
 	});
 });
@@ -93,7 +93,7 @@ describe('computeMonthEndForecast', () => {
 	it('orders the band low ≤ mid ≤ high from the baseline quartiles', () => {
 		const forecast = computeMonthEndForecast({
 			...baseInput,
-			baselineTransactions: dailyBaseline('2026-10-01', (week) => 350 + week * 100)
+			baselineExpenses: dailyBaseline('2026-10-01', (week) => 350 + week * 100)
 		});
 		const { low, mid, high } = forecast.discretionaryEnd;
 		expect(low).toBeLessThan(mid);
@@ -105,7 +105,7 @@ describe('computeMonthEndForecast', () => {
 	it("falls back to this month's pace with no band when history is short", () => {
 		const forecast = computeMonthEndForecast({
 			...baseInput,
-			baselineTransactions: [{ date: '2026-09-25', amount: 300 }]
+			baselineExpenses: [{ date: '2026-09-25', amount: 300 }]
 		});
 		expect(forecast.baselineWeeks).toBe(1);
 		expect(forecast.dailyRate).toBe(200);
@@ -124,7 +124,7 @@ describe('computeMonthEndForecast', () => {
 	it.each([28, 30, 31])('projects to the end of a %i-day month', (daysInMonth) => {
 		const forecast = computeMonthEndForecast({
 			...baseInput,
-			baselineTransactions: [],
+			baselineExpenses: [],
 			daysInMonth,
 			currentDay: 14,
 			discretionarySpent: 1400

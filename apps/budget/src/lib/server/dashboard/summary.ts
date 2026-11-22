@@ -8,7 +8,7 @@ import type {
 	SavingsGoalWithEta,
 	SpendingSpike,
 	TimeRangeInOutData,
-	Transaction
+	Expense
 } from '#lib';
 import {
 	computeGoalEta,
@@ -23,7 +23,7 @@ import {
 	recurringBillQueries,
 	savingsGoalQueries,
 	savingsAccountQueries,
-	transactionQueries
+	expenseQueries
 } from '#lib/server/db/queries/index.js';
 import { contribution } from '#lib/server/db/schema/index.js';
 import { computeSpendingSpikes } from '#lib/server/insights/spending-spikes.js';
@@ -45,7 +45,7 @@ import {
 	parseYearParam
 } from '#lib/utils/dates.js';
 
-function groupExcludedByCategory(excludedExpenses: Transaction[]): ExcludedSpendCategory[] {
+function groupExcludedByCategory(excludedExpenses: Expense[]): ExcludedSpendCategory[] {
 	const totals = new Map<string, ExcludedSpendCategory>();
 
 	for (const expense of excludedExpenses) {
@@ -64,7 +64,7 @@ function groupExcludedByCategory(excludedExpenses: Transaction[]): ExcludedSpend
 }
 
 /** Lean, newest-first rows for the yearly "Not counted" sheet. */
-function toExcludedExpenseRows(excludedExpenses: Transaction[]): ExcludedExpense[] {
+function toExcludedExpenseRows(excludedExpenses: Expense[]): ExcludedExpense[] {
 	return excludedExpenses
 		.map((e) => ({
 			id: e.id,
@@ -125,8 +125,8 @@ async function loadForecastHistory(startDate: string, month: number, year: numbe
 		return getMonthDateRange(d.getMonth() + 1, d.getFullYear());
 	});
 
-	const [baselineTransactions, previousIncome] = await Promise.all([
-		transactionQueries.findByDateRangeIncludedInBudget(baseline.startDate, baseline.endDate),
+	const [baselineExpenses, previousIncome] = await Promise.all([
+		expenseQueries.findByDateRangeIncludedInBudget(baseline.startDate, baseline.endDate),
 		incomeQueries.findByDateRange(previousMonths[0].startDate, previousMonths[2].endDate)
 	]);
 
@@ -137,7 +137,7 @@ async function loadForecastHistory(startDate: string, month: number, year: numbe
 		)
 	);
 
-	return { baselineTransactions, previousMonthsIncome };
+	return { baselineExpenses, previousMonthsIncome };
 }
 
 export async function loadMonthlyDashboard(url: URL) {
@@ -158,8 +158,8 @@ export async function loadMonthlyDashboard(url: URL) {
 		savingsAccountsTotal,
 		forecastHistory
 	] = await Promise.all([
-		transactionQueries.findByDateRangeIncludedInBudget(startDate, endDate),
-		transactionQueries.findByDateRangeExcludedFromBudget(startDate, endDate),
+		expenseQueries.findByDateRangeIncludedInBudget(startDate, endDate),
+		expenseQueries.findByDateRangeExcludedFromBudget(startDate, endDate),
 		budgetQueries.findByMonthYear(month, year),
 		// Prices in effect over the 6-month chart window, so each month uses its own amounts.
 		recurringBillQueries.findHistory(chartStartKey, selectedMonthKey),
@@ -221,7 +221,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		const chartStart = historicalMonths[0].monthStart;
 
 		const [allChartTx, allChartIncome] = await Promise.all([
-			transactionQueries.findByDateRangeIncludedInBudget(chartStart, chartEnd),
+			expenseQueries.findByDateRangeIncludedInBudget(chartStart, chartEnd),
 			incomeQueries.findByDateRange(chartStart, chartEnd)
 		]);
 
@@ -298,8 +298,8 @@ export async function loadYearlyDashboard(url: URL) {
 		goalsWithProgress,
 		savingsAccountsTotal
 	] = await Promise.all([
-		transactionQueries.findByDateRangeIncludedInBudget(startDate, endDate),
-		transactionQueries.findByDateRangeExcludedFromBudget(startDate, endDate),
+		expenseQueries.findByDateRangeIncludedInBudget(startDate, endDate),
+		expenseQueries.findByDateRangeExcludedFromBudget(startDate, endDate),
 		incomeQueries.findByDateRange(startDate, endDate),
 		recurringBillQueries.findHistory(historyStartKey, toMonthKey(12, year)),
 		budgetQueries.findByYear(year),
@@ -341,7 +341,7 @@ export async function loadYearlyDashboard(url: URL) {
 		const chartEnd = monthRanges[monthRanges.length - 1].endDate;
 
 		const [allChartTx, allChartIncome] = await Promise.all([
-			transactionQueries.findByDateRangeIncludedInBudget(chartStart, chartEnd),
+			expenseQueries.findByDateRangeIncludedInBudget(chartStart, chartEnd),
 			incomeQueries.findByDateRange(chartStart, chartEnd)
 		]);
 

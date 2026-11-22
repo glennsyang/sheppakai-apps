@@ -11,10 +11,10 @@ decisions.
   sign out, email verification, and password reset
 - **Dashboard** — Visual overview of income, expenses, and budget progress
 - **Budget Management** — Set monthly budgets per category, see over-budget alerts
-- **Transactions** — Filterable expense/income table by date and category
+- **Expenses** — Filterable expense table by date and category
 - **Income Tracking** — Log and manage multiple income sources
 - **Savings Goals** — Create and track savings goals with contribution history
-- **Recurring Expenses** — Configure and auto-reset recurring monthly expenses
+- **Recurring Bills** — Configure and auto-reset recurring monthly bills
 - **Receipts** — Separate tracking for fuel and business receipts
 - **Window Cleaning** — Customer management and job tracking for a window cleaning business
 - **Weekly Email Summaries** — Automated weekly financial summary emails

@@ -1,21 +1,21 @@
-import type { Transaction } from '#lib/types.js';
+import type { Expense } from '#lib/types.js';
 
-export type TransactionSummary = {
+export type ExpenseSummary = {
 	monthlyTotal: number;
 	yearlyTotal: number;
 	monthlyAverage: number | null;
 };
 
-export function calculateTransactionSummary(
-	monthlyTransactions: Transaction[],
-	yearlyTransactions: Transaction[],
+export function calculateExpenseSummary(
+	monthlyExpenses: Expense[],
+	yearlyExpenses: Expense[],
 	completedMonths: number
-): TransactionSummary {
-	const monthlyTotal = monthlyTransactions
+): ExpenseSummary {
+	const monthlyTotal = monthlyExpenses
 		.filter((t) => !t.excludedFromBudget)
 		.reduce((sum, t) => sum + t.amount, 0);
 
-	const filteredYearly = yearlyTransactions.filter((t) => !t.excludedFromBudget);
+	const filteredYearly = yearlyExpenses.filter((t) => !t.excludedFromBudget);
 	const yearlyTotal = filteredYearly.reduce((sum, t) => sum + t.amount, 0);
 
 	const monthlyAverage =

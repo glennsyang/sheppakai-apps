@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-type MockTransaction = {
+type MockExpense = {
 	amount: number;
 	date?: string;
 	category?: unknown;
@@ -18,12 +18,12 @@ type MockBillPrice = {
 };
 type MockGoal = { id: string; status: string; targetAmount: number };
 
-const mockTransactionQueries = vi.hoisted(() => ({
+const mockExpenseQueries = vi.hoisted(() => ({
 	findByDateRangeIncludedInBudget: vi.fn<
-		(startDate?: string, endDate?: string) => Promise<MockTransaction[]>
+		(startDate?: string, endDate?: string) => Promise<MockExpense[]>
 	>(async () => []),
 	findByDateRangeExcludedFromBudget: vi.fn<
-		(startDate?: string, endDate?: string) => Promise<MockTransaction[]>
+		(startDate?: string, endDate?: string) => Promise<MockExpense[]>
 	>(async () => [])
 }));
 const mockBudgetQueries = vi.hoisted(() => ({
@@ -34,7 +34,7 @@ const mockRecurringBillQueries = vi.hoisted(() => ({
 	findHistory: vi.fn<(fromKey?: string, toKey?: string) => Promise<MockBillPrice[]>>(async () => [])
 }));
 const mockIncomeQueries = vi.hoisted(() => ({
-	findByDateRange: vi.fn<(startDate?: string, endDate?: string) => Promise<MockTransaction[]>>(
+	findByDateRange: vi.fn<(startDate?: string, endDate?: string) => Promise<MockExpense[]>>(
 		async () => []
 	)
 }));
@@ -46,7 +46,7 @@ const mockSavingsAccountQueries = vi.hoisted(() => ({
 }));
 
 vi.mock('#lib/server/db/queries/index.js', () => ({
-	transactionQueries: mockTransactionQueries,
+	expenseQueries: mockExpenseQueries,
 	budgetQueries: mockBudgetQueries,
 	recurringBillQueries: mockRecurringBillQueries,
 	incomeQueries: mockIncomeQueries,
@@ -90,11 +90,11 @@ describe('loadMonthlyDashboard', () => {
 		vi.clearAllMocks();
 		mockSavingsGoalQueries.findAll.mockResolvedValue([]);
 		mockRecurringBillQueries.findHistory.mockResolvedValue([]);
-		mockTransactionQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
+		mockExpenseQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
 	});
 
 	it('computes expense/income totals for the requested month', async () => {
-		mockTransactionQueries.findByDateRangeIncludedInBudget.mockResolvedValue([
+		mockExpenseQueries.findByDateRangeIncludedInBudget.mockResolvedValue([
 			{ amount: 100, date: '2020-06-05', category: undefined },
 			{ amount: 50, date: '2020-06-15', category: undefined }
 		]);
@@ -158,7 +158,7 @@ describe('loadMonthlyDashboard', () => {
 		});
 
 		it('returns a forecast built from the baseline window and previous income', async () => {
-			mockTransactionQueries.findByDateRangeIncludedInBudget.mockImplementation(
+			mockExpenseQueries.findByDateRangeIncludedInBudget.mockImplementation(
 				async (startDate?: string) =>
 					startDate === '2026-10-01' ? [{ amount: 1500, date: '2026-10-05' }] : []
 			);
@@ -175,7 +175,7 @@ describe('loadMonthlyDashboard', () => {
 				new URL('https://example.com/dashboard?month=10&year=2026')
 			);
 
-			expect(mockTransactionQueries.findByDateRangeIncludedInBudget).toHaveBeenCalledWith(
+			expect(mockExpenseQueries.findByDateRangeIncludedInBudget).toHaveBeenCalledWith(
 				'2026-07-02',
 				'2026-09-30'
 			);
@@ -194,11 +194,11 @@ describe('loadYearlyDashboard', () => {
 		vi.clearAllMocks();
 		mockSavingsGoalQueries.findAll.mockResolvedValue([]);
 		mockRecurringBillQueries.findHistory.mockResolvedValue([]);
-		mockTransactionQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
+		mockExpenseQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
 	});
 
 	it('computes expense/income totals for the requested year', async () => {
-		mockTransactionQueries.findByDateRangeIncludedInBudget.mockResolvedValue([
+		mockExpenseQueries.findByDateRangeIncludedInBudget.mockResolvedValue([
 			{ amount: 1200, date: '2020-03-15', category: undefined }
 		]);
 		mockIncomeQueries.findByDateRange.mockResolvedValue([{ amount: 6000, date: '2020-03-10' }]);
@@ -252,8 +252,8 @@ describe('loadYearlyDashboard', () => {
 		expect(result.plannedExpensesTotal).toBe(900 + 320 + 760 + 60);
 	});
 
-	it('returns excluded transactions lean and newest first, summing to the stat', async () => {
-		mockTransactionQueries.findByDateRangeExcludedFromBudget.mockResolvedValue([
+	it('returns excluded expenses lean and newest first, summing to the stat', async () => {
+		mockExpenseQueries.findByDateRangeExcludedFromBudget.mockResolvedValue([
 			{
 				id: 't1',
 				amount: 40,
@@ -334,7 +334,7 @@ describe('getDashboardSummary', () => {
 		vi.clearAllMocks();
 		mockSavingsGoalQueries.findAll.mockResolvedValue([]);
 		mockRecurringBillQueries.findHistory.mockResolvedValue([]);
-		mockTransactionQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
+		mockExpenseQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
 	});
 
 	it('dispatches to the monthly summary by default', async () => {

@@ -18,7 +18,7 @@ web
 
 ## Product Purpose
 
-One authenticated app that runs household finances and a small side business together: transactions,
+One authenticated app that runs household finances and a small side business together: expenses,
 monthly category budgets, recurring items, income, savings goals, fuel and business receipts, and
 window-cleaning customers and jobs. Success means the household keeps logging because it's fast, and
 the numbers are trustworthy enough to act on and to use for bookkeeping.
@@ -32,7 +32,7 @@ budgeting app.
 ## Operating Context
 
 - Phone: installed PWA (`static/manifest.json`, portrait, standalone) for in-the-moment logging.
-- Desktop: weekly and monthly review of budgets, transactions, and trends.
+- Desktop: weekly and monthly review of budgets, expenses, and trends.
 - Automated weekly summary emails (Brevo) bring the user back to review.
 - External API under `src/routes/api/v1`, with scoped, revocable API keys for driving the app from
   outside tools.
@@ -47,8 +47,8 @@ budgeting app.
   must not require new inline script or style sources without review.
 - Email verification is required. Sign-up is open, but the real audience is the household.
 - Window-cleaning and receipts are first-class business records, not throwaway features.
-- Terminology in use: Transactions, Budget, Categories, Recurring, Income, Savings / Goals, Receipts
-  (Fuel, Business), Window Cleaning (Customers, Jobs).
+- Terminology in use: Expenses, Budget, Categories, Recurring bills, Income, Savings / Goals,
+  Receipts (Fuel, Business), Window Cleaning (Customers, Jobs).
 
 ## Brand Commitments
 

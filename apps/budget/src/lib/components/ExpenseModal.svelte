@@ -10,15 +10,15 @@
 	import { Input } from '#lib/components/ui/input/index.js';
 	import * as Select from '#lib/components/ui/select/index.js';
 	import { Textarea } from '#lib/components/ui/textarea/index.js';
-	import type { transactionSchema } from '#lib/formSchemas/index.js';
+	import type { expenseSchema } from '#lib/formSchemas/index.js';
 	import { extractDateFromTimestamp, getTodayDate } from '#lib/utils/dates.js';
 
-	interface Props extends Omit<BaseModalProps<z.infer<typeof transactionSchema>>, 'initialData'> {
-		initialData?: Partial<z.infer<typeof transactionSchema>>;
-		/** Pre-filled copy of an existing transaction, saved as a new one. */
+	interface Props extends Omit<BaseModalProps<z.infer<typeof expenseSchema>>, 'initialData'> {
+		initialData?: Partial<z.infer<typeof expenseSchema>>;
+		/** Pre-filled copy of an existing expense, saved as a new one. */
 		isDuplicating?: boolean;
 		categories: Category[];
-		transactionForm: SuperValidated<z.infer<typeof transactionSchema>>;
+		expenseForm: SuperValidated<z.infer<typeof expenseSchema>>;
 	}
 
 	let {
@@ -27,13 +27,13 @@
 		isEditing,
 		isDuplicating,
 		categories,
-		transactionForm
+		expenseForm
 	}: Props = $props();
 
 	let sortedCategories = $derived([...categories].toSorted((a, b) => a.name.localeCompare(b.name)));
 
 	// svelte-ignore state_referenced_locally
-	const { form, errors, enhance, submitting } = superForm(transactionForm, {
+	const { form, errors, enhance, submitting } = superForm(expenseForm, {
 		resetForm: true,
 		onUpdate: ({ form }) => {
 			// Read form.message, not $message: superforms clears the store on submit and only
@@ -102,9 +102,9 @@
 
 			<div class="flex gap-4">
 				<div class="flex-3 space-y-2">
-					<label for="transaction-amount" class="text-sm font-medium">Amount</label>
+					<label for="expense-amount" class="text-sm font-medium">Amount</label>
 					<Input
-						id="transaction-amount"
+						id="expense-amount"
 						name="amount"
 						type="number"
 						inputmode="decimal"
@@ -120,9 +120,9 @@
 					{/if}
 				</div>
 				<div class="flex-2 space-y-2">
-					<label for="transaction-gst-amount" class="text-sm font-medium">GST</label>
+					<label for="expense-gst-amount" class="text-sm font-medium">GST</label>
 					<Input
-						id="transaction-gst-amount"
+						id="expense-gst-amount"
 						name="gstAmount"
 						type="number"
 						inputmode="decimal"
@@ -139,9 +139,9 @@
 			</div>
 
 			<div class="space-y-2">
-				<label for="transaction-payee" class="text-sm font-medium">Payee</label>
+				<label for="expense-payee" class="text-sm font-medium">Payee</label>
 				<Input
-					id="transaction-payee"
+					id="expense-payee"
 					name="payee"
 					bind:value={$form.payee}
 					placeholder="Who did you pay?"
@@ -154,9 +154,9 @@
 			</div>
 
 			<div class="space-y-2">
-				<label for="transaction-notes" class="text-sm font-medium">Notes</label>
+				<label for="expense-notes" class="text-sm font-medium">Notes</label>
 				<Textarea
-					id="transaction-notes"
+					id="expense-notes"
 					name="notes"
 					bind:value={$form.notes}
 					placeholder="What was this expense for?"
@@ -169,9 +169,9 @@
 			</div>
 
 			<div class="space-y-2">
-				<label for="transaction-date" class="text-sm font-medium">Date</label>
+				<label for="expense-date" class="text-sm font-medium">Date</label>
 				<Input
-					id="transaction-date"
+					id="expense-date"
 					name="date"
 					type="date"
 					bind:value={$form.date}
@@ -186,14 +186,14 @@
 			<div class="space-y-2">
 				<div class="flex items-start gap-2">
 					<input
-						id="transaction-excluded"
+						id="expense-excluded"
 						name="excludedFromBudget"
 						type="checkbox"
 						bind:checked={$form.excludedFromBudget}
 						class="border-input text-primary focus:ring-ring mt-0.5 h-4 w-4 rounded"
 					/>
 					<div>
-						<label for="transaction-excluded" class="text-sm font-medium">
+						<label for="expense-excluded" class="text-sm font-medium">
 							Exclude from monthly budget
 						</label>
 						<p class="text-muted-foreground text-xs">
@@ -204,7 +204,7 @@
 			</div>
 
 			<div class="space-y-2">
-				<label for="transaction-category" class="text-sm font-medium">Category</label>
+				<label for="expense-category" class="text-sm font-medium">Category</label>
 				<Select.Root type="single" name="categoryId" bind:value={$form.categoryId} required>
 					<Select.Trigger class="w-full {$errors.categoryId ? 'border-destructive' : ''}">
 						{$form.categoryId

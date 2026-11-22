@@ -28,7 +28,7 @@ vi.mock('#lib/server/db/queries/index.js', () => ({
 	dashboardPreferenceQueries: mockState.failingQueries,
 	recurringBillQueries: mockState.failingQueries,
 	savingsGoalQueries: mockState.failingQueries,
-	transactionQueries: mockState.failingQueries,
+	expenseQueries: mockState.failingQueries,
 	userQueries: mockState.failingQueries,
 	windowCleaningCustomerQueries: mockState.failingQueries,
 	windowCleaningJobQueries: mockState.failingQueries
@@ -82,7 +82,7 @@ const cases: LoadCase[] = [
 		fallback: {
 			budget: [],
 			historicalBudgets: [],
-			historicalTransactions: [],
+			historicalExpenses: [],
 			recurringBillsTotal: 0
 		},
 		forms: []
@@ -99,14 +99,14 @@ const cases: LoadCase[] = [
 		load: dashboardLoad,
 		path: '/dashboard',
 		fallback: { mode: 'monthly', hiddenSections: [] },
-		forms: ['dashboardVisibilityForm', 'transactionForm']
+		forms: ['dashboardVisibilityForm', 'expenseForm']
 	},
 	{
 		name: 'dashboard (yearly)',
 		load: dashboardLoad,
 		path: '/dashboard?mode=yearly',
 		fallback: { mode: 'yearly', hiddenSections: [] },
-		forms: ['dashboardVisibilityForm', 'transactionForm']
+		forms: ['dashboardVisibilityForm', 'expenseForm']
 	},
 	{
 		name: 'profile',

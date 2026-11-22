@@ -17,7 +17,7 @@ export { default as billPrice, billPriceRelations } from './billPrice';
 export { default as savingsAccount, savingsAccountRelations } from './savingsAccount';
 export { default as savingsGoal, savingsGoalRelations } from './savingsGoal';
 export { default as session, sessionRelations } from './session';
-export { default as transaction, transactionRelations } from './transaction';
+export { default as expense, expenseRelations } from './expense';
 export { default as user, userRelations } from './user';
 export { default as verification } from './verification';
 export {

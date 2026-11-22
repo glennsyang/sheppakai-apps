@@ -1,20 +1,20 @@
 <script lang="ts">
-	import type { Transaction } from '#lib';
+	import type { Expense } from '#lib';
 	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
+	import ExpenseModal from '#lib/components/ExpenseModal.svelte';
 	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
-	import TransactionModal from '#lib/components/TransactionModal.svelte';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
-	import { getCategoriesContext, transactionFormContext } from '#lib/contexts/index.js';
-	import { toDuplicateTransactionFormData, toTransactionFormData } from '#lib/formSchemas/index.js';
+	import { getCategoriesContext, expenseFormContext } from '#lib/contexts/index.js';
+	import { toDuplicateExpenseFormData, toExpenseFormData } from '#lib/formSchemas/index.js';
 
 	let {
 		id,
-		transactionData,
+		expenseData,
 		actionUrl,
 		deleteMessage
 	}: {
 		id: string;
-		transactionData: Transaction;
+		expenseData: Expense;
 		actionUrl: string;
 		deleteMessage: string;
 	} = $props();
@@ -24,27 +24,27 @@
 	let openDeleteModal = $state<boolean>(false);
 
 	const categories = getCategoriesContext();
-	const transactionForm = transactionFormContext.get();
+	const expenseForm = expenseFormContext.get();
 </script>
 
 <RowActionsMenu onEdit={() => (openEditModal = true)} onDelete={() => (openDeleteModal = true)}>
 	<DropdownMenu.Item onclick={() => (openDuplicateModal = true)}>Duplicate</DropdownMenu.Item>
 </RowActionsMenu>
 
-<TransactionModal
+<ExpenseModal
 	bind:open={openEditModal}
-	initialData={toTransactionFormData(transactionData)}
+	initialData={toExpenseFormData(expenseData)}
 	isEditing
 	categories={categories()}
-	{transactionForm}
+	{expenseForm}
 />
 
-<TransactionModal
+<ExpenseModal
 	bind:open={openDuplicateModal}
-	initialData={toDuplicateTransactionFormData(transactionData)}
+	initialData={toDuplicateExpenseFormData(expenseData)}
 	isDuplicating
 	categories={categories()}
-	{transactionForm}
+	{expenseForm}
 />
 
 <ConfirmModal

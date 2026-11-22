@@ -64,7 +64,7 @@ This repo already has a shared helper for the repeated "list page + form + serve
   create/update/delete actions given a Zod schema, a Drizzle table, an entity name, and optional
   `transformCreate`/`transformUpdate` hooks. Handles superforms validation, audit fields
   (`withAuditFieldsForCreate/Update`), and consistent success/error messages (`CrudMessages`).
-- **Query objects** per domain in `src/lib/server/db/queries` (e.g. `transactionQueries`,
+- **Query objects** per domain in `src/lib/server/db/queries` (e.g. `expenseQueries`,
   `budgetQueries`) — encapsulate the Drizzle queries for that entity (`findByDateRange`, `search`,
   etc.) rather than querying inline in `+page.server.ts`.
 - **Schemas** live in `src/lib/formSchemas/<domain>.ts`, re-exported via
@@ -103,8 +103,8 @@ This repo already has a shared helper for the repeated "list page + form + serve
   features, not demo data — treat them as first-class, not throwaway.
 - **Receipt scanning** (`src/lib/server/receipt-scan/`): the **Scan receipt** button on `/expenses`
   posts a photo to `?/scanReceipt`, which sends it to Gemini or Claude (`RECEIPT_SCAN_PROVIDER`)
-  over plain `fetch` (no SDKs) and returns the fields to prefill `TransactionModal`. Nothing saves
-  until the user confirms. Both providers implement `ReceiptExtractor` and are validated by the same
+  over plain `fetch` (no SDKs) and returns the fields to prefill `ExpenseModal`. Nothing saves until
+  the user confirms. Both providers implement `ReceiptExtractor` and are validated by the same
   `receiptScanResultSchema`; add a provider by adding one file plus an entry in `providers` in
   `index.ts`. Photos are never stored.
 - **Sentry** is wired in `hooks.server.ts` via `sentryHandle()` in the `handle` sequence, with

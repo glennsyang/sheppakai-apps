@@ -12,7 +12,7 @@ import {
 	savingsGoalSchema,
 	savingsAccountSchema,
 	signInSchema,
-	transactionSchema,
+	expenseSchema,
 	unArchiveSchema,
 	windowCleaningCustomerSchema,
 	windowCleaningJobSchema
@@ -67,9 +67,9 @@ describe('form schemas', () => {
 		).toBe(false);
 	});
 
-	it('validates transaction and income date format', () => {
+	it('validates expense and income date format', () => {
 		expect(
-			transactionSchema.safeParse({
+			expenseSchema.safeParse({
 				amount: 20,
 				payee: 'Store',
 				notes: 'Groceries',
@@ -78,7 +78,7 @@ describe('form schemas', () => {
 			}).success
 		).toBe(true);
 		expect(
-			transactionSchema.safeParse({
+			expenseSchema.safeParse({
 				amount: 20,
 				payee: 'Store',
 				notes: 'Groceries',

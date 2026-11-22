@@ -1,17 +1,17 @@
 import { z } from 'zod';
 
-import { transactionSchema } from '#lib/formSchemas/index.js';
+import { expenseSchema } from '#lib/formSchemas/index.js';
 
 // Reuses the field rules (amount positivity, payee/notes length, date format) the form
 // action already validates against, so the API and the UI can't drift on what counts as
-// a valid transaction. `id` is server-generated, never accepted from the client.
-export const apiCreateTransactionSchema = transactionSchema.omit({ id: true });
+// a valid expense. `id` is server-generated, never accepted from the client.
+export const apiCreateExpenseSchema = expenseSchema.omit({ id: true });
 
 const dateParam = z
 	.string()
 	.regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format, expected YYYY-MM-DD');
 
-export const apiTransactionListQuerySchema = z
+export const apiExpenseListQuerySchema = z
 	.object({
 		startDate: dateParam.optional(),
 		endDate: dateParam.optional(),

@@ -23,9 +23,9 @@ export {
 	recurringBillSchema,
 	togglePaidSchema,
 	toRecurringBillFormData,
-	toDuplicateTransactionFormData,
-	toTransactionFormData,
-	transactionSchema
+	toDuplicateExpenseFormData,
+	toExpenseFormData,
+	expenseSchema
 } from './finances';
 export {
 	contributionSchema,

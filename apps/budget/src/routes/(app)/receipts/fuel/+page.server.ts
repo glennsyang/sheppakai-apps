@@ -1,4 +1,4 @@
-import { transactionQueries } from '#lib/server/db/queries/index.js';
+import { expenseQueries } from '#lib/server/db/queries/index.js';
 import { logger } from '#lib/server/logger.js';
 import { getReceiptLoadContext } from '#lib/server/receipts/index.js';
 import { calculateMonthsSinceJanuary } from '#lib/utils/dates.js';
@@ -13,22 +13,22 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 	try {
 		const completedMonthsSinceJanuary = calculateMonthsSinceJanuary(year);
 
-		const [monthlyTransactions, yearlyTransactions] = await Promise.all([
-			transactionQueries.findByCategory(gasCategory.id, { start: startDate, end: endDate }),
-			transactionQueries.findByCategory(gasCategory.id, { start: yearStartDate, end: yearEndDate })
+		const [monthlyExpenses, yearlyExpenses] = await Promise.all([
+			expenseQueries.findByCategory(gasCategory.id, { start: startDate, end: endDate }),
+			expenseQueries.findByCategory(gasCategory.id, { start: yearStartDate, end: yearEndDate })
 		]);
 
 		return {
-			monthlyTransactions,
-			yearlyTransactions,
+			monthlyExpenses,
+			yearlyExpenses,
 			completedMonthsSinceJanuary,
 			form
 		};
 	} catch (error) {
 		logger.error('Failed to load fuel receipts:', error);
 		return {
-			monthlyTransactions: [],
-			yearlyTransactions: [],
+			monthlyExpenses: [],
+			yearlyExpenses: [],
 			completedMonthsSinceJanuary: 0,
 			loadError: 'Failed to load fuel receipts. Please try refreshing the page.',
 			form

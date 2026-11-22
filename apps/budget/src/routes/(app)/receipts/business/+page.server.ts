@@ -1,4 +1,4 @@
-import { transactionQueries } from '#lib/server/db/queries/index.js';
+import { expenseQueries } from '#lib/server/db/queries/index.js';
 import { logger } from '#lib/server/logger.js';
 import { getReceiptLoadContext } from '#lib/server/receipts/index.js';
 
@@ -10,9 +10,9 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 		await getReceiptLoadContext(url, categories);
 
 	try {
-		const [monthlyTransactions, yearlyTransactions] = await Promise.all([
-			transactionQueries.findByDateRangeExcludingCategory(startDate, endDate, gasCategory.id, true),
-			transactionQueries.findByDateRangeExcludingCategory(
+		const [monthlyExpenses, yearlyExpenses] = await Promise.all([
+			expenseQueries.findByDateRangeExcludingCategory(startDate, endDate, gasCategory.id, true),
+			expenseQueries.findByDateRangeExcludingCategory(
 				yearStartDate,
 				yearEndDate,
 				gasCategory.id,
@@ -20,12 +20,12 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 			)
 		]);
 
-		return { monthlyTransactions, yearlyTransactions, form };
+		return { monthlyExpenses, yearlyExpenses, form };
 	} catch (error) {
 		logger.error('Failed to load business receipts:', error);
 		return {
-			monthlyTransactions: [],
-			yearlyTransactions: [],
+			monthlyExpenses: [],
+			yearlyExpenses: [],
 			loadError: 'Failed to load business receipts. Please try refreshing the page.',
 			form
 		};

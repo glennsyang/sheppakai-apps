@@ -21,7 +21,7 @@ describe('createQueryBuilder', () => {
 		mockState.findFirst.mockResolvedValue(undefined);
 		mockState.getDb.mockReturnValue({
 			query: {
-				transaction: {
+				expense: {
 					findMany: mockState.findMany,
 					findFirst: mockState.findFirst
 				}
@@ -31,7 +31,7 @@ describe('createQueryBuilder', () => {
 
 	it('findAll uses default relations and order by when options are omitted', async () => {
 		const builder = createQueryBuilder({
-			tableName: 'transaction',
+			tableName: 'expense',
 			defaultRelations: { category: true },
 			defaultOrderBy: [{ sql: 'ORDER' }] as never[]
 		});
@@ -47,7 +47,7 @@ describe('createQueryBuilder', () => {
 
 	it('findAll allows overriding where/with/orderBy', async () => {
 		const builder = createQueryBuilder({
-			tableName: 'transaction',
+			tableName: 'expense',
 			defaultRelations: { category: true },
 			defaultOrderBy: [{ sql: 'DEFAULT' }] as never[]
 		});
@@ -67,7 +67,7 @@ describe('createQueryBuilder', () => {
 
 	it('findById includes default relations by default', async () => {
 		const builder = createQueryBuilder({
-			tableName: 'transaction',
+			tableName: 'expense',
 			defaultRelations: { category: true }
 		});
 
@@ -81,7 +81,7 @@ describe('createQueryBuilder', () => {
 
 	it('findById omits relations when withRelations is false', async () => {
 		const builder = createQueryBuilder({
-			tableName: 'transaction',
+			tableName: 'expense',
 			defaultRelations: { category: true }
 		});
 
@@ -96,7 +96,7 @@ describe('createQueryBuilder', () => {
 	it('findFirst uses default relations and supports custom where', async () => {
 		const where = vi.fn<() => unknown>();
 		const builder = createQueryBuilder({
-			tableName: 'transaction',
+			tableName: 'expense',
 			defaultRelations: { category: true }
 		});
 
@@ -110,19 +110,19 @@ describe('createQueryBuilder', () => {
 
 	it('types rows and where callbacks from the Drizzle schema', async () => {
 		const builder = createQueryBuilder({
-			tableName: 'transaction',
+			tableName: 'expense',
 			defaultRelations: { category: true }
 		});
 
 		const row = await builder.findFirst({
-			where: (transaction, { eq }) => eq(transaction.categoryId, 'c-1')
+			where: (expense, { eq }) => eq(expense.categoryId, 'c-1')
 		});
-		expectTypeOf(row).toEqualTypeOf<QueryRow<'transaction', { category: true }> | undefined>();
+		expectTypeOf(row).toEqualTypeOf<QueryRow<'expense', { category: true }> | undefined>();
 		expectTypeOf<NonNullable<typeof row>['category']['name']>().toEqualTypeOf<string>();
 
 		await builder.findFirst({
 			// @ts-expect-error -- unknown columns are a type error, not a runtime surprise
-			where: (transaction, { eq }) => eq(transaction.notAColumn, 'c-1')
+			where: (expense, { eq }) => eq(expense.notAColumn, 'c-1')
 		});
 	});
 });

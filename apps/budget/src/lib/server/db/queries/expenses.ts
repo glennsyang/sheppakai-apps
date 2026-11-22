@@ -1,9 +1,9 @@
 import { and, desc, eq, isNotNull, ne, or, sql } from 'drizzle-orm';
 
-import type { Transaction } from '#lib/types.js';
+import type { Expense } from '#lib/types.js';
 
 import { getDb } from '../index';
-import { transaction } from '../schema';
+import { expense } from '../schema';
 import { dateInRange } from '../utils';
 import { createQueryBuilder } from './factory';
 
@@ -22,78 +22,76 @@ type CategoryMonthTotal = {
 };
 
 const baseBuilder = createQueryBuilder({
-	tableName: 'transaction',
+	tableName: 'expense',
 	defaultRelations: { category: true, user: true },
-	defaultOrderBy: [desc(transaction.date)]
+	defaultOrderBy: [desc(expense.date)]
 });
 
-export const transactionQueries = {
+export const expenseQueries = {
 	...baseBuilder,
 
-	// Find by date range (most common pattern for transactions)
-	findByDateRange: async (startDate: string, endDate: string): Promise<Transaction[]> => {
+	// Find by date range (most common pattern for expenses)
+	findByDateRange: async (startDate: string, endDate: string): Promise<Expense[]> => {
 		return baseBuilder.findAll({
-			where: and(...dateInRange(transaction.date, startDate, endDate))
+			where: and(...dateInRange(expense.date, startDate, endDate))
 		});
 	},
 
-	// Find budget-counted transactions by date range.
+	// Find budget-counted expenses by date range.
 	findByDateRangeIncludedInBudget: async (
 		startDate: string,
 		endDate: string
-	): Promise<Transaction[]> => {
+	): Promise<Expense[]> => {
 		return baseBuilder.findAll({
 			where: and(
-				...dateInRange(transaction.date, startDate, endDate),
-				eq(transaction.excludedFromBudget, false)
+				...dateInRange(expense.date, startDate, endDate),
+				eq(expense.excludedFromBudget, false)
 			)
 		});
 	},
 
-	// Find excluded transactions by date range for separate reporting.
+	// Find excluded expenses by date range for separate reporting.
 	findByDateRangeExcludedFromBudget: async (
 		startDate: string,
 		endDate: string
-	): Promise<Transaction[]> => {
+	): Promise<Expense[]> => {
 		return baseBuilder.findAll({
 			where: and(
-				...dateInRange(transaction.date, startDate, endDate),
-				eq(transaction.excludedFromBudget, true)
+				...dateInRange(expense.date, startDate, endDate),
+				eq(expense.excludedFromBudget, true)
 			)
 		});
 	},
 
 	// Find by month/year (convenience method)
-	findByMonth: async (month: number, year: number): Promise<Transaction[]> => {
+	findByMonth: async (month: number, year: number): Promise<Expense[]> => {
 		const paddedMonth = String(month).padStart(2, '0');
 		const startDate = `${year}-${paddedMonth}-01`;
 		const lastDay = new Date(year, month, 0).getDate();
 		const endDate = `${year}-${paddedMonth}-${lastDay}`;
-		return transactionQueries.findByDateRange(startDate, endDate);
+		return expenseQueries.findByDateRange(startDate, endDate);
 	},
 
 	// Find by category
 	findByCategory: async (
 		categoryId: string,
 		dateRange?: { start: string; end: string }
-	): Promise<Transaction[]> => {
+	): Promise<Expense[]> => {
 		const where = dateRange
 			? and(
-					eq(transaction.categoryId, categoryId),
-					...dateInRange(transaction.date, dateRange.start, dateRange.end)
+					eq(expense.categoryId, categoryId),
+					...dateInRange(expense.date, dateRange.start, dateRange.end)
 				)
-			: eq(transaction.categoryId, categoryId);
+			: eq(expense.categoryId, categoryId);
 
 		return baseBuilder.findAll({ where });
 	},
 
-	// Search across all transactions by payee or notes (cross-month).
+	// Search across all expenses by payee or notes (cross-month).
 	// Bounded to SEARCH_RESULT_LIMIT rows to prevent unbounded full-table scans;
 	// a leading-wildcard LIKE cannot use a B-tree index. `limitReached` reports whether the
 	// cap truncated the result set so callers can warn without knowing the limit itself.
-	search: async (
-		query: string
-	): Promise<{ transactions: Transaction[]; limitReached: boolean }> => {
+	search: async (query: string): Promise<{ expenses: Expense[]; limitReached: boolean }> => {
 		// Escape LIKE wildcards (\, %, _) so user input is treated as a literal string.
 		// The ESCAPE clause tells SQLite that \ is the escape character in the pattern.
 		const escaped = query
@@ -101,14 +99,14 @@ export const transactionQueries = {
 			.replaceAll('%', String.raw`\%`)
 			.replaceAll('_', String.raw`\_`);
 		const pattern = `%${escaped}%`;
-		const transactions = await baseBuilder.findAll({
+		const expenses = await baseBuilder.findAll({
 			where: or(
-				sql`${transaction.payee} LIKE ${pattern} ESCAPE '\\'`,
-				sql`${transaction.notes} LIKE ${pattern} ESCAPE '\\'`
+				sql`${expense.payee} LIKE ${pattern} ESCAPE '\\'`,
+				sql`${expense.notes} LIKE ${pattern} ESCAPE '\\'`
 			),
 			limit: SEARCH_RESULT_LIMIT
 		});
-		return { transactions, limitReached: transactions.length >= SEARCH_RESULT_LIMIT };
+		return { expenses, limitReached: expenses.length >= SEARCH_RESULT_LIMIT };
 	},
 
 	// Find by date range excluding a specific category (for business receipts)
@@ -117,36 +115,33 @@ export const transactionQueries = {
 		endDate: string,
 		excludeCategoryId: string,
 		requireGst: boolean = false
-	): Promise<Transaction[]> => {
+	): Promise<Expense[]> => {
 		const conditions = [
-			...dateInRange(transaction.date, startDate, endDate),
-			ne(transaction.categoryId, excludeCategoryId)
+			...dateInRange(expense.date, startDate, endDate),
+			ne(expense.categoryId, excludeCategoryId)
 		];
 
 		if (requireGst) {
-			conditions.push(isNotNull(transaction.gstAmount), sql`${transaction.gstAmount} > 0`);
+			conditions.push(isNotNull(expense.gstAmount), sql`${expense.gstAmount} > 0`);
 		}
 
 		return baseBuilder.findAll({ where: and(...conditions) });
 	},
 
-	// Sum budget-counted transactions per category per month over a date range (budget history chart).
+	// Sum budget-counted expenses per category per month over a date range (budget history chart).
 	sumByCategoryMonth: async (startDate: string, endDate: string): Promise<CategoryMonthTotal[]> => {
 		return getDb()
 			.select({
-				categoryId: transaction.categoryId,
-				month: sql<string>`substr(${transaction.date}, 6, 2)`,
-				year: sql<string>`substr(${transaction.date}, 1, 4)`,
-				total: sql<number>`sum(${transaction.amount})`
+				categoryId: expense.categoryId,
+				month: sql<string>`substr(${expense.date}, 6, 2)`,
+				year: sql<string>`substr(${expense.date}, 1, 4)`,
+				total: sql<number>`sum(${expense.amount})`
 			})
-			.from(transaction)
+			.from(expense)
 			.where(
-				and(
-					...dateInRange(transaction.date, startDate, endDate),
-					eq(transaction.excludedFromBudget, false)
-				)
+				and(...dateInRange(expense.date, startDate, endDate), eq(expense.excludedFromBudget, false))
 			)
-			.groupBy(transaction.categoryId, sql`substr(${transaction.date}, 1, 7)`)
+			.groupBy(expense.categoryId, sql`substr(${expense.date}, 1, 7)`)
 			.all();
 	}
 };

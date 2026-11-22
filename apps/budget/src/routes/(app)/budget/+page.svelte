@@ -86,8 +86,8 @@
 					b.year === monthData.year
 			);
 
-			// Find transaction total for this month/category
-			const transactionForMonth = data.historicalTransactions?.find(
+			// Find expense total for this month/category
+			const expenseForMonth = data.historicalExpenses?.find(
 				(t) =>
 					t.categoryId === selectedCategoryId &&
 					t.month === monthData.month &&
@@ -97,7 +97,7 @@
 			return {
 				date: new Date(monthData.date),
 				planned: budgetForMonth?.amount || 0,
-				actual: transactionForMonth?.total || 0
+				actual: expenseForMonth?.total || 0
 			} as ChartData;
 		});
 	});
@@ -181,12 +181,12 @@
 		const prevMonthStr = padMonth(prevMonth.toString());
 		const prevYearStr = prevYear.toString();
 
-		// Find transaction total for previous month and category
-		const transaction = data.historicalTransactions?.find(
+		// Find expense total for previous month and category
+		const expense = data.historicalExpenses?.find(
 			(t) => t.categoryId === categoryId && t.month === prevMonthStr && t.year === prevYearStr
 		);
 
-		return transaction?.total || 0;
+		return expense?.total || 0;
 	}
 
 	function getLastMonthBudget(categoryId: string): number {
@@ -211,17 +211,17 @@
 	}
 
 	function getAverageSpent(categoryId: string): number {
-		// Filter transactions for this category
-		const categoryTransactions =
-			data.historicalTransactions?.filter((t) => t.categoryId === categoryId) || [];
+		// Filter expenses for this category
+		const categoryExpenses =
+			data.historicalExpenses?.filter((t) => t.categoryId === categoryId) || [];
 
-		if (categoryTransactions.length === 0) {
+		if (categoryExpenses.length === 0) {
 			return 0;
 		}
 
 		// Calculate average by summing totals and dividing by count
-		const sum = categoryTransactions.reduce((acc, t) => acc + t.total, 0);
-		const average = sum / categoryTransactions.length;
+		const sum = categoryExpenses.reduce((acc, t) => acc + t.total, 0);
+		const average = sum / categoryExpenses.length;
 
 		return Math.round(average * 100) / 100; // Round to 2 decimal places
 	}
