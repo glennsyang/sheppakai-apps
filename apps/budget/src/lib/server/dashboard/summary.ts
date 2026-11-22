@@ -2,11 +2,11 @@ import { inArray, min, sql, sum } from 'drizzle-orm';
 
 import type {
 	Budget,
-	CategoryAnomaly,
 	ExcludedExpense,
 	ExcludedSpendCategory,
 	MonthEndForecast,
 	SavingsGoalWithEta,
+	SpendingSpike,
 	TimeRangeInOutData,
 	Transaction
 } from '#lib';
@@ -26,7 +26,7 @@ import {
 	transactionQueries
 } from '#lib/server/db/queries/index.js';
 import { contribution } from '#lib/server/db/schema/index.js';
-import { computeCategoryAnomalies } from '#lib/server/insights/category-anomalies.js';
+import { computeSpendingSpikes } from '#lib/server/insights/spending-spikes.js';
 import {
 	recurringForMonth,
 	recurringTotalForMonth,
@@ -212,7 +212,7 @@ export async function loadMonthlyDashboard(url: URL) {
 	}
 
 	const monthlyInOutData: TimeRangeInOutData[] = [];
-	let categoryAnomalies: CategoryAnomaly[] = [];
+	let spendingSpikes: SpendingSpike[] = [];
 
 	if (historicalMonths.length > 0) {
 		const chartStart = historicalMonths[0].monthStart;
@@ -239,7 +239,7 @@ export async function loadMonthlyDashboard(url: URL) {
 			});
 		}
 
-		categoryAnomalies = computeCategoryAnomalies(allChartTx, historicalMonths, plannedExpenses);
+		spendingSpikes = computeSpendingSpikes(allChartTx, historicalMonths, plannedExpenses);
 	}
 
 	const netflowSparkline = monthlyInOutData.map((d) => ({ month: d.month, value: d.in - d.out }));
@@ -262,7 +262,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		monthlyInOutData,
 		netflowSparkline,
 		spendingSparkline,
-		categoryAnomalies,
+		spendingSpikes,
 		forecast,
 		goalsWithProgress,
 		totalSavings

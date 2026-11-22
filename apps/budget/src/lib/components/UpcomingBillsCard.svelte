@@ -43,7 +43,7 @@
 	function dueLabel(daysUntilDue: number): string {
 		if (daysUntilDue < 0) {
 			const overdueDays = Math.abs(daysUntilDue);
-			return `Overdue by ${overdueDays} day${overdueDays === 1 ? '' : 's'}`;
+			return `Overdue Bill · ${overdueDays} day${overdueDays === 1 ? '' : 's'}`;
 		}
 		if (daysUntilDue === 0) return 'Due today';
 		if (daysUntilDue === 1) return 'Due tomorrow';
@@ -59,11 +59,11 @@
 
 <Card.Root>
 	<Card.Header class="pb-3">
-		<Card.Title class="text-base tracking-tight">Upcoming bills</Card.Title>
+		<Card.Title class="text-base tracking-tight">Upcoming recurring bills</Card.Title>
 	</Card.Header>
 	<Card.Content class="pt-0">
 		{#if upcoming.length === 0}
-			<p class="text-muted-foreground py-4 text-center text-sm">No bills due soon</p>
+			<p class="text-muted-foreground py-4 text-center text-sm">No recurring bills due soon</p>
 		{:else}
 			<div>
 				{#each upcoming as { item, daysUntilDue }, i (item.id)}

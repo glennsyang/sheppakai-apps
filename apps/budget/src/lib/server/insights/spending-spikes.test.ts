@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Budget, Transaction } from '#lib/types.js';
 
-import { computeCategoryAnomalies, type HistoricalMonthRange } from './category-anomalies';
+import { computeSpendingSpikes, type HistoricalMonthRange } from './spending-spikes';
 
 const fixtureUser: Transaction['user'] = {
 	id: 'user-1',
@@ -79,16 +79,16 @@ function buildBudget(categoryId: string, categoryName: string, amount: number): 
 	};
 }
 
-describe('computeCategoryAnomalies', () => {
+describe('computeSpendingSpikes', () => {
 	it('flags a category spending more than 25% over its trailing average', () => {
 		const transactions = [
 			...buildPriorMonthsSpend('groceries', 'Groceries', 100),
 			buildTx('groceries', 'Groceries', 140, '2026-06-15')
 		];
 
-		const anomalies = computeCategoryAnomalies(transactions, sixMonthRange);
+		const spikes = computeSpendingSpikes(transactions, sixMonthRange);
 
-		expect(anomalies).toEqual([
+		expect(spikes).toEqual([
 			{
 				categoryId: 'groceries',
 				categoryName: 'Groceries',
@@ -105,7 +105,7 @@ describe('computeCategoryAnomalies', () => {
 			buildTx('dining', 'Dining Out', 120, '2026-06-15')
 		];
 
-		expect(computeCategoryAnomalies(transactions, sixMonthRange)).toEqual([]);
+		expect(computeSpendingSpikes(transactions, sixMonthRange)).toEqual([]);
 	});
 
 	it('ignores categories whose trailing average is below the minimum baseline', () => {
@@ -114,10 +114,10 @@ describe('computeCategoryAnomalies', () => {
 			buildTx('parking', 'Parking', 50, '2026-06-15')
 		];
 
-		expect(computeCategoryAnomalies(transactions, sixMonthRange)).toEqual([]);
+		expect(computeSpendingSpikes(transactions, sixMonthRange)).toEqual([]);
 	});
 
-	it('returns no anomalies when there is not enough prior-month history', () => {
+	it('returns no spikes when there is not enough prior-month history', () => {
 		const shortRange = sixMonthRange.slice(-3); // only 2 prior months
 		const transactions = [
 			buildTx('groceries', 'Groceries', 100, '2026-04-15'),
@@ -125,7 +125,7 @@ describe('computeCategoryAnomalies', () => {
 			buildTx('groceries', 'Groceries', 500, '2026-06-15')
 		];
 
-		expect(computeCategoryAnomalies(transactions, shortRange)).toEqual([]);
+		expect(computeSpendingSpikes(transactions, shortRange)).toEqual([]);
 	});
 
 	it('sorts by percent-over descending and caps at 5 results', () => {
@@ -139,17 +139,11 @@ describe('computeCategoryAnomalies', () => {
 			];
 		}).flat();
 
-		const anomalies = computeCategoryAnomalies(transactions, sixMonthRange);
+		const spikes = computeSpendingSpikes(transactions, sixMonthRange);
 
-		expect(anomalies).toHaveLength(5);
-		expect(anomalies.map((a) => a.categoryId)).toEqual([
-			'cat-0',
-			'cat-1',
-			'cat-2',
-			'cat-3',
-			'cat-4'
-		]);
-		expect(anomalies).toEqual([...anomalies].sort((a, b) => b.percentOver - a.percentOver));
+		expect(spikes).toHaveLength(5);
+		expect(spikes.map((a) => a.categoryId)).toEqual(['cat-0', 'cat-1', 'cat-2', 'cat-3', 'cat-4']);
+		expect(spikes).toEqual([...spikes].sort((a, b) => b.percentOver - a.percentOver));
 	});
 
 	it('does not flag a category spending at or under its budget for the current month', () => {
@@ -159,7 +153,7 @@ describe('computeCategoryAnomalies', () => {
 		];
 		const budgets = [buildBudget('groceries', 'Groceries', 140)];
 
-		expect(computeCategoryAnomalies(transactions, sixMonthRange, budgets)).toEqual([]);
+		expect(computeSpendingSpikes(transactions, sixMonthRange, budgets)).toEqual([]);
 	});
 
 	it('still flags a category that spends over both its trailing average and its budget', () => {
@@ -169,9 +163,9 @@ describe('computeCategoryAnomalies', () => {
 		];
 		const budgets = [buildBudget('groceries', 'Groceries', 120)];
 
-		const anomalies = computeCategoryAnomalies(transactions, sixMonthRange, budgets);
+		const spikes = computeSpendingSpikes(transactions, sixMonthRange, budgets);
 
-		expect(anomalies).toEqual([
+		expect(spikes).toEqual([
 			{
 				categoryId: 'groceries',
 				categoryName: 'Groceries',
@@ -188,9 +182,9 @@ describe('computeCategoryAnomalies', () => {
 			buildTx('groceries', 'Groceries', 140, '2026-06-15')
 		];
 
-		const anomalies = computeCategoryAnomalies(transactions, sixMonthRange, []);
+		const spikes = computeSpendingSpikes(transactions, sixMonthRange, []);
 
-		expect(anomalies).toEqual([
+		expect(spikes).toEqual([
 			{
 				categoryId: 'groceries',
 				categoryName: 'Groceries',

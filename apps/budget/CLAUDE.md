@@ -1,6 +1,6 @@
 # Sheppakai Budget — Claude Code Guide
 
-A personal finance tracker: transactions, category budgets, recurring transactions, savings goals,
+A personal finance tracker: expenses, category budgets, recurring bills, savings accounts and goals,
 income, receipts (fuel + business), and a side "window-cleaning" business tracker, all under one
 auth'd app.
 

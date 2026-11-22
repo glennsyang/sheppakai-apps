@@ -138,7 +138,7 @@ export type ExcludedExpense = {
 	categoryName: string;
 };
 
-export type CategoryAnomaly = {
+export type SpendingSpike = {
 	categoryId: string;
 	categoryName: string;
 	currentAmount: number;

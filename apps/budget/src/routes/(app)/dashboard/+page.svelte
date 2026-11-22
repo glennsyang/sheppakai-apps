@@ -9,7 +9,6 @@
 	import type { MonthlyNetflowData, SpendingBreakdownData } from '#lib';
 	import BudgetAlertRow from '#lib/components/BudgetAlertRow.svelte';
 	import CardGridSkeleton from '#lib/components/CardGridSkeleton.svelte';
-	import CategoryAnomalyAlert from '#lib/components/CategoryAnomalyAlert.svelte';
 	import CategoryBudgetList from '#lib/components/CategoryBudgetList.svelte';
 	import CategoryTransactionSheet from '#lib/components/CategoryTransactionSheet.svelte';
 	import DashboardCustomizePopover from '#lib/components/DashboardCustomizePopover.svelte';
@@ -23,6 +22,7 @@
 	import RecurringExpensesCard from '#lib/components/RecurringExpensesCard.svelte';
 	import SafeToSpendHeroBand from '#lib/components/SafeToSpendHeroBand.svelte';
 	import SpendingBreakdownChart from '#lib/components/SpendingBreakdownChart.svelte';
+	import SpendingSpikeAlert from '#lib/components/SpendingSpikeAlert.svelte';
 	import TransactionModal from '#lib/components/TransactionModal.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
@@ -312,7 +312,7 @@
 	// KPI sparkline data
 	let netflowSparkline = $derived(data.netflowSparkline || []);
 	let spendingSparkline = $derived(data.spendingSparkline || []);
-	let categoryAnomalies = $derived(data.categoryAnomalies || []);
+	let spendingSpikes = $derived(data.spendingSpikes || []);
 
 	// Dashboard section show/hide preferences
 	let visibleSections = $derived(
@@ -661,9 +661,9 @@
 			</div>
 		{/if}
 
-		{#if categoryAnomalies.length > 0}
+		{#if spendingSpikes.length > 0}
 			<div class="mb-4">
-				<CategoryAnomalyAlert anomalies={categoryAnomalies} onViewCategory={openCategoryDetails} />
+				<SpendingSpikeAlert spikes={spendingSpikes} onViewCategory={openCategoryDetails} />
 			</div>
 		{/if}
 
