@@ -79,7 +79,7 @@
 			if (galleryInput) galleryInput.value = '';
 
 			const { type, text } = actionMessage(result, {
-				success: 'Meal estimated.',
+				success: 'Food estimated.',
 				error: 'Estimating failed.'
 			});
 			const estimate = result.type === 'success' ? estimateFrom(result.data) : undefined;
@@ -130,7 +130,7 @@
 				variant="outline"
 				size="sm"
 				class="hidden rounded-l-none border-l-0 pointer-coarse:inline-flex"
-				aria-label="Choose a saved meal photo"
+				aria-label="Choose a saved food photo"
 				disabled={estimating}
 				onclick={() => galleryInput?.click()}
 			>

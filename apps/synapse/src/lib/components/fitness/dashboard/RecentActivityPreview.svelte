@@ -219,7 +219,7 @@
 												</Button>
 											{/snippet}
 										</Tooltip.Trigger>
-										<Tooltip.Content>Edit weight entry</Tooltip.Content>
+										<Tooltip.Content>Edit weigh-in</Tooltip.Content>
 									</Tooltip.Root>
 									<Tooltip.Root>
 										<Tooltip.Trigger>
@@ -236,7 +236,7 @@
 												</Button>
 											{/snippet}
 										</Tooltip.Trigger>
-										<Tooltip.Content>Delete weight entry</Tooltip.Content>
+										<Tooltip.Content>Delete weigh-in</Tooltip.Content>
 									</Tooltip.Root>
 								</div>
 							</li>
@@ -273,7 +273,7 @@
 												</Button>
 											{/snippet}
 										</Tooltip.Trigger>
-										<Tooltip.Content>Edit meal entry</Tooltip.Content>
+										<Tooltip.Content>Edit food entry</Tooltip.Content>
 									</Tooltip.Root>
 									<Tooltip.Root>
 										<Tooltip.Trigger>
@@ -290,7 +290,7 @@
 												</Button>
 											{/snippet}
 										</Tooltip.Trigger>
-										<Tooltip.Content>Delete meal entry</Tooltip.Content>
+										<Tooltip.Content>Delete food entry</Tooltip.Content>
 									</Tooltip.Root>
 								</div>
 							</li>

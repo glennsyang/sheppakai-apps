@@ -118,9 +118,9 @@
 	{/if}
 	<Dialog.Content class="sm:max-w-md">
 		<Dialog.Header>
-			<Dialog.Title>{isEditing ? 'Edit Weight Entry' : 'Log Weight'}</Dialog.Title>
+			<Dialog.Title>{isEditing ? 'Edit Weigh-in' : 'Log Weight'}</Dialog.Title>
 			<Dialog.Description>
-				{isEditing ? 'Update your weight entry' : 'Record your current weight'}
+				{isEditing ? 'Update your weigh-in' : 'Record your current weight'}
 			</Dialog.Description>
 		</Dialog.Header>
 		<form method="POST" action={isEditing ? '?/updateWeight' : '?/logWeight'} use:enhance>

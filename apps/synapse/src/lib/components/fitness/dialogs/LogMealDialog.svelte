@@ -79,7 +79,9 @@
 				if (open === undefined) {
 					internalOpen = false;
 				}
-				toast.success(isEditing ? 'Meal updated successfully!' : 'Meal logged successfully!');
+				toast.success(
+					isEditing ? 'Food entry updated successfully!' : 'Food entry logged successfully!'
+				);
 				onClose?.();
 			}
 			if ($message?.type === 'error') {
@@ -145,16 +147,16 @@
 			{#snippet child({ props })}
 				<Button {...props} class="bg-pen-fitness hover:bg-pen-fitness text-white">
 					<PlusIcon class="mr-2 h-4 w-4" />
-					Log Meal
+					Log Food
 				</Button>
 			{/snippet}
 		</Dialog.Trigger>
 	{/if}
 	<Dialog.Content class="sm:max-w-md">
 		<Dialog.Header>
-			<Dialog.Title>{isEditing ? 'Edit Meal' : 'Log Meal'}</Dialog.Title>
+			<Dialog.Title>{isEditing ? 'Edit Food Entry' : 'Log Food'}</Dialog.Title>
 			<Dialog.Description>
-				{isEditing ? 'Update your meal entry' : 'Record what you ate'}
+				{isEditing ? 'Update your food entry' : 'Record what you ate'}
 			</Dialog.Description>
 		</Dialog.Header>
 		{#if canEstimate}
@@ -189,10 +191,10 @@
 				</div>
 				<div class="grid grid-cols-2 gap-4">
 					<div class="grid gap-2">
-						<Label for="meal-type">Meal Type</Label>
+						<Label for="meal-type">Time of Day</Label>
 						<Select.Root type="single" name="timeOfDay" bind:value={$form.timeOfDay}>
 							<Select.Trigger id="meal-type" class="w-full">
-								{$form.timeOfDay || 'Select meal type'}
+								{$form.timeOfDay || 'Select time of day'}
 							</Select.Trigger>
 							<Select.Content>
 								<Select.Item value="breakfast" label="Breakfast">Breakfast</Select.Item>

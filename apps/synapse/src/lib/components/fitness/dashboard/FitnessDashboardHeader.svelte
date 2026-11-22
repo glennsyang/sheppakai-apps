@@ -107,7 +107,7 @@
 						onclick={() => (showLogMeal = true)}
 					>
 						<UtensilsCrossed class="mr-3 h-4 w-4" />
-						Log Meal
+						Log Food
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator />
 					<DropdownMenu.Item

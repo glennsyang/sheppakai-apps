@@ -28,7 +28,7 @@
 
 <section aria-labelledby="meals-h" class="min-w-0">
 	<div class="ruled mb-1 flex items-baseline gap-3 pb-2">
-		<h2 id="meals-h" class="text-2xl font-black tracking-tight">Today's meals</h2>
+		<h2 id="meals-h" class="text-2xl font-black tracking-tight">Today's food log</h2>
 		<span class="text-muted-foreground text-sm tabular-nums">
 			<span class="text-foreground font-black">{todayMeals.totalCalories.toLocaleString()}</span>
 			{#if todayMeals.targetCalories}

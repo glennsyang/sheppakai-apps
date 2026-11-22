@@ -202,7 +202,7 @@ export const actions = {
 	logWeight: createAction({
 		schema: logWeightSchema,
 		table: weightEntries,
-		entityName: 'Weight entry',
+		entityName: 'Weigh-in',
 		toRow: (data) => ({ date: data.date, time: data.time || null, weightLbs: data.weightLbs })
 	}),
 
@@ -313,20 +313,20 @@ export const actions = {
 	logMeal: createAction({
 		schema: logMealSchema,
 		table: mealLogs,
-		entityName: 'Meal',
+		entityName: 'Food entry',
 		toRow: toMealRow
 	}),
 
 	/**
 	 * Estimates a meal from a photo and/or note with the configured AI provider and returns it as
-	 * the form's data. Nothing is saved: Log Meal prefills its fields for review.
+	 * the form's data. Nothing is saved: Log Food prefills its fields for review.
 	 */
 	estimateMeal: requireAuth(async (event, user) => {
 		const emptyForm = await superValidate(zod4(mealEstimateResultSchema));
 		const fail = (text: string, status: 400 | 413 | 422 | 429 | 502 | 503) =>
 			message(emptyForm, { type: 'error', text }, { status });
 
-		if (!isMealEstimateEnabled()) return fail('Meal estimates are not set up.', 503);
+		if (!isMealEstimateEnabled()) return fail('Food estimates are not set up.', 503);
 
 		const limit = await estimateLimiter.check(event, { userId: user.id });
 		if (limit.limited) {
@@ -347,7 +347,7 @@ export const actions = {
 		const note = typeof noteValue === 'string' ? noteValue.trim() : '';
 		const hasPhoto = photo instanceof File && photo.size > 0;
 
-		if (!hasPhoto && !note) return fail('Add a photo or describe the meal first.', 400);
+		if (!hasPhoto && !note) return fail('Add a photo or describe what you ate first.', 400);
 		if (note.length > MAX_MEAL_NOTE_LENGTH) {
 			return fail(`Keep the description under ${MAX_MEAL_NOTE_LENGTH} characters.`, 400);
 		}
@@ -360,12 +360,12 @@ export const actions = {
 			const form = await superValidate(estimate, zod4(mealEstimateResultSchema));
 			return message(form, {
 				type: 'success',
-				text: 'Meal estimated. Check the details, then save.'
+				text: 'Food estimated. Check the details, then save.'
 			});
 		} catch (err) {
 			if (err instanceof UnreadableMealError) {
 				logger.warn('Meal estimate unreadable', { userId: user.id, reason: err.message });
-				return fail("Couldn't estimate that meal. Try a clearer photo or add a description.", 422);
+				return fail("Couldn't estimate that food. Try a clearer photo or add a description.", 422);
 			}
 			logger.error('Meal estimate failed', err);
 			return fail('Estimating failed. Try again, or enter the calories yourself.', 502);
@@ -432,15 +432,15 @@ export const actions = {
 	updateWeight: updateAction({
 		schema: updateWeightSchema,
 		table: weightEntries,
-		entityName: 'Weight entry',
+		entityName: 'Weigh-in',
 		toRow: (data) => ({ date: data.date, time: data.time || null, weightLbs: data.weightLbs })
 	}),
 
 	deleteWeight: deleteAction({
 		schema: deleteEntrySchema,
 		table: weightEntries,
-		entityName: 'Weight entry',
-		invalidMessage: 'Invalid weight entry id'
+		entityName: 'Weigh-in',
+		invalidMessage: 'Invalid weigh-in id'
 	}),
 
 	updateWorkout: requireAuth(async ({ request }, user) => {
@@ -533,14 +533,14 @@ export const actions = {
 	updateMeal: updateAction({
 		schema: updateMealSchema,
 		table: mealLogs,
-		entityName: 'Meal',
+		entityName: 'Food entry',
 		toRow: toMealRow
 	}),
 
 	deleteMeal: deleteAction({
 		schema: deleteEntrySchema,
 		table: mealLogs,
-		entityName: 'Meal',
-		invalidMessage: 'Invalid meal id'
+		entityName: 'Food entry',
+		invalidMessage: 'Invalid food entry id'
 	})
 } satisfies Actions;
