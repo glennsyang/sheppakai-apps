@@ -40,8 +40,8 @@ export const peopleRelations = relations(people, ({ one, many }) => ({
 
 /**
  * Visits
- * Visit records with companions. `followUpDate` is unused since #303 (the Next Visit lives on
- * `people.scheduledVisitDate`) and is dropped in #304.
+ * Visit records with companions. A group member's Next Visit lives on
+ * `people.scheduledVisitDate`, not on the visit.
  */
 export const visits = sqliteTable(
 	'visits',
@@ -57,7 +57,6 @@ export const visits = sqliteTable(
 		time: text('time'),
 		companions: text('companions'), // JSON array of companion names
 		notes: text('notes'),
-		followUpDate: text('follow_up_date'),
 		createdAt: integer('created_at', { mode: 'timestamp' })
 			.notNull()
 			.$defaultFn(() => new Date()),

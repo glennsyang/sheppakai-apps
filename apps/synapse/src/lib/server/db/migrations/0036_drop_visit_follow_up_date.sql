@@ -1,0 +1,1 @@
+ALTER TABLE `visits` DROP COLUMN `follow_up_date`;

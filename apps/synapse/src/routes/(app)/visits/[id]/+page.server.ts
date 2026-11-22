@@ -136,7 +136,7 @@ export const actions = {
 					companions,
 					notes: form.data.notes || null
 				},
-				nextVisitDate: form.data.followUpDate || null,
+				nextVisitDate: form.data.nextVisitDate || null,
 				now
 			});
 

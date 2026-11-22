@@ -155,8 +155,10 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
 visit always replaces it, so leaving `followUpDate` out clears the member's Next Visit.
 
 `PATCH /api/v1/visits/{id}` — requires `visits:write`. A `followUpDate` in the body sets the
-member's Next Visit, `null` clears it, and leaving it out keeps it. The `followUpDate` field on
-visit responses is no longer kept up to date and will be removed.
+member's Next Visit, `null` clears it, and leaving it out keeps it.
+
+`followUpDate` is write-only: visits don't store it, so visit responses don't include it. Read the
+member's Next Visit from `scheduledVisitDate` on `GET /api/v1/people`.
 
 ### Journal
 

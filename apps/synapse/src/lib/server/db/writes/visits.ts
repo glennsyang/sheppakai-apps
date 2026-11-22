@@ -17,7 +17,7 @@ function companionsToJson(companions: string[] | undefined | null): string | nul
 
 type Db = ReturnType<typeof getDb>;
 
-type NewVisit = Omit<typeof visits.$inferInsert, 'followUpDate' | 'createdAt' | 'updatedAt'> & {
+type NewVisit = Omit<typeof visits.$inferInsert, 'createdAt' | 'updatedAt'> & {
 	id: string;
 	personId: string;
 	userId: string;
