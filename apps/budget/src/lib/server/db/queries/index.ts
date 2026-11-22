@@ -4,7 +4,7 @@ export { contributionQueries } from './contributions';
 export { dashboardPreferenceQueries } from './dashboardPreferences';
 export { incomeQueries } from './income';
 export { recurringQueries } from './recurring';
-export { savingsQueries } from './savings';
+export { savingsAccountQueries } from './savings-accounts';
 export { savingsGoalQueries } from './savings-goals';
 export { transactionQueries } from './transactions';
 export { accountQueries, sessionQueries, userQueries } from './users';

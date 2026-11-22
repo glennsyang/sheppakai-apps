@@ -1,13 +1,13 @@
 import type { ColumnDef } from '@tanstack/table-core';
 
-import type { Savings } from '#lib';
+import type { SavingsAccount } from '#lib';
 import DataTableSortButton from '#lib/components/DataTableSortButton.svelte';
 import { moneyCell } from '#lib/components/table/cells.js';
 import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
 
 import DataTableActions from './data-table-actions.svelte';
 
-export const columns: ColumnDef<Features, Savings>[] = [
+export const columns: ColumnDef<Features, SavingsAccount>[] = [
 	{
 		accessorKey: 'title',
 		header: ({ column }) =>
@@ -38,7 +38,7 @@ export const columns: ColumnDef<Features, Savings>[] = [
 		cell: ({ row }) =>
 			renderComponent(DataTableActions, {
 				id: row.original.id,
-				savingsData: row.original
+				savingsAccount: row.original
 			})
 	}
 ];

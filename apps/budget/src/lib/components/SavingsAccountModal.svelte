@@ -9,16 +9,16 @@
 	import * as Dialog from '#lib/components/ui/dialog/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Textarea } from '#lib/components/ui/textarea/index.js';
-	import type { savingsSchema } from '#lib/formSchemas/index.js';
+	import type { savingsAccountSchema } from '#lib/formSchemas/index.js';
 
-	interface Props extends BaseModalProps<z.infer<typeof savingsSchema>> {
-		savingsForm: SuperValidated<z.infer<typeof savingsSchema>>;
+	interface Props extends BaseModalProps<z.infer<typeof savingsAccountSchema>> {
+		savingsAccountForm: SuperValidated<z.infer<typeof savingsAccountSchema>>;
 	}
 
-	let { open = $bindable(), initialData, isEditing, savingsForm }: Props = $props();
+	let { open = $bindable(), initialData, isEditing, savingsAccountForm }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
-	const { form, errors, enhance, submitting } = superForm(savingsForm, {
+	const { form, errors, enhance, submitting } = superForm(savingsAccountForm, {
 		resetForm: true,
 		onUpdate: ({ form }) => {
 			// Read form.message, not $message: superforms clears the store on submit and only
@@ -33,7 +33,7 @@
 		onError: ({ result }) => {
 			// Catastrophic DB crashes (Form data is lost)
 			toast.error(
-				`There was an error ${isEditing ? 'updating' : 'creating'} the savings entry. Reason: ${result.error.message}`
+				`There was an error ${isEditing ? 'updating' : 'creating'} the savings account. Reason: ${result.error.message}`
 			);
 		}
 	});
@@ -61,8 +61,8 @@
 			<Dialog.Title>{isEditing ? 'Edit savings account' : 'Add savings account'}</Dialog.Title>
 			<Dialog.Description>
 				{isEditing
-					? 'Update this savings entry. Modify the title, description, or amount as needed.'
-					: 'Create a new savings entry. Add a title, optional description, and the current amount.'}
+					? 'Update this savings account. Modify the title, description, or amount as needed.'
+					: 'Create a new savings account. Add a title, optional description, and the current amount.'}
 			</Dialog.Description>
 		</Dialog.Header>
 		<form
@@ -73,9 +73,9 @@
 		>
 			<input type="hidden" name="id" bind:value={$form.id} />
 			<div class="space-y-2">
-				<label for="savings-title" class="text-sm font-medium">Title</label>
+				<label for="savings-account-title" class="text-sm font-medium">Title</label>
 				<Input
-					id="savings-title"
+					id="savings-account-title"
 					name="title"
 					bind:value={$form.title}
 					placeholder="e.g., Emergency Fund, Vacation Savings"
@@ -88,9 +88,11 @@
 			</div>
 
 			<div class="space-y-2">
-				<label for="savings-description" class="text-sm font-medium">Description (Optional)</label>
+				<label for="savings-account-description" class="text-sm font-medium"
+					>Description (Optional)</label
+				>
 				<Textarea
-					id="savings-description"
+					id="savings-account-description"
 					name="description"
 					bind:value={$form.description}
 					placeholder="Add additional details about this savings account"
@@ -103,9 +105,9 @@
 			</div>
 
 			<div class="space-y-2">
-				<label for="savings-amount" class="text-sm font-medium">Amount</label>
+				<label for="savings-account-amount" class="text-sm font-medium">Amount</label>
 				<Input
-					id="savings-amount"
+					id="savings-account-amount"
 					name="amount"
 					type="number"
 					inputmode="decimal"

@@ -1,30 +1,30 @@
 <script lang="ts">
-	import type { Savings } from '#lib';
+	import type { SavingsAccount } from '#lib';
 	import ConfirmModal from '#lib/components/ConfirmModal.svelte';
 	import RowActionsMenu from '#lib/components/RowActionsMenu.svelte';
-	import SavingsModal from '#lib/components/SavingsModal.svelte';
-	import { savingsFormContext } from '#lib/contexts/index.js';
+	import SavingsAccountModal from '#lib/components/SavingsAccountModal.svelte';
+	import { savingsAccountFormContext } from '#lib/contexts/index.js';
 
-	let { id, savingsData }: { id: string; savingsData: Savings } = $props();
+	let { id, savingsAccount }: { id: string; savingsAccount: SavingsAccount } = $props();
 
 	let openEditModal = $state<boolean>(false);
 	let openDeleteModal = $state<boolean>(false);
 
-	const savingsForm = savingsFormContext.get();
+	const savingsAccountForm = savingsAccountFormContext.get();
 </script>
 
 <RowActionsMenu onEdit={() => (openEditModal = true)} onDelete={() => (openDeleteModal = true)} />
 
-<SavingsModal
+<SavingsAccountModal
 	bind:open={openEditModal}
 	initialData={{
 		id,
-		title: savingsData?.title,
-		description: savingsData?.description ?? undefined,
-		amount: savingsData?.amount
+		title: savingsAccount?.title,
+		description: savingsAccount?.description ?? undefined,
+		amount: savingsAccount?.amount
 	}}
 	isEditing
-	{savingsForm}
+	{savingsAccountForm}
 />
 
 <ConfirmModal
@@ -32,6 +32,6 @@
 	{id}
 	actionUrl="/savings?/delete"
 	title="Delete savings account"
-	message="Are you sure you want to delete this savings entry?"
+	message="Are you sure you want to delete this savings account?"
 	confirmButtonText="Delete"
 />

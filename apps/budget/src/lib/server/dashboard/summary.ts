@@ -22,7 +22,7 @@ import {
 	incomeQueries,
 	recurringQueries,
 	savingsGoalQueries,
-	savingsQueries,
+	savingsAccountQueries,
 	transactionQueries
 } from '#lib/server/db/queries/index.js';
 import { contribution } from '#lib/server/db/schema/index.js';
@@ -155,7 +155,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		recurringHistory,
 		incomeRecords,
 		goalsWithProgress,
-		totalSavings,
+		savingsAccountsTotal,
 		forecastHistory
 	] = await Promise.all([
 		transactionQueries.findByDateRangeIncludedInBudget(startDate, endDate),
@@ -165,7 +165,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		recurringQueries.findHistory(chartStartKey, selectedMonthKey),
 		incomeQueries.findByDateRange(startDate, endDate),
 		getGoalsWithProgress(),
-		savingsQueries.getTotal(),
+		savingsAccountQueries.getTotal(),
 		isCurrentMonth ? loadForecastHistory(startDate, month, year) : null
 	]);
 
@@ -265,7 +265,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		spendingSpikes,
 		forecast,
 		goalsWithProgress,
-		totalSavings
+		savingsAccountsTotal
 	};
 }
 
@@ -293,7 +293,7 @@ export async function loadYearlyDashboard(url: URL) {
 		allYearBudgets,
 		otherYearBudgets,
 		goalsWithProgress,
-		totalSavings
+		savingsAccountsTotal
 	] = await Promise.all([
 		transactionQueries.findByDateRangeIncludedInBudget(startDate, endDate),
 		transactionQueries.findByDateRangeExcludedFromBudget(startDate, endDate),
@@ -302,7 +302,7 @@ export async function loadYearlyDashboard(url: URL) {
 		budgetQueries.findByYear(year),
 		Promise.all(otherChartYears.map((y) => budgetQueries.findByYear(y))),
 		getGoalsWithProgress(),
-		savingsQueries.getTotal()
+		savingsAccountQueries.getTotal()
 	]);
 	const chartBudgets: Budget[] = [...allYearBudgets, ...otherYearBudgets.flat()];
 
@@ -386,7 +386,7 @@ export async function loadYearlyDashboard(url: URL) {
 		remainingBalance,
 		timeRangeData,
 		goalsWithProgress,
-		totalSavings
+		savingsAccountsTotal
 	};
 }
 

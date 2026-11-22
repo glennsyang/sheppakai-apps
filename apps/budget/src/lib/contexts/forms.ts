@@ -9,7 +9,7 @@ import type {
 	incomeSchema,
 	recurringSchema,
 	restoreCustomerSchema,
-	savingsSchema,
+	savingsAccountSchema,
 	setPasswordSchema,
 	setRoleSchema,
 	transactionSchema,
@@ -34,7 +34,8 @@ function createFormContext<T extends Record<string, unknown>>(contextName: strin
 export const incomeFormContext = createFormContext<z.infer<typeof incomeSchema>>('incomeForm');
 export const transactionFormContext =
 	createFormContext<z.infer<typeof transactionSchema>>('transactionForm');
-export const savingsFormContext = createFormContext<z.infer<typeof savingsSchema>>('savingsForm');
+export const savingsAccountFormContext =
+	createFormContext<z.infer<typeof savingsAccountSchema>>('savingsAccountForm');
 export const categoryFormContext =
 	createFormContext<z.infer<typeof categorySchema>>('categoryForm');
 export const recurringFormContext =

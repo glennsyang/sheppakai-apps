@@ -10,7 +10,7 @@ import {
 	recurringSchema,
 	resendVerificationSchema,
 	savingsGoalSchema,
-	savingsSchema,
+	savingsAccountSchema,
 	signInSchema,
 	transactionSchema,
 	unArchiveSchema,
@@ -128,8 +128,12 @@ describe('form schemas', () => {
 	});
 
 	it('validates savings and savings goal rules', () => {
-		expect(savingsSchema.safeParse({ title: 'Emergency Fund', amount: 1000 }).success).toBe(true);
-		expect(savingsSchema.safeParse({ title: 'Emergency Fund', amount: -1 }).success).toBe(false);
+		expect(savingsAccountSchema.safeParse({ title: 'Emergency Fund', amount: 1000 }).success).toBe(
+			true
+		);
+		expect(savingsAccountSchema.safeParse({ title: 'Emergency Fund', amount: -1 }).success).toBe(
+			false
+		);
 
 		expect(
 			savingsGoalSchema.safeParse({

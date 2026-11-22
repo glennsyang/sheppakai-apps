@@ -41,7 +41,7 @@ const mockIncomeQueries = vi.hoisted(() => ({
 const mockSavingsGoalQueries = vi.hoisted(() => ({
 	findAll: vi.fn<() => Promise<MockGoal[]>>(async () => [])
 }));
-const mockSavingsQueries = vi.hoisted(() => ({
+const mockSavingsAccountQueries = vi.hoisted(() => ({
 	getTotal: vi.fn<() => Promise<number>>(async () => 0)
 }));
 
@@ -51,7 +51,7 @@ vi.mock('#lib/server/db/queries/index.js', () => ({
 	recurringQueries: mockRecurringQueries,
 	incomeQueries: mockIncomeQueries,
 	savingsGoalQueries: mockSavingsGoalQueries,
-	savingsQueries: mockSavingsQueries
+	savingsAccountQueries: mockSavingsAccountQueries
 }));
 vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => unknown>(() => undefined) }));
 vi.mock('#lib/server/db/schema/index.js', () => ({ contribution: {} }));
