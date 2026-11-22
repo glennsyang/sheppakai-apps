@@ -49,7 +49,7 @@ export function buildReceiptPrompt(categories: ScanCategory[]): string {
 	return `Extract this receipt for a household budget app.
 
 - payee: the merchant, as a person would write it (e.g. "Costco", "Save-On-Foods").
-- date: the transaction date as YYYY-MM-DD.
+- date: the expense date as YYYY-MM-DD.
 - total: the final amount paid, including tax.
 - gstAmount: the GST (or GST portion of HST) charged or included; null if the receipt shows none.
 - notes: a short description of what was bought, e.g. "Fuel - 29.997 L @ $1.899/L" or "Groceries".

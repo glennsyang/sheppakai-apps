@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Budget, Transaction } from '#lib/types.js';
+import type { Budget, Expense } from '#lib/types.js';
 
 import { computeSpendingSpikes, type HistoricalMonthRange } from './spending-spikes';
 
-const fixtureUser: Transaction['user'] = {
+const fixtureUser: Expense['user'] = {
 	id: 'user-1',
 	name: 'Test User',
 	email: 'test@example.com',
@@ -20,12 +20,7 @@ const fixtureUser: Transaction['user'] = {
 
 const audit = { createdAt: new Date(0), updatedAt: new Date(0) };
 
-function buildTx(
-	categoryId: string,
-	categoryName: string,
-	amount: number,
-	date: string
-): Transaction {
+function buildTx(categoryId: string, categoryName: string, amount: number, date: string): Expense {
 	return {
 		id: `${categoryId}-${date}`,
 		amount,
@@ -58,7 +53,7 @@ function buildPriorMonthsSpend(
 	categoryId: string,
 	categoryName: string,
 	amount: number
-): Transaction[] {
+): Expense[] {
 	return priorMonthStarts.map((monthStart) =>
 		buildTx(categoryId, categoryName, amount, monthStart)
 	);
@@ -81,12 +76,12 @@ function buildBudget(categoryId: string, categoryName: string, amount: number): 
 
 describe('computeSpendingSpikes', () => {
 	it('flags a category spending more than 25% over its trailing average', () => {
-		const transactions = [
+		const expenses = [
 			...buildPriorMonthsSpend('groceries', 'Groceries', 100),
 			buildTx('groceries', 'Groceries', 140, '2026-06-15')
 		];
 
-		const spikes = computeSpendingSpikes(transactions, sixMonthRange);
+		const spikes = computeSpendingSpikes(expenses, sixMonthRange);
 
 		expect(spikes).toEqual([
 			{
@@ -100,36 +95,36 @@ describe('computeSpendingSpikes', () => {
 	});
 
 	it('does not flag a category within 25% of its trailing average', () => {
-		const transactions = [
+		const expenses = [
 			...buildPriorMonthsSpend('dining', 'Dining Out', 100),
 			buildTx('dining', 'Dining Out', 120, '2026-06-15')
 		];
 
-		expect(computeSpendingSpikes(transactions, sixMonthRange)).toEqual([]);
+		expect(computeSpendingSpikes(expenses, sixMonthRange)).toEqual([]);
 	});
 
 	it('ignores categories whose trailing average is below the minimum baseline', () => {
-		const transactions = [
+		const expenses = [
 			...buildPriorMonthsSpend('parking', 'Parking', 10),
 			buildTx('parking', 'Parking', 50, '2026-06-15')
 		];
 
-		expect(computeSpendingSpikes(transactions, sixMonthRange)).toEqual([]);
+		expect(computeSpendingSpikes(expenses, sixMonthRange)).toEqual([]);
 	});
 
 	it('returns no spikes when there is not enough prior-month history', () => {
 		const shortRange = sixMonthRange.slice(-3); // only 2 prior months
-		const transactions = [
+		const expenses = [
 			buildTx('groceries', 'Groceries', 100, '2026-04-15'),
 			buildTx('groceries', 'Groceries', 100, '2026-05-15'),
 			buildTx('groceries', 'Groceries', 500, '2026-06-15')
 		];
 
-		expect(computeSpendingSpikes(transactions, shortRange)).toEqual([]);
+		expect(computeSpendingSpikes(expenses, shortRange)).toEqual([]);
 	});
 
 	it('sorts by percent-over descending and caps at 5 results', () => {
-		const transactions = Array.from({ length: 6 }, (_, i) => {
+		const expenses = Array.from({ length: 6 }, (_, i) => {
 			const categoryId = `cat-${i}`;
 			// Trailing average of 50, current spend increasing with i so percentOver descends as i increases: cat-0 is highest.
 			const currentAmount = 150 - i * 10;
@@ -139,7 +134,7 @@ describe('computeSpendingSpikes', () => {
 			];
 		}).flat();
 
-		const spikes = computeSpendingSpikes(transactions, sixMonthRange);
+		const spikes = computeSpendingSpikes(expenses, sixMonthRange);
 
 		expect(spikes).toHaveLength(5);
 		expect(spikes.map((a) => a.categoryId)).toEqual(['cat-0', 'cat-1', 'cat-2', 'cat-3', 'cat-4']);
@@ -147,23 +142,23 @@ describe('computeSpendingSpikes', () => {
 	});
 
 	it('does not flag a category spending at or under its budget for the current month', () => {
-		const transactions = [
+		const expenses = [
 			...buildPriorMonthsSpend('groceries', 'Groceries', 100),
 			buildTx('groceries', 'Groceries', 140, '2026-06-15')
 		];
 		const budgets = [buildBudget('groceries', 'Groceries', 140)];
 
-		expect(computeSpendingSpikes(transactions, sixMonthRange, budgets)).toEqual([]);
+		expect(computeSpendingSpikes(expenses, sixMonthRange, budgets)).toEqual([]);
 	});
 
 	it('still flags a category that spends over both its trailing average and its budget', () => {
-		const transactions = [
+		const expenses = [
 			...buildPriorMonthsSpend('groceries', 'Groceries', 100),
 			buildTx('groceries', 'Groceries', 140, '2026-06-15')
 		];
 		const budgets = [buildBudget('groceries', 'Groceries', 120)];
 
-		const spikes = computeSpendingSpikes(transactions, sixMonthRange, budgets);
+		const spikes = computeSpendingSpikes(expenses, sixMonthRange, budgets);
 
 		expect(spikes).toEqual([
 			{
@@ -177,12 +172,12 @@ describe('computeSpendingSpikes', () => {
 	});
 
 	it('falls back to average-only detection when no budget is set for the category', () => {
-		const transactions = [
+		const expenses = [
 			...buildPriorMonthsSpend('groceries', 'Groceries', 100),
 			buildTx('groceries', 'Groceries', 140, '2026-06-15')
 		];
 
-		const spikes = computeSpendingSpikes(transactions, sixMonthRange, []);
+		const spikes = computeSpendingSpikes(expenses, sixMonthRange, []);
 
 		expect(spikes).toEqual([
 			{

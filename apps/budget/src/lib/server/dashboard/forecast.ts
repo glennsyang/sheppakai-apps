@@ -42,7 +42,7 @@ export function getGoalRateWindowStart(today: string): string {
 
 /**
  * Weekly spending totals for the baseline window, oldest first. Weeks before the first
- * transaction are dropped so a new account isn't averaged against empty history.
+ * expense are dropped so a new account isn't averaged against empty history.
  */
 export function weeklyTotals(rows: DatedAmount[], monthStart: string): number[] {
 	const windowStart = toDayNumber(monthStart) - BASELINE_WEEKS * 7;
@@ -72,8 +72,8 @@ function average(values: number[]): number {
 }
 
 export interface MonthEndForecastInput {
-	/** Included-in-budget transactions from `getBaselineRange(monthStart)`. */
-	baselineTransactions: DatedAmount[];
+	/** Included-in-budget expenses from `getBaselineRange(monthStart)`. */
+	baselineExpenses: DatedAmount[];
 	monthStart: string;
 	daysInMonth: number;
 	/** Current day of the month (1-based); today counts as elapsed. */
@@ -92,7 +92,7 @@ export interface MonthEndForecastInput {
  * The band uses the baseline's 25th/75th percentile weeks.
  */
 export function computeMonthEndForecast({
-	baselineTransactions,
+	baselineExpenses,
 	monthStart,
 	daysInMonth,
 	currentDay,
@@ -104,7 +104,7 @@ export function computeMonthEndForecast({
 	const day = Math.min(Math.max(currentDay, 1), daysInMonth);
 	const daysRemaining = daysInMonth - day;
 	const thisMonthRate = discretionarySpent / day;
-	const weeks = weeklyTotals(baselineTransactions, monthStart);
+	const weeks = weeklyTotals(baselineExpenses, monthStart);
 
 	let rate = { low: thisMonthRate, mid: thisMonthRate, high: thisMonthRate };
 	if (weeks.length >= MIN_BASELINE_WEEKS) {

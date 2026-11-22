@@ -1,4 +1,4 @@
-// Receipt photo → transaction fields. The provider is picked by RECEIPT_SCAN_PROVIDER, so
+// Receipt photo → expense fields. The provider is picked by RECEIPT_SCAN_PROVIDER, so
 // switching between Gemini and Claude is a config change; both are held to the same
 // `receiptScanResultSchema`.
 import {

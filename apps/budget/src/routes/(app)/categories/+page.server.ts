@@ -3,7 +3,7 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { categorySchema } from '#lib/formSchemas/index.js';
 import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
-import { transactionQueries } from '#lib/server/db/queries/index.js';
+import { expenseQueries } from '#lib/server/db/queries/index.js';
 import { category } from '#lib/server/db/schema/index.js';
 
 import type { Actions, PageServerLoad } from './$types';
@@ -21,8 +21,8 @@ export const actions = createCrudActions({
 	entityName: 'Category',
 	beforeDelete: async (id, _userId) => {
 		// Check if category is in use before deleting
-		const inUse = await transactionQueries.findFirst({
-			where: (transaction, { eq }) => eq(transaction.categoryId, id)
+		const inUse = await expenseQueries.findFirst({
+			where: (expense, { eq }) => eq(expense.categoryId, id)
 		});
 
 		if (inUse) {

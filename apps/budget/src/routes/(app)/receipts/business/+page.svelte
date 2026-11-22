@@ -14,8 +14,8 @@
 	{columns}
 	amountLabel="Spent"
 	addLabel="Add business receipt"
-	monthlyTransactions={data.monthlyTransactions}
-	yearlyTransactions={data.yearlyTransactions}
+	monthlyExpenses={data.monthlyExpenses}
+	yearlyExpenses={data.yearlyExpenses}
 	form={data.form}
 	loadError={data.loadError}
 />

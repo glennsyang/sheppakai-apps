@@ -5,8 +5,8 @@
 	import { months } from '#lib/utils.js';
 	import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
-	/** Minimal row shape; full `Transaction`s satisfy it. */
-	type SheetTransaction = {
+	/** Minimal row shape; full `Expense`s satisfy it. */
+	type SheetExpense = {
 		id: string;
 		date: string;
 		payee: string;
@@ -17,7 +17,7 @@
 
 	interface Props {
 		openSheet: boolean;
-		transactions: SheetTransaction[];
+		expenses: SheetExpense[];
 		category?: Category | null;
 		/** Overrides the "<category> Expenses" title. */
 		title?: string;
@@ -31,7 +31,7 @@
 
 	let {
 		openSheet = $bindable(),
-		transactions,
+		expenses,
 		category,
 		title,
 		showCategory = false,
@@ -41,7 +41,7 @@
 		footer
 	}: Props = $props();
 
-	let categoryTotal = $derived(transactions.reduce((sum, t) => sum + t.amount, 0));
+	let categoryTotal = $derived(expenses.reduce((sum, t) => sum + t.amount, 0));
 </script>
 
 <Sheet.Root bind:open={openSheet}>
@@ -59,7 +59,7 @@
 		</Sheet.Header>
 
 		<div class="flex-1 overflow-y-auto px-4 py-4">
-			{#if transactions.length === 0}
+			{#if expenses.length === 0}
 				<div class="text-muted-foreground flex h-32 items-center justify-center">
 					No expenses yet
 				</div>
@@ -78,22 +78,22 @@
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
-						{#each transactions as transaction (transaction.id)}
+						{#each expenses as expense (expense.id)}
 							<Table.Row>
-								<Table.Cell>{formatLocalTimestamp(transaction.date)}</Table.Cell>
+								<Table.Cell>{formatLocalTimestamp(expense.date)}</Table.Cell>
 								{#if showCategory}
-									<Table.Cell>{transaction.category?.name ?? 'Uncategorized'}</Table.Cell>
+									<Table.Cell>{expense.category?.name ?? 'Uncategorized'}</Table.Cell>
 									<Table.Cell class="whitespace-normal">
-										{transaction.payee}
-										{#if transaction.notes}
-											<span class="text-muted-foreground block text-xs">{transaction.notes}</span>
+										{expense.payee}
+										{#if expense.notes}
+											<span class="text-muted-foreground block text-xs">{expense.notes}</span>
 										{/if}
 									</Table.Cell>
 								{:else}
-									<Table.Cell>{transaction.payee}</Table.Cell>
+									<Table.Cell>{expense.payee}</Table.Cell>
 								{/if}
 								<Table.Cell class="text-right font-medium">
-									${transaction.amount.toLocaleString('en-US', {
+									${expense.amount.toLocaleString('en-US', {
 										minimumFractionDigits: 2,
 										maximumFractionDigits: 2
 									})}
@@ -111,8 +111,8 @@
 			{:else}
 				<div class="flex w-full justify-between font-semibold">
 					<span>
-						{transactions.length}
-						{transactions.length === 1 ? 'expense' : 'expenses'}
+						{expenses.length}
+						{expenses.length === 1 ? 'expense' : 'expenses'}
 					</span>
 					<span>
 						${categoryTotal.toLocaleString('en-US', {

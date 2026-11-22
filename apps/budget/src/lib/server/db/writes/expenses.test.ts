@@ -11,7 +11,7 @@ type InsertedRow = {
 	categoryId: string;
 	userId: string;
 };
-type FoundTransaction = { id: string; amount: number; category: null; user: object };
+type FoundExpense = { id: string; amount: number; category: null; user: object };
 
 const mockInsertReturning = vi.hoisted(() =>
 	vi.fn<() => Promise<InsertedRow[]>>(async () => [
@@ -40,7 +40,7 @@ const mockInsert = vi.hoisted(() =>
 	vi.fn<() => { values: typeof mockInsertValues }>(() => ({ values: mockInsertValues }))
 );
 const mockFindById = vi.hoisted(() =>
-	vi.fn<(id: string) => Promise<FoundTransaction | undefined>>(async (id) => ({
+	vi.fn<(id: string) => Promise<FoundExpense | undefined>>(async (id) => ({
 		id,
 		amount: 42.5,
 		category: null,
@@ -53,16 +53,16 @@ const mockEvaluateBudgetAlert = vi.hoisted(() =>
 
 vi.mock('#lib/server/db/index.js', () => ({ getDb: () => ({ insert: mockInsert }) }));
 vi.mock('#lib/server/db/queries/index.js', () => ({
-	transactionQueries: { findById: mockFindById }
+	expenseQueries: { findById: mockFindById }
 }));
-vi.mock('#lib/server/db/schema/index.js', () => ({ transaction: {} }));
+vi.mock('#lib/server/db/schema/index.js', () => ({ expense: {} }));
 vi.mock('#lib/server/notifications/budget-threshold-alerts.js', () => ({
-	evaluateCreatedTransactionBudgetAlert: mockEvaluateBudgetAlert
+	evaluateCreatedExpenseBudgetAlert: mockEvaluateBudgetAlert
 }));
 
-import { createTransaction, toTransactionRow } from './transactions';
+import { createExpense, toExpenseRow } from './expenses';
 
-describe('createTransaction', () => {
+describe('createExpense', () => {
 	beforeEach(() => {
 		mockInsert.mockClear();
 		mockInsertValues.mockClear();
@@ -72,7 +72,7 @@ describe('createTransaction', () => {
 	});
 
 	it('inserts without createdBy/updatedBy', async () => {
-		await createTransaction(
+		await createExpense(
 			{
 				amount: 42.5,
 				payee: 'Grocery Store',
@@ -93,7 +93,7 @@ describe('createTransaction', () => {
 	});
 
 	it('evaluates budget alerts for the inserted row', async () => {
-		await createTransaction(
+		await createExpense(
 			{
 				amount: 42.5,
 				payee: 'Grocery Store',
@@ -111,7 +111,7 @@ describe('createTransaction', () => {
 	});
 
 	it('re-fetches the created record with relations', async () => {
-		const result = await createTransaction(
+		const result = await createExpense(
 			{
 				amount: 42.5,
 				payee: 'Grocery Store',
@@ -131,7 +131,7 @@ describe('createTransaction', () => {
 		mockFindById.mockResolvedValueOnce(undefined);
 
 		await expect(
-			createTransaction(
+			createExpense(
 				{
 					amount: 42.5,
 					payee: 'Grocery Store',
@@ -142,11 +142,11 @@ describe('createTransaction', () => {
 				},
 				'user-1'
 			)
-		).rejects.toThrow('Failed to re-fetch transaction txn-1 after creation');
+		).rejects.toThrow('Failed to re-fetch expense txn-1 after creation');
 	});
 });
 
-describe('toTransactionRow', () => {
+describe('toExpenseRow', () => {
 	const base = {
 		amount: 10,
 		payee: 'Shop',
@@ -157,11 +157,11 @@ describe('toTransactionRow', () => {
 	};
 
 	it('maps a missing gstAmount to null so an update can clear it', () => {
-		expect(toTransactionRow(base).gstAmount).toBeNull();
+		expect(toExpenseRow(base).gstAmount).toBeNull();
 	});
 
 	it('keeps excludedFromBudget and formats the date for storage', () => {
-		const row = toTransactionRow({ ...base, gstAmount: 0.5 });
+		const row = toExpenseRow({ ...base, gstAmount: 0.5 });
 		expect(row.excludedFromBudget).toBe(true);
 		expect(row.gstAmount).toBe(0.5);
 		expect(row.date).toMatch(/^2020-06-15/);

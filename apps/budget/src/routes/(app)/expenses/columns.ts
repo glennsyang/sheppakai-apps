@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/table-core';
 
-import type { Transaction } from '#lib';
+import type { Expense } from '#lib';
 import DataTableSortButton from '#lib/components/DataTableSortButton.svelte';
 import { badgeCell, categoryCell, moneyCell } from '#lib/components/table/cells.js';
 import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
@@ -9,9 +9,7 @@ import { formatLocalTimestamp } from '#lib/utils/dates.js';
 
 import DataTableActions from './data-table-actions.svelte';
 
-export function createColumns(
-	categoryColors: Map<string, string>
-): ColumnDef<Features, Transaction>[] {
+export function createColumns(categoryColors: Map<string, string>): ColumnDef<Features, Expense>[] {
 	return [
 		{
 			accessorKey: 'date',
@@ -85,7 +83,7 @@ export function createColumns(
 			cell: ({ row }) =>
 				renderComponent(DataTableActions, {
 					id: row.original.id,
-					transactionData: row.original
+					expenseData: row.original
 				})
 		}
 	];

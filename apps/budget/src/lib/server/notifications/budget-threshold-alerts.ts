@@ -4,7 +4,7 @@ import { formatCurrency } from '#lib/utils.js';
 import { getMonthDateRange, padMonth } from '#lib/utils/dates.js';
 
 import { getDb } from '../db';
-import { budget, transaction } from '../db/schema';
+import { budget, expense } from '../db/schema';
 import { dateInRange } from '../db/utils';
 import { logger } from '../logger';
 import { sendBudgetAlerts } from './index';
@@ -16,7 +16,7 @@ const OVER_BUDGET_ALERT_PRIORITY = 4;
 type BudgetThresholdState = 'below' | 'near' | 'over';
 type BudgetThresholdAlertType = 'near' | 'over';
 
-type TransactionBudgetAlertRecord = {
+type ExpenseBudgetAlertRecord = {
 	id: string;
 	userId: string;
 	categoryId: string;
@@ -25,8 +25,8 @@ type TransactionBudgetAlertRecord = {
 	excludedFromBudget: boolean;
 };
 
-type TransactionBudgetAlertUpdateContext = {
-	previousTransaction: TransactionBudgetAlertRecord | null;
+type ExpenseBudgetAlertUpdateContext = {
+	previousExpense: ExpenseBudgetAlertRecord | null;
 };
 
 type BudgetCategorySnapshot = {
@@ -78,7 +78,7 @@ export function getBudgetThresholdAlertType(
 	return null;
 }
 
-function getMonthYearFromStoredTransactionDate(date: string): { month: number; year: number } {
+function getMonthYearFromStoredExpenseDate(date: string): { month: number; year: number } {
 	const datePart = date.split(' ')[0] ?? date;
 	const [yearText, monthText] = datePart.split('-');
 
@@ -169,13 +169,13 @@ async function loadCategoryMonthSpend(
 ): Promise<number> {
 	const { startDate, endDate } = getMonthDateRange(month, year);
 	const [row] = await getDb()
-		.select({ total: sql<number>`coalesce(sum(${transaction.amount}), 0)` })
-		.from(transaction)
+		.select({ total: sql<number>`coalesce(sum(${expense.amount}), 0)` })
+		.from(expense)
 		.where(
 			and(
-				eq(transaction.categoryId, categoryId),
-				eq(transaction.excludedFromBudget, false),
-				...dateInRange(transaction.date, startDate, endDate)
+				eq(expense.categoryId, categoryId),
+				eq(expense.excludedFromBudget, false),
+				...dateInRange(expense.date, startDate, endDate)
 			)
 		);
 
@@ -257,38 +257,34 @@ async function maybeSendBudgetThresholdAlert(params: {
 	});
 }
 
-function mergeUpdatedTransactionRecord(
-	previousTransaction: TransactionBudgetAlertRecord,
-	updatedData: Partial<TransactionBudgetAlertRecord>
-): TransactionBudgetAlertRecord {
+function mergeUpdatedExpenseRecord(
+	previousExpense: ExpenseBudgetAlertRecord,
+	updatedData: Partial<ExpenseBudgetAlertRecord>
+): ExpenseBudgetAlertRecord {
 	return {
-		id: previousTransaction.id,
-		userId: updatedData.userId ?? previousTransaction.userId,
-		categoryId: updatedData.categoryId ?? previousTransaction.categoryId,
-		amount: updatedData.amount ?? previousTransaction.amount,
-		date: updatedData.date ?? previousTransaction.date,
-		excludedFromBudget: updatedData.excludedFromBudget ?? previousTransaction.excludedFromBudget
+		id: previousExpense.id,
+		userId: updatedData.userId ?? previousExpense.userId,
+		categoryId: updatedData.categoryId ?? previousExpense.categoryId,
+		amount: updatedData.amount ?? previousExpense.amount,
+		date: updatedData.date ?? previousExpense.date,
+		excludedFromBudget: updatedData.excludedFromBudget ?? previousExpense.excludedFromBudget
 	};
 }
 
-export async function evaluateCreatedTransactionBudgetAlert(
-	transactionRecord: TransactionBudgetAlertRecord
+export async function evaluateCreatedExpenseBudgetAlert(
+	expenseRecord: ExpenseBudgetAlertRecord
 ): Promise<void> {
-	if (transactionRecord.excludedFromBudget) {
+	if (expenseRecord.excludedFromBudget) {
 		return;
 	}
 
-	const { month, year } = getMonthYearFromStoredTransactionDate(transactionRecord.date);
-	const currentSpentAmount = await loadCategoryMonthSpend(
-		transactionRecord.categoryId,
-		month,
-		year
-	);
-	const previousSpentAmount = Math.max(currentSpentAmount - transactionRecord.amount, 0);
+	const { month, year } = getMonthYearFromStoredExpenseDate(expenseRecord.date);
+	const currentSpentAmount = await loadCategoryMonthSpend(expenseRecord.categoryId, month, year);
+	const previousSpentAmount = Math.max(currentSpentAmount - expenseRecord.amount, 0);
 
 	await maybeSendBudgetThresholdAlert({
-		userId: transactionRecord.userId,
-		categoryId: transactionRecord.categoryId,
+		userId: expenseRecord.userId,
+		categoryId: expenseRecord.categoryId,
 		month,
 		year,
 		previousSpentAmount,
@@ -296,10 +292,10 @@ export async function evaluateCreatedTransactionBudgetAlert(
 	});
 }
 
-export async function buildTransactionBudgetAlertUpdateContext(
-	transactionId: string
-): Promise<TransactionBudgetAlertUpdateContext> {
-	const previousTransaction = await getDb().query.transaction.findFirst({
+export async function buildExpenseBudgetAlertUpdateContext(
+	expenseId: string
+): Promise<ExpenseBudgetAlertUpdateContext> {
+	const previousExpense = await getDb().query.expense.findFirst({
 		columns: {
 			id: true,
 			userId: true,
@@ -308,54 +304,54 @@ export async function buildTransactionBudgetAlertUpdateContext(
 			date: true,
 			excludedFromBudget: true
 		},
-		where: eq(transaction.id, transactionId)
+		where: eq(expense.id, expenseId)
 	});
 
 	return {
-		previousTransaction: previousTransaction ?? null
+		previousExpense: previousExpense ?? null
 	};
 }
 
-export async function evaluateUpdatedTransactionBudgetAlert(
-	updatedData: Partial<TransactionBudgetAlertRecord>,
-	context?: TransactionBudgetAlertUpdateContext
+export async function evaluateUpdatedExpenseBudgetAlert(
+	updatedData: Partial<ExpenseBudgetAlertRecord>,
+	context?: ExpenseBudgetAlertUpdateContext
 ): Promise<void> {
-	const previousTransaction = context?.previousTransaction;
+	const previousExpense = context?.previousExpense;
 
-	if (!previousTransaction) {
-		logger.error('Missing previous transaction context for budget threshold update evaluation');
+	if (!previousExpense) {
+		logger.error('Missing previous expense context for budget threshold update evaluation');
 		return;
 	}
 
-	const nextTransaction = mergeUpdatedTransactionRecord(previousTransaction, updatedData);
-	if (nextTransaction.excludedFromBudget) {
+	const nextExpense = mergeUpdatedExpenseRecord(previousExpense, updatedData);
+	if (nextExpense.excludedFromBudget) {
 		return;
 	}
 
-	const previousMonthYear = getMonthYearFromStoredTransactionDate(previousTransaction.date);
-	const nextMonthYear = getMonthYearFromStoredTransactionDate(nextTransaction.date);
+	const previousMonthYear = getMonthYearFromStoredExpenseDate(previousExpense.date);
+	const nextMonthYear = getMonthYearFromStoredExpenseDate(nextExpense.date);
 	const isSameBudgetBucket =
-		!previousTransaction.excludedFromBudget &&
-		!nextTransaction.excludedFromBudget &&
-		previousTransaction.userId === nextTransaction.userId &&
-		previousTransaction.categoryId === nextTransaction.categoryId &&
+		!previousExpense.excludedFromBudget &&
+		!nextExpense.excludedFromBudget &&
+		previousExpense.userId === nextExpense.userId &&
+		previousExpense.categoryId === nextExpense.categoryId &&
 		previousMonthYear.month === nextMonthYear.month &&
 		previousMonthYear.year === nextMonthYear.year;
 
 	if (isSameBudgetBucket) {
 		const currentSpentAmount = await loadCategoryMonthSpend(
-			nextTransaction.categoryId,
+			nextExpense.categoryId,
 			nextMonthYear.month,
 			nextMonthYear.year
 		);
 		const previousSpentAmount = Math.max(
-			currentSpentAmount - nextTransaction.amount + previousTransaction.amount,
+			currentSpentAmount - nextExpense.amount + previousExpense.amount,
 			0
 		);
 
 		await maybeSendBudgetThresholdAlert({
-			userId: nextTransaction.userId,
-			categoryId: nextTransaction.categoryId,
+			userId: nextExpense.userId,
+			categoryId: nextExpense.categoryId,
 			month: nextMonthYear.month,
 			year: nextMonthYear.year,
 			previousSpentAmount,
@@ -365,15 +361,15 @@ export async function evaluateUpdatedTransactionBudgetAlert(
 	}
 
 	const currentSpentAmount = await loadCategoryMonthSpend(
-		nextTransaction.categoryId,
+		nextExpense.categoryId,
 		nextMonthYear.month,
 		nextMonthYear.year
 	);
-	const previousSpentAmount = Math.max(currentSpentAmount - nextTransaction.amount, 0);
+	const previousSpentAmount = Math.max(currentSpentAmount - nextExpense.amount, 0);
 
 	await maybeSendBudgetThresholdAlert({
-		userId: nextTransaction.userId,
-		categoryId: nextTransaction.categoryId,
+		userId: nextExpense.userId,
+		categoryId: nextExpense.categoryId,
 		month: nextMonthYear.month,
 		year: nextMonthYear.year,
 		previousSpentAmount,
@@ -381,18 +377,18 @@ export async function evaluateUpdatedTransactionBudgetAlert(
 	});
 }
 
-export const transactionBudgetAlertHooks = {
-	afterCreate: async (_id: string, data: TransactionBudgetAlertRecord) => {
-		await evaluateCreatedTransactionBudgetAlert(data);
+export const expenseBudgetAlertHooks = {
+	afterCreate: async (_id: string, data: ExpenseBudgetAlertRecord) => {
+		await evaluateCreatedExpenseBudgetAlert(data);
 	},
 	beforeUpdate: async (id: string) => {
-		return buildTransactionBudgetAlertUpdateContext(id);
+		return buildExpenseBudgetAlertUpdateContext(id);
 	},
 	afterUpdate: async (
 		_id: string,
-		data: Partial<TransactionBudgetAlertRecord>,
-		context?: TransactionBudgetAlertUpdateContext
+		data: Partial<ExpenseBudgetAlertRecord>,
+		context?: ExpenseBudgetAlertUpdateContext
 	) => {
-		await evaluateUpdatedTransactionBudgetAlert(data, context);
+		await evaluateUpdatedExpenseBudgetAlert(data, context);
 	}
 };

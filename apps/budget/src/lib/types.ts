@@ -10,7 +10,7 @@ import type { RecleanDue } from '#lib/utils/windowCleaningStats.js';
  * Base props for all modal/dialog components in the application.
  * Provides common interface for open state, data initialization, and edit mode.
  *
- * @template T - The entity type for initialData (e.g., Transaction, Income, Category)
+ * @template T - The entity type for initialData (e.g., Expense, Income, Category)
  */
 export interface BaseModalProps<T> {
 	/** Controls modal visibility (bindable) */
@@ -41,7 +41,7 @@ export type UserWithSessions = UserWithRole & {
 
 export type Category = QueryRow<'category'>;
 
-export type Transaction = QueryRow<'transaction', { category: true; user: true }>;
+export type Expense = QueryRow<'expense', { category: true; user: true }>;
 
 export type Budget = QueryRow<'budget', { category: true; user: true }>;
 
@@ -128,7 +128,7 @@ export type ExcludedSpendCategory = {
 	amount: number;
 };
 
-/** Lean row for an excluded-from-budget transaction (yearly "Not counted" sheet). */
+/** Lean row for an excluded-from-budget expense (yearly "Not counted" sheet). */
 export type ExcludedExpense = {
 	id: string;
 	date: string;

@@ -6,7 +6,7 @@ export { incomeQueries } from './income';
 export { recurringBillQueries } from './recurring-bills';
 export { savingsAccountQueries } from './savings-accounts';
 export { savingsGoalQueries } from './savings-goals';
-export { transactionQueries } from './transactions';
+export { expenseQueries } from './expenses';
 export { accountQueries, sessionQueries, userQueries } from './users';
 export { windowCleaningCustomerQueries } from './windowCleaningCustomers';
 export { windowCleaningJobQueries } from './windowCleaningJobs';

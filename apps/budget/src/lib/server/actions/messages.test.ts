@@ -5,14 +5,12 @@ import { getCrudMessage } from './messages';
 describe('getCrudMessage', () => {
 	describe('default messages', () => {
 		it('createSuccess interpolates entity name', () => {
-			expect(getCrudMessage('createSuccess', 'Transaction')).toBe(
-				'Transaction created successfully'
-			);
+			expect(getCrudMessage('createSuccess', 'Expense')).toBe('Expense created successfully');
 		});
 
 		it('createError interpolates lowercase entity name', () => {
-			expect(getCrudMessage('createError', 'Transaction')).toBe(
-				'Failed to create transaction. A database error occurred.'
+			expect(getCrudMessage('createError', 'Expense')).toBe(
+				'Failed to create expense. A database error occurred.'
 			);
 		});
 
@@ -40,7 +38,7 @@ describe('getCrudMessage', () => {
 	describe('custom message overrides', () => {
 		it('uses custom createSuccess when provided', () => {
 			const custom = { createSuccess: 'Saved!' };
-			expect(getCrudMessage('createSuccess', 'Transaction', custom)).toBe('Saved!');
+			expect(getCrudMessage('createSuccess', 'Expense', custom)).toBe('Saved!');
 		});
 
 		it('uses custom deleteError when provided', () => {

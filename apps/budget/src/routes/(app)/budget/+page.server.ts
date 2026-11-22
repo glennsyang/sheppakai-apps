@@ -5,7 +5,7 @@ import { createAction, updateAction } from '#lib/server/actions/crud-helpers.js'
 import {
 	budgetQueries,
 	recurringBillQueries,
-	transactionQueries
+	expenseQueries
 } from '#lib/server/db/queries/index.js';
 import { budget } from '#lib/server/db/schema/index.js';
 import { logger } from '#lib/server/logger.js';
@@ -58,7 +58,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const earliestMonth = last12Months[0];
 	const latestMonth = last12Months.at(-1) ?? earliestMonth;
 
-	// Calculate start and end dates for transaction filtering
+	// Calculate start and end dates for expense filtering
 	const startDate = `${earliestMonth.year}-${earliestMonth.month}-01`;
 	const endDate = new Date(Number(latestMonth.year), Number(latestMonth.month), 0);
 	const endDateStr = `${latestMonth.year}-${latestMonth.month}-${padMonth(endDate.getDate().toString())}`;
@@ -66,10 +66,10 @@ export const load: PageServerLoad = async ({ url }) => {
 	try {
 		// Chart-window history plus the selected month's budget and bill prices.
 		const monthKey = toMonthKey(month, year);
-		const [historicalBudgets, historicalTransactions, monthBudget, billPriceHistory] =
+		const [historicalBudgets, historicalExpenses, monthBudget, billPriceHistory] =
 			await Promise.all([
 				budgetQueries.findHistory(earliestMonth, latestMonth),
-				transactionQueries.sumByCategoryMonth(startDate, endDateStr),
+				expenseQueries.sumByCategoryMonth(startDate, endDateStr),
 				budgetQueries.findByMonthYear(month, year),
 				recurringBillQueries.findHistory(monthKey, monthKey)
 			]);
@@ -77,7 +77,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		return {
 			budget: monthBudget,
 			historicalBudgets,
-			historicalTransactions,
+			historicalExpenses,
 			last12Months,
 			recurringBillsTotal: recurringBillsTotalForMonth(billPriceHistory, monthKey)
 		};
@@ -86,7 +86,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		return {
 			budget: [],
 			historicalBudgets: [],
-			historicalTransactions: [],
+			historicalExpenses: [],
 			last12Months,
 			recurringBillsTotal: 0,
 			loadError: 'Failed to load budget. Please try refreshing the page.'

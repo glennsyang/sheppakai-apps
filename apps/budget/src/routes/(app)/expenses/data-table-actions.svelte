@@ -1,13 +1,13 @@
 <script lang="ts">
-	import type { Transaction } from '#lib';
-	import TransactionRowActions from '#lib/components/TransactionRowActions.svelte';
+	import type { Expense } from '#lib';
+	import ExpenseRowActions from '#lib/components/ExpenseRowActions.svelte';
 
-	let { id, transactionData }: { id: string; transactionData: Transaction } = $props();
+	let { id, expenseData }: { id: string; expenseData: Expense } = $props();
 </script>
 
-<TransactionRowActions
+<ExpenseRowActions
 	{id}
-	{transactionData}
+	{expenseData}
 	actionUrl="/expenses?/delete"
 	deleteMessage="Are you sure you want to delete this expense?"
 />

@@ -9,9 +9,9 @@ const mockRecordApiWrite = vi.hoisted(() => vi.fn<(...args: unknown[]) => Promis
 
 vi.mock('#lib/server/api/require-api-key.js', () => ({ requireApiKey: mockRequireApiKey }));
 vi.mock('#lib/server/db/queries/index.js', () => ({
-	transactionQueries: { findAll: mockFindAll }
+	expenseQueries: { findAll: mockFindAll }
 }));
-vi.mock('#lib/server/db/writes/transactions.js', () => ({ createTransaction: mockCreate }));
+vi.mock('#lib/server/db/writes/expenses.js', () => ({ createExpense: mockCreate }));
 vi.mock('#lib/server/api/audit-log', () => ({ recordApiWrite: mockRecordApiWrite }));
 vi.mock('#lib/server/logger.js', () => ({
 	logger: {

@@ -392,7 +392,7 @@ comes from size, weight 600 and negative tracking, never from a second family.
 - **Display (phone)** (600, 2.75rem, line-height 1, -0.035em, tabular): the same hero figure below
   `sm`. A step of its own, not an ad-hoc size; it pairs only with Display.
 - **Headline** (600, 1.75rem; 1.5rem below `sm`, tracking-tight): the page greeting ("Hi, Glenn")
-  and every route's page title ("Transactions", "Admin"), always with a body-size muted subtitle
+  and every route's page title ("Expenses", "Admin"), always with a body-size muted subtitle
   beneath. The landing page alone sets its one headline at 2.25rem / 3rem from `sm` with -0.035em
   tracking.
 - **Title** (600, 1rem, tracking-tight): panel, section and dialog titles in sentence case

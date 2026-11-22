@@ -59,7 +59,7 @@ interface CrudConfig<
 	/** Drizzle table reference */
 	table: TTable;
 
-	/** Entity name for logging and messages (e.g., "Transaction", "Category") */
+	/** Entity name for logging and messages (e.g., "Expense", "Category") */
 	entityName: string;
 
 	/** Custom messages to override defaults */
@@ -332,14 +332,14 @@ function createDeleteAction<TTable extends AnySQLiteTable>(config: DeleteConfig<
  * @example
  * ```typescript
  * import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
- * import { transactionSchema } from '#lib/formSchemas/index.js';
- * import { transaction } from '#lib/server/db/schema/index.js';
+ * import { expenseSchema } from '#lib/formSchemas/index.js';
+ * import { expense } from '#lib/server/db/schema/index.js';
  * import { formatDateForStorage } from '#lib/utils/dates.js';
  *
  * export const actions = createCrudActions({
- *   schema: transactionSchema,
- *   table: transaction,
- *   entityName: 'Transaction',
+ *   schema: expenseSchema,
+ *   table: expense,
+ *   entityName: 'Expense',
  *   transformCreate: (data, userId) => ({
  *     ...data,
  *     date: formatDateForStorage(data.date),

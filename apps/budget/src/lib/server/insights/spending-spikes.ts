@@ -1,4 +1,4 @@
-import type { Budget, SpendingSpike, Transaction } from '#lib/types.js';
+import type { Budget, SpendingSpike, Expense } from '#lib/types.js';
 
 // Require at least this many prior months of history before flagging anything, so a
 // category with only 1-2 months on record doesn't produce a noisy "spike" on day one.
@@ -15,7 +15,7 @@ export type HistoricalMonthRange = {
 };
 
 export function computeSpendingSpikes(
-	transactions: Transaction[],
+	expenses: Expense[],
 	historicalMonths: HistoricalMonthRange[],
 	currentBudgets: Budget[] = []
 ): SpendingSpike[] {
@@ -34,7 +34,7 @@ export function computeSpendingSpikes(
 
 	const categoryTotals = new Map<string, { name: string; current: number; priorTotal: number }>();
 
-	for (const tx of transactions) {
+	for (const tx of expenses) {
 		if (!tx.category) continue;
 
 		const datePart = tx.date.substring(0, 10);

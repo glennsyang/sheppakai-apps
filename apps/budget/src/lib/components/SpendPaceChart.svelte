@@ -5,7 +5,7 @@
 	import { formatCurrency, formatCurrencyRounded, monthNames } from '#lib/utils.js';
 
 	interface Props {
-		/** Discretionary transactions for the month (recurring excluded). */
+		/** Discretionary expenses for the month (recurring excluded). */
 		expenses: { date: string; amount: number }[];
 		/** Discretionary budget for the month (planned minus recurring). */
 		budget: number;

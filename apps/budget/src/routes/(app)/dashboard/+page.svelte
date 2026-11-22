@@ -10,9 +10,10 @@
 	import BudgetAlertRow from '#lib/components/BudgetAlertRow.svelte';
 	import CardGridSkeleton from '#lib/components/CardGridSkeleton.svelte';
 	import CategoryBudgetList from '#lib/components/CategoryBudgetList.svelte';
-	import CategoryTransactionSheet from '#lib/components/CategoryTransactionSheet.svelte';
+	import CategoryExpenseSheet from '#lib/components/CategoryExpenseSheet.svelte';
 	import DashboardCustomizePopover from '#lib/components/DashboardCustomizePopover.svelte';
 	import DashboardStatStrip, { type Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import ExpenseModal from '#lib/components/ExpenseModal.svelte';
 	import GoalsSummaryStrip from '#lib/components/GoalsSummaryStrip.svelte';
 	import InfoTooltip from '#lib/components/InfoTooltip.svelte';
 	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
@@ -23,7 +24,6 @@
 	import SafeToSpendHeroBand from '#lib/components/SafeToSpendHeroBand.svelte';
 	import SpendingBreakdownChart from '#lib/components/SpendingBreakdownChart.svelte';
 	import SpendingSpikeAlert from '#lib/components/SpendingSpikeAlert.svelte';
-	import TransactionModal from '#lib/components/TransactionModal.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
 	import * as Select from '#lib/components/ui/select/index.js';
@@ -79,8 +79,8 @@
 	let categoriesOpen = $state(false);
 	let spentByCategoryOpen = $state(false);
 
-	// Transaction drawer
-	let openTransactionSheet = $state(false);
+	// Expense drawer
+	let openExpenseSheet = $state(false);
 	let openExcludedSheet = $state(false);
 	let selectedCategoryId = $state<string | null>(null);
 
@@ -116,7 +116,7 @@
 		goto(buildDashboardUrl(state), { replace: true, reset: false });
 	}
 
-	let filteredTransactions = $derived(
+	let filteredExpenses = $derived(
 		selectedCategoryId
 			? (data.actualExpenses || [])
 					.filter((t) => t?.category?.id === selectedCategoryId)
@@ -130,7 +130,7 @@
 
 	function openCategoryDetails(categoryId: string) {
 		selectedCategoryId = categoryId;
-		openTransactionSheet = true;
+		openExpenseSheet = true;
 	}
 
 	function onModeChange(mode: string | undefined) {
@@ -431,7 +431,7 @@
 		return stats;
 	});
 
-	// Discretionary transactions feed the pace chart; recurring is a separate monthly lump.
+	// Discretionary expenses feed the pace chart; recurring is a separate monthly lump.
 	let discretionaryExpenses = $derived(
 		(data.actualExpenses || []).map((e) => ({ date: String(e.date), amount: e.amount }))
 	);
@@ -824,9 +824,9 @@
 </div>
 
 {#if selectedMode === 'yearly'}
-	<CategoryTransactionSheet
+	<CategoryExpenseSheet
 		bind:openSheet={openExcludedSheet}
-		transactions={(data.excludedExpenses || []).map((e) => ({
+		expenses={(data.excludedExpenses || []).map((e) => ({
 			...e,
 			category: { name: e.categoryName }
 		}))}
@@ -835,17 +835,17 @@
 		showCategory
 	/>
 {:else if selectedMode === 'monthly'}
-	<CategoryTransactionSheet
-		bind:openSheet={openTransactionSheet}
-		transactions={filteredTransactions}
+	<CategoryExpenseSheet
+		bind:openSheet={openExpenseSheet}
+		expenses={filteredExpenses}
 		category={selectedCategory}
 		month={selectedMonth}
 		year={parseInt(selectedYear)}
 	/>
 {/if}
 
-<TransactionModal
+<ExpenseModal
 	bind:open={openLogExpenseModal}
 	categories={categories()}
-	transactionForm={data.transactionForm}
+	expenseForm={data.expenseForm}
 />

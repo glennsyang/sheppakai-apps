@@ -153,7 +153,7 @@ describe('runWeeklySummaryEmail', () => {
 				expect.objectContaining({ categoryName: 'Groceries', overByAmount: 20 })
 			],
 			nearLimitCategories: [expect.objectContaining({ categoryName: 'Fuel' })],
-			excludedTransactions: [
+			excludedExpenses: [
 				expect.objectContaining({ payee: 'Hotel', date: '2026-09-02' }),
 				expect.objectContaining({ payee: 'Airline', date: '2026-09-10' })
 			]
@@ -203,7 +203,7 @@ describe('runWeeklySummaryEmail', () => {
 		);
 	});
 
-	it('leaves excluded transactions out of budget spend', async () => {
+	it('leaves excluded expenses out of budget spend', async () => {
 		const spendQuery: { where?: SQL } = {};
 		mockState.select
 			.mockReturnValueOnce(queryResult([{ name: 'Glenn', email: 'glenn@example.com' }]))

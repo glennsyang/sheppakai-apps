@@ -3,14 +3,14 @@
 	import type { SuperValidated } from 'sveltekit-superforms';
 	import type { z } from 'zod';
 
-	import type { Transaction } from '#lib';
+	import type { Expense } from '#lib';
 	import type { Stat } from '#lib/components/DashboardStatStrip.svelte';
+	import ExpenseModal from '#lib/components/ExpenseModal.svelte';
 	import MonthlyTablePageShell from '#lib/components/MonthlyTablePageShell.svelte';
-	import TransactionModal from '#lib/components/TransactionModal.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { DataTable } from '#lib/components/ui/data-table/index.js';
-	import { getCategoriesContext, transactionFormContext } from '#lib/contexts/index.js';
-	import type { transactionSchema } from '#lib/formSchemas/index.js';
+	import { getCategoriesContext, expenseFormContext } from '#lib/contexts/index.js';
+	import type { expenseSchema } from '#lib/formSchemas/index.js';
 	import { formatCurrency, monthNames } from '#lib/utils.js';
 	import { formatDayHeading } from '#lib/utils/dates.js';
 	import { useMonthYearParams } from '#lib/utils/monthYearParams.svelte.js';
@@ -25,9 +25,9 @@
 		amountLabel: string;
 		/** Label for the add button, e.g. "Add fuel receipt". */
 		addLabel: string;
-		monthlyTransactions: Transaction[];
-		yearlyTransactions: Transaction[];
-		form?: SuperValidated<z.infer<typeof transactionSchema>>;
+		monthlyExpenses: Expense[];
+		yearlyExpenses: Expense[];
+		form?: SuperValidated<z.infer<typeof expenseSchema>>;
 		loadError?: string;
 		/** Extra figures for the stat strip, placed after the yearly total. */
 		yearlyExtra?: (yearlyTotalAmount: number) => Stat[];
@@ -40,8 +40,8 @@
 		columns,
 		amountLabel,
 		addLabel,
-		monthlyTransactions,
-		yearlyTransactions,
+		monthlyExpenses,
+		yearlyExpenses,
 		form,
 		loadError,
 		yearlyExtra
@@ -49,19 +49,19 @@
 
 	// svelte-ignore state_referenced_locally
 	if (form) {
-		transactionFormContext.set(form);
+		expenseFormContext.set(form);
 	}
 
 	let openModal = $state<boolean>(false);
 
-	const sumAmount = (items: Transaction[]) => (items || []).reduce((sum, t) => sum + t.amount, 0);
-	const sumGst = (items: Transaction[]) =>
+	const sumAmount = (items: Expense[]) => (items || []).reduce((sum, t) => sum + t.amount, 0);
+	const sumGst = (items: Expense[]) =>
 		(items || []).reduce((sum, t) => sum + (t.gstAmount ?? 0), 0);
 
-	let monthlyTotalAmount = $derived(sumAmount(monthlyTransactions));
-	let monthlyTotalGst = $derived(sumGst(monthlyTransactions));
-	let yearlyTotalAmount = $derived(sumAmount(yearlyTransactions));
-	let yearlyTotalGst = $derived(sumGst(yearlyTransactions));
+	let monthlyTotalAmount = $derived(sumAmount(monthlyExpenses));
+	let monthlyTotalGst = $derived(sumGst(monthlyExpenses));
+	let yearlyTotalAmount = $derived(sumAmount(yearlyExpenses));
+	let yearlyTotalGst = $derived(sumGst(yearlyExpenses));
 
 	// svelte-ignore state_referenced_locally
 	const monthYear = useMonthYearParams(basePath);
@@ -113,11 +113,11 @@
 	{#snippet tableContent()}
 		<DataTable
 			{columns}
-			data={monthlyTransactions}
+			data={monthlyExpenses}
 			mobileGroupBy={(t) => formatDayHeading(t.date)}
 			emptyMessage={`No receipts for ${monthName} ${monthYear.year} yet.`}
 		/>
 	{/snippet}
 </MonthlyTablePageShell>
 
-<TransactionModal bind:open={openModal} categories={categories()} transactionForm={form!} />
+<ExpenseModal bind:open={openModal} categories={categories()} expenseForm={form!} />

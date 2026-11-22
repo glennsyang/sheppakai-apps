@@ -2,18 +2,14 @@ import { toAiImage } from '@sheppakai/shared/ai-vision';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import { receiptScanResultSchema, transactionSchema } from '#lib/formSchemas/index.js';
+import { receiptScanResultSchema, expenseSchema } from '#lib/formSchemas/index.js';
 import { requireAuth } from '#lib/server/actions/auth-guard.js';
 import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
-import {
-	budgetQueries,
-	categoryQueries,
-	transactionQueries
-} from '#lib/server/db/queries/index.js';
-import { transaction } from '#lib/server/db/schema/index.js';
-import { toTransactionRow } from '#lib/server/db/writes/transactions.js';
+import { budgetQueries, categoryQueries, expenseQueries } from '#lib/server/db/queries/index.js';
+import { expense } from '#lib/server/db/schema/index.js';
+import { toExpenseRow } from '#lib/server/db/writes/expenses.js';
 import { logger } from '#lib/server/logger.js';
-import { transactionBudgetAlertHooks } from '#lib/server/notifications/budget-threshold-alerts.js';
+import { expenseBudgetAlertHooks } from '#lib/server/notifications/budget-threshold-alerts.js';
 import { createUserRateLimiter } from '#lib/server/rate-limiter.js';
 import {
 	isReceiptScanEnabled,
@@ -41,19 +37,19 @@ export const load: PageServerLoad = async ({ url }) => {
 	// Normalize on the server regardless of what the client sends: trim whitespace and cap at
 	// the notes column max length (800 chars) so a crafted URL can't trigger an oversized query.
 	const searchQuery = (url.searchParams.get('search') ?? '').trim().slice(0, 800);
-	const form = await superValidate(zod4(transactionSchema));
+	const form = await superValidate(zod4(expenseSchema));
 
 	try {
 		// In search mode: query across all months, skip budget data (sidebar is hidden)
 		if (searchQuery) {
-			const { transactions, limitReached } = await transactionQueries.search(searchQuery);
+			const { expenses, limitReached } = await expenseQueries.search(searchQuery);
 			return {
-				transactions,
+				expenses,
 				budgets: [],
 				// oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- widens the inferred load type the page indexes with a string
 				categorySpending: {} as Record<string, number>,
 				excludedFromBudgetTotal: 0,
-				yearlyTransactions: [],
+				yearlyExpenses: [],
 				completedMonthsSinceJanuary: 0,
 				form,
 				searchQuery,
@@ -63,19 +59,19 @@ export const load: PageServerLoad = async ({ url }) => {
 		}
 
 		// The month is a subset of the year, so load the year once and derive the month from it.
-		const [yearlyTransactions, budgets] = await Promise.all([
-			transactionQueries.findByDateRange(yearStartDate, yearEndDate),
+		const [yearlyExpenses, budgets] = await Promise.all([
+			expenseQueries.findByDateRange(yearStartDate, yearEndDate),
 			budgetQueries.findByMonthYear(month, year)
 		]);
-		const transactions = filterByDateRange(yearlyTransactions, startDate, endDate);
-		const budgetTransactions = transactions.filter((txn) => !txn.excludedFromBudget);
-		const excludedFromBudgetTotal = transactions.reduce(
+		const expenses = filterByDateRange(yearlyExpenses, startDate, endDate);
+		const budgetExpenses = expenses.filter((txn) => !txn.excludedFromBudget);
+		const excludedFromBudgetTotal = expenses.reduce(
 			(sum, txn) => sum + (txn.excludedFromBudget ? txn.amount : 0),
 			0
 		);
 
 		// Calculate spending per category
-		const categorySpending = budgetTransactions.reduce<Record<string, number>>((acc, txn) => {
+		const categorySpending = budgetExpenses.reduce<Record<string, number>>((acc, txn) => {
 			if (txn.category) {
 				const categoryId = txn.category.id;
 				acc[categoryId] = (acc[categoryId] || 0) + txn.amount;
@@ -84,11 +80,11 @@ export const load: PageServerLoad = async ({ url }) => {
 		}, {});
 
 		return {
-			transactions,
+			expenses,
 			budgets,
 			categorySpending,
 			excludedFromBudgetTotal,
-			yearlyTransactions,
+			yearlyExpenses,
 			completedMonthsSinceJanuary,
 			form,
 			searchQuery,
@@ -97,12 +93,12 @@ export const load: PageServerLoad = async ({ url }) => {
 	} catch (error) {
 		logger.error('Failed to load expense data:', error);
 		return {
-			transactions: [],
+			expenses: [],
 			budgets: [],
 			// oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- widens the inferred load type the page indexes with a string
 			categorySpending: {} as Record<string, number>,
 			excludedFromBudgetTotal: 0,
-			yearlyTransactions: [],
+			yearlyExpenses: [],
 			completedMonthsSinceJanuary,
 			loadError: 'Failed to load expense data. Please try refreshing the page.',
 			form,
@@ -116,17 +112,17 @@ const scanLimiter = createUserRateLimiter([20, 'h']);
 
 export const actions = {
 	...createCrudActions({
-		schema: transactionSchema,
-		table: transaction,
+		schema: expenseSchema,
+		table: expense,
 		entityName: 'Expense',
-		...transactionBudgetAlertHooks,
-		transformCreate: (data, userId) => ({ ...toTransactionRow(data), userId }),
-		transformUpdate: (data) => toTransactionRow(data)
+		...expenseBudgetAlertHooks,
+		transformCreate: (data, userId) => ({ ...toExpenseRow(data), userId }),
+		transformUpdate: (data) => toExpenseRow(data)
 	}),
 
 	/**
 	 * Reads a receipt photo with the configured AI provider and returns the extracted fields as
-	 * the form's data. Nothing is saved: the page prefills the transaction modal for review.
+	 * the form's data. Nothing is saved: the page prefills the expense modal for review.
 	 */
 	scanReceipt: requireAuth(async (event, user) => {
 		const emptyForm = await superValidate(zod4(receiptScanResultSchema));

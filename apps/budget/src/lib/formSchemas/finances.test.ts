@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import type { RecurringBill, Transaction } from '#lib/types.js';
+import type { RecurringBill, Expense } from '#lib/types.js';
 import { getTodayDate } from '#lib/utils/dates.js';
 
 import {
 	recurringBillSchema,
 	toRecurringBillFormData,
-	toDuplicateTransactionFormData,
-	toTransactionFormData,
-	transactionSchema
+	toDuplicateExpenseFormData,
+	toExpenseFormData,
+	expenseSchema
 } from './finances';
 
-const user: Transaction['user'] = {
+const user: Expense['user'] = {
 	id: 'u1',
 	name: 'Test User',
 	email: 'test@example.com',
@@ -27,7 +27,7 @@ const user: Transaction['user'] = {
 
 const audit = { createdAt: new Date(0), updatedAt: new Date(0) };
 
-const transaction: Transaction = {
+const expense: Expense = {
 	id: 't1',
 	amount: 42.5,
 	payee: 'Costco',
@@ -57,30 +57,30 @@ const recurringBill: RecurringBill = {
 	user
 };
 
-describe('toTransactionFormData', () => {
-	it('covers every transactionSchema key', () => {
-		expect(Object.keys(toTransactionFormData(transaction)).sort()).toEqual(
-			Object.keys(transactionSchema.shape).sort()
+describe('toExpenseFormData', () => {
+	it('covers every expenseSchema key', () => {
+		expect(Object.keys(toExpenseFormData(expense)).sort()).toEqual(
+			Object.keys(expenseSchema.shape).sort()
 		);
 	});
 
 	it('preserves excludedFromBudget and passes validation', () => {
-		const data = toTransactionFormData(transaction);
+		const data = toExpenseFormData(expense);
 		expect(data.excludedFromBudget).toBe(true);
 		expect(data.categoryId).toBe('c1');
-		expect(transactionSchema.safeParse(data).success).toBe(true);
+		expect(expenseSchema.safeParse(data).success).toBe(true);
 	});
 });
 
-describe('toDuplicateTransactionFormData', () => {
+describe('toDuplicateExpenseFormData', () => {
 	it('copies the fields but clears the id and dates it today', () => {
-		const data = toDuplicateTransactionFormData(transaction);
+		const data = toDuplicateExpenseFormData(expense);
 		expect(data).toEqual({
-			...toTransactionFormData(transaction),
+			...toExpenseFormData(expense),
 			id: '',
 			date: getTodayDate()
 		});
-		expect(transactionSchema.safeParse(data).success).toBe(true);
+		expect(expenseSchema.safeParse(data).success).toBe(true);
 	});
 });
 

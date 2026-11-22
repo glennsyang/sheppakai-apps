@@ -20,7 +20,7 @@ vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => void>() }));
 vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 vi.mock('#lib/server/db/queries/index.js', () => ({
 	budgetQueries: {},
-	transactionQueries: {},
+	expenseQueries: {},
 	categoryQueries: { findAll: findAllCategoriesMock }
 }));
 
