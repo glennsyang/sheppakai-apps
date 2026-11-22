@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const savingsSchema = z.object({
+export const savingsAccountSchema = z.object({
 	id: z.string().optional(),
 	title: z.string().min(1, 'Title is required').max(100, 'Title must be at most 100 characters'),
 	description: z

@@ -14,7 +14,7 @@ export type {
 	MonthlyNetflowData,
 	MonthlySpentChartData,
 	Recurring,
-	Savings,
+	SavingsAccount,
 	SavingsGoal,
 	SavingsGoalWithEta,
 	SavingsGoalWithProgress,

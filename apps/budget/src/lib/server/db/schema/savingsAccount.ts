@@ -4,7 +4,7 @@ import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { generateId } from '../utils';
 import user from './user';
 
-const savings = sqliteTable('savings', {
+const savingsAccount = sqliteTable('savings_accounts', {
 	id: text('id').primaryKey().$defaultFn(generateId),
 	title: text('title').notNull(),
 	description: text('description'),
@@ -20,8 +20,8 @@ const savings = sqliteTable('savings', {
 		.$defaultFn(() => new Date())
 });
 
-export const savingsRelations = relations(savings, ({ one }) => ({
-	user: one(user, { fields: [savings.userId], references: [user.id] })
+export const savingsAccountRelations = relations(savingsAccount, ({ one }) => ({
+	user: one(user, { fields: [savingsAccount.userId], references: [user.id] })
 }));
 
-export default savings;
+export default savingsAccount;

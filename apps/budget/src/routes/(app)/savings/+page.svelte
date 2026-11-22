@@ -4,10 +4,10 @@
 	import DashboardStatStrip, { type Stat } from '#lib/components/DashboardStatStrip.svelte';
 	import LoadErrorBanner from '#lib/components/LoadErrorBanner.svelte';
 	import PageShell from '#lib/components/PageShell.svelte';
-	import SavingsModal from '#lib/components/SavingsModal.svelte';
+	import SavingsAccountModal from '#lib/components/SavingsAccountModal.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { DataTable } from '#lib/components/ui/data-table/index.js';
-	import { savingsFormContext } from '#lib/contexts/index.js';
+	import { savingsAccountFormContext } from '#lib/contexts/index.js';
 	import { formatCurrency } from '#lib/utils.js';
 
 	import type { PageProps } from './$types';
@@ -17,14 +17,16 @@
 
 	// svelte-ignore state_referenced_locally
 	if (data.form) {
-		savingsFormContext.set(data.form);
+		savingsAccountFormContext.set(data.form);
 	}
 
 	let openModal = $state<boolean>(false);
 
-	let totalSavings = $derived(data.savings.reduce((sum, saving) => sum + saving.amount, 0));
+	let totalInSavingsAccounts = $derived(
+		data.savingsAccounts.reduce((sum, account) => sum + account.amount, 0)
+	);
 	let largest = $derived(
-		data.savings.reduce<(typeof data.savings)[number] | null>(
+		data.savingsAccounts.reduce<(typeof data.savingsAccounts)[number] | null>(
 			(top, s) => (!top || s.amount > top.amount ? s : top),
 			null
 		)
@@ -32,9 +34,9 @@
 
 	let stats = $derived<Stat[]>([
 		{
-			label: 'Total savings',
-			value: formatCurrency(totalSavings),
-			subtext: `${data.savings.length} ${data.savings.length === 1 ? 'account' : 'accounts'}`
+			label: 'Total in savings accounts',
+			value: formatCurrency(totalInSavingsAccounts),
+			subtext: `${data.savingsAccounts.length} ${data.savingsAccounts.length === 1 ? 'account' : 'accounts'}`
 		},
 		{
 			label: 'Largest account',
@@ -45,10 +47,10 @@
 </script>
 
 <svelte:head>
-	<title>Savings</title>
+	<title>Savings accounts</title>
 </svelte:head>
 
-<PageShell title="Savings" subtitle="What is set aside in each account">
+<PageShell title="Savings accounts" subtitle="What is set aside in each account">
 	{#snippet actions()}
 		<Button href="/savings/goals" variant="outline">Goals</Button>
 		<Button onclick={() => (openModal = true)}>
@@ -63,12 +65,12 @@
 		<DashboardStatStrip {stats} />
 		<DataTable
 			{columns}
-			data={data.savings}
-			searchable={data.savings.length > 10}
+			data={data.savingsAccounts}
+			searchable={data.savingsAccounts.length > 10}
 			defaultSorting={[{ id: 'amount', desc: true }]}
 			emptyMessage="No savings accounts yet. Add one to track its balance here."
 		/>
 	{/if}
 </PageShell>
 
-<SavingsModal bind:open={openModal} savingsForm={data.form} />
+<SavingsAccountModal bind:open={openModal} savingsAccountForm={data.form} />

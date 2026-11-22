@@ -407,10 +407,11 @@
 					'The percentage of your income committed to recurring expenses (subscriptions, bills, etc.). High values leave less room for discretionary spending.'
 			},
 			{
-				label: 'Total savings',
-				value: formatCurrency(data.totalSavings || 0),
+				label: 'Total in savings accounts',
+				value: formatCurrency(data.savingsAccountsTotal || 0),
 				subtext: 'across all accounts',
-				tooltip: 'The sum of all your savings accounts, same total shown on the Savings page.'
+				tooltip:
+					'The sum of all your savings accounts, same total shown on the Savings accounts page.'
 			}
 		];
 		if (goalsWithProgress.length > 0) {
@@ -494,10 +495,11 @@
 				subtext: 'year to date, incl. recurring'
 			},
 			{
-				label: 'Total savings',
-				value: formatCurrency(data.totalSavings || 0),
+				label: 'Total in savings accounts',
+				value: formatCurrency(data.savingsAccountsTotal || 0),
 				subtext: 'across all accounts',
-				tooltip: 'The sum of all your savings accounts, same total shown on the Savings page.'
+				tooltip:
+					'The sum of all your savings accounts, same total shown on the Savings accounts page.'
 			}
 		];
 		if (goalsWithProgress.length > 0) {

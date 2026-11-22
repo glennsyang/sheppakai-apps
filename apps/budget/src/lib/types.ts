@@ -53,7 +53,7 @@ export type Recurring = QueryRow<'recurring', { user: true }> & { paid: boolean 
 
 export type Income = QueryRow<'income'>;
 
-export type Savings = QueryRow<'savings', { user: true }>;
+export type SavingsAccount = QueryRow<'savingsAccount', { user: true }>;
 
 export type SavingsGoal = QueryRow<'savingsGoal', { user: true }>;
 

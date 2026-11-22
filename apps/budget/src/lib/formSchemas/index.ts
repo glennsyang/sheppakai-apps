@@ -27,7 +27,12 @@ export {
 	toTransactionFormData,
 	transactionSchema
 } from './finances';
-export { contributionSchema, savingsGoalSchema, savingsSchema, unArchiveSchema } from './savings';
+export {
+	contributionSchema,
+	savingsGoalSchema,
+	savingsAccountSchema,
+	unArchiveSchema
+} from './savings';
 export {
 	restoreCustomerSchema,
 	sendInvoiceSchema,
