@@ -94,8 +94,8 @@ catalogs:
       specifier: ^3.43.1
       version: 3.43.1
     layerchart:
-      specifier: ^2.10.1
-      version: 2.10.1
+      specifier: ^2.11.0
+      version: 2.11.0
     lefthook:
       specifier: ^2.2.2
       version: 2.2.2
@@ -275,7 +275,7 @@ importers:
         version: 3.43.1
       layerchart:
         specifier: 'catalog:'
-        version: 2.10.1(svelte@5.57.3)
+        version: 2.11.0(svelte@5.57.3)
       lint-staged:
         specifier: 'catalog:'
         version: 17.6.1
@@ -577,7 +577,7 @@ importers:
         version: 3.43.1
       layerchart:
         specifier: 'catalog:'
-        version: 2.10.1(svelte@5.57.3)
+        version: 2.11.0(svelte@5.57.3)
       lint-staged:
         specifier: 'catalog:'
         version: 17.6.1
@@ -3233,8 +3233,8 @@ packages:
     resolution: {integrity: sha512-K48ErswC3MlIcBqR0pYIIEl+n9rIgwxgzaM1FxKHMXn7egxr1NHj7bCeF98mXl9A3/QoL5I7mo5S/mLXgeDgGA==}
     engines: {node: '>=22.0.0'}
 
-  layerchart@2.10.1:
-    resolution: {integrity: sha512-/W1zMbcQdvcUoeMWoBVbIEymLtr7ZCA0bptIFfzPWym/hTid/3sWnrK2qhflNdvPTel4mvr4drvhB6RDlcJxEQ==}
+  layerchart@2.11.0:
+    resolution: {integrity: sha512-j8yFwfF+DbP5stsIfts14c+8gV8cUFTs43yNu0lAZut1EqWaK5Kaa3WT/HxNOVxcxHB+7lpOL9r+doD4P8ekow==}
     peerDependencies:
       svelte: ^5.57.0
 
@@ -5893,7 +5893,7 @@ snapshots:
 
   kysely@0.29.9: {}
 
-  layerchart@2.10.1(svelte@5.57.3):
+  layerchart@2.11.0(svelte@5.57.3):
     dependencies:
       '@dagrejs/dagre': 2.0.4
       '@layerstack/svelte-actions': 1.0.1-next.20
