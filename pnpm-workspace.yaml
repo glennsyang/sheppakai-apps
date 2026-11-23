@@ -3,7 +3,7 @@ packages:
   - 'packages/*'
 
 catalog:
-  '@better-auth/api-key': ^1.7.25
+  '@better-auth/api-key': ^1.7.27
   '@better-auth/passkey': 1.7.25 # keep equal to better-auth
   '@getbrevo/brevo': ^6.2.0
   '@internationalized/date': ^3.12.4
