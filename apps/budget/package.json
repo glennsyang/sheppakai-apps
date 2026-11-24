@@ -22,7 +22,6 @@
 		"check:redirect-throws": "node ../../scripts/check-redirect-throws.mjs",
 		"check:dead-code": "fallow dead-code --format human",
 		"test": "pnpm run test:unit -- --run",
-		"openapi": "vitest run src/lib/server/api/openapi.test.ts --update",
 		"test:unit": "vitest",
 		"test:ci": "pnpm run test:unit -- --run && pnpm run test:coverage",
 		"test:coverage": "vitest run --coverage",

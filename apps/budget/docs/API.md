@@ -5,11 +5,6 @@ envelope, error codes, CORS and what's out of scope are shared with synapse and 
 [docs/API_CONVENTIONS.md](../../../docs/API_CONVENTIONS.md). This file covers what's specific to
 budget.
 
-**Machine-readable spec:** [openapi.yaml](openapi.yaml) (OpenAPI 3.1) describes every endpoint
-below: its scope, parameters, request body, response shape and examples. Point an AI assistant or
-API client at it. It is generated from the route validation schemas and Drizzle tables; after
-changing an endpoint, run `pnpm openapi` to regenerate it (a test fails until you do).
-
 ## Keys
 
 Created and revoked by an admin from **Admin → API Keys** (`/admin/api-keys`).
