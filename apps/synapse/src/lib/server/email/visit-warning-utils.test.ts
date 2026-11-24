@@ -1,17 +1,37 @@
 import { describe, expect, it } from 'vitest';
 
+import { addDaysToDateString, getTodayString } from '#lib/utils/date.js';
+
 import {
 	buildVisitWarningEntityId,
 	buildVisitWarningSubject,
 	formatVisitWarningDate,
-	getVisitWarningStatus
+	getVisitWarningStatus,
+	wasVisitWarningSentRecently
 } from './visit-warning-utils';
 
 function dateDaysAgo(daysAgo: number): string {
-	const date = new Date();
-	date.setUTCDate(date.getUTCDate() - daysAgo);
-	return date.toISOString().split('T')[0];
+	return addDaysToDateString(getTodayString(), -daysAgo);
 }
+
+describe('wasVisitWarningSentRecently', () => {
+	// Jan 16, 7pm PST (UTC is already Jan 17)
+	const now = new Date('2026-01-17T03:00:00Z');
+
+	it('suppresses a warning sent earlier the same Pacific day', () => {
+		expect(wasVisitWarningSentRecently(new Date('2026-01-16T16:00:00Z'), now)).toBe(true);
+	});
+
+	it('suppresses a warning sent 6 Pacific days ago', () => {
+		// Jan 10, 7am PST
+		expect(wasVisitWarningSentRecently(new Date('2026-01-10T15:00:00Z'), now)).toBe(true);
+	});
+
+	it('allows a resend once 7 Pacific days have passed, regardless of time of day', () => {
+		// Jan 9, 11:37pm PST: UTC date is Jan 10, but the Pacific day is 7 days ago
+		expect(wasVisitWarningSentRecently(new Date('2026-01-10T07:37:00Z'), now)).toBe(false);
+	});
+});
 
 describe('visit warning utilities', () => {
 	it('returns null for non-warning status windows', () => {
