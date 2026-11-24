@@ -134,8 +134,8 @@ function buildBudgetThresholdNotification(params: {
 	};
 }
 
+// Budgets belong to the Household, so match them whoever created them.
 async function loadBudgetCategorySnapshot(
-	userId: string,
 	categoryId: string,
 	month: number,
 	year: number
@@ -145,7 +145,6 @@ async function loadBudgetCategorySnapshot(
 			category: true
 		},
 		where: and(
-			eq(budget.userId, userId),
 			eq(budget.categoryId, categoryId),
 			eq(budget.month, padMonth(month)),
 			eq(budget.year, year.toString())
@@ -183,7 +182,6 @@ async function loadCategoryMonthSpend(
 }
 
 async function maybeSendBudgetThresholdAlert(params: {
-	userId: string;
 	categoryId: string;
 	month: number;
 	year: number;
@@ -191,7 +189,6 @@ async function maybeSendBudgetThresholdAlert(params: {
 	currentSpentAmount: number;
 }): Promise<void> {
 	const budgetSnapshot = await loadBudgetCategorySnapshot(
-		params.userId,
 		params.categoryId,
 		params.month,
 		params.year
@@ -283,7 +280,6 @@ export async function evaluateCreatedExpenseBudgetAlert(
 	const previousSpentAmount = Math.max(currentSpentAmount - expenseRecord.amount, 0);
 
 	await maybeSendBudgetThresholdAlert({
-		userId: expenseRecord.userId,
 		categoryId: expenseRecord.categoryId,
 		month,
 		year,
@@ -333,7 +329,6 @@ export async function evaluateUpdatedExpenseBudgetAlert(
 	const isSameBudgetBucket =
 		!previousExpense.excludedFromBudget &&
 		!nextExpense.excludedFromBudget &&
-		previousExpense.userId === nextExpense.userId &&
 		previousExpense.categoryId === nextExpense.categoryId &&
 		previousMonthYear.month === nextMonthYear.month &&
 		previousMonthYear.year === nextMonthYear.year;
@@ -350,7 +345,6 @@ export async function evaluateUpdatedExpenseBudgetAlert(
 		);
 
 		await maybeSendBudgetThresholdAlert({
-			userId: nextExpense.userId,
 			categoryId: nextExpense.categoryId,
 			month: nextMonthYear.month,
 			year: nextMonthYear.year,
@@ -368,7 +362,6 @@ export async function evaluateUpdatedExpenseBudgetAlert(
 	const previousSpentAmount = Math.max(currentSpentAmount - nextExpense.amount, 0);
 
 	await maybeSendBudgetThresholdAlert({
-		userId: nextExpense.userId,
 		categoryId: nextExpense.categoryId,
 		month: nextMonthYear.month,
 		year: nextMonthYear.year,
