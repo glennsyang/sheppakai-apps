@@ -1,5 +1,3 @@
-// `/api/v1/recurring-bills` replaced `/api/v1/recurring` (#320). The old paths stay as aliases
-// for one release, so both must answer the same way.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockRequireApiKey = vi.hoisted(() => vi.fn<(...args: unknown[]) => Promise<unknown>>());
@@ -24,8 +22,6 @@ vi.mock('#lib/server/logger.js', () => ({
 	}
 }));
 
-import { GET as aliasGet } from '../recurring/+server';
-import { PATCH as aliasPatch } from '../recurring/[id]/+server';
 import { GET } from './+server';
 import { PATCH } from './[id]/+server';
 
@@ -45,41 +41,24 @@ beforeEach(() => {
 });
 
 describe('GET /api/v1/recurring-bills', () => {
-	it.each([
-		['/api/v1/recurring-bills', GET],
-		['/api/v1/recurring', aliasGet]
-	])('%s lists active recurring bills', async (path, handler) => {
+	it('lists active recurring bills', async () => {
 		mockFindActive.mockResolvedValue([bill]);
 
-		const response = await call(handler, path);
+		const response = await call(GET as Handler, '/api/v1/recurring-bills');
 
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({ data: [bill] });
 		expect(mockRequireApiKey).toHaveBeenCalledWith(expect.any(Request), 'recurring:read');
 	});
-
-	it('returns the same body from both paths', async () => {
-		mockFindActive.mockResolvedValue([bill]);
-
-		const [current, alias] = await Promise.all([
-			call(GET as Handler, '/api/v1/recurring-bills'),
-			call(aliasGet as Handler, '/api/v1/recurring')
-		]);
-
-		expect(await alias.json()).toEqual(await current.json());
-	});
 });
 
 describe('PATCH /api/v1/recurring-bills/[id]', () => {
-	it.each([
-		['/api/v1/recurring-bills/rb1', PATCH],
-		['/api/v1/recurring/rb1', aliasPatch]
-	])('%s marks a recurring bill paid', async (path, handler) => {
+	it('marks a recurring bill paid', async () => {
 		mockMarkPaid.mockResolvedValue({ ...bill, paid: true });
 
 		const response = await call(
-			handler,
-			path,
+			PATCH as Handler,
+			'/api/v1/recurring-bills/rb1',
 			{
 				method: 'PATCH',
 				headers: { 'content-type': 'application/json' },

@@ -30,7 +30,7 @@ import { requireApiKey } from './require-api-key';
 const owner = { id: 'user1', email: 'owner@example.com', role: 'admin', banned: false };
 const call = () =>
 	requireApiKey(
-		new Request('https://example.com/api/v1/transactions', {
+		new Request('https://example.com/api/v1/expenses', {
 			headers: { authorization: 'Bearer sk_test_123' }
 		}),
 		'transactions:write'

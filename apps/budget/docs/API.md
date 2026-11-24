@@ -5,6 +5,11 @@ envelope, error codes, CORS and what's out of scope are shared with synapse and 
 [docs/API_CONVENTIONS.md](../../../docs/API_CONVENTIONS.md). This file covers what's specific to
 budget.
 
+**Machine-readable spec:** [openapi.yaml](openapi.yaml) (OpenAPI 3.1) describes every endpoint
+below: its scope, parameters, request body, response shape and examples. Point an AI assistant or
+API client at it. It is generated from the route validation schemas and Drizzle tables; after
+changing an endpoint, run `pnpm openapi` to regenerate it (a test fails until you do).
+
 ## Keys
 
 Created and revoked by an admin from **Admin → API Keys** (`/admin/api-keys`).
@@ -54,10 +59,6 @@ Requires `transactions:read`. Query parameters (all optional):
 curl -H "Authorization: Bearer sk_live_xxx" \
   "https://budget.example.com/api/v1/expenses?startDate=2026-08-01&endDate=2026-08-31"
 ```
-
-> **Deprecated alias:** `GET /api/v1/transactions` and `POST /api/v1/transactions` still work and
-> return the same responses, but will be removed after one release. Switch callers to
-> `/api/v1/expenses`. The scope names (`transactions:read`, `transactions:write`) are unchanged.
 
 ### `POST /api/v1/expenses`
 
@@ -157,10 +158,6 @@ Requires `recurring:read`. No parameters — returns every active recurring bill
 ```bash
 curl -H "Authorization: Bearer sk_live_xxx" "https://budget.example.com/api/v1/recurring-bills"
 ```
-
-> **Deprecated alias:** `GET /api/v1/recurring` and `PATCH /api/v1/recurring/:id` still work and
-> return the same responses, but will be removed after one release. Switch callers to
-> `/api/v1/recurring-bills`. The scope names (`recurring:read`, `recurring:markPaid`) are unchanged.
 
 ### `PATCH /api/v1/recurring-bills/:id`
 

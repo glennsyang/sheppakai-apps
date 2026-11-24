@@ -1,0 +1,1512 @@
+openapi: "3.1.0"
+info:
+  title: "Sheppakai Budget API"
+  version: "1"
+  description: "Read and write access to the budget app for external tools. Every request needs an API key, created by an admin under Admin → API Keys, with the scope each operation names.\n\nScopes: `transactions:read`, `transactions:write`, `budgets:read`, `categories:read`, `dashboard:read`, `income:read`, `income:write`, `recurring:read`, `recurring:markPaid`, `windowCleaningCustomers:read`, `windowCleaningCustomers:write`, `windowCleaningJobs:read`, `windowCleaningJobs:write`, `contributions:write`.\n\nEvery response is JSON: `{ \"data\": ... }` on success, `{ \"error\": { \"code\", \"message\" } }` on failure. Every write is recorded in an audit log with the key that made it."
+servers:
+  - url: "https://budget.example.com"
+    description: "Replace with the deployed app URL."
+security:
+  - apiKey: []
+paths:
+  "/api/v1/expenses":
+    get:
+      operationId: "getExpenses"
+      summary: "List expenses"
+      description: "Newest first. `startDate` and `endDate` must be given together. `limit` only applies when no date range is given.\n\nRequires the `transactions:read` scope."
+      x-required-scope: "transactions:read"
+      parameters:
+        - name: "startDate"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          example: "2026-08-01"
+        - name: "endDate"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          example: "2026-08-31"
+        - name: "categoryId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            minLength: 1
+        - name: "limit"
+          in: "query"
+          required: false
+          schema:
+            default: 50
+            type: "integer"
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: "OK."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    type: "array"
+                    items:
+                      $ref: "#/components/schemas/Expense"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: "postExpenses"
+      summary: "Create an expense"
+      description: "Returns the created expense with its category and owner. Every write, successful or not, is recorded in the audit log.\n\nRequires the `transactions:write` scope."
+      x-required-scope: "transactions:write"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: "object"
+              properties:
+                amount:
+                  type: "number"
+                  exclusiveMinimum: 0
+                payee:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 100
+                notes:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 800
+                date:
+                  type: "string"
+                  minLength: 1
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+                gstAmount:
+                  type: "number"
+                excludedFromBudget:
+                  default: false
+                  type: "boolean"
+                categoryId:
+                  type: "string"
+                  minLength: 1
+              required:
+                - "amount"
+                - "payee"
+                - "notes"
+                - "date"
+                - "categoryId"
+            example:
+              amount: 42.5
+              payee: "Grocery Store"
+              notes: "Weekly shop"
+              date: "2026-08-12"
+              categoryId: "cat_123"
+              excludedFromBudget: false
+      responses:
+        "201":
+          description: "Created."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Expense"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/v1/budgets":
+    get:
+      operationId: "getBudgets"
+      summary: "List category budgets for a year, or one month of it"
+      description: "Requires the `budgets:read` scope."
+      x-required-scope: "budgets:read"
+      parameters:
+        - name: "month"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 1
+            maximum: 12
+          example: 8
+        - name: "year"
+          in: "query"
+          required: true
+          schema:
+            type: "integer"
+            minimum: 2000
+            maximum: 2100
+          example: 2026
+      responses:
+        "200":
+          description: "OK."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    type: "array"
+                    items:
+                      $ref: "#/components/schemas/Budget"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/v1/categories":
+    get:
+      operationId: "getCategories"
+      summary: "List categories"
+      description: "Requires the `categories:read` scope."
+      x-required-scope: "categories:read"
+      responses:
+        "200":
+          description: "OK."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    type: "array"
+                    items:
+                      $ref: "#/components/schemas/Category"
+                required:
+                  - "data"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/v1/dashboard":
+    get:
+      operationId: "getDashboard"
+      summary: "Dashboard summary"
+      description: "The same figures the dashboard page shows. `mode=monthly` (default) uses `month` and `year`; `mode=yearly` uses `year` and `view`. Defaults to the current month or year.\n\nRequires the `dashboard:read` scope."
+      x-required-scope: "dashboard:read"
+      parameters:
+        - name: "mode"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            enum:
+              - "monthly"
+              - "yearly"
+          example: "monthly"
+        - name: "month"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 1
+            maximum: 12
+          example: 8
+        - name: "year"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 2000
+            maximum: 2100
+          example: 2026
+        - name: "view"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            enum:
+              - "current"
+              - "full"
+      responses:
+        "200":
+          description: "OK."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DashboardSummary"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/v1/income":
+    get:
+      operationId: "getIncome"
+      summary: "List income"
+      description: "`startDate` and `endDate` must be given together; `month` needs `year`. `limit` only applies when no range is given.\n\nRequires the `income:read` scope."
+      x-required-scope: "income:read"
+      parameters:
+        - name: "startDate"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: "endDate"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: "month"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 1
+            maximum: 12
+          example: 8
+        - name: "year"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 2000
+            maximum: 2100
+          example: 2026
+        - name: "limit"
+          in: "query"
+          required: false
+          schema:
+            default: 50
+            type: "integer"
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: "OK."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    type: "array"
+                    items:
+                      $ref: "#/components/schemas/Income"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: "postIncome"
+      summary: "Record income"
+      description: "Requires the `income:write` scope."
+      x-required-scope: "income:write"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: "object"
+              properties:
+                name:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 100
+                description:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 500
+                date:
+                  type: "string"
+                  minLength: 1
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+                amount:
+                  type: "number"
+                  exclusiveMinimum: 0
+              required:
+                - "name"
+                - "description"
+                - "date"
+                - "amount"
+            example:
+              name: "Freelance payment"
+              description: "Invoice #42"
+              date: "2026-08-12"
+              amount: 500
+      responses:
+        "201":
+          description: "Created."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Income"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/v1/recurring-bills":
+    get:
+      operationId: "getRecurringBills"
+      summary: "List active recurring bills"
+      description: "`paid` is this period's paid state: the current month, or the current year for Yearly bills.\n\nRequires the `recurring:read` scope."
+      x-required-scope: "recurring:read"
+      responses:
+        "200":
+          description: "OK."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    type: "array"
+                    items:
+                      $ref: "#/components/schemas/RecurringBill"
+                required:
+                  - "data"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/v1/recurring-bills/{id}":
+    patch:
+      operationId: "patchRecurringBillsById"
+      summary: "Mark a recurring bill paid or unpaid for the current period"
+      description: "Requires the `recurring:markPaid` scope."
+      x-required-scope: "recurring:markPaid"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          description: "Recurring bill id."
+          schema:
+            type: "string"
+          example: "rec_123"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: "object"
+              properties:
+                paid:
+                  type: "boolean"
+              required:
+                - "paid"
+            example:
+              paid: true
+      responses:
+        "200":
+          description: "OK."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    $ref: "#/components/schemas/RecurringBill"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: "No record with that id (`not_found`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/v1/window-cleaning/customers":
+    get:
+      operationId: "getWindowCleaningCustomers"
+      summary: "List window-cleaning customers"
+      description: "Every active (non-deleted) customer.\n\nRequires the `windowCleaningCustomers:read` scope."
+      x-required-scope: "windowCleaningCustomers:read"
+      responses:
+        "200":
+          description: "OK."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    type: "array"
+                    items:
+                      $ref: "#/components/schemas/WindowCleaningCustomer"
+                required:
+                  - "data"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: "postWindowCleaningCustomers"
+      summary: "Create a window-cleaning customer"
+      description: "Requires the `windowCleaningCustomers:write` scope."
+      x-required-scope: "windowCleaningCustomers:write"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: "object"
+              properties:
+                name:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 100
+                address:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 200
+                city:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 100
+                unitNumber:
+                  type: "string"
+                  maxLength: 20
+                buzzerNumber:
+                  type: "string"
+                  maxLength: 20
+                phoneNumber:
+                  type: "string"
+                  maxLength: 20
+                email:
+                  anyOf:
+                    - type: "string"
+                      maxLength: 255
+                      format: "email"
+                      pattern: "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                    - type: "string"
+                      const: ""
+                notes:
+                  type: "string"
+                  maxLength: 500
+                recleanIntervalDays:
+                  type: "integer"
+                  minimum: 1
+                  maximum: 730
+              required:
+                - "name"
+                - "address"
+                - "city"
+            example:
+              name: "Jane Doe"
+              address: "123 Main St"
+              city: "Vancouver"
+      responses:
+        "201":
+          description: "Created."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    $ref: "#/components/schemas/WindowCleaningCustomer"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/v1/window-cleaning/customers/{id}":
+    patch:
+      operationId: "patchWindowCleaningCustomersById"
+      summary: "Replace a window-cleaning customer"
+      description: "A full replace of the editable fields, not a partial patch.\n\nRequires the `windowCleaningCustomers:write` scope."
+      x-required-scope: "windowCleaningCustomers:write"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          description: "Customer id."
+          schema:
+            type: "string"
+          example: "cust_123"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: "object"
+              properties:
+                name:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 100
+                address:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 200
+                city:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 100
+                unitNumber:
+                  type: "string"
+                  maxLength: 20
+                buzzerNumber:
+                  type: "string"
+                  maxLength: 20
+                phoneNumber:
+                  type: "string"
+                  maxLength: 20
+                email:
+                  anyOf:
+                    - type: "string"
+                      maxLength: 255
+                      format: "email"
+                      pattern: "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                    - type: "string"
+                      const: ""
+                notes:
+                  type: "string"
+                  maxLength: 500
+                recleanIntervalDays:
+                  type: "integer"
+                  minimum: 1
+                  maximum: 730
+              required:
+                - "name"
+                - "address"
+                - "city"
+            example:
+              name: "Jane Doe"
+              address: "456 Elm St"
+              city: "Vancouver"
+      responses:
+        "200":
+          description: "OK."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    $ref: "#/components/schemas/WindowCleaningCustomer"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: "No record with that id (`not_found`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/v1/window-cleaning/jobs":
+    get:
+      operationId: "getWindowCleaningJobs"
+      summary: "List window-cleaning jobs"
+      description: "Filters apply in this order: `customerId`, then `month` with `year`, then `year` alone. With none, returns every job.\n\nRequires the `windowCleaningJobs:read` scope."
+      x-required-scope: "windowCleaningJobs:read"
+      parameters:
+        - name: "customerId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            minLength: 1
+          example: "cust_123"
+        - name: "month"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 1
+            maximum: 12
+        - name: "year"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            minimum: 2000
+            maximum: 2100
+      responses:
+        "200":
+          description: "OK."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    type: "array"
+                    items:
+                      $ref: "#/components/schemas/WindowCleaningJob"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: "postWindowCleaningJobs"
+      summary: "Record a window-cleaning job"
+      description: "Requires the `windowCleaningJobs:write` scope."
+      x-required-scope: "windowCleaningJobs:write"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: "object"
+              properties:
+                customerId:
+                  type: "string"
+                  minLength: 1
+                jobDate:
+                  type: "string"
+                  minLength: 1
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+                jobTime:
+                  type: "string"
+                amountCharged:
+                  type: "number"
+                  exclusiveMinimum: 0
+                tip:
+                  default: 0
+                  type: "number"
+                  minimum: 0
+                durationHours:
+                  type: "number"
+                  exclusiveMinimum: 0
+                notes:
+                  type: "string"
+                  maxLength: 500
+              required:
+                - "customerId"
+                - "jobDate"
+                - "amountCharged"
+            example:
+              customerId: "cust_123"
+              jobDate: "2026-08-12"
+              amountCharged: 120
+              tip: 20
+      responses:
+        "201":
+          description: "Created."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    $ref: "#/components/schemas/WindowCleaningJob"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+  "/api/v1/savings/goals/{id}/contributions":
+    post:
+      operationId: "postSavingsGoalsContributions"
+      summary: "Add a contribution to a savings goal"
+      description: "Requires the `contributions:write` scope."
+      x-required-scope: "contributions:write"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          description: "Savings goal id."
+          schema:
+            type: "string"
+          example: "goal_123"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: "object"
+              properties:
+                amount:
+                  type: "number"
+                  exclusiveMinimum: 0
+                date:
+                  type: "string"
+                  minLength: 1
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+                description:
+                  type: "string"
+                  minLength: 1
+                  maxLength: 500
+              required:
+                - "amount"
+                - "date"
+            example:
+              amount: 100
+              date: "2026-08-12"
+              description: "Monthly deposit"
+      responses:
+        "201":
+          description: "Created."
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Contribution"
+                required:
+                  - "data"
+        "400":
+          description: "Invalid JSON, or a query or body that failed validation (`invalid_json`, `validation_failed`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "Missing, malformed or invalid API key, or a key without the required scope (`missing_header`, `malformed_header`, `invalid_api_key`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: "No record with that id (`not_found`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: "Rate limit exceeded for this API key (`rate_limited`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Server error (`internal_error`)."
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  securitySchemes:
+    apiKey:
+      type: "http"
+      scheme: "bearer"
+      description: "An API key: `Authorization: Bearer sk_…`."
+  schemas:
+    Category:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        name:
+          type: "string"
+        description:
+          type: "string"
+        createdAt:
+          type: "string"
+          format: "date-time"
+        updatedAt:
+          type: "string"
+          format: "date-time"
+      required:
+        - "id"
+        - "name"
+        - "description"
+        - "createdAt"
+        - "updatedAt"
+    User:
+      type: "object"
+      description: "A record's owner. Email, role and ban details are never returned."
+      properties:
+        id:
+          type: "string"
+        name:
+          type: "string"
+      required:
+        - "id"
+        - "name"
+    Expense:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        amount:
+          type: "number"
+        payee:
+          type: "string"
+        notes:
+          type: "string"
+        date:
+          type: "string"
+        gstAmount:
+          type:
+            - "number"
+            - "null"
+        excludedFromBudget:
+          type: "boolean"
+        categoryId:
+          type: "string"
+        userId:
+          type: "string"
+        createdAt:
+          type: "string"
+          format: "date-time"
+        updatedAt:
+          type: "string"
+          format: "date-time"
+        category:
+          $ref: "#/components/schemas/Category"
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - "id"
+        - "amount"
+        - "payee"
+        - "notes"
+        - "date"
+        - "gstAmount"
+        - "excludedFromBudget"
+        - "categoryId"
+        - "userId"
+        - "createdAt"
+        - "updatedAt"
+        - "category"
+        - "user"
+    Budget:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        amount:
+          type: "number"
+        month:
+          type: "string"
+        year:
+          type: "string"
+        presetType:
+          type:
+            - "string"
+            - "null"
+        categoryId:
+          type: "string"
+        userId:
+          type: "string"
+        createdAt:
+          type: "string"
+          format: "date-time"
+        updatedAt:
+          type: "string"
+          format: "date-time"
+        category:
+          $ref: "#/components/schemas/Category"
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - "id"
+        - "amount"
+        - "month"
+        - "year"
+        - "presetType"
+        - "categoryId"
+        - "userId"
+        - "createdAt"
+        - "updatedAt"
+        - "category"
+        - "user"
+    Income:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        name:
+          type: "string"
+        description:
+          type: "string"
+        amount:
+          type: "number"
+        date:
+          type: "string"
+        userId:
+          type: "string"
+        createdAt:
+          type: "string"
+          format: "date-time"
+        updatedAt:
+          type: "string"
+          format: "date-time"
+      required:
+        - "id"
+        - "name"
+        - "description"
+        - "amount"
+        - "date"
+        - "userId"
+        - "createdAt"
+        - "updatedAt"
+    RecurringBill:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        merchant:
+          type: "string"
+        description:
+          type: "string"
+        cadence:
+          type: "string"
+        amount:
+          type: "number"
+        dueDay:
+          type:
+            - "integer"
+            - "null"
+        dueMonth:
+          type:
+            - "integer"
+            - "null"
+        endedAt:
+          type:
+            - "string"
+            - "null"
+          format: "date-time"
+        userId:
+          type: "string"
+        createdAt:
+          type: "string"
+          format: "date-time"
+        updatedAt:
+          type: "string"
+          format: "date-time"
+        user:
+          $ref: "#/components/schemas/User"
+        paid:
+          type: "boolean"
+          description: "Paid for this period (month, or year for Yearly bills)."
+      required:
+        - "id"
+        - "merchant"
+        - "description"
+        - "cadence"
+        - "amount"
+        - "dueDay"
+        - "dueMonth"
+        - "endedAt"
+        - "userId"
+        - "createdAt"
+        - "updatedAt"
+        - "user"
+        - "paid"
+    WindowCleaningCustomer:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        name:
+          type: "string"
+        address:
+          type: "string"
+        city:
+          type: "string"
+        unitNumber:
+          type:
+            - "string"
+            - "null"
+        buzzerNumber:
+          type:
+            - "string"
+            - "null"
+        phoneNumber:
+          type:
+            - "string"
+            - "null"
+        email:
+          type:
+            - "string"
+            - "null"
+        notes:
+          type:
+            - "string"
+            - "null"
+        recleanIntervalDays:
+          type:
+            - "integer"
+            - "null"
+        deletedAt:
+          type:
+            - "string"
+            - "null"
+          format: "date-time"
+        deletedBy:
+          type:
+            - "string"
+            - "null"
+        userId:
+          type: "string"
+        createdAt:
+          type: "string"
+          format: "date-time"
+        updatedAt:
+          type: "string"
+          format: "date-time"
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - "id"
+        - "name"
+        - "address"
+        - "city"
+        - "unitNumber"
+        - "buzzerNumber"
+        - "phoneNumber"
+        - "email"
+        - "notes"
+        - "recleanIntervalDays"
+        - "deletedAt"
+        - "deletedBy"
+        - "userId"
+        - "createdAt"
+        - "updatedAt"
+        - "user"
+    WindowCleaningJob:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        customerId:
+          type: "string"
+        jobDate:
+          type: "string"
+        jobTime:
+          type:
+            - "string"
+            - "null"
+        amountCharged:
+          type: "number"
+        tip:
+          type: "number"
+        durationHours:
+          type:
+            - "number"
+            - "null"
+        notes:
+          type:
+            - "string"
+            - "null"
+        invoiceSentAt:
+          type:
+            - "string"
+            - "null"
+          format: "date-time"
+        userId:
+          type: "string"
+        createdAt:
+          type: "string"
+          format: "date-time"
+        updatedAt:
+          type: "string"
+          format: "date-time"
+        customer:
+          $ref: "#/components/schemas/WindowCleaningCustomer"
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - "id"
+        - "customerId"
+        - "jobDate"
+        - "jobTime"
+        - "amountCharged"
+        - "tip"
+        - "durationHours"
+        - "notes"
+        - "invoiceSentAt"
+        - "userId"
+        - "createdAt"
+        - "updatedAt"
+        - "customer"
+        - "user"
+    SavingsGoal:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        name:
+          type: "string"
+        description:
+          type:
+            - "string"
+            - "null"
+        targetAmount:
+          type: "number"
+        targetDate:
+          type:
+            - "string"
+            - "null"
+        status:
+          type: "string"
+          enum:
+            - "active"
+            - "completed"
+            - "paused"
+            - "archived"
+        userId:
+          type: "string"
+        createdAt:
+          type: "string"
+          format: "date-time"
+        updatedAt:
+          type: "string"
+          format: "date-time"
+      required:
+        - "id"
+        - "name"
+        - "description"
+        - "targetAmount"
+        - "targetDate"
+        - "status"
+        - "userId"
+        - "createdAt"
+        - "updatedAt"
+    Contribution:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        goalId:
+          type: "string"
+        amount:
+          type: "number"
+        date:
+          type: "string"
+        description:
+          type:
+            - "string"
+            - "null"
+        userId:
+          type: "string"
+        createdAt:
+          type: "string"
+          format: "date-time"
+        updatedAt:
+          type: "string"
+          format: "date-time"
+        goal:
+          $ref: "#/components/schemas/SavingsGoal"
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - "id"
+        - "goalId"
+        - "amount"
+        - "date"
+        - "description"
+        - "userId"
+        - "createdAt"
+        - "updatedAt"
+        - "goal"
+        - "user"
+    DashboardSummary:
+      type: "object"
+      description: "Computed dashboard figures. The fields differ by `mode`; see `docs/API.md` for what each one means."
+      properties:
+        mode:
+          type: "string"
+          enum:
+            - "monthly"
+            - "yearly"
+      required:
+        - "mode"
+      additionalProperties: true
+    Error:
+      type: "object"
+      properties:
+        error:
+          type: "object"
+          properties:
+            code:
+              type: "string"
+            message:
+              type: "string"
+          required:
+            - "code"
+            - "message"
+      required:
+        - "error"
