@@ -18,8 +18,10 @@ const state = vi.hoisted(() => ({ db: null as unknown }));
 
 vi.mock('#lib/server/db/index.js', () => ({ getDb: () => state.db }));
 
-import { getPersonVisitStatus } from '#lib/server/visits.js';
-import { DEFAULT_VISIT_STATUS_THRESHOLDS } from '#lib/utils/visit-status.js';
+import {
+	calculatePersonVisitStatus,
+	DEFAULT_VISIT_STATUS_THRESHOLDS
+} from '#lib/utils/visit-status.js';
 
 import { createVisit, logVisitAndSetNextVisit, updateVisit } from './visits';
 
@@ -108,9 +110,10 @@ function oldStatus(db: TestDb, sqlite: TestSqlite, personId: string) {
 	const nextVisit = latest ? latest.followUpDate : person.scheduledVisitDate;
 	return {
 		latest,
-		status: getPersonVisitStatus(
-			{ isExempt: person.isExempt, scheduledVisitDate: nextVisit },
-			latest,
+		status: calculatePersonVisitStatus(
+			latest?.date ?? null,
+			person.isExempt,
+			nextVisit,
 			TODAY,
 			DEFAULT_VISIT_STATUS_THRESHOLDS
 		).status
@@ -119,7 +122,13 @@ function oldStatus(db: TestDb, sqlite: TestSqlite, personId: string) {
 
 function newStatus(db: TestDb, personId: string, latest: { date: string } | undefined) {
 	const person = db.query.people.findFirst({ where: eq(schema.people.id, personId) }).sync()!;
-	return getPersonVisitStatus(person, latest, TODAY, DEFAULT_VISIT_STATUS_THRESHOLDS).status;
+	return calculatePersonVisitStatus(
+		latest?.date ?? null,
+		person.isExempt,
+		person.scheduledVisitDate,
+		TODAY,
+		DEFAULT_VISIT_STATUS_THRESHOLDS
+	).status;
 }
 
 describe('0035 Next Visit backfill and 0036 follow-up column drop', () => {

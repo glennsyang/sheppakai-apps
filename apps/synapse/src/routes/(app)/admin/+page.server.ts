@@ -2,7 +2,7 @@ import { FLY_APP_NAME } from '$app/env/private';
 import { createAdminUserActions, listAdminUsers } from '@sheppakai/shared/admin-user-actions';
 import { createApiKeyAdminActions } from '@sheppakai/shared/api-key-admin';
 import { isHttpError } from '@sveltejs/kit';
-import { desc, eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
@@ -17,11 +17,11 @@ import { listApiAuditEntries } from '#lib/server/api/audit-log.js';
 import { allowedEmails, auth } from '#lib/server/auth.js';
 import { sendWelcome } from '#lib/server/auth/welcome.js';
 import { getDb } from '#lib/server/db/index.js';
-import { people, user } from '#lib/server/db/schema/index.js';
+import { people } from '#lib/server/db/schema/index.js';
 import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
+import { loadArchivedMembers } from '#lib/server/group-status.js';
 import { logger } from '#lib/server/logger.js';
 import { sendAuthAlerts } from '#lib/server/notifications/index.js';
-import { getLatestVisitsByPersonId } from '#lib/server/visits.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -63,35 +63,15 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 		const [users, archivedPeople, apiKeys, apiLogs] = await Promise.all([
 			// Through the admin plugin, not the db, so better-auth's own admin check runs.
 			listAdminUsers(auth, request.headers, { sortBy: 'createdAt', sortDirection: 'desc' }),
-			db.query.people.findMany({
-				where: eq(people.isArchived, true),
-				orderBy: [desc(people.updatedAt)]
-			}),
+			loadArchivedMembers(db),
 			// Every user's keys, not just the signed-in admin's, so any admin can revoke anyone's.
 			apiKeyStore.listAllWithOwner(),
 			listApiAuditEntries()
 		]);
 
-		const ownerIds = [...new Set(archivedPeople.map((person) => person.userId))];
-		const owners =
-			ownerIds.length > 0
-				? await db.query.user.findMany({ where: inArray(user.id, ownerIds) })
-				: [];
-		const ownerEmailById = new Map(owners.map((owner) => [owner.id, owner.email]));
-
-		const latestVisitsByPersonId = await getLatestVisitsByPersonId(
-			archivedPeople.map((person) => person.id),
-			undefined,
-			db
-		);
-
 		return {
 			users,
-			archivedPeople: archivedPeople.map((person) => ({
-				...person,
-				ownerEmail: ownerEmailById.get(person.userId) ?? 'Unknown',
-				lastVisitDate: latestVisitsByPersonId.get(person.id)?.date ?? null
-			})),
+			archivedPeople,
 			apiKeys,
 			apiLogs,
 			createApiKeyForm,

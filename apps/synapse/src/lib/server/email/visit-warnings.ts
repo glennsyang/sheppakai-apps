@@ -1,86 +1,37 @@
-import { eq, sql } from 'drizzle-orm';
+import { loadGroupStatuses, type GroupMemberStatus } from '#lib/server/group-status.js';
 
-import { logger } from '#lib/server/logger.js';
-import { getVisitStatusThresholdsByUserIds } from '#lib/server/visit-status-settings.js';
-
-import { people, user, visits } from '../db/schema';
 import type { Db, NotificationJob } from '../notification-jobs/run-job';
 import { buildVisitWarningEmail } from './templates';
 import {
 	buildVisitWarningEntityId,
 	buildVisitWarningSubject,
 	formatVisitWarningDate,
-	getVisitWarningStatus
+	toVisitWarningStatus,
+	type VisitWarningStatus
 } from './visit-warning-utils';
 
 type VisitWarningCandidate = {
-	person: typeof people.$inferSelect;
-	user: typeof user.$inferSelect;
+	person: GroupMemberStatus['person'];
+	user: GroupMemberStatus['owner'];
 	lastVisitDate: string;
-	warningStatus: 'yellow' | 'critical';
+	warningStatus: VisitWarningStatus;
 };
 
 /**
- * Non-archived, non-exempt people whose latest visit puts them in yellow/critical status,
- * using each owner's visit-status thresholds. Shared by the warnings job and the morning digest.
+ * Every owner's Overdue or Critical group members. Shared by the warnings job and the morning
+ * digest.
  */
 export async function loadVisitWarningCandidates(
 	db: Db,
 	today: string
 ): Promise<VisitWarningCandidate[]> {
-	// Get all people with their last visit date
-	const allPeople = db
-		.select({
-			person: people,
-			user: user
-		})
-		.from(people)
-		.innerJoin(user, eq(people.userId, user.id))
-		.where(eq(people.isArchived, false))
-		.all();
-
-	logger.debug(`   Found ${allPeople.length} people to check`);
-	const visitThresholdsByUserId = await getVisitStatusThresholdsByUserIds(
-		allPeople.map(({ user: userData }) => userData.id),
-		db
-	);
-
-	const candidates: VisitWarningCandidate[] = [];
-
-	for (const { person, user: userData } of allPeople) {
-		if (person.isExempt) {
-			logger.debug('   ⏭️  Skipping exempt person', { personId: person.id });
-			continue;
-		}
-
-		// Get last visit for this person
-		const lastVisit = db
-			.select()
-			.from(visits)
-			.where(eq(visits.personId, person.id))
-			.orderBy(sql`${visits.date} DESC`)
-			.limit(1)
-			.get();
-
-		if (!lastVisit) {
-			// No visits recorded yet, skip
-			continue;
-		}
-
-		const warningStatus = getVisitWarningStatus(
-			lastVisit.date,
-			person.scheduledVisitDate,
-			visitThresholdsByUserId.get(userData.id),
-			today
-		);
-		if (!warningStatus) {
-			continue;
-		}
-
-		candidates.push({ person, user: userData, lastVisitDate: lastVisit.date, warningStatus });
-	}
-
-	return candidates;
+	const members = await loadGroupStatuses(db, { today });
+	return members.flatMap(({ person, owner, status, lastVisit }) => {
+		const warningStatus = toVisitWarningStatus(status);
+		return warningStatus && lastVisit
+			? [{ person, user: owner, lastVisitDate: lastVisit.date, warningStatus }]
+			: [];
+	});
 }
 
 /** Email + push when a group member turns Overdue or Critical; repeats at most weekly. */

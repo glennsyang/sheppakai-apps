@@ -22,10 +22,9 @@ import { getDb } from '#lib/server/db/index.js';
 import { people, visits } from '#lib/server/db/schema/index.js';
 import { generateId, withTimestampsForUpdate } from '#lib/server/db/utils.js';
 import { logVisitAndSetNextVisit } from '#lib/server/db/writes/visits.js';
+import { loadGroupStatuses } from '#lib/server/group-status.js';
 import { stringListSchema, safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
-import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
-import { getPersonVisitStatus } from '#lib/server/visits.js';
 import { getTodayString } from '#lib/utils/date.js';
 
 import type { Actions, PageServerLoad } from './$types';
@@ -52,22 +51,18 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		// Load all visits for this person
 		const personVisits = await db.query.visits.findMany({
 			where: eq(visits.personId, params.id),
-			orderBy: [desc(visits.date)]
+			orderBy: [desc(visits.date), desc(visits.createdAt)]
 		});
 
 		const parsedVisits = personVisits.map((visit) => ({
 			...visit,
 			companions: safeParse(visit.companions, stringListSchema, null, 'visit.companions')
 		}));
-		const visitStatusThresholds = await getVisitStatusThresholdsForUser(userId, db);
-
-		// Calculate status
-		const statusInfo = getPersonVisitStatus(
-			person,
-			personVisits[0],
-			getTodayString(),
-			visitStatusThresholds
-		);
+		const [statusInfo] = await loadGroupStatuses(db, {
+			userId,
+			personId: person.id,
+			today: getTodayString()
+		});
 
 		// Initialize forms
 		const visitForm = await superValidate(zod4(visitSchema));

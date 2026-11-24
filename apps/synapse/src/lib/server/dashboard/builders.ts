@@ -1,5 +1,4 @@
 import type { MealType } from '#lib/schemas/fitness.js';
-import { getPersonVisitStatus } from '#lib/server/visits.js';
 import { DEFAULT_DASHBOARD_GOALS } from '#lib/utils/dashboard-goals.js';
 import {
 	addDaysToDateString,
@@ -15,7 +14,7 @@ import {
 } from '#lib/utils/date.js';
 import { createMarkdownExcerpt } from '#lib/utils/markdown.js';
 import { sumCalories, type TodayMeals } from '#lib/utils/meal.js';
-import type { VisitStatus, VisitStatusThresholds } from '#lib/utils/visit-status.js';
+import type { VisitStatus } from '#lib/utils/visit-status.js';
 import { getWorkoutLabel } from '#lib/utils/workout.js';
 
 import type { QueryData } from './queries';
@@ -92,11 +91,9 @@ export function buildUpcomingVisits(
 		}));
 }
 
+/** Counts and names per health bucket; Exempt members are left out. */
 export function buildVisitHealth(
-	peopleRaw: { id: string; name: string; isExempt: boolean; scheduledVisitDate: string | null }[],
-	visitsMap: Map<string, { date: string }>,
-	today: string,
-	visitStatusThresholds: VisitStatusThresholds
+	members: { person: { name: string }; status: VisitStatus }[]
 ): VisitHealthResult {
 	const counts: Record<VisitHealthBucket, number> & { total: number } = {
 		critical: 0,
@@ -111,13 +108,7 @@ export function buildVisitHealth(
 		healthy: [],
 		noVisits: []
 	};
-	for (const person of peopleRaw) {
-		const { status } = getPersonVisitStatus(
-			person,
-			visitsMap.get(person.id),
-			today,
-			visitStatusThresholds
-		);
+	for (const { person, status } of members) {
 		if (status === 'exempt') continue;
 		const key = STATUS_KEY_MAP[status];
 		counts[key]++;

@@ -1,7 +1,6 @@
-import { getTodayString } from '#lib/utils/date.js';
-import { calculatePersonVisitStatus, type VisitStatusThresholds } from '#lib/utils/visit-status.js';
+import type { VisitStatus } from '#lib/utils/visit-status.js';
 
-type VisitWarningStatus = 'yellow' | 'critical';
+export type VisitWarningStatus = 'yellow' | 'critical';
 
 const visitWarningDateFormatter = new Intl.DateTimeFormat('en-US', {
 	timeZone: 'UTC',
@@ -10,28 +9,10 @@ const visitWarningDateFormatter = new Intl.DateTimeFormat('en-US', {
 	year: 'numeric'
 });
 
-export function getVisitWarningStatus(
-	lastVisitDate: string,
-	nextVisitDate: string | null = null,
-	visitStatusThresholds?: Partial<VisitStatusThresholds> | null,
-	today: string = getTodayString()
-): VisitWarningStatus | null {
-	const { status } = calculatePersonVisitStatus(
-		lastVisitDate,
-		false,
-		nextVisitDate,
-		today,
-		visitStatusThresholds
-	);
-
-	if (status === 'yellow') {
-		return 'yellow';
-	}
-
-	if (status === 'red') {
-		return 'critical';
-	}
-
+/** The Visit Warning a status earns: Overdue → yellow, Critical → critical, otherwise none. */
+export function toVisitWarningStatus(status: VisitStatus): VisitWarningStatus | null {
+	if (status === 'yellow') return 'yellow';
+	if (status === 'red') return 'critical';
 	return null;
 }
 

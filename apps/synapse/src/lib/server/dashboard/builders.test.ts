@@ -1,11 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-// Visit status rules have their own tests; here each person's status is fixed by id.
-vi.mock('#lib/server/visits.js', () => ({
-	getPersonVisitStatus: (person: { id: string }) => ({ status: person.id.split('-')[0] })
-}));
-
-import type { VisitStatusThresholds } from '#lib/utils/visit-status.js';
+import type { VisitStatus } from '#lib/utils/visit-status.js';
 
 import {
 	buildAgendaCompletionTrend,
@@ -58,25 +53,15 @@ describe('buildUpcomingVisits', () => {
 
 describe('buildVisitHealth', () => {
 	it('buckets people by visit status, counting scheduled as healthy and skipping exempt', () => {
-		const person = (id: string, name: string) => ({
-			id,
-			name,
-			isExempt: false,
-			scheduledVisitDate: null
-		});
+		const member = (status: VisitStatus, name: string) => ({ person: { name }, status });
 
-		const result = buildVisitHealth(
-			[
-				person('red-1', 'Ann'),
-				person('yellow-1', 'Bo'),
-				person('scheduled-1', 'Cy'),
-				person('none-1', 'Di'),
-				person('exempt-1', 'Ed')
-			],
-			new Map(),
-			TODAY,
-			{} as VisitStatusThresholds
-		);
+		const result = buildVisitHealth([
+			member('red', 'Ann'),
+			member('yellow', 'Bo'),
+			member('scheduled', 'Cy'),
+			member('none', 'Di'),
+			member('exempt', 'Ed')
+		]);
 
 		expect(result.counts).toEqual({ critical: 1, overdue: 1, healthy: 1, noVisits: 1, total: 4 });
 		expect(result.names).toEqual({
