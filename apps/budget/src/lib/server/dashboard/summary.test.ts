@@ -8,7 +8,12 @@ type MockExpense = {
 	payee?: string;
 	notes?: string;
 };
-type MockBudget = { amount: number; month?: string; year?: string; category?: { id: string } };
+type MockBudget = {
+	amount: number;
+	month?: string;
+	year?: string;
+	category?: { id: string; name?: string };
+};
 type MockBillPrice = {
 	amount: number;
 	cadence: 'Monthly' | 'Yearly';
@@ -110,6 +115,32 @@ describe('loadMonthlyDashboard', () => {
 		expect(result.plannedExpensesTotal).toBe(200);
 		expect(result.totalIncome).toBe(500);
 		expect(result.remainingBalance).toBe(300);
+	});
+
+	it('returns a Category Status for each budgeted or spent Category, riskiest first', async () => {
+		const groceries = { id: 'c-groceries', name: 'Groceries' };
+		const fuel = { id: 'c-fuel', name: 'Fuel' };
+		const gifts = { id: 'c-gifts', name: 'Gifts' };
+		mockExpenseQueries.findByDateRangeIncludedInBudget.mockResolvedValue([
+			{ amount: 80, date: '2020-06-05', category: groceries },
+			{ amount: 40, date: '2020-06-07', category: groceries },
+			{ amount: 10, date: '2020-06-08', category: fuel },
+			{ amount: 25, date: '2020-06-09', category: gifts }
+		]);
+		mockBudgetQueries.findByMonthYear.mockResolvedValue([
+			{ amount: 100, category: groceries },
+			{ amount: 50, category: fuel }
+		]);
+
+		const result = await loadMonthlyDashboard(
+			new URL('https://example.com/dashboard?month=6&year=2020')
+		);
+
+		expect(result.categoryStatuses.map((s) => [s.categoryId, s.state, s.overBy])).toEqual([
+			['c-groceries', 'over', 20],
+			['c-fuel', 'ok', 0],
+			['c-gifts', 'unbudgeted', 0]
+		]);
 	});
 
 	it('has no forecast for a past month', async () => {
@@ -250,6 +281,27 @@ describe('loadYearlyDashboard', () => {
 			95
 		]);
 		expect(result.plannedExpensesTotal).toBe(900 + 320 + 760 + 60);
+	});
+
+	it('charts each Category per month with Over Budget from Category Status', async () => {
+		const travel = { id: 'c-travel', name: 'Travel' };
+		mockExpenseQueries.findByDateRangeIncludedInBudget.mockResolvedValue([
+			{ amount: 150, date: '2020-02-10', category: travel },
+			{ amount: 30, date: '2020-03-10', category: travel }
+		]);
+		mockBudgetQueries.findByYear.mockResolvedValue([
+			{ amount: 100, month: '02', year: '2020', category: travel },
+			{ amount: 100, month: '03', year: '2020', category: travel }
+		]);
+
+		const result = await loadYearlyDashboard(new URL('https://example.com/dashboard?year=2020'));
+
+		expect(result.categoryMonthly['c-travel'].slice(0, 4)).toEqual([
+			{ month: 'January', spent: 0, budget: undefined, overbudget: 0 },
+			{ month: 'February', spent: 150, budget: 100, overbudget: 50 },
+			{ month: 'March', spent: 30, budget: 100, overbudget: 0 },
+			{ month: 'April', spent: 0, budget: undefined, overbudget: 0 }
+		]);
 	});
 
 	it('returns excluded expenses lean and newest first, summing to the stat', async () => {

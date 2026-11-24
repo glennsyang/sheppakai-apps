@@ -4,9 +4,13 @@
 	import { page } from '$app/state';
 	import { ChevronDownIcon } from '@lucide/svelte';
 	import { PlusIcon } from '@lucide/svelte/icons';
-	import { SvelteMap } from 'svelte/reactivity';
 
-	import type { MonthlyNetflowData, SpendingBreakdownData } from '#lib';
+	import type {
+		CategoryStatus,
+		MonthlyNetflowData,
+		MonthlySpentChartData,
+		SpendingBreakdownData
+	} from '#lib';
 	import BudgetAlertRow from '#lib/components/BudgetAlertRow.svelte';
 	import CardGridSkeleton from '#lib/components/CardGridSkeleton.svelte';
 	import CategoryBudgetList from '#lib/components/CategoryBudgetList.svelte';
@@ -164,22 +168,9 @@
 	// Sort categories alphabetically
 	let sortedCategories = $derived([...categories()].sort((a, b) => a.name.localeCompare(b.name)));
 
-	function getPlannedAmount(categoryId: string): number {
-		return data.plannedExpenses?.find((b) => b?.category?.id === categoryId)?.amount || 0;
-	}
-
-	function getActualAmount(categoryId: string): number {
-		if (!data.actualExpenses) return 0;
-		return data.actualExpenses
-			.filter((e) => e?.category?.id === categoryId)
-			.reduce((sum, e) => sum + e.amount, 0);
-	}
-
-	function isCategoryOverBudget(categoryId: string): boolean {
-		const planned = getPlannedAmount(categoryId);
-		if (planned <= 0) return false;
-		return getActualAmount(categoryId) > planned;
-	}
+	// Budget vs spent comes from the server's Category Status module; this page only renders it.
+	let categoryStatuses = $derived(data.categoryStatuses ?? []);
+	let statusById = $derived(new Map(categoryStatuses.map((s) => [s.categoryId, s])));
 
 	// Spending breakdown donut chart data (monthly)
 	let spendingBreakdownData: SpendingBreakdownData[] = $derived.by(() => {
@@ -240,36 +231,22 @@
 		return { direction, label: `${Math.abs(pctChange).toFixed(0)}% ${verb} vs last month` };
 	}
 
-	// Over-budget categories for alert row (monthly)
-	let overBudgetCategories = $derived.by(() => {
-		return sortedCategories
-			.filter((c) => isCategoryOverBudget(c.id))
-			.map((c) => ({
-				id: c.id,
-				name: c.name,
-				actual: getActualAmount(c.id),
-				planned: getPlannedAmount(c.id)
+	// Over-budget categories for alert row (monthly), largest overage first
+	let overBudgetCategories = $derived(
+		categoryStatuses
+			.filter((s) => s.state === 'over')
+			.map((s) => ({
+				id: s.categoryId,
+				name: s.categoryName,
+				actual: s.spent,
+				planned: s.budgeted
 			}))
-			.sort((a, b) => b.actual - b.planned - (a.actual - a.planned));
-	});
+	);
 
-	// Top 6 categories sorted by risk level (over budget first, then highest % used)
-	let topRiskCategories = $derived.by(() => {
-		return [...sortedCategories]
-			.filter((c) => getPlannedAmount(c.id) > 0 || getActualAmount(c.id) > 0)
-			.sort((a, b) => {
-				const aOver = isCategoryOverBudget(a.id);
-				const bOver = isCategoryOverBudget(b.id);
-				if (aOver && !bOver) return -1;
-				if (!aOver && bOver) return 1;
-				const aPlanned = getPlannedAmount(a.id);
-				const bPlanned = getPlannedAmount(b.id);
-				const aPct = aPlanned > 0 ? getActualAmount(a.id) / aPlanned : 0;
-				const bPct = bPlanned > 0 ? getActualAmount(b.id) / bPlanned : 0;
-				return bPct - aPct;
-			})
-			.slice(0, 6);
-	});
+	// Top 6 categories by risk (over budget first, then highest % used)
+	let topRiskCategories = $derived(
+		categoryStatuses.slice(0, 6).map((s) => ({ id: s.categoryId, name: s.categoryName }))
+	);
 
 	// Recurring total for the selected month, from the prices in effect that month.
 	let recurringBillsMonthlyTotal = $derived(data.recurringBillsMonthlyTotal || 0);
@@ -359,12 +336,23 @@
 	let excludedExpensesTotal = $derived(data.excludedExpensesTotal || 0);
 
 	let categoryColors = $derived(categoryColorMap(sortedCategories));
+	function emptyStatus(c: { id: string; name: string }): CategoryStatus {
+		return {
+			categoryId: c.id,
+			categoryName: c.name,
+			budgeted: 0,
+			spent: 0,
+			overBy: 0,
+			pctUsed: 0,
+			state: 'empty'
+		};
+	}
+
 	function categoryRows(list: { id: string; name: string }[]) {
 		return list.map((c) => ({
 			id: c.id,
 			name: c.name,
-			planned: getPlannedAmount(c.id),
-			actual: getActualAmount(c.id),
+			status: statusById.get(c.id) ?? emptyStatus(c),
 			color: categoryColors.get(c.id) ?? chartColors[0]
 		}));
 	}
@@ -436,47 +424,12 @@
 		(data.actualExpenses || []).map((e) => ({ date: String(e.date), amount: e.amount }))
 	);
 
-	// Pre-built lookup map for allYearBudgets: key is `${categoryId}-${monthValue}-${year}`
-	let allYearBudgetsMap = $derived.by(() => {
-		const map = new Map<string, number>();
-		for (const b of data.allYearBudgets ?? []) {
-			if (b.category?.id && b.month && b.year) {
-				map.set(`${b.category.id}-${b.month}-${b.year}`, b.amount);
-			}
-		}
-		return map;
-	});
-
-	function getCategoryMonthlyData(categoryId: string) {
-		if (!data.timeRangeData || !data.actualExpenses) return [];
-		const monthlySpending = new SvelteMap<string, number>();
-		data.timeRangeData.forEach((item) => monthlySpending.set(item.month, 0));
-		const monthsInRange = data.timeRangeData.map((item) => item.month);
-		data.actualExpenses
-			.filter((expense) => expense?.category?.id === categoryId)
-			.forEach((expense) => {
-				const expenseDate = new Date(expense.date);
-				const monthIndex = expenseDate.getMonth();
-				const monthName = monthNames[monthIndex];
-				if (monthsInRange.includes(monthName)) {
-					const currentTotal = monthlySpending.get(monthName) || 0;
-					monthlySpending.set(monthName, currentTotal + expense.amount);
-				}
-			});
-		return data.timeRangeData.map((item) => {
-			const monthValue = months.find((m) => m.label === item.month)?.value;
-			const budgetAmount = monthValue
-				? allYearBudgetsMap.get(`${categoryId}-${monthValue}-${String(data.year)}`)
-				: undefined;
-			const spent = monthlySpending.get(item.month) || 0;
-			const budget = budgetAmount;
-			return {
-				month: item.month,
-				spent,
-				budget,
-				overbudget: budget !== undefined ? Math.max(0, spent - budget) : 0
-			};
-		});
+	// Per-Category yearly series, built on the server from Category Status.
+	function getCategoryMonthlyData(categoryId: string): MonthlySpentChartData[] {
+		return (
+			data.categoryMonthly?.[categoryId] ??
+			(data.timeRangeData ?? []).map((item) => ({ month: item.month, spent: 0, overbudget: 0 }))
+		);
 	}
 
 	// Monthly netflow chart data (yearly view)

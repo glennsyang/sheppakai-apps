@@ -5,6 +5,7 @@ export type {
 	BaseModalProps,
 	Budget,
 	Category,
+	CategoryStatus,
 	ChartData,
 	Contribution,
 	ExcludedExpense,

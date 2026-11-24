@@ -1,14 +1,15 @@
 <script lang="ts">
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 
+	import type { CategoryStatus } from '#lib';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import { formatCurrency } from '#lib/utils.js';
 
 	interface CategoryRow {
 		id: string;
 		name: string;
-		planned: number;
-		actual: number;
+		/** From the server's Category Status module; this list only renders it. */
+		status: CategoryStatus;
 		color: string;
 	}
 
@@ -18,20 +19,13 @@
 	}
 
 	let { categories, onSelect }: Props = $props();
-
-	function status(row: CategoryRow) {
-		if (row.planned <= 0) return row.actual > 0 ? 'unbudgeted' : 'empty';
-		if (row.actual > row.planned) return 'over';
-		if (row.actual / row.planned >= 0.9) return 'close';
-		return 'ok';
-	}
 </script>
 
 <Card.Root class="gap-0 py-1.5">
 	<ul class="divide-y">
 		{#each categories as row (row.id)}
-			{@const state = status(row)}
-			{@const pct = row.planned > 0 ? (row.actual / row.planned) * 100 : 0}
+			{@const state = row.status.state}
+			{@const pct = row.status.pctUsed}
 			<li>
 				<button
 					type="button"
@@ -50,15 +44,17 @@
 					<span class="text-right text-sm tabular-nums sm:order-3">
 						{#if state === 'over'}
 							<span class="text-destructive font-medium"
-								>{formatCurrency(row.actual - row.planned)} over</span
+								>{formatCurrency(row.status.overBy)} over</span
 							>
 						{:else if state === 'unbudgeted'}
-							<span class="text-muted-foreground">{formatCurrency(row.actual)} unbudgeted</span>
+							<span class="text-muted-foreground"
+								>{formatCurrency(row.status.spent)} unbudgeted</span
+							>
 						{:else if state === 'empty'}
 							<span class="text-muted-foreground">No budget</span>
 						{:else}
-							<span class={state === 'close' ? 'text-warning font-medium' : 'font-medium'}
-								>{formatCurrency(row.planned - row.actual)}</span
+							<span class={state === 'near' ? 'text-warning font-medium' : 'font-medium'}
+								>{formatCurrency(row.status.budgeted - row.status.spent)}</span
 							>
 							<span class="text-muted-foreground">left</span>
 						{/if}
@@ -71,7 +67,7 @@
 									'block h-full rounded-full transition-[width] duration-500 ease-out',
 									state === 'over'
 										? 'bg-destructive'
-										: state === 'close'
+										: state === 'near'
 											? 'bg-warning'
 											: state === 'unbudgeted'
 												? 'bg-muted-foreground/50'
@@ -84,8 +80,9 @@
 							></span>
 						</span>
 						<span class="text-muted-foreground w-28 shrink-0 text-right text-xs tabular-nums">
-							{formatCurrency(row.actual)}{#if row.planned > 0}<span
-									class="text-muted-foreground/70">&nbsp;/ {formatCurrency(row.planned)}</span
+							{formatCurrency(row.status.spent)}{#if row.status.budgeted > 0}<span
+									class="text-muted-foreground/70"
+									>&nbsp;/ {formatCurrency(row.status.budgeted)}</span
 								>{/if}
 						</span>
 					</span>

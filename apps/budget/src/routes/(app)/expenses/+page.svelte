@@ -88,13 +88,11 @@
 		return expense.excludedFromBudget ? 'text-muted-foreground' : '';
 	}
 
-	// Sort budgets alphabetically by category name
+	// Budgeted categories, alphabetically; status (spent, % used, state) comes from the server.
 	let sortedBudgets = $derived(
-		[...data.budgets].sort((a, b) => {
-			const nameA = a.category?.name || '';
-			const nameB = b.category?.name || '';
-			return nameA.localeCompare(nameB);
-		})
+		data.categoryStatuses
+			.filter((s) => s.budgeted > 0)
+			.toSorted((a, b) => a.categoryName.localeCompare(b.categoryName))
 	);
 
 	let periodLabel = $derived(`${monthNames[monthYear.month - 1]} ${monthYear.year}`);
@@ -232,15 +230,8 @@
 				</p>
 			{:else}
 				<div class="pb-2 md:grid md:grid-cols-2 xl:grid-cols-3 2xl:block">
-					{#each sortedBudgets as budgetItem (budgetItem.id)}
-						{#if budgetItem.category}
-							<CategoryBudgetProgress
-								categoryName={budgetItem.category.name}
-								spent={data.categorySpending[budgetItem.category.id] || 0}
-								budgeted={budgetItem.amount}
-								color={categoryColors.get(budgetItem.category.id)}
-							/>
-						{/if}
+					{#each sortedBudgets as status (status.categoryId)}
+						<CategoryBudgetProgress {status} color={categoryColors.get(status.categoryId)} />
 					{/each}
 				</div>
 			{/if}

@@ -5,6 +5,11 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 import { receiptScanResultSchema, expenseSchema } from '#lib/formSchemas/index.js';
 import { requireAuth } from '#lib/server/actions/auth-guard.js';
 import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
+import {
+	buildCategoryStatuses,
+	toBudgetInputs,
+	toSpendInputs
+} from '#lib/server/budgets/category-status.js';
 import { budgetQueries, categoryQueries, expenseQueries } from '#lib/server/db/queries/index.js';
 import { expense } from '#lib/server/db/schema/index.js';
 import { toExpenseRow } from '#lib/server/db/writes/expenses.js';
@@ -16,6 +21,7 @@ import {
 	scanReceipt,
 	UnreadableReceiptError
 } from '#lib/server/receipt-scan/index.js';
+import type { CategoryStatus } from '#lib/types.js';
 import {
 	calculateMonthsSinceJanuary,
 	filterByDateRange,
@@ -45,9 +51,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			const { expenses, limitReached } = await expenseQueries.search(searchQuery);
 			return {
 				expenses,
-				budgets: [],
-				// oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- widens the inferred load type the page indexes with a string
-				categorySpending: {} as Record<string, number>,
+				categoryStatuses: [] as CategoryStatus[],
 				excludedFromBudgetTotal: 0,
 				yearlyExpenses: [],
 				completedMonthsSinceJanuary: 0,
@@ -64,25 +68,19 @@ export const load: PageServerLoad = async ({ url }) => {
 			budgetQueries.findByMonthYear(month, year)
 		]);
 		const expenses = filterByDateRange(yearlyExpenses, startDate, endDate);
-		const budgetExpenses = expenses.filter((txn) => !txn.excludedFromBudget);
 		const excludedFromBudgetTotal = expenses.reduce(
 			(sum, txn) => sum + (txn.excludedFromBudget ? txn.amount : 0),
 			0
 		);
 
-		// Calculate spending per category
-		const categorySpending = budgetExpenses.reduce<Record<string, number>>((acc, txn) => {
-			if (txn.category) {
-				const categoryId = txn.category.id;
-				acc[categoryId] = (acc[categoryId] || 0) + txn.amount;
-			}
-			return acc;
-		}, {});
+		const categoryStatuses = buildCategoryStatuses(
+			toBudgetInputs(budgets),
+			toSpendInputs(expenses)
+		);
 
 		return {
 			expenses,
-			budgets,
-			categorySpending,
+			categoryStatuses,
 			excludedFromBudgetTotal,
 			yearlyExpenses,
 			completedMonthsSinceJanuary,
@@ -94,9 +92,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		logger.error('Failed to load expense data:', error);
 		return {
 			expenses: [],
-			budgets: [],
-			// oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- widens the inferred load type the page indexes with a string
-			categorySpending: {} as Record<string, number>,
+			categoryStatuses: [] as CategoryStatus[],
 			excludedFromBudgetTotal: 0,
 			yearlyExpenses: [],
 			completedMonthsSinceJanuary,

@@ -46,6 +46,26 @@ export type Expense = QueryRow<'expense', { category: true; user: true }>;
 export type Budget = QueryRow<'budget', { category: true; user: true }>;
 
 /**
+ * Where a Category stands against its Budget for a month. `over` and `near` need a Budget above
+ * zero; `unbudgeted` is spend with no (or a $0) Budget, `empty` is neither. Built only by
+ * `#lib/server/budgets/category-status.js`; components render it, never recompute it.
+ */
+export type CategoryStatusState = 'over' | 'near' | 'ok' | 'unbudgeted' | 'empty';
+
+export type CategoryStatus = {
+	categoryId: string;
+	categoryName: string;
+	budgeted: number;
+	/** Spend that counts toward the Budget: Excluded Expenses are left out. */
+	spent: number;
+	/** How far spent is past budgeted; 0 unless `state` is `over`. */
+	overBy: number;
+	/** spent / budgeted × 100, unrounded; 0 when there is no Budget. */
+	pctUsed: number;
+	state: CategoryStatusState;
+};
+
+/**
  * A recurring bill as the UI and API see it: `amount`/`cadence` are the values in effect for
  * the period being viewed, and `paid` is whether that period's payment is recorded.
  */
