@@ -54,37 +54,46 @@ export function rowToRecipe(row: typeof recipes.$inferSelect): Recipe {
 	};
 }
 
-export async function saveRecipe(
-	userId: string,
-	data: {
-		name: string;
-		description: string;
-		ingredientsJson: Ingredient[];
-		instructionsJson: string[];
-		prepTimeMinutes: number;
-		servings: number;
-		source?: RecipeSource;
-		sourceUrl?: string | null;
-	}
-): Promise<Recipe> {
-	logger.debug('saveRecipe', { userId, name: data.name });
-	const id = generateId();
-	const db = getDb();
-	await db.insert(recipes).values({
-		id,
-		userId,
-		name: data.name,
-		description: data.description,
-		ingredientsJson: JSON.stringify(data.ingredientsJson),
-		instructionsJson: JSON.stringify(data.instructionsJson),
-		prepTimeMinutes: data.prepTimeMinutes,
-		servings: data.servings,
-		source: data.source ?? 'suggested',
-		sourceUrl: data.sourceUrl ?? null,
-		...withTimestampsForCreate()
-	});
-	const [row] = db.select().from(recipes).where(eq(recipes.id, id)).all();
+type Db = ReturnType<typeof getDb>;
+/** A transaction handle, for writes that must commit together with others (see `planDinner`). */
+export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+export interface NewRecipe {
+	name: string;
+	description: string;
+	ingredientsJson: Ingredient[];
+	instructionsJson: string[];
+	prepTimeMinutes: number;
+	servings: number;
+	source?: RecipeSource;
+	sourceUrl?: string | null;
+}
+
+/** Insert a Recipe inside the caller's transaction, stamped with the caller's `now`. */
+export function insertRecipe(tx: Tx, userId: string, data: NewRecipe, now: Date): Recipe {
+	const row = tx
+		.insert(recipes)
+		.values({
+			id: generateId(),
+			userId,
+			name: data.name,
+			description: data.description,
+			ingredientsJson: JSON.stringify(data.ingredientsJson),
+			instructionsJson: JSON.stringify(data.instructionsJson),
+			prepTimeMinutes: data.prepTimeMinutes,
+			servings: data.servings,
+			source: data.source ?? 'suggested',
+			sourceUrl: data.sourceUrl ?? null,
+			...withTimestampsForCreate(now)
+		})
+		.returning()
+		.get();
 	return rowToRecipe(row);
+}
+
+export async function saveRecipe(userId: string, data: NewRecipe): Promise<Recipe> {
+	logger.debug('saveRecipe', { userId, name: data.name });
+	return getDb().transaction((tx) => insertRecipe(tx, userId, data, new Date()));
 }
 
 /** Overwrite a saved recipe's content. Keeps its source, so a written-in meal stays custom. */

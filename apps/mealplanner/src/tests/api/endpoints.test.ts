@@ -4,6 +4,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+	RecipeNotFoundError: class RecipeNotFoundError extends Error {},
 	requireApiKey: vi.fn<(request: Request, scope: string) => Promise<unknown>>(),
 	recordApiWrite: vi.fn<(entry: unknown) => Promise<void>>(),
 	limiterCheck: vi.fn<() => Promise<{ limited: boolean; retryAfter: number }>>(),
@@ -24,8 +25,7 @@ const mocks = vi.hoisted(() => ({
 	},
 	mealPlan: {
 		getMealPlanWithEntries: vi.fn<(week: string) => Promise<unknown[]>>(),
-		getMondayOfCurrentWeek: vi.fn<() => string>(),
-		addMealPlanEntry: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+		planDinner: vi.fn<(input: unknown) => Promise<unknown[]>>(),
 		clearMealPlanDay: vi.fn<(week: string, day: number) => Promise<boolean>>()
 	}
 }));
@@ -38,7 +38,10 @@ vi.mock('#lib/server/rate-limiter.js', () => ({
 vi.mock('#lib/server/suggestions/index.js', () => ({ suggest: mocks.suggest }));
 vi.mock('#lib/server/services/pantry.js', () => mocks.pantry);
 vi.mock('#lib/server/services/recipes.js', () => mocks.recipes);
-vi.mock('#lib/server/services/mealPlan.js', () => mocks.mealPlan);
+vi.mock('#lib/server/services/mealPlan.js', () => ({
+	...mocks.mealPlan,
+	RecipeNotFoundError: mocks.RecipeNotFoundError
+}));
 vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		debug: vi.fn<() => void>(),
@@ -47,6 +50,10 @@ vi.mock('#lib/server/logger.js', () => ({
 		error: vi.fn<() => void>()
 	}
 }));
+
+// The current week resolves from the clock: Wed 28 Oct 2026 → Monday 2026-10-26.
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date(2026, 9, 28, 12));
 
 import * as pantry from '../../routes/api/v1/pantry/+server';
 import * as pantryItem from '../../routes/api/v1/pantry/[id]/+server';
@@ -94,7 +101,6 @@ beforeEach(() => {
 	mocks.requireApiKey.mockResolvedValue(KEY);
 	mocks.recordApiWrite.mockResolvedValue();
 	mocks.limiterCheck.mockResolvedValue({ limited: false, retryAfter: 0 });
-	mocks.mealPlan.getMondayOfCurrentWeek.mockReturnValue('2026-10-26');
 	mocks.mealPlan.getMealPlanWithEntries.mockResolvedValue([]);
 });
 
@@ -272,8 +278,7 @@ describe('plans', () => {
 	});
 
 	it('sets a day and returns the updated week', async () => {
-		mocks.recipes.getRecipe.mockResolvedValue(RECIPE);
-		mocks.mealPlan.getMealPlanWithEntries.mockResolvedValue([
+		mocks.mealPlan.planDinner.mockResolvedValue([
 			{ entry: { id: 'e1', dayOfWeek: 2 }, recipe: RECIPE }
 		]);
 		const res = await call(planDay.PUT, '/api/v1/plans/2026-10-26/days/2', {
@@ -282,7 +287,12 @@ describe('plans', () => {
 			params: { week: '2026-10-26', day: '2' }
 		});
 		expect(res.status).toBe(200);
-		expect(mocks.mealPlan.addMealPlanEntry).toHaveBeenCalledWith('user-1', '2026-10-26', 2, 'r1');
+		expect(mocks.mealPlan.planDinner).toHaveBeenCalledWith({
+			userId: 'user-1',
+			week: '2026-10-26',
+			day: 2,
+			dinner: { recipeId: 'r1' }
+		});
 		const { data } = await res.json();
 		expect(data.days[2]).toMatchObject({ entryId: 'e1', recipe: { id: 'r1' } });
 	});
@@ -303,7 +313,7 @@ describe('plans', () => {
 	});
 
 	it('returns 404 for a missing recipe and for clearing an empty day', async () => {
-		mocks.recipes.getRecipe.mockResolvedValue(null);
+		mocks.mealPlan.planDinner.mockRejectedValue(new mocks.RecipeNotFoundError('gone'));
 		mocks.mealPlan.clearMealPlanDay.mockResolvedValue(false);
 		const params = { week: '2026-10-26', day: '1' };
 		const put = await call(planDay.PUT, '/api/v1/plans/2026-10-26/days/1', {
@@ -316,8 +326,8 @@ describe('plans', () => {
 			params
 		});
 		expect(put.status).toBe(404);
+		expect(await put.json()).toMatchObject({ error: { code: 'not_found' } });
 		expect(del.status).toBe(404);
-		expect(mocks.mealPlan.addMealPlanEntry).not.toHaveBeenCalled();
 	});
 });
 

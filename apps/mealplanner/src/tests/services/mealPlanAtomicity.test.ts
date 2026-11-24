@@ -19,7 +19,7 @@ vi.mock('../../lib/server/logger', () => ({
 let currentDb: ReturnType<typeof drizzle<typeof schema>>;
 vi.mock('../../lib/server/db', () => ({ getDb: () => currentDb }));
 
-const { addMealPlanEntry, getMealPlanWithEntries } =
+const { planDinner, getMealPlanWithEntries, RecipeNotFoundError } =
 	await import('../../lib/server/services/mealPlan');
 
 const MIGRATIONS = resolve(__dirname, '../../lib/server/db/migrations');
@@ -130,7 +130,7 @@ describe('shared rows survive user removal (#164)', () => {
 	});
 });
 
-describe('addMealPlanEntry (#164)', () => {
+describe('planDinner: plan and day upsert (#164)', () => {
 	let sqlite: Database.Database;
 
 	beforeEach(() => {
@@ -144,8 +144,8 @@ describe('addMealPlanEntry (#164)', () => {
 	});
 
 	it('reuses one shared plan per week across users', async () => {
-		await addMealPlanEntry('u1', '2026-09-28', 0, 'r1');
-		await addMealPlanEntry('u2', '2026-09-28', 1, 'r2');
+		await planDinner({ userId: 'u1', week: '2026-09-28', day: 0, dinner: { recipeId: 'r1' } });
+		await planDinner({ userId: 'u2', week: '2026-09-28', day: 1, dinner: { recipeId: 'r2' } });
 
 		expect(sqlite.prepare(`SELECT COUNT(*) FROM meal_plans`).pluck().get()).toBe(1);
 		const entries = await getMealPlanWithEntries('2026-09-28');
@@ -153,11 +153,22 @@ describe('addMealPlanEntry (#164)', () => {
 	});
 
 	it('replaces the recipe for a day instead of adding a second entry', async () => {
-		const first = await addMealPlanEntry('u1', '2026-09-28', 2, 'r1');
-		const second = await addMealPlanEntry('u2', '2026-09-28', 2, 'r2');
+		const first = await planDinner({
+			userId: 'u1',
+			week: '2026-09-28',
+			day: 2,
+			dinner: { recipeId: 'r1' }
+		});
+		const second = await planDinner({
+			userId: 'u2',
+			week: '2026-09-28',
+			day: 2,
+			dinner: { recipeId: 'r2' }
+		});
 
-		expect(second.recipeId).toBe('r2');
-		expect(second.id).toBe(first.id);
+		expect(second).toHaveLength(1);
+		expect(second[0].recipe.id).toBe('r2');
+		expect(second[0].entry.id).toBe(first[0].entry.id);
 		expect(sqlite.prepare(`SELECT COUNT(*) FROM meal_plan_entries`).pluck().get()).toBe(1);
 	});
 
@@ -176,7 +187,7 @@ describe('addMealPlanEntry (#164)', () => {
 		);
 
 		try {
-			await addMealPlanEntry('u1', '2026-09-28', 0, 'r1');
+			await planDinner({ userId: 'u1', week: '2026-09-28', day: 0, dinner: { recipeId: 'r1' } });
 		} finally {
 			vi.unstubAllGlobals();
 		}
@@ -188,12 +199,136 @@ describe('addMealPlanEntry (#164)', () => {
 
 	it('handles concurrent calls for the same day without duplicates', async () => {
 		await Promise.all([
-			addMealPlanEntry('u1', '2026-10-05', 4, 'r1'),
-			addMealPlanEntry('u2', '2026-10-05', 4, 'r2')
+			planDinner({ userId: 'u1', week: '2026-10-05', day: 4, dinner: { recipeId: 'r1' } }),
+			planDinner({ userId: 'u2', week: '2026-10-05', day: 4, dinner: { recipeId: 'r2' } })
 		]);
 
 		expect(sqlite.prepare(`SELECT COUNT(*) FROM meal_plans`).pluck().get()).toBe(1);
 		expect(sqlite.prepare(`SELECT COUNT(*) FROM meal_plan_entries`).pluck().get()).toBe(1);
+	});
+});
+
+describe('planDinner (#347)', () => {
+	let sqlite: Database.Database;
+	const WEEK = '2026-11-23';
+	const SUGGESTION = {
+		name: 'Fried rice',
+		description: 'Leftover rice, eggs, peas',
+		ingredients: [{ name: 'rice', quantity: '2', unit: 'cup' }],
+		steps: ['Fry it'],
+		prepTimeMinutes: 20,
+		servings: 2
+	};
+	const countRecipes = () => sqlite.prepare(`SELECT COUNT(*) FROM recipes`).pluck().get();
+
+	beforeEach(() => {
+		sqlite = new Database(':memory:');
+		applyMigrations(sqlite, TAGS);
+		currentDb = drizzle(sqlite, { schema });
+		seedUser(sqlite, 'u1');
+		seedRecipe(sqlite, 'r1', 'u1');
+	});
+
+	it('plans a Library Recipe and returns the week', async () => {
+		const week = await planDinner({ userId: 'u1', week: WEEK, day: 3, dinner: { recipeId: 'r1' } });
+
+		expect(week.map((e) => [e.entry.dayOfWeek, e.recipe.id])).toEqual([[3, 'r1']]);
+		expect(countRecipes()).toBe(1);
+	});
+
+	it('saves a Suggestion as a suggested Recipe and plans it', async () => {
+		const week = await planDinner({
+			userId: 'u1',
+			week: WEEK,
+			day: 0,
+			dinner: { suggestion: SUGGESTION }
+		});
+
+		expect(week).toHaveLength(1);
+		expect(week[0].recipe).toMatchObject({
+			name: 'Fried rice',
+			description: 'Leftover rice, eggs, peas',
+			ingredientsJson: SUGGESTION.ingredients,
+			instructionsJson: ['Fry it'],
+			prepTimeMinutes: 20,
+			servings: 2,
+			source: 'suggested',
+			userId: 'u1'
+		});
+		expect(countRecipes()).toBe(2);
+	});
+
+	it('saves a written-in dinner as a custom Recipe and plans it', async () => {
+		const week = await planDinner({
+			userId: 'u1',
+			week: WEEK,
+			day: 5,
+			dinner: { custom: { name: 'Takeout', notes: 'Thai place' } }
+		});
+
+		expect(week[0].recipe).toMatchObject({
+			name: 'Takeout',
+			description: 'Thai place',
+			ingredientsJson: [],
+			instructionsJson: [],
+			prepTimeMinutes: 0,
+			servings: 1,
+			source: 'custom'
+		});
+	});
+
+	it('saves two Recipes when the same Suggestion is planned twice (dedupe is #345)', async () => {
+		await planDinner({ userId: 'u1', week: WEEK, day: 0, dinner: { suggestion: SUGGESTION } });
+		await planDinner({ userId: 'u1', week: WEEK, day: 1, dinner: { suggestion: SUGGESTION } });
+
+		expect(
+			sqlite.prepare(`SELECT COUNT(*) FROM recipes WHERE name = 'Fried rice'`).pluck().get()
+		).toBe(2);
+	});
+
+	it('stamps the new Recipe, plan and Planned Dinner with one timestamp', async () => {
+		const RealDate = Date;
+		let reads = 0;
+		vi.stubGlobal(
+			'Date',
+			class extends RealDate {
+				constructor(...args: ConstructorParameters<typeof Date>) {
+					if (args.length > 0) super(...args);
+					else super(RealDate.UTC(2026, 10, 23) + reads++ * 1000);
+				}
+			}
+		);
+		try {
+			await planDinner({ userId: 'u1', week: WEEK, day: 0, dinner: { suggestion: SUGGESTION } });
+		} finally {
+			vi.unstubAllGlobals();
+		}
+
+		const stamps = (table: string, where = '') =>
+			sqlite.prepare(`SELECT created_at, updated_at FROM ${table} ${where}`).get();
+		const plan = stamps('meal_plans');
+		expect(stamps('meal_plan_entries')).toEqual(plan);
+		expect(stamps('recipes', `WHERE name = 'Fried rice'`)).toEqual(plan);
+	});
+
+	it('throws RecipeNotFoundError for an unknown recipeId and writes nothing', async () => {
+		await expect(
+			planDinner({ userId: 'u1', week: WEEK, day: 0, dinner: { recipeId: 'gone' } })
+		).rejects.toBeInstanceOf(RecipeNotFoundError);
+		expect(sqlite.prepare(`SELECT COUNT(*) FROM meal_plans`).pluck().get()).toBe(0);
+	});
+
+	it.each([
+		['Suggestion', { suggestion: SUGGESTION }],
+		['custom dinner', { custom: { name: 'Takeout' } }]
+	] as const)('leaves no orphan Recipe when planning a %s fails', async (_, dinner) => {
+		sqlite.exec(
+			`CREATE TRIGGER fail_entry BEFORE INSERT ON meal_plan_entries BEGIN SELECT RAISE(ABORT, 'boom'); END`
+		);
+
+		await expect(planDinner({ userId: 'u1', week: WEEK, day: 0, dinner })).rejects.toThrow(/boom/);
+		expect(countRecipes()).toBe(1); // only the seeded r1
+		expect(sqlite.prepare(`SELECT COUNT(*) FROM meal_plans`).pluck().get()).toBe(0);
 	});
 });
 
@@ -221,9 +356,9 @@ describe('getMealPlanWithEntries (#170)', () => {
 	});
 
 	it('returns the week’s entries with mapped recipes, ordered by day, in one query', async () => {
-		await addMealPlanEntry('u1', '2026-09-28', 4, 'r1');
-		await addMealPlanEntry('u1', '2026-09-28', 1, 'r2');
-		await addMealPlanEntry('u1', '2026-10-05', 0, 'r1'); // other week
+		await planDinner({ userId: 'u1', week: '2026-09-28', day: 4, dinner: { recipeId: 'r1' } });
+		await planDinner({ userId: 'u1', week: '2026-09-28', day: 1, dinner: { recipeId: 'r2' } });
+		await planDinner({ userId: 'u1', week: '2026-10-05', day: 0, dinner: { recipeId: 'r1' } }); // other week
 		queries = [];
 
 		const result = await getMealPlanWithEntries('2026-09-28');

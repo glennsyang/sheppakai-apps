@@ -37,7 +37,12 @@ async function plan(day: number, name: string, ingredients: [string, string, str
 		servings: 2,
 		source: 'custom'
 	});
-	await mealPlan.addMealPlanEntry('u1', WEEK, day, recipe.id);
+	await mealPlan.planDinner({
+		userId: 'u1',
+		week: WEEK,
+		day: day,
+		dinner: { recipeId: recipe.id }
+	});
 }
 
 const sync = () => shopping.syncShoppingList('u1', WEEK);

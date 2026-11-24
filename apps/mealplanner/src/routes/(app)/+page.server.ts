@@ -1,12 +1,13 @@
 import { weekdayIndex } from '#lib/dates.js';
 import { logger } from '#lib/server/logger.js';
-import { getMealPlanWithEntries, getMondayOfCurrentWeek } from '#lib/server/services/mealPlan.js';
+import { getMealPlanWithEntries } from '#lib/server/services/mealPlan.js';
 import { listPantryItems } from '#lib/server/services/pantry.js';
+import { currentWeek } from '#lib/server/week.js';
 
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-	const weekStartDate = getMondayOfCurrentWeek();
+	const weekStartDate = currentWeek();
 	// Server-local guess at today; the page corrects it to the browser's own clock.
 	const todayIndex = weekdayIndex(new Date());
 

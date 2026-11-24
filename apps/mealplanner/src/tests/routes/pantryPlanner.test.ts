@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { pantryMock, mealPlanMock, recipesMock, loggerMock } = vi.hoisted(() => ({
+const { pantryMock, mealPlanMock, loggerMock } = vi.hoisted(() => ({
 	pantryMock: {
 		listPantryItems: vi.fn<() => Promise<unknown>>(),
 		addPantryItem: vi.fn<() => Promise<unknown>>().mockResolvedValue(undefined),
@@ -8,12 +8,8 @@ const { pantryMock, mealPlanMock, recipesMock, loggerMock } = vi.hoisted(() => (
 	},
 	mealPlanMock: {
 		getMealPlanWithEntries: vi.fn<() => Promise<unknown>>(),
-		addMealPlanEntry: vi.fn<() => Promise<unknown>>().mockResolvedValue(undefined),
-		removeMealPlanEntry: vi.fn<() => Promise<unknown>>().mockResolvedValue(undefined),
-		getMondayOfCurrentWeek: vi.fn<() => string>().mockReturnValue('2026-09-28')
-	},
-	recipesMock: {
-		saveRecipe: vi.fn<() => Promise<unknown>>().mockResolvedValue({ id: 'recipe_1' })
+		planDinner: vi.fn<() => Promise<unknown>>().mockResolvedValue([]),
+		removeMealPlanEntry: vi.fn<() => Promise<unknown>>().mockResolvedValue(undefined)
 	},
 	loggerMock: {
 		info: vi.fn<() => void>(),
@@ -24,8 +20,11 @@ const { pantryMock, mealPlanMock, recipesMock, loggerMock } = vi.hoisted(() => (
 
 vi.mock('#lib/server/services/pantry.js', () => pantryMock);
 vi.mock('#lib/server/services/mealPlan.js', () => mealPlanMock);
-vi.mock('#lib/server/services/recipes.js', () => recipesMock);
 vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
+
+// The current week resolves from the clock: Wed 30 Sep 2026 → Monday 2026-09-28.
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date(2026, 8, 30, 12));
 
 import { actions as pantryActions } from '../../routes/(app)/pantry/+page.server';
 import {
@@ -46,11 +45,7 @@ type Locals = Partial<App.Locals>;
 const ctx = (locals: Locals, fields: Record<string, string> = {}) =>
 	({ request: req(fields), locals }) as never;
 
-const allServiceMocks = [
-	...Object.values(pantryMock),
-	...Object.values(mealPlanMock),
-	...Object.values(recipesMock)
-];
+const allServiceMocks = [...Object.values(pantryMock), ...Object.values(mealPlanMock)];
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -89,16 +84,12 @@ describe('pantry/planner actions: authenticated', () => {
 			ctx({ user: USER } as Locals, { name: 'Tacos', weekStartDate: '2026-09-28', dayOfWeek: '1' })
 		);
 
-		expect(recipesMock.saveRecipe).toHaveBeenCalledWith(
-			'user_1',
-			expect.objectContaining({ name: 'Tacos', source: 'custom' })
-		);
-		expect(mealPlanMock.addMealPlanEntry).toHaveBeenCalledWith(
-			'user_1',
-			'2026-09-28',
-			1,
-			'recipe_1'
-		);
+		expect(mealPlanMock.planDinner).toHaveBeenCalledWith({
+			userId: 'user_1',
+			week: '2026-09-28',
+			day: 1,
+			dinner: { custom: { name: 'Tacos', notes: '' } }
+		});
 	});
 });
 
@@ -120,16 +111,21 @@ describe('pantry/planner actions: consistent { form } results (#166)', () => {
 		expect(result).toMatchObject({
 			form: { valid: true, message: { type: 'success', text: 'Added Curry to the planner.' } }
 		});
-		expect(recipesMock.saveRecipe).toHaveBeenCalledWith(
-			'user_1',
-			expect.objectContaining({ name: 'Curry', ingredientsJson: [expect.any(Object)] })
-		);
-		expect(mealPlanMock.addMealPlanEntry).toHaveBeenCalledWith(
-			'user_1',
-			'2026-09-28',
-			2,
-			'recipe_1'
-		);
+		expect(mealPlanMock.planDinner).toHaveBeenCalledWith({
+			userId: 'user_1',
+			week: '2026-09-28',
+			day: 2,
+			dinner: {
+				suggestion: {
+					name: 'Curry',
+					description: 'Spicy',
+					ingredients: [{ name: 'rice', quantity: '1', unit: 'cup' }],
+					steps: ['Cook'],
+					prepTimeMinutes: 30,
+					servings: 2
+				}
+			}
+		});
 	});
 
 	it('saveAndAdd returns fail(400, { form }) for an invalid day', async () => {
@@ -141,13 +137,13 @@ describe('pantry/planner actions: consistent { form } results (#166)', () => {
 			status: 400,
 			data: { form: { valid: false, message: { type: 'error' } } }
 		});
-		expect(recipesMock.saveRecipe).not.toHaveBeenCalled();
+		expect(mealPlanMock.planDinner).not.toHaveBeenCalled();
 	});
 
 	it.each([
 		[
 			'planner saveAndAdd',
-			() => recipesMock.saveRecipe.mockRejectedValueOnce(new Error('db down')),
+			() => mealPlanMock.planDinner.mockRejectedValueOnce(new Error('db down')),
 			() => plannerActions.saveAndAdd(ctx({ user: USER } as Locals, recipeFields))
 		],
 		[
@@ -157,7 +153,7 @@ describe('pantry/planner actions: consistent { form } results (#166)', () => {
 		],
 		[
 			'planner addCustom',
-			() => recipesMock.saveRecipe.mockRejectedValueOnce(new Error('db down')),
+			() => mealPlanMock.planDinner.mockRejectedValueOnce(new Error('db down')),
 			() =>
 				plannerActions.addCustom(
 					ctx({ user: USER } as Locals, {

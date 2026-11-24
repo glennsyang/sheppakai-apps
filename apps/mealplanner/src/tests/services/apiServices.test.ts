@@ -82,7 +82,12 @@ describe('recipes', () => {
 
 	it('deleting a recipe removes its planned days', async () => {
 		const recipe = await recipes.saveRecipe('u1', recipeInput);
-		await mealPlan.addMealPlanEntry('u1', WEEK, 0, recipe.id);
+		await mealPlan.planDinner({
+			userId: 'u1',
+			week: WEEK,
+			day: 0,
+			dinner: { recipeId: recipe.id }
+		});
 
 		expect(await recipes.deleteRecipe(recipe.id)).toBe(true);
 		expect(await recipes.getRecipe(recipe.id)).toBeNull();
@@ -96,8 +101,18 @@ describe('mealPlan', () => {
 		const recipe = await recipes.saveRecipe('u1', recipeInput);
 		expect(await mealPlan.clearMealPlanDay(WEEK, 0)).toBe(false); // no plan yet
 
-		await mealPlan.addMealPlanEntry('u1', WEEK, 0, recipe.id);
-		await mealPlan.addMealPlanEntry('u1', WEEK, 1, recipe.id);
+		await mealPlan.planDinner({
+			userId: 'u1',
+			week: WEEK,
+			day: 0,
+			dinner: { recipeId: recipe.id }
+		});
+		await mealPlan.planDinner({
+			userId: 'u1',
+			week: WEEK,
+			day: 1,
+			dinner: { recipeId: recipe.id }
+		});
 
 		expect(await mealPlan.clearMealPlanDay(WEEK, 0)).toBe(true);
 		expect(await mealPlan.clearMealPlanDay(WEEK, 0)).toBe(false);

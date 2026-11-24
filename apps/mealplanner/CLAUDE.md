@@ -118,10 +118,11 @@ src/
 │       │   ├── suggester.ts     # createSuggester({ models, now }): history → prompt → model → filter
 │       │   ├── prompts.ts       # system prompts, user prompts, output schemas
 │       │   └── history.ts       # Recently Cooked / Favorites / Disliked from the DB; repeat filter
+│       ├── week.ts              # currentWeek(today?), resolveWeekStartDate(url) for ?week=
 │       ├── recipe-import/       # URL + photo import: safe-fetch (SSRF guard), json-ld, html-text, ai-extract
 │       └── services/
 │           ├── pantry.ts
-│           ├── mealPlan.ts      # includes getMondayOfCurrentWeek()
+│           ├── mealPlan.ts      # Week Plan: planDinner() (one transaction), RecipeNotFoundError
 │           ├── recipes.ts       # includes searchRecipes(), setRecipeRating()
 │           ├── recipeCooks.ts   # the "cooked it" log
 │           └── shoppingList.ts  # week's list: sync from plan − pantry, tick → restockPantry()
@@ -391,8 +392,10 @@ pnpm db:studio              # Drizzle visual browser
    inputs. Zod v4's email regex uses character classes incompatible with the browser's HTML
    `pattern` attribute `v` flag.
 
-2. **`getMondayOfCurrentWeek()`** — Uses local date components (`.getFullYear()`, `.getMonth()`,
-   `.getDate()`) instead of `.toISOString()` to avoid UTC offset shifting the date across midnight.
+2. **`currentWeek()`** (`#lib/server/week.ts`) — Uses local date components (`.getFullYear()`,
+   `.getMonth()`, `.getDate()`) instead of `.toISOString()` to avoid UTC offset shifting the date
+   across midnight. Every route gets the current week from here, never from `services/mealPlan.ts`.
+   Route tests pin the clock with `vi.setSystemTime` rather than mocking it.
 
 3. **Auth redirects** — `auth.api.signInEmail` / `signUpEmail` may internally throw SvelteKit
    redirects. Always `if (isRedirect(err)) throw err` inside auth catch blocks.
