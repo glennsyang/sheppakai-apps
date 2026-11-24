@@ -6,7 +6,8 @@ import { toApiWeek } from '#lib/server/api/plans.js';
 import { requireApiKey } from '#lib/server/api/require-api-key.js';
 import { apiPlanQuerySchema } from '#lib/server/api/schemas/plans.js';
 import { logger } from '#lib/server/logger.js';
-import { getMealPlanWithEntries, getMondayOfCurrentWeek } from '#lib/server/services/mealPlan.js';
+import { getMealPlanWithEntries } from '#lib/server/services/mealPlan.js';
+import { currentWeek } from '#lib/server/week.js';
 
 import type { RequestHandler } from './$types';
 
@@ -19,7 +20,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 
 	const { week } = parsed.data;
 	const date = week ? parseIsoDate(week) : null;
-	const weekStartDate = date ? getMondayOf(date) : getMondayOfCurrentWeek();
+	const weekStartDate = date ? getMondayOf(date) : currentWeek();
 
 	try {
 		return apiSuccess(toApiWeek(weekStartDate, await getMealPlanWithEntries(weekStartDate)));

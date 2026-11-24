@@ -19,7 +19,7 @@ import { requireAuth } from '#lib/server/actions/auth-guard.js';
 import { handleDomainAction } from '#lib/server/actions/domain-action.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { logger } from '#lib/server/logger.js';
-import { addMealPlanEntry, getMondayOfCurrentWeek } from '#lib/server/services/mealPlan.js';
+import { planDinner, RecipeNotFoundError } from '#lib/server/services/mealPlan.js';
 import { deleteCook, listCooks, logCook } from '#lib/server/services/recipeCooks.js';
 import {
 	deleteRecipe,
@@ -27,6 +27,7 @@ import {
 	setRecipeRating,
 	updateRecipe
 } from '#lib/server/services/recipes.js';
+import { currentWeek } from '#lib/server/week.js';
 import type { Recipe, RecipeCook } from '#lib/types.js';
 
 import type { Actions, PageServerLoad } from './$types';
@@ -35,7 +36,7 @@ import type { Actions, PageServerLoad } from './$types';
 const PLANNER_WEEKS = 4;
 
 export const load: PageServerLoad = async ({ params }) => {
-	const thisWeek = getMondayOfCurrentWeek();
+	const thisWeek = currentWeek();
 	const plannerWeeks = Array.from({ length: PLANNER_WEEKS }, (_, i) => addWeeks(thisWeek, i));
 	const cookForm = await superValidate(zod4(logCookSchema));
 
@@ -163,10 +164,20 @@ export const actions: Actions = {
 
 		return handleDomainAction(
 			form,
-			() => addMealPlanEntry(user.id, form.data.weekStartDate, form.data.dayOfWeek, params.id),
+			() =>
+				planDinner({
+					userId: user.id,
+					week: form.data.weekStartDate,
+					day: form.data.dayOfWeek,
+					dinner: { recipeId: params.id }
+				}),
 			{
 				loggerContext: 'Failed to add recipe to planner',
 				fallbackMessage: 'Could not add that to the planner. Please try again.',
+				expectedError: (err) =>
+					err instanceof RecipeNotFoundError
+						? { text: 'That recipe no longer exists.', status: 404 }
+						: undefined,
 				successMessage: 'Added to the planner.',
 				logFields: { userId: user.id, recipeId: params.id }
 			}

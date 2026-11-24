@@ -1,13 +1,18 @@
 import { and, eq } from 'drizzle-orm';
 
-import { getMondayOf } from '#lib/dates.js';
 import { logger } from '#lib/server/logger.js';
-import type { MealPlan, MealPlanEntry, MealPlanEntryWithRecipe } from '#lib/types.js';
+import type {
+	MealPlan,
+	MealPlanEntry,
+	MealPlanEntryWithRecipe,
+	Recipe,
+	Suggestion
+} from '#lib/types.js';
 
 import { getDb } from '../db';
 import { mealPlans, mealPlanEntries, recipes } from '../db/schema';
 import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '../db/utils';
-import { rowToRecipe } from './recipes';
+import { insertRecipe, rowToRecipe, type Tx } from './recipes';
 
 function rowToMealPlan(row: typeof mealPlans.$inferSelect): MealPlan {
 	return {
@@ -31,7 +36,6 @@ function rowToEntry(row: typeof mealPlanEntries.$inferSelect): MealPlanEntry {
 }
 
 type Db = ReturnType<typeof getDb>;
-type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
 /**
  * Upsert on the unique `week_start_date` index so concurrent callers converge on one
@@ -48,14 +52,11 @@ function getOrCreateMealPlan(tx: Tx, userId: string, weekStartDate: string, now:
 	return rowToMealPlan(plan);
 }
 
-export async function getMealPlanWithEntries(
-	weekStartDate: string
-): Promise<MealPlanEntryWithRecipe[]> {
-	logger.debug('getMealPlanWithEntries', { weekStartDate });
-
+/** The week's Planned Dinners with their Recipes, Monday first. Works on the db or a transaction. */
+function selectWeek(db: Db | Tx, weekStartDate: string): MealPlanEntryWithRecipe[] {
 	// One query: plan → entries → recipes. Inner joins drop entries whose recipe is gone,
 	// matching the old per-entry lookup that skipped missing recipes.
-	const rows = getDb()
+	const rows = db
 		.select({ entry: mealPlanEntries, recipe: recipes })
 		.from(mealPlanEntries)
 		.innerJoin(mealPlans, eq(mealPlanEntries.mealPlanId, mealPlans.id))
@@ -70,39 +71,113 @@ export async function getMealPlanWithEntries(
 	}));
 }
 
-export async function addMealPlanEntry(
-	userId: string,
-	weekStartDate: string,
-	dayOfWeek: number,
-	recipeId: string
-): Promise<MealPlanEntry> {
-	logger.debug('addMealPlanEntry', { userId, weekStartDate, dayOfWeek, recipeId });
+export async function getMealPlanWithEntries(
+	weekStartDate: string
+): Promise<MealPlanEntryWithRecipe[]> {
+	logger.debug('getMealPlanWithEntries', { weekStartDate });
+	return selectWeek(getDb(), weekStartDate);
+}
 
-	// One synchronous transaction: plan get-or-create and the per-day replace can't
-	// interleave with another request, and the unique (meal_plan_id, day_of_week)
-	// index makes the upsert replace the day's recipe instead of adding a second row.
-	const db = getDb();
-	return db.transaction((tx) => {
-		// One timestamp for the plan (if new) and its entry
+/** `planDinner` was given a `recipeId` that isn't in the Library. */
+export class RecipeNotFoundError extends Error {
+	constructor(readonly recipeId: string) {
+		super(`Recipe not found: ${recipeId}`);
+		this.name = 'RecipeNotFoundError';
+	}
+}
+
+/**
+ * What goes on the day: a Library Recipe, a Suggestion (saved as a `suggested` Recipe) or a
+ * written-in dinner (saved as a `custom` Recipe with no ingredients or steps).
+ */
+export type Dinner =
+	| { recipeId: string }
+	| { suggestion: Suggestion }
+	| { custom: { name: string; notes?: string | null } };
+
+/**
+ * Plan a dinner on one day of a week. One transaction saves the Recipe if it's new, gets or
+ * creates the week's plan and upserts the Planned Dinner, so a failure leaves no orphan
+ * Recipe. Planning the same Suggestion twice saves two Recipes. Returns the week's Planned
+ * Dinners. Throws `RecipeNotFoundError` for an unknown `recipeId`.
+ */
+export async function planDinner({
+	userId,
+	week,
+	day,
+	dinner
+}: {
+	userId: string;
+	week: string;
+	day: number;
+	dinner: Dinner;
+}): Promise<MealPlanEntryWithRecipe[]> {
+	logger.debug('planDinner', { userId, week, day, kind: Object.keys(dinner)[0] });
+
+	// Synchronous better-sqlite3 transaction: nothing can interleave, and the unique
+	// (meal_plan_id, day_of_week) index makes the upsert replace the day's recipe.
+	return getDb().transaction((tx) => {
 		const now = new Date();
-		const plan = getOrCreateMealPlan(tx, userId, weekStartDate, now);
-		const entry = tx
-			.insert(mealPlanEntries)
+		const recipe = resolveRecipe(tx, userId, dinner, now);
+		const plan = getOrCreateMealPlan(tx, userId, week, now);
+		tx.insert(mealPlanEntries)
 			.values({
 				id: generateId(),
 				mealPlanId: plan.id,
-				dayOfWeek,
-				recipeId,
+				dayOfWeek: day,
+				recipeId: recipe.id,
 				...withTimestampsForCreate(now)
 			})
 			.onConflictDoUpdate({
 				target: [mealPlanEntries.mealPlanId, mealPlanEntries.dayOfWeek],
-				set: { recipeId, ...withTimestampsForUpdate(now) }
+				set: { recipeId: recipe.id, ...withTimestampsForUpdate(now) }
 			})
-			.returning()
-			.get();
-		return rowToEntry(entry);
+			.run();
+		return selectWeek(tx, week);
 	});
+}
+
+function resolveRecipe(tx: Tx, userId: string, dinner: Dinner, now: Date): Pick<Recipe, 'id'> {
+	if ('recipeId' in dinner) {
+		const row = tx
+			.select({ id: recipes.id })
+			.from(recipes)
+			.where(eq(recipes.id, dinner.recipeId))
+			.get();
+		if (!row) throw new RecipeNotFoundError(dinner.recipeId);
+		return row;
+	}
+	if ('suggestion' in dinner) {
+		const { name, description, ingredients, steps, prepTimeMinutes, servings } = dinner.suggestion;
+		return insertRecipe(
+			tx,
+			userId,
+			{
+				name,
+				description,
+				ingredientsJson: ingredients,
+				instructionsJson: steps,
+				prepTimeMinutes,
+				servings,
+				source: 'suggested'
+			},
+			now
+		);
+	}
+	return insertRecipe(
+		tx,
+		userId,
+		{
+			name: dinner.custom.name,
+			description: dinner.custom.notes ?? '',
+			ingredientsJson: [],
+			instructionsJson: [],
+			prepTimeMinutes: 0,
+			servings: 1,
+			source: 'custom'
+		},
+		now
+	);
 }
 
 export async function removeMealPlanEntry(entryId: string): Promise<void> {
@@ -131,8 +206,4 @@ export async function clearMealPlanDay(weekStartDate: string, dayOfWeek: number)
 		.returning({ id: mealPlanEntries.id })
 		.all();
 	return deleted.length > 0;
-}
-
-export function getMondayOfCurrentWeek(): string {
-	return getMondayOf(new Date());
 }

@@ -6,10 +6,7 @@ const mockState = vi.hoisted(() => {
 	return {
 		dbError,
 		pantryMock: { listPantryItems: reject() },
-		mealPlanMock: {
-			getMealPlanWithEntries: reject(),
-			getMondayOfCurrentWeek: vi.fn<() => string>().mockReturnValue('2026-09-28')
-		},
+		mealPlanMock: { getMealPlanWithEntries: reject() },
 		loggerError: vi.fn<() => void>()
 	};
 });
@@ -25,6 +22,10 @@ vi.mock('#lib/server/logger.js', () => ({
 		error: mockState.loggerError
 	}
 }));
+
+// The current week resolves from the clock: Wed 30 Sep 2026 → Monday 2026-09-28.
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date(2026, 8, 30, 12));
 
 import { load as homeLoad } from '../../routes/(app)/+page.server';
 import { load as pantryLoad } from '../../routes/(app)/pantry/+page.server';

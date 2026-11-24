@@ -6,11 +6,11 @@ import { toApiWeek } from '#lib/server/api/plans.js';
 import { requireApiKey } from '#lib/server/api/require-api-key.js';
 import { apiPlanDayParamsSchema, apiSetPlanDaySchema } from '#lib/server/api/schemas/plans.js';
 import {
-	addMealPlanEntry,
 	clearMealPlanDay,
-	getMealPlanWithEntries
+	getMealPlanWithEntries,
+	planDinner,
+	RecipeNotFoundError
 } from '#lib/server/services/mealPlan.js';
-import { getRecipe } from '#lib/server/services/recipes.js';
 
 import type { RequestHandler } from './$types';
 
@@ -42,11 +42,20 @@ export const PUT: RequestHandler = async ({ request, params, url }) => {
 			action: 'plans:write'
 		},
 		async () => {
-			if (!(await getRecipe(body.data.recipeId))) {
-				throw new ApiWriteError('not_found', 'Recipe not found.', 404);
+			try {
+				const entries = await planDinner({
+					userId: auth.userId,
+					week,
+					day,
+					dinner: { recipeId: body.data.recipeId }
+				});
+				return toApiWeek(week, entries);
+			} catch (err) {
+				if (err instanceof RecipeNotFoundError) {
+					throw new ApiWriteError('not_found', 'Recipe not found.', 404);
+				}
+				throw err;
 			}
-			await addMealPlanEntry(auth.userId, week, day, body.data.recipeId);
-			return toApiWeek(week, await getMealPlanWithEntries(week));
 		},
 		{ successStatus: 200, failureMessage: 'Failed to set planned dinner' }
 	);

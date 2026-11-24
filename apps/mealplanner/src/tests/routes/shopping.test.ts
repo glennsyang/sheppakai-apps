@@ -18,10 +18,11 @@ const { shoppingMock, loggerMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('#lib/server/services/shoppingList.js', () => shoppingMock);
-vi.mock('#lib/server/services/mealPlan.js', () => ({
-	getMondayOfCurrentWeek: () => '2026-11-16'
-}));
 vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
+
+// The current week resolves from the clock: Thu 19 Nov 2026 → Monday 2026-11-16.
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date(2026, 10, 19, 12));
 
 import { actions, load } from '../../routes/(app)/shopping/+page.server';
 

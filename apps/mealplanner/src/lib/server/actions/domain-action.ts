@@ -13,6 +13,11 @@ interface DomainActionOptions {
 	successMessage: string;
 	/** Extra structured fields for the log entry (e.g. `{ userId }`). */
 	logFields?: Record<string, unknown>;
+	/**
+	 * Maps an expected domain error to a user message and status (e.g. a 404 for a missing
+	 * Recipe). Return `undefined` to fall back to `fallbackMessage` with a 500.
+	 */
+	expectedError?: (err: unknown) => { text: string; status: 404 | 409 } | undefined;
 }
 
 /**
@@ -33,6 +38,11 @@ export async function handleDomainAction<TForm extends Record<string, unknown>>(
 		return message(form, { type: 'success', text: options.successMessage });
 	} catch (err) {
 		if (isRedirect(err)) throw err;
+		const expected = options.expectedError?.(err);
+		if (expected) {
+			logger.warn(options.loggerContext, { ...options.logFields, error: String(err) });
+			return message(form, { type: 'error', text: expected.text }, { status: expected.status });
+		}
 		logger.error(options.loggerContext, err, options.logFields);
 		return message(form, { type: 'error', text: options.fallbackMessage }, { status: 500 });
 	}

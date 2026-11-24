@@ -4,6 +4,7 @@ const { recipesMock, cooksMock, mealPlanMock, importMock, limiterCheck, loggerMo
 	() => {
 		class RecipeFetchError extends Error {}
 		class UnreadableRecipeError extends Error {}
+		class RecipeNotFoundError extends Error {}
 		return {
 			recipesMock: {
 				saveRecipe: vi.fn<() => Promise<unknown>>().mockResolvedValue({ id: 'recipe_1' }),
@@ -19,8 +20,8 @@ const { recipesMock, cooksMock, mealPlanMock, importMock, limiterCheck, loggerMo
 				listCooks: vi.fn<() => Promise<unknown>>().mockResolvedValue([])
 			},
 			mealPlanMock: {
-				addMealPlanEntry: vi.fn<() => Promise<unknown>>().mockResolvedValue({}),
-				getMondayOfCurrentWeek: vi.fn<() => string>().mockReturnValue('2026-10-26')
+				planDinner: vi.fn<() => Promise<unknown>>().mockResolvedValue([]),
+				RecipeNotFoundError
 			},
 			importMock: {
 				importRecipeFromUrl: vi.fn<() => Promise<unknown>>(),
@@ -294,17 +295,28 @@ describe('detail actions', () => {
 
 	it('addToPlanner adds this recipe to the chosen Monday-week day', async () => {
 		await detailActions.addToPlanner(ctx({ weekStartDate: '2026-11-02', dayOfWeek: '4' }));
-		expect(mealPlanMock.addMealPlanEntry).toHaveBeenCalledWith(
-			'user_1',
-			'2026-11-02',
-			4,
-			'recipe_1'
-		);
+		expect(mealPlanMock.planDinner).toHaveBeenCalledWith({
+			userId: 'user_1',
+			week: '2026-11-02',
+			day: 4,
+			dinner: { recipeId: 'recipe_1' }
+		});
 
 		const notMonday = await detailActions.addToPlanner(
 			ctx({ weekStartDate: '2026-11-03', dayOfWeek: '4' })
 		);
 		expect(notMonday).toMatchObject({ status: 400 });
+	});
+
+	it('addToPlanner reports a recipe that no longer exists', async () => {
+		mealPlanMock.planDinner.mockRejectedValueOnce(new mealPlanMock.RecipeNotFoundError());
+		const result = await detailActions.addToPlanner(
+			ctx({ weekStartDate: '2026-11-02', dayOfWeek: '4' })
+		);
+		expect(result).toMatchObject({
+			status: 404,
+			data: { form: { message: { type: 'error', text: 'That recipe no longer exists.' } } }
+		});
 	});
 
 	it('delete redirects to the library, or reports a recipe already gone', async () => {
