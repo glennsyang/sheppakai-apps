@@ -1,48 +1,22 @@
 import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import { deleteTaskSchema, type UpdateTaskInput, updateTaskSchema } from '#lib/schemas/task.js';
+import { deleteTaskSchema, updateTaskSchema } from '#lib/schemas/task.js';
 import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
 import {
 	getOwnedEntityOrNull,
 	getOwnedEntityOrThrow
 } from '#lib/server/actions/edit-route-helpers.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
-import { parseTaskTags, toCommaSeparatedJson } from '#lib/server/actions/string-parsers.js';
+import { parseTaskTags, splitCommaSeparated } from '#lib/server/actions/string-parsers.js';
 import { getDb } from '#lib/server/db/index.js';
 import { tasks } from '#lib/server/db/schema/index.js';
-import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
 import { logger } from '#lib/server/logger.js';
+import { updateTask } from '#lib/server/tasks/task.js';
 
 import type { Actions, PageServerLoad } from './$types';
-
-function buildTaskUpdateData(
-	formData: UpdateTaskInput,
-	existingState: string
-): Partial<typeof tasks.$inferInsert> {
-	const updateData: Partial<typeof tasks.$inferInsert> = {
-		...withTimestampsForUpdate()
-	};
-
-	if (formData.title !== undefined) updateData.title = formData.title;
-	if (formData.description !== undefined) updateData.description = formData.description;
-	if (formData.tags !== undefined) updateData.tags = toCommaSeparatedJson(formData.tags);
-	if (formData.dueDate !== undefined) updateData.dueDate = formData.dueDate;
-	if (formData.priority !== undefined) updateData.priority = formData.priority;
-
-	if (formData.state !== undefined) {
-		updateData.state = formData.state;
-		if (formData.state === 'done' && existingState !== 'done') {
-			updateData.completedAt = new Date();
-		} else if (formData.state !== 'done' && existingState === 'done') {
-			updateData.completedAt = null;
-		}
-	}
-
-	return updateData;
-}
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const userId = getUser(locals).id;
@@ -93,94 +67,18 @@ export const actions = {
 			return invalidForm(form);
 		}
 
-		if (form.data.title) {
-			const duplicate = await getDb().query.tasks.findFirst({
-				where: and(
-					eq(tasks.userId, user.id),
-					eq(tasks.title, form.data.title),
-					ne(tasks.id, taskId)
-				)
+		try {
+			const { tags, ...fields } = form.data;
+			const result = updateTask(getDb(), user.id, taskId, {
+				...fields,
+				...(tags !== undefined && { tags: splitCommaSeparated(tags) })
 			});
-			if (duplicate) {
+
+			if (!result.ok && result.reason === 'duplicate_title') {
 				return setError(form, 'title', 'A task with this name already exists.');
 			}
-		}
-
-		try {
-			const existing = await getOwnedEntityOrNull(() =>
-				getDb().query.tasks.findFirst({
-					where: and(eq(tasks.id, taskId), eq(tasks.userId, user.id))
-				})
-			);
-
-			if (!existing) {
+			if (!result.ok) {
 				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
-			}
-
-			const nextState = form.data.state ?? existing.state;
-
-			if (nextState === existing.state) {
-				const updateData = buildTaskUpdateData(form.data, existing.state);
-
-				await getDb()
-					.update(tasks)
-					.set(updateData)
-					.where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
-			} else {
-				const timestamp = new Date();
-
-				// The better-sqlite3 driver runs transaction callbacks synchronously, so every
-				// query inside must use its sync execution method (`.all()`/`.run()`/`.sync()`)
-				// instead of `await` — an `async` callback throws "Transaction function cannot
-				// return a promise" at runtime.
-				getDb().transaction((tx) => {
-					const [targetSortOrderRow] = tx
-						.select({
-							maxSortOrder: sql<number>`coalesce(max(${tasks.sortOrder}), -1)`
-						})
-						.from(tasks)
-						.where(and(eq(tasks.userId, user.id), eq(tasks.state, nextState)))
-						.all();
-
-					const sourceRows = tx.query.tasks
-						.findMany({
-							where: and(eq(tasks.userId, user.id), eq(tasks.state, existing.state)),
-							columns: { id: true },
-							orderBy: [tasks.sortOrder, tasks.taskNumber]
-						})
-						.sync();
-
-					const sourceTaskIds = sourceRows
-						.map((row) => row.id)
-						.filter((sourceTaskId) => sourceTaskId !== taskId);
-
-					const updateData = buildTaskUpdateData(
-						{
-							...form.data,
-							state: nextState
-						},
-						existing.state
-					);
-
-					tx.update(tasks)
-						.set({
-							...updateData,
-							sortOrder: (targetSortOrderRow?.maxSortOrder ?? -1) + 1,
-							updatedAt: timestamp
-						})
-						.where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)))
-						.run();
-
-					for (let index = 0; index < sourceTaskIds.length; index += 1) {
-						tx.update(tasks)
-							.set({
-								sortOrder: index,
-								updatedAt: timestamp
-							})
-							.where(and(eq(tasks.id, sourceTaskIds[index]), eq(tasks.userId, user.id)))
-							.run();
-					}
-				});
 			}
 
 			logger.info('Task updated', { taskId, userId: user.id });

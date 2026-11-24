@@ -42,7 +42,7 @@ import {
 	failAgendaMutation,
 	failAgendaValidation
 } from '#lib/server/tasks/agenda-responses.js';
-import { getAllTags, loadTaskBoardData, moveTaskWithinBoard } from '#lib/server/tasks/board.js';
+import { getAllTags, loadTaskBoardData } from '#lib/server/tasks/board.js';
 import {
 	buildEmptyMood,
 	buildMoodForm,
@@ -50,6 +50,7 @@ import {
 	getSelectedPeriod,
 	summarizeMood
 } from '#lib/server/tasks/mood.js';
+import { moveTask, updateTask } from '#lib/server/tasks/task.js';
 import {
 	formatDateShort,
 	getDateRange,
@@ -191,19 +192,15 @@ export const actions = {
 		if (!form.valid) return invalidForm(form);
 
 		try {
-			const timestamp = new Date();
-			const moveResult = getDb().transaction((tx) =>
-				moveTaskWithinBoard(
-					tx,
-					user.id,
-					form.data.id,
-					form.data.toState,
-					form.data.toIndex,
-					timestamp
-				)
+			const moveResult = moveTask(
+				getDb(),
+				user.id,
+				form.data.id,
+				form.data.toState,
+				form.data.toIndex
 			);
 
-			if (!moveResult) {
+			if (!moveResult.ok) {
 				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
 			}
 
@@ -222,35 +219,9 @@ export const actions = {
 		if (!form.valid) return invalidForm(form);
 
 		try {
-			const existing = await getDb().query.tasks.findFirst({
-				where: and(eq(tasks.id, form.data.id), eq(tasks.userId, user.id)),
-				columns: {
-					id: true,
-					state: true
-				}
-			});
+			const result = updateTask(getDb(), user.id, form.data.id, { state: form.data.state });
 
-			if (!existing) {
-				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
-			}
-
-			if (existing.state === form.data.state) {
-				return { form };
-			}
-
-			const timestamp = new Date();
-			const moveResult = getDb().transaction((tx) =>
-				moveTaskWithinBoard(
-					tx,
-					user.id,
-					form.data.id,
-					form.data.state,
-					Number.MAX_SAFE_INTEGER,
-					timestamp
-				)
-			);
-
-			if (!moveResult) {
+			if (!result.ok) {
 				return message(form, { type: 'error', text: 'Task not found' }, { status: 404 });
 			}
 
