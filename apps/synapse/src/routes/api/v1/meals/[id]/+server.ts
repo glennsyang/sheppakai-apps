@@ -7,7 +7,7 @@ import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiUpdateMealSchema } from '#lib/server/api/schemas/meals.js';
 import { getDb } from '#lib/server/db/index.js';
 import { mealLogs } from '#lib/server/db/schema/index.js';
-import { updateMeal } from '#lib/server/db/writes/meals.js';
+import { updateMealFromApi } from '#lib/server/db/writes/meals.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
@@ -47,7 +47,7 @@ export const PATCH: RequestHandler = async ({ request, params, url }) => {
 			path: url.pathname,
 			action: 'meals:write'
 		},
-		() => updateMeal(auth.userId, params.id, parsed.data),
+		() => updateMealFromApi(auth.userId, params.id, parsed.data),
 		{ successStatus: 200, failureMessage: 'Failed to update meal' }
 	);
 };

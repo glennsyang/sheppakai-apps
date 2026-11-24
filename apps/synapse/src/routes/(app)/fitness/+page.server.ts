@@ -23,7 +23,13 @@ import {
 	workoutReminderSchema
 } from '#lib/schemas/fitness.js';
 import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
-import { createAction, deleteAction, updateAction } from '#lib/server/actions/crud-helpers.js';
+import {
+	createAction,
+	deleteAction,
+	updateAction,
+	upsertSettingAction,
+	writeAction
+} from '#lib/server/actions/crud-helpers.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { getDb } from '#lib/server/db/index.js';
 import {
@@ -31,16 +37,15 @@ import {
 	goalWeights,
 	mealLogs,
 	weightEntries,
-	workoutExercises,
 	workoutLogs,
 	workoutReminders
 } from '#lib/server/db/schema/index.js';
 import {
-	generateId,
-	withTimestampsForCreate,
-	withTimestampsForUpdate
-} from '#lib/server/db/utils.js';
-import { upsertUserSettings } from '#lib/server/db/writes/user-settings.js';
+	createFoodEntry,
+	type FoodEntryFields,
+	updateFoodEntry
+} from '#lib/server/fitness/food-entry.js';
+import { createWorkout, updateWorkout, type WorkoutFields } from '#lib/server/fitness/workout.js';
 import { logger } from '#lib/server/logger.js';
 import {
 	estimateMeal,
@@ -57,12 +62,30 @@ const estimateLimiter = createUserRateLimiter([30, 'h']);
 
 const INVALID_EXERCISES_MESSAGE = `Exercises are invalid. Each needs a name (max 100 characters) and positive whole numbers, up to ${MAX_WORKOUT_EXERCISES} exercises.`;
 
-// Columns shared by the log and update actions for each entry type.
-const toMealRow = (data: z.infer<typeof logMealSchema>) => ({
+// Form values → domain fields, shared by the log and update actions for each entry type.
+const toFoodEntryFields = (data: z.infer<typeof logMealSchema>): FoodEntryFields => ({
 	date: data.date,
 	timeOfDay: data.timeOfDay,
 	description: data.description,
 	caloriesEstimate: data.caloriesEstimate || null
+});
+
+const toWorkoutFields = (
+	data: z.infer<typeof logWorkoutSchema>,
+	exercises: WorkoutExerciseInput[]
+): WorkoutFields => ({
+	date: data.date,
+	time: data.time || null,
+	type: data.type,
+	durationMinutes: data.durationMinutes || null,
+	steps: data.steps || null,
+	notes: data.notes || null,
+	exercises: exercises.map((exercise) => ({
+		exerciseName: exercise.exerciseName,
+		sets: exercise.sets || null,
+		reps: exercise.reps || null,
+		weightLbs: exercise.weightLbs || null
+	}))
 });
 
 /**
@@ -206,34 +229,11 @@ export const actions = {
 		toRow: (data) => ({ date: data.date, time: data.time || null, weightLbs: data.weightLbs })
 	}),
 
-	setGoal: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(setGoalWeightSchema));
-
-		if (!form.valid) {
-			logger.warn('Invalid goal weight form data', { errors: form.errors });
-			return invalidForm(form);
-		}
-
-		try {
-			await upsertUserSettings(goalWeights, user.id, {
-				targetWeightLbs: form.data.targetWeightLbs,
-				setDate: getTodayString()
-			});
-
-			logger.info('Goal weight set', { userId: user.id });
-		} catch (error) {
-			logger.error('Failed to set goal weight', error);
-			return message(
-				form,
-				{
-					type: 'error',
-					text: 'Failed to set goal weight. Please try again.'
-				},
-				{ status: 500 }
-			);
-		}
-
-		return message(form, { type: 'success', text: 'Goal weight set.' });
+	setGoal: upsertSettingAction({
+		schema: setGoalWeightSchema,
+		table: goalWeights,
+		entityName: 'Goal weight',
+		toValues: (data) => ({ targetWeightLbs: data.targetWeightLbs, setDate: getTodayString() })
 	}),
 
 	logWorkout: requireAuth(async ({ request }, user) => {
@@ -255,44 +255,11 @@ export const actions = {
 		}
 
 		try {
-			const db = getDb();
-			const workoutId = generateId();
-			// One timestamp for the workout log and its exercises
-			const now = new Date();
-
-			// The better-sqlite3 driver runs transaction callbacks synchronously, so every
-			// query inside must use `.run()` instead of `await`.
-			db.transaction((tx) => {
-				tx.insert(workoutLogs)
-					.values({
-						id: workoutId,
-						userId: user.id,
-						date: form.data.date,
-						time: form.data.time || null,
-						type: form.data.type,
-						durationMinutes: form.data.durationMinutes || null,
-						steps: form.data.steps || null,
-						notes: form.data.notes || null,
-						...withTimestampsForCreate(now)
-					})
-					.run();
-
-				if (exercises.length > 0) {
-					tx.insert(workoutExercises)
-						.values(
-							exercises.map((exercise) => ({
-								id: generateId(),
-								workoutLogId: workoutId,
-								exerciseName: exercise.exerciseName,
-								sets: exercise.sets || null,
-								reps: exercise.reps || null,
-								weightLbs: exercise.weightLbs || null,
-								...withTimestampsForCreate(now)
-							}))
-						)
-						.run();
-				}
-			});
+			const { id: workoutId } = createWorkout(
+				getDb(),
+				user.id,
+				toWorkoutFields(form.data, exercises)
+			);
 
 			logger.info('Workout logged', { workoutId, userId: user.id });
 		} catch (error) {
@@ -310,11 +277,11 @@ export const actions = {
 		return message(form, { type: 'success', text: 'Workout logged.' });
 	}),
 
-	logMeal: createAction({
+	logMeal: writeAction({
 		schema: logMealSchema,
-		table: mealLogs,
 		entityName: 'Food entry',
-		toRow: toMealRow
+		verb: 'create',
+		write: (data, { userId }) => createFoodEntry(getDb(), userId, toFoodEntryFields(data)).id
 	}),
 
 	/**
@@ -372,34 +339,11 @@ export const actions = {
 		}
 	}),
 
-	setCalorieTarget: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(setCalorieTargetSchema));
-
-		if (!form.valid) {
-			logger.warn('Invalid calorie target form data', { errors: form.errors });
-			return invalidForm(form);
-		}
-
-		try {
-			await upsertUserSettings(dailyCalorieTargets, user.id, {
-				targetCalories: form.data.targetCalories,
-				setDate: getTodayString()
-			});
-
-			logger.info('Calorie target set', { userId: user.id });
-		} catch (error) {
-			logger.error('Failed to set calorie target', error);
-			return message(
-				form,
-				{
-					type: 'error',
-					text: 'Failed to set calorie target. Please try again.'
-				},
-				{ status: 500 }
-			);
-		}
-
-		return message(form, { type: 'success', text: 'Calorie target set.' });
+	setCalorieTarget: upsertSettingAction({
+		schema: setCalorieTargetSchema,
+		table: dailyCalorieTargets,
+		entityName: 'Calorie target',
+		toValues: (data) => ({ targetCalories: data.targetCalories, setDate: getTodayString() })
 	}),
 
 	createReminder: createAction({
@@ -461,54 +405,16 @@ export const actions = {
 		}
 
 		try {
-			const db = getDb();
-			const existing = await db.query.workoutLogs.findFirst({
-				where: and(eq(workoutLogs.id, form.data.id), eq(workoutLogs.userId, user.id))
-			});
+			const updated = updateWorkout(
+				getDb(),
+				user.id,
+				form.data.id,
+				toWorkoutFields(form.data, parsedExercises)
+			);
 
-			if (!existing) {
+			if (!updated) {
 				return message(form, { type: 'error', text: 'Workout not found.' }, { status: 404 });
 			}
-
-			// One timestamp for the workout log and its exercises
-			const now = new Date();
-
-			// The better-sqlite3 driver runs transaction callbacks synchronously, so every
-			// query inside must use its sync execution method (`.run()`) instead of `await`
-			// — an `async` callback throws "Transaction function cannot return a promise"
-			// at runtime.
-			db.transaction((tx) => {
-				tx.update(workoutLogs)
-					.set({
-						date: form.data.date,
-						time: form.data.time || null,
-						type: form.data.type,
-						durationMinutes: form.data.durationMinutes || null,
-						steps: form.data.steps || null,
-						notes: form.data.notes || null,
-						...withTimestampsForUpdate(now)
-					})
-					.where(and(eq(workoutLogs.id, form.data.id), eq(workoutLogs.userId, user.id)))
-					.run();
-
-				tx.delete(workoutExercises).where(eq(workoutExercises.workoutLogId, form.data.id)).run();
-
-				if (form.data.type === 'strength' && parsedExercises.length > 0) {
-					tx.insert(workoutExercises)
-						.values(
-							parsedExercises.map((exercise) => ({
-								id: generateId(),
-								workoutLogId: form.data.id,
-								exerciseName: exercise.exerciseName,
-								sets: exercise.sets || null,
-								reps: exercise.reps || null,
-								weightLbs: exercise.weightLbs || null,
-								...withTimestampsForCreate(now)
-							}))
-						)
-						.run();
-				}
-			});
 
 			logger.info('Workout updated', { workoutId: form.data.id, userId: user.id });
 		} catch (error) {
@@ -530,11 +436,12 @@ export const actions = {
 		invalidMessage: 'Invalid workout id'
 	}),
 
-	updateMeal: updateAction({
+	updateMeal: writeAction({
 		schema: updateMealSchema,
-		table: mealLogs,
 		entityName: 'Food entry',
-		toRow: toMealRow
+		verb: 'update',
+		write: (data, { userId }) =>
+			updateFoodEntry(getDb(), userId, data.id, toFoodEntryFields(data))?.id ?? null
 	}),
 
 	deleteMeal: deleteAction({

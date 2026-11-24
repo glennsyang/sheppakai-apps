@@ -15,6 +15,7 @@ import {
 } from '#lib/schemas/auth.js';
 import { removePasskeySchema, renamePasskeySchema } from '#lib/schemas/passkeys.js';
 import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
+import { upsertSettingAction } from '#lib/server/actions/crud-helpers.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { auth } from '#lib/server/auth.js';
 import { getDashboardGoalsForUser } from '#lib/server/dashboard-goal-settings.js';
@@ -26,7 +27,6 @@ import {
 	user,
 	visitStatusSettings
 } from '#lib/server/db/schema/index.js';
-import { upsertUserSettings } from '#lib/server/db/writes/user-settings.js';
 import { sendPasswordChangedEmail } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';
 import {
@@ -199,104 +199,37 @@ export const actions = {
 		}
 	}),
 
-	updateVisitSettings: requireAuth(async ({ request }, currentUser) => {
-		const form = await superValidate(request, zod4(updateVisitStatusSettingsSchema));
-
-		if (!form.valid) return invalidForm(form);
-
-		try {
-			const rawRecentDays = convertVisitThresholdToDays(
-				form.data.recentToOverdueValue,
-				form.data.thresholdUnit
-			);
-			const rawCriticalDays = convertVisitThresholdToDays(
-				form.data.overdueToCriticalValue,
-				form.data.thresholdUnit
-			);
-
-			const normalizedThresholds = normalizeVisitStatusThresholds({
-				recentToOverdueDays: rawRecentDays,
-				overdueToCriticalDays: rawCriticalDays
-			});
-
-			await upsertUserSettings(visitStatusSettings, currentUser.id, {
-				recentToOverdueDays: normalizedThresholds.recentToOverdueDays,
-				overdueToCriticalDays: normalizedThresholds.overdueToCriticalDays
-			});
-
-			logger.info('Visit status settings updated', {
-				userId: currentUser.id,
-				recentToOverdueDays: normalizedThresholds.recentToOverdueDays,
-				overdueToCriticalDays: normalizedThresholds.overdueToCriticalDays
-			});
-
-			return message(form, {
-				type: 'success',
-				text: 'Visit settings updated successfully.'
-			});
-		} catch (error) {
-			logger.error('Failed to update visit settings', error);
-			return message(
-				form,
-				{ type: 'error', text: 'Failed to update visit settings. Please try again.' },
-				{ status: 500 }
-			);
-		}
+	updateVisitSettings: upsertSettingAction({
+		schema: updateVisitStatusSettingsSchema,
+		table: visitStatusSettings,
+		entityName: 'Visit settings',
+		verb: 'update',
+		toValues: (data) =>
+			normalizeVisitStatusThresholds({
+				recentToOverdueDays: convertVisitThresholdToDays(
+					data.recentToOverdueValue,
+					data.thresholdUnit
+				),
+				overdueToCriticalDays: convertVisitThresholdToDays(
+					data.overdueToCriticalValue,
+					data.thresholdUnit
+				)
+			})
 	}),
 
-	updateDashboardGoalSettings: requireAuth(async ({ request }, currentUser) => {
-		const form = await superValidate(request, zod4(updateDashboardGoalSettingsSchema));
-
-		if (!form.valid) return invalidForm(form);
-
-		try {
-			const normalizedGoals = normalizeDashboardGoals(form.data);
-
-			await upsertUserSettings(dashboardGoalSettings, currentUser.id, normalizedGoals);
-
-			logger.info('Dashboard goal settings updated', {
-				userId: currentUser.id,
-				...normalizedGoals
-			});
-
-			return message(form, {
-				type: 'success',
-				text: 'Dashboard goals updated successfully.'
-			});
-		} catch (error) {
-			logger.error('Failed to update dashboard goal settings', error);
-			return message(
-				form,
-				{ type: 'error', text: 'Failed to update dashboard goals. Please try again.' },
-				{ status: 500 }
-			);
-		}
+	updateDashboardGoalSettings: upsertSettingAction({
+		schema: updateDashboardGoalSettingsSchema,
+		table: dashboardGoalSettings,
+		entityName: 'Dashboard goals',
+		verb: 'update',
+		toValues: normalizeDashboardGoals
 	}),
 
-	updateMorningDigestSettings: requireAuth(async ({ request }, currentUser) => {
-		const form = await superValidate(request, zod4(updateMorningDigestSettingsSchema));
-
-		if (!form.valid) return invalidForm(form);
-
-		try {
-			await upsertUserSettings(morningDigestSettings, currentUser.id, form.data);
-
-			logger.info('Morning digest settings updated', {
-				userId: currentUser.id,
-				...form.data
-			});
-
-			return message(form, {
-				type: 'success',
-				text: 'Morning digest settings updated successfully.'
-			});
-		} catch (error) {
-			logger.error('Failed to update morning digest settings', error);
-			return message(
-				form,
-				{ type: 'error', text: 'Failed to update morning digest settings. Please try again.' },
-				{ status: 500 }
-			);
-		}
+	updateMorningDigestSettings: upsertSettingAction({
+		schema: updateMorningDigestSettingsSchema,
+		table: morningDigestSettings,
+		entityName: 'Morning digest settings',
+		verb: 'update',
+		toValues: (data) => data
 	})
 } satisfies Actions;

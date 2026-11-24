@@ -10,7 +10,7 @@ import {
 } from '#lib/server/api/schemas/workouts.js';
 import { getDb } from '#lib/server/db/index.js';
 import { workoutLogs } from '#lib/server/db/schema/index.js';
-import { createWorkout } from '#lib/server/db/writes/workouts.js';
+import { createWorkoutFromApi } from '#lib/server/db/writes/workouts.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
@@ -59,7 +59,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 			path: url.pathname,
 			action: 'workouts:write'
 		},
-		() => createWorkout(auth.userId, parsed.data),
+		() => createWorkoutFromApi(auth.userId, parsed.data),
 		{ successStatus: 201, failureMessage: 'Failed to create workout' }
 	);
 };

@@ -11,6 +11,11 @@ import {
 	withTimestampsForCreate,
 	withTimestampsForUpdate
 } from '#lib/server/db/utils.js';
+import {
+	upsertUserSettings,
+	type UserSettingsTable,
+	type UserSettingsValues
+} from '#lib/server/db/writes/user-settings.js';
 import { logger } from '#lib/server/logger.js';
 
 import { requireAuth } from './auth-guard';
@@ -88,36 +93,112 @@ function ownedBy(table: UserOwnedTable, id: string, userId: string) {
 
 type SuccessResponse<S extends ZodValidationSchema> = ReturnType<typeof success<Data<S>>>;
 
+/** How a write reads in messages and logs: "Failed to <failure> x.", "<Entity> <done>." */
+const VERBS = {
+	create: { failure: 'save', done: 'created' },
+	update: { failure: 'update', done: 'updated' },
+	set: { failure: 'set', done: 'set' }
+} as const;
+
+type WriteVerb = keyof typeof VERBS;
+
+interface WriteActionConfig<S extends ZodValidationSchema, R> {
+	schema: S;
+	/** Sentence-case entity name for messages and logs, e.g. "Food entry". */
+	entityName: string;
+	verb: WriteVerb;
+	/** Banner text for an invalid form; defaults to `invalidForm`'s generic text. */
+	invalidMessage?: string;
+	/**
+	 * Runs the write, usually through a domain write module. Returns the written row's id, or
+	 * `null` when the user has no such row (answered with a 404).
+	 */
+	write: (
+		data: Data<S>,
+		context: { userId: string; event: RequestEvent }
+	) => string | null | Promise<string | null>;
+	/**
+	 * The response once the write succeeds. It runs outside the try/catch, so it may
+	 * `throw redirect(...)`.
+	 */
+	onSuccess?: (form: SuperValidated<Data<S>>, id: string) => R;
+}
+
+/**
+ * The shape every write action shares: validate, run the write, log, and answer with a 404, a
+ * 500 banner or a success message. Success defaults to "<Entity> <created|updated|set>."
+ */
+export function writeAction<S extends ZodValidationSchema, R = SuccessResponse<S>>(
+	config: WriteActionConfig<S, R>
+) {
+	const { failure, done } = VERBS[config.verb];
+
+	return requireAuth(async (event, user) => {
+		const form = await superValidate(event.request, zod4(config.schema));
+		if (!form.valid) return invalidForm(form, config.invalidMessage);
+
+		let id: string | null;
+		try {
+			id = await config.write(form.data, { userId: user.id, event });
+			if (id === null) return notFound(form, config.entityName);
+
+			logger.info(`${config.entityName} ${done}`, { id, userId: user.id });
+		} catch (error) {
+			logger.error(`Failed to ${failure} ${lower(config.entityName)}`, error);
+			return serverError(
+				form,
+				`Failed to ${failure} ${lower(config.entityName)}. Please try again.`
+			);
+		}
+
+		return config.onSuccess
+			? config.onSuccess(form, id)
+			: success(form, `${config.entityName} ${done}.`);
+	});
+}
+
+/**
+ * Create-or-replace the signed-in user's one row in a per-user settings table (Goal Weight,
+ * Calorie Target, …). Success defaults to "<Entity> set."
+ */
+export function upsertSettingAction<
+	S extends ZodValidationSchema,
+	T extends UserSettingsTable,
+	R = SuccessResponse<S>
+>(
+	config: Omit<WriteActionConfig<S, R>, 'write' | 'verb'> & {
+		table: T;
+		verb?: 'set' | 'update';
+		/** The settings columns to write from the validated form. */
+		toValues: (data: Data<S>) => UserSettingsValues<T>;
+	}
+) {
+	return writeAction({
+		...config,
+		verb: config.verb ?? 'set',
+		write: async (data, { userId }) => {
+			await upsertUserSettings(config.table, userId, config.toValues(data));
+			return userId;
+		}
+	});
+}
+
 /** Insert a row owned by the signed-in user. Success defaults to "<Entity> created." */
 export function createAction<
 	S extends ZodValidationSchema,
 	T extends UserOwnedTable,
 	R = SuccessResponse<S>
->(config: WriteConfig<S, T, R>) {
-	return requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(config.schema));
-		if (!form.valid) return invalidForm(form, config.invalidMessage);
-
-		const id = generateId();
-		try {
+>({ table, toRow, ...config }: WriteConfig<S, T, R>) {
+	return writeAction({
+		...config,
+		verb: 'create',
+		write: async (data, { userId }) => {
+			const id = generateId();
 			await getDb()
-				.insert(config.table)
-				.values({
-					...config.toRow(form.data),
-					id,
-					userId: user.id,
-					...withTimestampsForCreate()
-				} as Row<T>);
-
-			logger.info(`${config.entityName} created`, { id, userId: user.id });
-		} catch (error) {
-			logger.error(`Failed to create ${lower(config.entityName)}`, error);
-			return serverError(form, `Failed to save ${lower(config.entityName)}. Please try again.`);
+				.insert(table)
+				.values({ ...toRow(data), id, userId, ...withTimestampsForCreate() } as Row<T>);
+			return id;
 		}
-
-		return config.onSuccess
-			? config.onSuccess(form, id)
-			: success(form, `${config.entityName} created.`);
 	});
 }
 
@@ -126,30 +207,19 @@ export function updateAction<
 	S extends ZodValidationSchema,
 	T extends UserOwnedTable,
 	R = SuccessResponse<S>
->(config: WriteConfig<S, T, R>) {
-	return requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(config.schema));
-		if (!form.valid) return invalidForm(form, config.invalidMessage);
-
-		const id = idOf(form.data);
-		try {
+>({ table, toRow, ...config }: WriteConfig<S, T, R>) {
+	return writeAction({
+		...config,
+		verb: 'update',
+		write: async (data, { userId }) => {
+			const id = idOf(data);
 			const updated = await getDb()
-				.update(config.table)
-				.set({ ...config.toRow(form.data), ...withTimestampsForUpdate() })
-				.where(ownedBy(config.table, id, user.id))
-				.returning({ id: getTableColumns(config.table).id });
-
-			if (updated.length === 0) return notFound(form, config.entityName);
-
-			logger.info(`${config.entityName} updated`, { id, userId: user.id });
-		} catch (error) {
-			logger.error(`Failed to update ${lower(config.entityName)}`, error, { id });
-			return serverError(form, `Failed to update ${lower(config.entityName)}. Please try again.`);
+				.update(table)
+				.set({ ...toRow(data), ...withTimestampsForUpdate() })
+				.where(ownedBy(table, id, userId))
+				.returning({ id: getTableColumns(table).id });
+			return updated.length > 0 ? id : null;
 		}
-
-		return config.onSuccess
-			? config.onSuccess(form, id)
-			: success(form, `${config.entityName} updated.`);
 	});
 }
 

@@ -5,7 +5,7 @@ import { handleApiWrite } from '#lib/server/api/handle-write.js';
 import { requireApiKey } from '#lib/server/api/require-api-key.js';
 import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiUpdateWorkoutSchema } from '#lib/server/api/schemas/workouts.js';
-import { getWorkoutWithExercises, updateWorkout } from '#lib/server/db/writes/workouts.js';
+import { getWorkoutFromApi, updateWorkoutFromApi } from '#lib/server/db/writes/workouts.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
@@ -15,7 +15,7 @@ export const GET: RequestHandler = async ({ request, params }) => {
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
 	try {
-		const workout = await getWorkoutWithExercises(auth.userId, params.id);
+		const workout = await getWorkoutFromApi(auth.userId, params.id);
 		return apiSuccess(workout);
 	} catch (error) {
 		if (error instanceof ApiWriteError) {
@@ -41,7 +41,7 @@ export const PATCH: RequestHandler = async ({ request, params, url }) => {
 			path: url.pathname,
 			action: 'workouts:write'
 		},
-		() => updateWorkout(auth.userId, params.id, parsed.data),
+		() => updateWorkoutFromApi(auth.userId, params.id, parsed.data),
 		{ successStatus: 200, failureMessage: 'Failed to update workout' }
 	);
 };

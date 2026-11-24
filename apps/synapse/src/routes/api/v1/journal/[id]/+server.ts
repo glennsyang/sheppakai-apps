@@ -7,7 +7,7 @@ import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiUpdateJournalSchema } from '#lib/server/api/schemas/journal.js';
 import { getDb } from '#lib/server/db/index.js';
 import { journalEntries } from '#lib/server/db/schema/index.js';
-import { updateJournalEntry } from '#lib/server/db/writes/journal.js';
+import { updateJournalEntryFromApi } from '#lib/server/db/writes/journal.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
@@ -47,7 +47,7 @@ export const PATCH: RequestHandler = async ({ request, params, url }) => {
 			path: url.pathname,
 			action: 'journal:write'
 		},
-		() => updateJournalEntry(auth.userId, params.id, parsed.data),
+		() => updateJournalEntryFromApi(auth.userId, params.id, parsed.data),
 		{ successStatus: 200, failureMessage: 'Failed to update journal entry' }
 	);
 };
