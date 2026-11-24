@@ -1,4 +1,4 @@
-import { desc, eq, max, or, sql } from 'drizzle-orm';
+import { asc, desc, eq, max, or, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import { storedIngredientListSchema, storedInstructionListSchema } from '#lib/schemas/mealPlan.js';
@@ -89,6 +89,30 @@ export function insertRecipe(tx: Tx, userId: string, data: NewRecipe, now: Date)
 		.returning()
 		.get();
 	return rowToRecipe(row);
+}
+
+/**
+ * The key two Recipe names match on: lowercase, whitespace runs collapsed to one space, trimmed.
+ * The one definition of "same name" (Suggestion → Library match, Recently Cooked repeat filter).
+ */
+export function normalizeRecipeName(name: string): string {
+	return name.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * The Library Recipe a name refers to, or null. Searches the whole household Library, any
+ * Source; with several matches (older duplicates), the oldest wins. Runs in the caller's
+ * transaction. Normalizes in JS rather than SQL so the rule stays `normalizeRecipeName`'s.
+ */
+export function findLibraryRecipeByName(tx: Tx, name: string): Pick<Recipe, 'id'> | null {
+	const key = normalizeRecipeName(name);
+	const rows = tx
+		.select({ id: recipes.id, name: recipes.name })
+		.from(recipes)
+		.orderBy(asc(recipes.createdAt), asc(recipes.id))
+		.all();
+	const match = rows.find((row) => normalizeRecipeName(row.name) === key);
+	return match ? { id: match.id } : null;
 }
 
 export async function saveRecipe(userId: string, data: NewRecipe): Promise<Recipe> {

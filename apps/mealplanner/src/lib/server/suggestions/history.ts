@@ -7,6 +7,7 @@ import { sanitizePromptText } from '#lib/server/ai/promptSafety.js';
 import { getDb } from '#lib/server/db/index.js';
 import { recipeCooks, recipes } from '#lib/server/db/schema/index.js';
 import { logger } from '#lib/server/logger.js';
+import { normalizeRecipeName } from '#lib/server/services/recipes.js';
 
 /** Recipes cooked within this many days are not re-suggested. */
 const RECENT_COOK_WINDOW_DAYS = 14;
@@ -112,10 +113,6 @@ export function buildHistoryPrompt(history: SuggestionHistory): string {
 		.join('\n');
 }
 
-function normalizeName(name: string): string {
-	return name.toLowerCase().replace(/\s+/g, ' ').trim();
-}
-
 /**
  * Drops suggestions whose name matches a recently cooked recipe. If that would leave
  * nothing, returns the original list: a repeat beats an empty result.
@@ -125,7 +122,7 @@ export function dropRecentRepeats<T extends { name: string }>(
 	recentNames: string[]
 ): T[] {
 	if (recentNames.length === 0) return suggestions;
-	const recent = new Set(recentNames.map(normalizeName));
-	const kept = suggestions.filter((s) => !recent.has(normalizeName(s.name)));
+	const recent = new Set(recentNames.map(normalizeRecipeName));
+	const kept = suggestions.filter((s) => !recent.has(normalizeRecipeName(s.name)));
 	return kept.length > 0 ? kept : suggestions;
 }

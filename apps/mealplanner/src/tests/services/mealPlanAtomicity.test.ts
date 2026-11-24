@@ -277,13 +277,91 @@ describe('planDinner (#347)', () => {
 		});
 	});
 
-	it('saves two Recipes when the same Suggestion is planned twice (dedupe is #345)', async () => {
+	it('plans the same Suggestion on two days and two weeks as one Recipe (#345)', async () => {
 		await planDinner({ userId: 'u1', week: WEEK, day: 0, dinner: { suggestion: SUGGESTION } });
 		await planDinner({ userId: 'u1', week: WEEK, day: 1, dinner: { suggestion: SUGGESTION } });
+		const next = await planDinner({
+			userId: 'u1',
+			week: '2026-11-30',
+			day: 4,
+			dinner: { suggestion: SUGGESTION }
+		});
 
-		expect(
-			sqlite.prepare(`SELECT COUNT(*) FROM recipes WHERE name = 'Fried rice'`).pluck().get()
-		).toBe(2);
+		const ids = sqlite.prepare(`SELECT id FROM recipes WHERE name = 'Fried rice'`).pluck().all();
+		expect(ids).toHaveLength(1);
+		const planned = sqlite
+			.prepare(`SELECT DISTINCT recipe_id FROM meal_plan_entries`)
+			.pluck()
+			.all();
+		expect(planned).toEqual(ids);
+		expect(next[0].recipe.id).toBe(ids[0]);
+	});
+
+	describe('a Suggestion named like a Library Recipe plans that Recipe (#345)', () => {
+		function seedNamed(
+			id: string,
+			name: string,
+			{ source = 'suggested', createdAt = 0, rating = null as number | null } = {}
+		) {
+			sqlite
+				.prepare(
+					`INSERT INTO recipes (id, user_id, name, description, ingredients_json, instructions_json, prep_time_minutes, servings, source, rating, created_at, updated_at)
+					 VALUES (?, 'u1', ?, 'Original', '[{"name":"chicken","quantity":"1","unit":"lb"}]', '["Stir"]', 15, 4, ?, ?, ?, ?)`
+				)
+				.run(id, name, source, rating, createdAt, createdAt);
+		}
+		const plan = (name: string) =>
+			planDinner({
+				userId: 'u2',
+				week: WEEK,
+				day: 2,
+				dinner: { suggestion: { ...SUGGESTION, name } }
+			});
+
+		beforeEach(() => seedUser(sqlite, 'u2'));
+
+		it('matches after lowercasing, collapsing whitespace and trimming, and changes nothing', async () => {
+			seedNamed('stir', 'Chicken Stir Fry', { rating: 2 });
+			sqlite
+				.prepare(
+					`INSERT INTO recipe_cooks (id, recipe_id, user_id, cooked_on, created_at, updated_at) VALUES ('c1', 'stir', 'u1', '2026-11-01', 0, 0)`
+				)
+				.run();
+			const before = sqlite.prepare(`SELECT * FROM recipes WHERE id = 'stir'`).get();
+
+			const week = await plan(' chicken  STIR fry ');
+
+			expect(week[0].recipe.id).toBe('stir');
+			expect(countRecipes()).toBe(2); // r1 + stir, nothing inserted
+			expect(sqlite.prepare(`SELECT * FROM recipes WHERE id = 'stir'`).get()).toEqual(before);
+			expect(sqlite.prepare(`SELECT COUNT(*) FROM recipe_cooks`).pluck().get()).toBe(1);
+		});
+
+		it.each(['custom', 'imported'])('matches a %s Recipe', async (source) => {
+			seedNamed('mine', 'Fried rice', { source });
+
+			const week = await plan('Fried Rice');
+
+			expect(week[0].recipe).toMatchObject({ id: 'mine', source });
+			expect(countRecipes()).toBe(2);
+		});
+
+		it('uses the oldest of several same-named Recipes', async () => {
+			seedNamed('newer', 'Fried rice', { createdAt: ts(9) });
+			seedNamed('older', 'fried rice', { createdAt: ts(1) });
+
+			expect((await plan('Fried rice'))[0].recipe.id).toBe('older');
+			expect(countRecipes()).toBe(3);
+		});
+
+		it('still saves a Suggestion whose name only resembles a Recipe', async () => {
+			seedNamed('stir', 'Chicken Stir Fry');
+
+			const week = await plan('Chicken Stir Fry with Rice');
+
+			expect(week[0].recipe.id).not.toBe('stir');
+			expect(countRecipes()).toBe(3);
+		});
 	});
 
 	it('stamps the new Recipe, plan and Planned Dinner with one timestamp', async () => {
