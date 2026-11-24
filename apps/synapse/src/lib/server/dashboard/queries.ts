@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, gte, lt, lte, ne, sql } from 'drizzle-orm';
 
+import { ensureStandingItemEntries } from '#lib/server/daily-agenda.js';
 import type { getDb } from '#lib/server/db/index.js';
 import {
 	dailyAgendaEntries,
@@ -13,6 +14,7 @@ import {
 	workoutLogs
 } from '#lib/server/db/schema/index.js';
 import { loadGroupStatuses } from '#lib/server/group-status.js';
+import { getDateRange } from '#lib/utils/date.js';
 
 import type { DashboardDateRanges } from './agenda-stats';
 
@@ -22,6 +24,9 @@ export async function runDashboardQueries(
 	userId: string,
 	r: DashboardDateRanges
 ) {
+	// Expand Standing Items through today first, so the agenda stats count days nobody opened.
+	ensureStandingItemEntries({ db, userId }, getDateRange(r.agenda8WeeksStart, r.today));
+
 	const [
 		journalDateCounts,
 		workoutDateCounts,

@@ -4,6 +4,7 @@ import { requireApiKey } from '#lib/server/api/require-api-key.js';
 import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiAgendaQuerySchema } from '#lib/server/api/schemas/agenda.js';
 import { loadDailyAgendaEntriesForDate } from '#lib/server/daily-agenda.js';
+import { getDb } from '#lib/server/db/index.js';
 import { logger } from '#lib/server/logger.js';
 import { getTodayString } from '#lib/utils/date.js';
 
@@ -20,7 +21,10 @@ export const GET: RequestHandler = async ({ request, url }) => {
 	const date = parsed.data.date ?? getTodayString();
 
 	try {
-		const entries = await loadDailyAgendaEntriesForDate(auth.userId, date);
+		const entries = await loadDailyAgendaEntriesForDate(
+			{ db: getDb(), userId: auth.userId, today: getTodayString() },
+			date
+		);
 
 		return apiSuccess({
 			date,
