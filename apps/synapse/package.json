@@ -80,7 +80,7 @@
 		"oxlint-tsgolint": "catalog:",
 		"svelte": "catalog:",
 		"svelte-check": "catalog:",
-		"svelte-dnd-action": "^0.9.80",
+		"svelte-dnd-action": "^0.9.81",
 		"svelte-sonner": "catalog:",
 		"sveltekit-superforms": "catalog:",
 		"tailwind-merge": "catalog:",
