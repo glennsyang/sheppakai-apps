@@ -1,142 +1,38 @@
+// `/api/v1/workouts` adapter over the Workout module: maps a miss onto an `ApiWriteError`.
 import { ApiWriteError } from '@sheppakai/shared/api-write';
-import { and, eq } from 'drizzle-orm';
 
 import type {
 	ApiCreateWorkoutInput,
 	ApiUpdateWorkoutInput
 } from '#lib/server/api/schemas/workouts.js';
 import { getDb } from '#lib/server/db/index.js';
-import { workoutExercises, workoutLogs } from '#lib/server/db/schema/index.js';
-import {
-	generateId,
-	withTimestampsForCreate,
-	withTimestampsForUpdate
-} from '#lib/server/db/utils.js';
+import * as workout from '#lib/server/fitness/workout.js';
 
-/**
- * Insert path for API-key-driven workout logging, including strength-workout exercises.
- * Mirrors the `logWorkout` action in src/routes/(app)/fitness/+page.server.ts, kept as
- * its own standalone function rather than sharing code with that UI action.
- */
-export async function createWorkout(userId: string, input: ApiCreateWorkoutInput) {
-	const db = getDb();
-	const workoutId = generateId();
-	// One timestamp for the workout log and its exercises
-	const now = new Date();
+function found(result: workout.Workout | null): workout.Workout {
+	if (!result) throw new ApiWriteError('not_found', 'Workout not found.', 404);
+	return result;
+}
 
-	await db.insert(workoutLogs).values({
-		id: workoutId,
-		userId,
+export async function createWorkoutFromApi(userId: string, input: ApiCreateWorkoutInput) {
+	return workout.createWorkout(getDb(), userId, {
 		date: input.date,
 		time: input.time ?? null,
 		type: input.type,
 		durationMinutes: input.durationMinutes ?? null,
 		steps: input.steps ?? null,
 		notes: input.notes ?? null,
-		...withTimestampsForCreate(now)
+		exercises: input.exercises ?? []
 	});
-
-	if (input.type === 'strength' && input.exercises && input.exercises.length > 0) {
-		await db.insert(workoutExercises).values(
-			input.exercises
-				.filter((exercise) => exercise.exerciseName.trim().length > 0)
-				.map((exercise) => ({
-					id: generateId(),
-					workoutLogId: workoutId,
-					exerciseName: exercise.exerciseName,
-					sets: exercise.sets ?? null,
-					reps: exercise.reps ?? null,
-					weightLbs: exercise.weightLbs ?? null,
-					...withTimestampsForCreate(now)
-				}))
-		);
-	}
-
-	return getWorkoutWithExercises(userId, workoutId);
 }
 
-/**
- * Update path for API-key-driven workout updates. Mirrors the `updateWorkout` action
- * in src/routes/(app)/fitness/+page.server.ts (replace-all-exercises-on-update),
- * kept as its own standalone function rather than sharing code with that UI action.
- */
-export async function updateWorkout(
+export async function updateWorkoutFromApi(
 	userId: string,
 	workoutId: string,
 	input: ApiUpdateWorkoutInput
 ) {
-	const db = getDb();
-
-	const existing = await db.query.workoutLogs.findFirst({
-		where: and(eq(workoutLogs.id, workoutId), eq(workoutLogs.userId, userId))
-	});
-
-	if (!existing) {
-		throw new ApiWriteError('not_found', 'Workout not found.', 404);
-	}
-
-	const nextType = input.type ?? existing.type;
-	// One timestamp for the workout log and its exercises
-	const now = new Date();
-
-	// The better-sqlite3 driver runs transaction callbacks synchronously, so every query
-	// inside must use its sync execution method (`.run()`) instead of `await` — an
-	// `async` callback throws "Transaction function cannot return a promise" at runtime.
-	db.transaction((tx) => {
-		tx.update(workoutLogs)
-			.set({
-				date: input.date ?? existing.date,
-				time: input.time !== undefined ? input.time : existing.time,
-				type: nextType,
-				durationMinutes:
-					input.durationMinutes !== undefined ? input.durationMinutes : existing.durationMinutes,
-				steps: input.steps !== undefined ? input.steps : existing.steps,
-				notes: input.notes !== undefined ? input.notes : existing.notes,
-				...withTimestampsForUpdate(now)
-			})
-			.where(and(eq(workoutLogs.id, workoutId), eq(workoutLogs.userId, userId)))
-			.run();
-
-		if (input.exercises !== undefined) {
-			tx.delete(workoutExercises).where(eq(workoutExercises.workoutLogId, workoutId)).run();
-
-			if (nextType === 'strength' && input.exercises.length > 0) {
-				tx.insert(workoutExercises)
-					.values(
-						input.exercises
-							.filter((exercise) => exercise.exerciseName.trim().length > 0)
-							.map((exercise) => ({
-								id: generateId(),
-								workoutLogId: workoutId,
-								exerciseName: exercise.exerciseName,
-								sets: exercise.sets ?? null,
-								reps: exercise.reps ?? null,
-								weightLbs: exercise.weightLbs ?? null,
-								...withTimestampsForCreate(now)
-							}))
-					)
-					.run();
-			}
-		}
-	});
-
-	return getWorkoutWithExercises(userId, workoutId);
+	return found(workout.updateWorkout(getDb(), userId, workoutId, input));
 }
 
-export async function getWorkoutWithExercises(userId: string, workoutId: string) {
-	const db = getDb();
-
-	const workout = await db.query.workoutLogs.findFirst({
-		where: and(eq(workoutLogs.id, workoutId), eq(workoutLogs.userId, userId))
-	});
-
-	if (!workout) {
-		throw new ApiWriteError('not_found', 'Workout not found.', 404);
-	}
-
-	const exercises = await db.query.workoutExercises.findMany({
-		where: eq(workoutExercises.workoutLogId, workoutId)
-	});
-
-	return { ...workout, exercises };
+export async function getWorkoutFromApi(userId: string, workoutId: string) {
+	return found(workout.getWorkout(getDb(), userId, workoutId));
 }

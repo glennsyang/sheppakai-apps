@@ -10,7 +10,7 @@ import {
 } from '#lib/server/api/schemas/journal.js';
 import { getDb } from '#lib/server/db/index.js';
 import { journalEntries } from '#lib/server/db/schema/index.js';
-import { createJournalEntry } from '#lib/server/db/writes/journal.js';
+import { createJournalEntryFromApi } from '#lib/server/db/writes/journal.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
@@ -59,7 +59,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 			path: url.pathname,
 			action: 'journal:write'
 		},
-		() => createJournalEntry(auth.userId, parsed.data),
+		() => createJournalEntryFromApi(auth.userId, parsed.data),
 		{ successStatus: 201, failureMessage: 'Failed to create journal entry' }
 	);
 };

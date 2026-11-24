@@ -20,11 +20,19 @@ const notes = sqliteTable('notes', {
 const state = vi.hoisted(() => ({ db: null as unknown }));
 
 vi.mock('#lib/server/db/index.js', () => ({ getDb: () => state.db }));
+const upsertUserSettings = vi.hoisted(() => vi.fn<(...args: unknown[]) => Promise<void>>());
+vi.mock('#lib/server/db/writes/user-settings.js', () => ({ upsertUserSettings }));
 vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn<() => void>(), error: vi.fn<() => void>(), warn: vi.fn<() => void>() }
 }));
 
-import { createAction, deleteAction, updateAction } from './crud-helpers';
+import {
+	createAction,
+	deleteAction,
+	updateAction,
+	upsertSettingAction,
+	writeAction
+} from './crud-helpers';
 
 const noteSchema = z.object({ body: z.string().min(1) });
 const updateNoteSchema = noteSchema.extend({ id: z.string().min(1) });
@@ -135,6 +143,73 @@ describe('updateAction', () => {
 		expect(result).toMatchObject({
 			status: 500,
 			data: { form: { message: { text: 'Failed to update note. Please try again.' } } }
+		});
+	});
+});
+
+describe('writeAction', () => {
+	it('passes the validated data and caller to the write, and answers with the verb', async () => {
+		const write = vi.fn<(data: { body: string }, ctx: { userId: string }) => string>(() => 'n9');
+		const action = writeAction({ schema: noteSchema, entityName: 'Note', verb: 'set', write });
+
+		const result = await action(event(OWNER, { body: 'hi' }));
+
+		expect(write).toHaveBeenCalledWith(
+			{ body: 'hi' },
+			expect.objectContaining({ userId: 'owner' })
+		);
+		expect(result).toMatchObject({ form: { message: { type: 'success', text: 'Note set.' } } });
+	});
+
+	it('answers 404 when the write finds no row', async () => {
+		const action = writeAction({
+			schema: noteSchema,
+			entityName: 'Note',
+			verb: 'update',
+			write: () => null
+		});
+
+		expect(await action(event(OWNER, { body: 'hi' }))).toMatchObject({
+			status: 404,
+			data: { form: { message: { text: 'Note not found.' } } }
+		});
+	});
+});
+
+describe('upsertSettingAction', () => {
+	const setGoal = upsertSettingAction({
+		schema: z.object({ target: z.coerce.number().positive() }),
+		table: {} as never,
+		entityName: 'Goal weight',
+		toValues: (data) => ({ targetWeightLbs: data.target }) as never
+	});
+
+	beforeEach(() => {
+		upsertUserSettings.mockReset().mockResolvedValue(undefined);
+	});
+
+	it("upserts the caller's settings row and answers '<Entity> set.'", async () => {
+		const result = await setGoal(event(OWNER, { target: '170' }));
+
+		expect(upsertUserSettings).toHaveBeenCalledWith({}, 'owner', { targetWeightLbs: 170 });
+		expect(result).toMatchObject({
+			form: { message: { type: 'success', text: 'Goal weight set.' } }
+		});
+	});
+
+	it('does not save an invalid form', async () => {
+		expect(await setGoal(event(OWNER, { target: '-1' }))).toMatchObject({ status: 400 });
+		expect(upsertUserSettings).not.toHaveBeenCalled();
+	});
+
+	it('answers 500 with a banner when the upsert throws', async () => {
+		upsertUserSettings.mockImplementation(async () => {
+			throw new Error('disk full');
+		});
+
+		expect(await setGoal(event(OWNER, { target: '170' }))).toMatchObject({
+			status: 500,
+			data: { form: { message: { text: 'Failed to set goal weight. Please try again.' } } }
 		});
 	});
 });

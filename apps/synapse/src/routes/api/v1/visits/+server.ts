@@ -7,7 +7,7 @@ import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiCreateVisitSchema, apiVisitListQuerySchema } from '#lib/server/api/schemas/visits.js';
 import { getDb } from '#lib/server/db/index.js';
 import { visits } from '#lib/server/db/schema/index.js';
-import { createVisit } from '#lib/server/db/writes/visits.js';
+import { createVisitFromApi } from '#lib/server/db/writes/visits.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
@@ -53,7 +53,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 			path: url.pathname,
 			action: 'visits:write'
 		},
-		() => createVisit(auth.userId, parsed.data),
+		() => createVisitFromApi(auth.userId, parsed.data),
 		{ successStatus: 201, failureMessage: 'Failed to create visit' }
 	);
 };

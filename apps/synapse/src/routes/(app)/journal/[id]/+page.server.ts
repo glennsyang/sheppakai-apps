@@ -4,12 +4,13 @@ import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { idSchema } from '#lib/schemas/common.js';
-import { buildWeatherJson, journalEntrySchema, storedWeatherSchema } from '#lib/schemas/journal.js';
+import { journalEntrySchema, storedWeatherSchema } from '#lib/schemas/journal.js';
 import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
-import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { writeAction } from '#lib/server/actions/crud-helpers.js';
 import { getDb } from '#lib/server/db/index.js';
 import { journalEntries } from '#lib/server/db/schema/index.js';
-import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
+import { toJournalEntryFields } from '#lib/server/journal/journal-entry-form.js';
+import { updateJournalEntry } from '#lib/server/journal/journal-entry.js';
 import { safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
 
@@ -49,43 +50,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 };
 
 export const actions = {
-	update: requireAuth(async ({ request, params }, user) => {
-		const entryId = params.id;
-		const form = await superValidate(request, zod4(journalEntrySchema));
-
-		if (!form.valid) {
-			logger.warn('Invalid journal entry form data', { errors: form.errors });
-			return invalidForm(form);
+	update: writeAction({
+		schema: journalEntrySchema,
+		entityName: 'Journal entry',
+		verb: 'update',
+		write: (data, { userId, event }) =>
+			updateJournalEntry(getDb(), userId, event.params.id ?? '', toJournalEntryFields(data))?.id ??
+			null,
+		onSuccess: () => {
+			throw redirect(303, '/journal');
 		}
-
-		try {
-			const db = getDb();
-			const location = form.data.location?.trim() || 'Home';
-
-			const weather = buildWeatherJson(form.data.weatherTemp, form.data.weatherCondition);
-
-			await db
-				.update(journalEntries)
-				.set({
-					date: form.data.date,
-					content: form.data.content,
-					location,
-					weather,
-					...withTimestampsForUpdate()
-				})
-				.where(and(eq(journalEntries.id, entryId), eq(journalEntries.userId, user.id)));
-
-			logger.info('Journal entry updated', { entryId, userId: user.id });
-		} catch (err) {
-			logger.error('Failed to update journal entry', err);
-			return message(
-				form,
-				{ type: 'error', text: 'Failed to update journal entry' },
-				{ status: 500 }
-			);
-		}
-
-		throw redirect(303, '/journal');
 	}),
 
 	delete: requireAuth(async ({ request, params }, user) => {

@@ -7,7 +7,7 @@ import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiCreateMealSchema, apiMealListQuerySchema } from '#lib/server/api/schemas/meals.js';
 import { getDb } from '#lib/server/db/index.js';
 import { mealLogs } from '#lib/server/db/schema/index.js';
-import { createMeal } from '#lib/server/db/writes/meals.js';
+import { createMealFromApi } from '#lib/server/db/writes/meals.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
@@ -56,7 +56,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 			path: url.pathname,
 			action: 'meals:write'
 		},
-		() => createMeal(auth.userId, parsed.data),
+		() => createMealFromApi(auth.userId, parsed.data),
 		{ successStatus: 201, failureMessage: 'Failed to create meal' }
 	);
 };

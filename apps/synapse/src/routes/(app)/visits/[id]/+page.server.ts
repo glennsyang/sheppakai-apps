@@ -2,6 +2,7 @@ import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { and, desc, eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
+import type { z } from 'zod';
 
 import { noFieldsSchema } from '#lib/schemas/common.js';
 import {
@@ -17,17 +18,25 @@ import {
 	getOwnedEntityOrThrow
 } from '#lib/server/actions/edit-route-helpers.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
-import { toCommaSeparatedJson } from '#lib/server/actions/string-parsers.js';
+import { splitCommaSeparated } from '#lib/server/actions/string-parsers.js';
 import { getDb } from '#lib/server/db/index.js';
 import { people, visits } from '#lib/server/db/schema/index.js';
-import { generateId, withTimestampsForUpdate } from '#lib/server/db/utils.js';
-import { logVisitAndSetNextVisit } from '#lib/server/db/writes/visits.js';
+import { withTimestampsForUpdate } from '#lib/server/db/utils.js';
 import { loadGroupStatuses } from '#lib/server/group-status.js';
 import { stringListSchema, safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
+import { logVisit, updateVisit, type VisitFields } from '#lib/server/visits/visit.js';
 import { getTodayString } from '#lib/utils/date.js';
 
 import type { Actions, PageServerLoad } from './$types';
+
+const toVisitFields = (data: z.infer<typeof visitSchema>): VisitFields => ({
+	date: data.date,
+	time: data.time || null,
+	companions: splitCommaSeparated(data.companions),
+	notes: data.notes || null,
+	nextVisitDate: data.nextVisitDate || null
+});
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const userId = getUser(locals).id;
@@ -102,41 +111,14 @@ export const actions = {
 		}
 
 		try {
-			const db = getDb();
+			const visit = logVisit(getDb(), user.id, params.id, toVisitFields(form.data));
 
-			// Verify person belongs to user
-			const person = await getOwnedEntityOrNull(() =>
-				db.query.people.findFirst({
-					where: and(eq(people.id, params.id), eq(people.userId, user.id))
-				})
-			);
-
-			if (!person) {
+			if (!visit) {
 				return message(form, { type: 'error', text: 'Group member not found' }, { status: 404 });
 			}
 
-			const companions = toCommaSeparatedJson(form.data.companions);
-
-			const visitId = generateId();
-			// One timestamp for the visit and the member's Next Visit it sets
-			const now = new Date();
-
-			logVisitAndSetNextVisit(db, {
-				visit: {
-					id: visitId,
-					personId: params.id,
-					userId: user.id,
-					date: form.data.date,
-					time: form.data.time || null,
-					companions,
-					notes: form.data.notes || null
-				},
-				nextVisitDate: form.data.nextVisitDate || null,
-				now
-			});
-
 			logger.info('Visit logged', {
-				visitId,
+				visitId: visit.id,
 				personId: params.id,
 				userId: user.id
 			});
@@ -173,36 +155,13 @@ export const actions = {
 		}
 
 		try {
-			const db = getDb();
-
-			const visit = await getOwnedEntityOrNull(() =>
-				db.query.visits.findFirst({
-					where: and(
-						eq(visits.id, visitId),
-						eq(visits.userId, user.id),
-						eq(visits.personId, params.id)
-					)
-				})
-			);
+			// Editing a visit leaves the member's Next Visit alone.
+			const { nextVisitDate: _nextVisitDate, ...patch } = toVisitFields(form.data);
+			const visit = updateVisit(getDb(), user.id, visitId, patch, { personId: params.id });
 
 			if (!visit) {
 				return message(form, { type: 'error', text: 'Visit not found' }, { status: 404 });
 			}
-
-			const companions = toCommaSeparatedJson(form.data.companions);
-
-			await db
-				.update(visits)
-				.set({
-					date: form.data.date,
-					time: form.data.time || null,
-					companions,
-					notes: form.data.notes || null,
-					...withTimestampsForUpdate()
-				})
-				.where(
-					and(eq(visits.id, visitId), eq(visits.userId, user.id), eq(visits.personId, params.id))
-				);
 
 			logger.info('Visit updated', {
 				visitId,

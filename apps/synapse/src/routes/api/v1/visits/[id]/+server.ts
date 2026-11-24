@@ -7,7 +7,7 @@ import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiUpdateVisitSchema } from '#lib/server/api/schemas/visits.js';
 import { getDb } from '#lib/server/db/index.js';
 import { visits } from '#lib/server/db/schema/index.js';
-import { updateVisit } from '#lib/server/db/writes/visits.js';
+import { updateVisitFromApi } from '#lib/server/db/writes/visits.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
@@ -47,7 +47,7 @@ export const PATCH: RequestHandler = async ({ request, params, url }) => {
 			path: url.pathname,
 			action: 'visits:write'
 		},
-		() => updateVisit(auth.userId, params.id, parsed.data),
+		() => updateVisitFromApi(auth.userId, params.id, parsed.data),
 		{ successStatus: 200, failureMessage: 'Failed to update visit' }
 	);
 };

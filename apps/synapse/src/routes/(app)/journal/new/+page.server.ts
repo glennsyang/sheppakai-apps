@@ -1,14 +1,12 @@
 import { redirect } from '@sveltejs/kit';
-import { message, superValidate } from 'sveltekit-superforms';
+import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
-import { buildWeatherJson, journalEntrySchema } from '#lib/schemas/journal.js';
-import { requireAuth } from '#lib/server/actions/auth-guard.js';
-import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { journalEntrySchema } from '#lib/schemas/journal.js';
+import { writeAction } from '#lib/server/actions/crud-helpers.js';
 import { getDb } from '#lib/server/db/index.js';
-import { journalEntries } from '#lib/server/db/schema/index.js';
-import { generateId, withTimestampsForCreate } from '#lib/server/db/utils.js';
-import { logger } from '#lib/server/logger.js';
+import { toJournalEntryFields } from '#lib/server/journal/journal-entry-form.js';
+import { createJournalEntry } from '#lib/server/journal/journal-entry.js';
 import { getTodayString } from '#lib/utils/date.js';
 
 import type { Actions, PageServerLoad } from './$types';
@@ -24,45 +22,13 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions = {
-	default: requireAuth(async ({ request }, user) => {
-		const form = await superValidate(request, zod4(journalEntrySchema));
-
-		if (!form.valid) {
-			return invalidForm(form);
+	default: writeAction({
+		schema: journalEntrySchema,
+		entityName: 'Journal entry',
+		verb: 'create',
+		write: (data, { userId }) => createJournalEntry(getDb(), userId, toJournalEntryFields(data)).id,
+		onSuccess: () => {
+			throw redirect(303, '/journal');
 		}
-
-		try {
-			const location = form.data.location?.trim() || 'Home';
-
-			const weather = buildWeatherJson(form.data.weatherTemp, form.data.weatherCondition);
-
-			const entryId = generateId();
-
-			await getDb()
-				.insert(journalEntries)
-				.values({
-					id: entryId,
-					userId: user.id,
-					date: form.data.date,
-					content: form.data.content,
-					location,
-					weather,
-					...withTimestampsForCreate()
-				});
-
-			logger.info('Journal entry created', { entryId, userId: user.id });
-		} catch (error) {
-			logger.error('Failed to create journal entry', error, { userId: user.id });
-			return message(
-				form,
-				{
-					type: 'error',
-					text: 'An error occurred while creating the journal entry. Please try again.'
-				},
-				{ status: 500 }
-			);
-		}
-
-		throw redirect(303, '/journal');
 	})
 } satisfies Actions;

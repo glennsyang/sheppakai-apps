@@ -23,7 +23,8 @@ import {
 	DEFAULT_VISIT_STATUS_THRESHOLDS
 } from '#lib/utils/visit-status.js';
 
-import { createVisit, logVisitAndSetNextVisit, updateVisit } from './visits';
+import { logVisit } from '../../visits/visit';
+import { createVisitFromApi, updateVisitFromApi } from './visits';
 
 const migrationsFolder = fileURLToPath(new URL('../migrations', import.meta.url));
 
@@ -195,42 +196,57 @@ describe('visit writes set the member Next Visit', () => {
 		addPerson(db, 'p1', '2026-11-25');
 	});
 
-	it('logVisitAndSetNextVisit logs the visit and sets the Next Visit', () => {
-		logVisitAndSetNextVisit(db, {
-			visit: { id: 'v1', personId: 'p1', userId: USER_ID, date: TODAY },
-			nextVisitDate: '2027-01-15',
-			now: new Date()
+	it('logVisit logs the visit and sets the Next Visit', () => {
+		const logged = logVisit(db, USER_ID, 'p1', {
+			date: TODAY,
+			time: null,
+			companions: ['Sam'],
+			notes: null,
+			nextVisitDate: '2027-01-15'
 		});
 
 		expect(nextVisitOf(db, 'p1')).toBe('2027-01-15');
-		const visit = db.query.visits.findFirst({ where: eq(schema.visits.id, 'v1') }).sync();
-		expect(visit?.date).toBe(TODAY);
+		const visit = db.query.visits.findFirst({ where: eq(schema.visits.id, logged!.id) }).sync();
+		expect(visit).toMatchObject({ date: TODAY, companions: '["Sam"]' });
+	});
+
+	it("logVisit returns null for another user's member and writes nothing", () => {
+		expect(
+			logVisit(db, 'someone-else', 'p1', {
+				date: TODAY,
+				time: null,
+				companions: null,
+				notes: null,
+				nextVisitDate: null
+			})
+		).toBeNull();
+		expect(nextVisitOf(db, 'p1')).toBe('2026-11-25');
 	});
 
 	it('API create with followUpDate sets the Next Visit', async () => {
-		await createVisit(USER_ID, { personId: 'p1', date: TODAY, followUpDate: '2027-02-01' });
+		await createVisitFromApi(USER_ID, { personId: 'p1', date: TODAY, followUpDate: '2027-02-01' });
 		expect(nextVisitOf(db, 'p1')).toBe('2027-02-01');
 	});
 
 	it('API create without followUpDate clears the Next Visit', async () => {
-		await createVisit(USER_ID, { personId: 'p1', date: TODAY });
+		await createVisitFromApi(USER_ID, { personId: 'p1', date: TODAY });
 		expect(nextVisitOf(db, 'p1')).toBeNull();
 	});
 
 	it('API update sets, keeps, or clears the Next Visit', async () => {
-		const visit = await createVisit(USER_ID, {
+		const visit = await createVisitFromApi(USER_ID, {
 			personId: 'p1',
 			date: TODAY,
 			followUpDate: '2027-02-01'
 		});
 
-		await updateVisit(USER_ID, visit!.id, { notes: 'Brought a book' });
+		await updateVisitFromApi(USER_ID, visit.id, { notes: 'Brought a book' });
 		expect(nextVisitOf(db, 'p1')).toBe('2027-02-01');
 
-		await updateVisit(USER_ID, visit!.id, { followUpDate: '2027-03-01' });
+		await updateVisitFromApi(USER_ID, visit.id, { followUpDate: '2027-03-01' });
 		expect(nextVisitOf(db, 'p1')).toBe('2027-03-01');
 
-		await updateVisit(USER_ID, visit!.id, { followUpDate: null });
+		await updateVisitFromApi(USER_ID, visit.id, { followUpDate: null });
 		expect(nextVisitOf(db, 'p1')).toBeNull();
 	});
 });

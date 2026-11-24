@@ -15,14 +15,14 @@ import {
 } from '#lib/server/db/utils.js';
 
 /** Tables holding exactly one settings row per user (`user_id` is unique). */
-type UserSettingsTable =
+export type UserSettingsTable =
 	| typeof dailyCalorieTargets
 	| typeof dashboardGoalSettings
 	| typeof goalWeights
 	| typeof morningDigestSettings
 	| typeof visitStatusSettings;
 
-type UserSettingsValues<T extends UserSettingsTable> = Omit<
+export type UserSettingsValues<T extends UserSettingsTable> = Omit<
 	T['$inferInsert'],
 	'id' | 'userId' | 'createdAt' | 'updatedAt'
 >;
