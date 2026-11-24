@@ -1,18 +1,16 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsByUserIds } from '#lib/server/visit-status-settings.js';
 
-import { getDb } from '../db';
-import { emailNotifications, people, user, visits } from '../db/schema';
-import { sendVisitWarningEmail } from './index';
-import { logNotification, sendReminderNotification } from './notification-log';
+import { people, user, visits } from '../db/schema';
+import type { Db, NotificationJob } from '../notification-jobs/run-job';
+import { buildVisitWarningEmail } from './templates';
 import {
 	buildVisitWarningEntityId,
 	buildVisitWarningSubject,
 	formatVisitWarningDate,
-	getVisitWarningStatus,
-	wasVisitWarningSentRecently
+	getVisitWarningStatus
 } from './visit-warning-utils';
 
 type VisitWarningCandidate = {
@@ -26,9 +24,10 @@ type VisitWarningCandidate = {
  * Non-archived, non-exempt people whose latest visit puts them in yellow/critical status,
  * using each owner's visit-status thresholds. Shared by the warnings job and the morning digest.
  */
-export async function loadVisitWarningCandidates(): Promise<VisitWarningCandidate[]> {
-	const db = getDb();
-
+export async function loadVisitWarningCandidates(
+	db: Db,
+	today: string
+): Promise<VisitWarningCandidate[]> {
 	// Get all people with their last visit date
 	const allPeople = db
 		.select({
@@ -71,7 +70,8 @@ export async function loadVisitWarningCandidates(): Promise<VisitWarningCandidat
 		const warningStatus = getVisitWarningStatus(
 			lastVisit.date,
 			person.scheduledVisitDate,
-			visitThresholdsByUserId.get(userData.id)
+			visitThresholdsByUserId.get(userData.id),
+			today
 		);
 		if (!warningStatus) {
 			continue;
@@ -83,83 +83,30 @@ export async function loadVisitWarningCandidates(): Promise<VisitWarningCandidat
 	return candidates;
 }
 
-/**
- * Process visit warnings (people in yellow/red visit status)
- */
-export async function processVisitWarnings(): Promise<void> {
-	const db = getDb();
-	logger.debug('\n👥 Processing visit warnings...');
-
-	const candidates = await loadVisitWarningCandidates();
-
-	let sentCount = 0;
-
-	for (const { person, user: userData, lastVisitDate, warningStatus } of candidates) {
-		const formattedLastVisitDate = formatVisitWarningDate(lastVisitDate);
-		const warningEntityId = buildVisitWarningEntityId(person.id, warningStatus);
-
-		// Check if already sent a warning in the last 7 Pacific days
-		const lastWarning = db
-			.select({ sentAt: emailNotifications.sentAt })
-			.from(emailNotifications)
-			.where(
-				and(
-					eq(emailNotifications.userId, userData.id),
-					eq(emailNotifications.notificationType, 'visit_warning'),
-					eq(emailNotifications.entityId, warningEntityId)
-				)
-			)
-			.orderBy(sql`${emailNotifications.sentAt} DESC`)
-			.get();
-		const recentWarning = !!lastWarning && wasVisitWarningSentRecently(lastWarning.sentAt);
-
-		if (recentWarning) {
-			logger.debug(`   ⏭️  Already sent ${warningStatus} warning in last 7 days`, {
-				personId: person.id
-			});
-			continue;
-		}
-
-		// Send warning email
-		logger.debug(`   📧 Sending ${warningStatus} visit warning`, {
-			userId: userData.id,
-			personId: person.id
-		});
-
-		try {
-			await sendVisitWarningEmail(
-				userData.email,
-				userData.name,
-				person.name,
-				formattedLastVisitDate,
-				warningStatus
-			);
-
-			const visitNotificationMessage =
+/** Email + push when a group member turns Overdue or Critical; repeats at most weekly. */
+export const visitWarningJob: NotificationJob<VisitWarningCandidate> = {
+	type: 'visit_warning',
+	label: 'visit warnings',
+	dedupe: { days: 7 },
+	candidates: ({ db, clock }) => loadVisitWarningCandidates(db, clock.today),
+	recipient: (candidate) => candidate.user,
+	entityId: ({ person, warningStatus }) => buildVisitWarningEntityId(person.id, warningStatus),
+	message: ({ person, user: owner, lastVisitDate, warningStatus }) => ({
+		logSubject: buildVisitWarningSubject(person.name, warningStatus),
+		email: buildVisitWarningEmail(
+			owner.name,
+			person.name,
+			formatVisitWarningDate(lastVisitDate),
+			warningStatus
+		),
+		push: {
+			message:
 				warningStatus === 'critical'
 					? `Critical visit warning: ${person.name} needs a visit.`
-					: `Visit warning: ${person.name} is due for a visit.`;
-
-			await sendReminderNotification(
-				visitNotificationMessage,
-				'Synapse - Visit Warning',
-				'busts_in_silhouette',
-				warningStatus === 'critical' ? 4 : 3
-			);
-
-			await logNotification(
-				userData.id,
-				'visit_warning',
-				warningEntityId,
-				buildVisitWarningSubject(person.name, warningStatus)
-			);
-
-			sentCount++;
-			logger.debug(`   ✅ Sent successfully`);
-		} catch (error) {
-			logger.error(`   ❌ Failed to send:`, error);
+					: `Visit warning: ${person.name} is due for a visit.`,
+			title: 'Synapse - Visit Warning',
+			tags: 'busts_in_silhouette',
+			priority: warningStatus === 'critical' ? 4 : 3
 		}
-	}
-
-	logger.debug(`   📊 Sent ${sentCount} visit warnings`);
-}
+	})
+};

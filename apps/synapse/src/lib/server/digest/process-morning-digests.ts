@@ -1,14 +1,9 @@
-import { and, eq } from 'drizzle-orm';
-
-import { logger } from '#lib/server/logger.js';
-
 import { loadDailyAgendaEntriesForDate } from '../daily-agenda';
-import { getDb } from '../db';
-import { emailNotifications, user } from '../db/schema';
+import { user } from '../db/schema';
 import { loadTasksDueToday } from '../email/digests';
-import { logNotification, sendReminderNotification } from '../email/notification-log';
 import { loadVisitWarningCandidates } from '../email/visit-warnings';
 import { getMorningDigestSettingsByUserIds } from '../morning-digest-settings';
+import type { JobContext, NotificationJob } from '../notification-jobs/run-job';
 import {
 	buildMorningDigestMessage,
 	buildMorningDigestTitle,
@@ -20,102 +15,92 @@ import {
 } from './morning-digest';
 import { fetchBillsDueThisWeek, fetchTonightsDinner } from './remote-sections';
 
-async function alreadySentMorningDigest(userId: string, dateString: string): Promise<boolean> {
-	const db = getDb();
-	const existing = db
-		.select({ id: emailNotifications.id })
-		.from(emailNotifications)
-		.where(
-			and(
-				eq(emailNotifications.userId, userId),
-				eq(emailNotifications.notificationType, MORNING_DIGEST_NOTIFICATION_TYPE),
-				eq(emailNotifications.entityId, dateString)
-			)
-		)
-		.get();
+type MorningDigestCandidate = { id: string; email: string; name: string };
 
-	return !!existing;
+type HouseholdSections = {
+	dinner: string | null;
+	bills: DigestBill[];
+	visitCandidates: Awaited<ReturnType<typeof loadVisitWarningCandidates>>;
+};
+
+// Keyed by the run's context: fetched on the first digest built in a run, reused for the rest.
+const householdSectionsByRun = new WeakMap<JobContext, Promise<HouseholdSections>>();
+
+async function fetchHouseholdSections({ db, clock }: JobContext): Promise<HouseholdSections> {
+	const [dinnerResult, billsResult, visitCandidates] = await Promise.all([
+		fetchTonightsDinner(clock.today),
+		fetchBillsDueThisWeek(clock.today),
+		loadVisitWarningCandidates(db, clock.today)
+	]);
+	return {
+		dinner: dinnerResult.ok ? dinnerResult.value : null,
+		bills: billsResult.ok ? billsResult.value : [],
+		visitCandidates
+	};
+}
+
+function householdSections(ctx: JobContext): Promise<HouseholdSections> {
+	let sections = householdSectionsByRun.get(ctx);
+	if (!sections) {
+		sections = fetchHouseholdSections(ctx);
+		householdSectionsByRun.set(ctx, sections);
+	}
+	return sections;
 }
 
 /**
  * Send each opted-in user one combined push once their send time has passed: agenda,
  * tasks due, tonight's dinner (mealplanner), bills due this week (budget) and overdue
- * visits. Dinner and bills are household-wide, so they are fetched once per run; an
- * unreachable app only drops its own section.
+ * visits. Dinner and bills are household-wide, so they are fetched once per run, and only
+ * when someone is due; an unreachable app only drops its own section. An empty digest is still logged, so later
+ * runs today don't rebuild it.
  */
-export async function processMorningDigests(
-	currentHour: string,
-	currentMinute: string,
-	todayPacific: string
-): Promise<void> {
-	const db = getDb();
-	logger.debug('\n🌅 Processing morning digests...');
+export const morningDigestJob: NotificationJob<MorningDigestCandidate> = {
+	type: MORNING_DIGEST_NOTIFICATION_TYPE,
+	label: 'morning digests',
+	dedupe: 'pacific-day',
+	candidates: async ({ db, clock }) => {
+		const allUsers = db
+			.select({ id: user.id, email: user.email, name: user.name })
+			.from(user)
+			.all();
+		const settingsByUserId = await getMorningDigestSettingsByUserIds(
+			allUsers.map(({ id }) => id),
+			db
+		);
+		return allUsers.filter(({ id }) => {
+			const settings = settingsByUserId.get(id);
+			return !!settings?.enabled && isMorningDigestDue(clock.hour, clock.minute, settings.sendTime);
+		});
+	},
+	recipient: (candidate) => candidate,
+	entityId: (_candidate, { clock }) => clock.today,
+	message: async ({ id: userId }, ctx) => {
+		const { db, clock } = ctx;
+		const { dinner, bills, visitCandidates } = await householdSections(ctx);
+		const visits: DigestVisit[] = visitCandidates
+			.filter((candidate) => candidate.user.id === userId)
+			.map((candidate) => ({
+				name: candidate.person.name,
+				status: candidate.warningStatus,
+				lastVisitDate: candidate.lastVisitDate
+			}));
 
-	const allUsers = db.select({ id: user.id }).from(user).all();
-	const settingsByUserId = await getMorningDigestSettingsByUserIds(
-		allUsers.map(({ id }) => id),
-		db
-	);
+		const title = buildMorningDigestTitle(clock.today);
+		const message = buildMorningDigestMessage(
+			{
+				agenda: await loadDailyAgendaEntriesForDate(userId, clock.today),
+				tasksDue: await loadTasksDueToday(db, userId, clock.today),
+				dinner,
+				bills,
+				visits
+			},
+			clock.today
+		);
 
-	const dueUserIds: string[] = [];
-	for (const { id } of allUsers) {
-		const settings = settingsByUserId.get(id);
-		if (!settings?.enabled) continue;
-		if (!isMorningDigestDue(currentHour, currentMinute, settings.sendTime)) continue;
-		if (await alreadySentMorningDigest(id, todayPacific)) continue;
-		dueUserIds.push(id);
+		return {
+			logSubject: title,
+			push: message ? { message, title, tags: MORNING_DIGEST_TAGS } : undefined
+		};
 	}
-
-	if (dueUserIds.length === 0) {
-		logger.debug('   ⏭️  No morning digests due');
-		return;
-	}
-
-	const [dinnerResult, billsResult, visitCandidates] = await Promise.all([
-		fetchTonightsDinner(todayPacific),
-		fetchBillsDueThisWeek(todayPacific),
-		loadVisitWarningCandidates()
-	]);
-	const dinner = dinnerResult.ok ? dinnerResult.value : null;
-	const bills: DigestBill[] = billsResult.ok ? billsResult.value : [];
-
-	let sentCount = 0;
-
-	for (const userId of dueUserIds) {
-		try {
-			const visits: DigestVisit[] = visitCandidates
-				.filter((candidate) => candidate.user.id === userId)
-				.map((candidate) => ({
-					name: candidate.person.name,
-					status: candidate.warningStatus,
-					lastVisitDate: candidate.lastVisitDate
-				}));
-
-			const title = buildMorningDigestTitle(todayPacific);
-			const message = buildMorningDigestMessage(
-				{
-					agenda: await loadDailyAgendaEntriesForDate(userId, todayPacific),
-					tasksDue: await loadTasksDueToday(userId, todayPacific),
-					dinner,
-					bills,
-					visits
-				},
-				todayPacific
-			);
-
-			// Log even when every section is empty, so later runs today don't rebuild it.
-			if (message) {
-				await sendReminderNotification(message, title, MORNING_DIGEST_TAGS);
-				sentCount++;
-			} else {
-				logger.debug('   ⏭️  Morning digest empty; nothing to send', { userId });
-			}
-
-			await logNotification(userId, MORNING_DIGEST_NOTIFICATION_TYPE, todayPacific, title);
-		} catch (error) {
-			logger.error('   ❌ Failed to send morning digest', error, { userId });
-		}
-	}
-
-	logger.debug(`   📊 Sent ${sentCount} morning digests`);
-}
+};

@@ -5,42 +5,8 @@ import {
 	buildScheduledVisitReminderSubject,
 	buildVisitTodayReminderEntityIdForPerson,
 	buildVisitTodayReminderSubject,
-	formatReminderDate,
-	getDateDaysAhead
+	formatReminderDate
 } from './scheduled-visit-reminder-utils';
-
-describe('getDateDaysAhead', () => {
-	it('returns the correct date when adding positive days', () => {
-		expect(getDateDaysAhead(new Date('2026-01-01T20:00:00Z'), 7)).toBe('2026-01-08');
-		expect(getDateDaysAhead(new Date('2026-03-25T20:00:00Z'), 10)).toBe('2026-04-04');
-	});
-
-	it('handles month-boundary rollover correctly', () => {
-		expect(getDateDaysAhead(new Date('2026-01-28T20:00:00Z'), 7)).toBe('2026-02-04');
-	});
-
-	it('handles year-boundary rollover correctly', () => {
-		expect(getDateDaysAhead(new Date('2025-12-28T20:00:00Z'), 7)).toBe('2026-01-04');
-	});
-
-	it('returns the same date when days is 0', () => {
-		expect(getDateDaysAhead(new Date('2026-06-15T20:00:00Z'), 0)).toBe('2026-06-15');
-	});
-
-	it('counts from the Pacific date on evening runs when UTC is already tomorrow', () => {
-		// 2026-01-10T03:00Z is Jan 9, 7pm PST
-		expect(getDateDaysAhead(new Date('2026-01-10T03:00:00Z'), 7)).toBe('2026-01-16');
-	});
-
-	it('counts from the Pacific date on evening runs during daylight time', () => {
-		// 2026-07-10T05:37Z is Jul 9, 10:37pm PDT
-		expect(getDateDaysAhead(new Date('2026-07-10T05:37:00Z'), 7)).toBe('2026-07-16');
-	});
-
-	it('handles the DST spring-forward week', () => {
-		expect(getDateDaysAhead(new Date('2026-03-07T20:00:00Z'), 7)).toBe('2026-03-14');
-	});
-});
 
 describe('formatReminderDate', () => {
 	it('formats a YYYY-MM-DD string as Month D, YYYY', () => {

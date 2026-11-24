@@ -1,5 +1,3 @@
-import { addDaysToDateString, getTodayString } from '#lib/utils/date.js';
-
 const reminderDateFormatter = new Intl.DateTimeFormat('en-US', {
 	timeZone: 'UTC',
 	month: 'long',
@@ -8,14 +6,6 @@ const reminderDateFormatter = new Intl.DateTimeFormat('en-US', {
 });
 
 export const SCHEDULED_VISIT_REMINDER_NOTIFICATION_TYPE = 'scheduled_visit_reminder';
-
-/**
- * Returns the Pacific date (YYYY-MM-DD) that is `daysAhead` days after the Pacific
- * day containing `now`. Evening cron runs (00:00-07:59 UTC) are still "today" in Pacific.
- */
-export function getDateDaysAhead(now: Date, daysAhead: number): string {
-	return addDaysToDateString(getTodayString(now), daysAhead);
-}
 
 export function formatReminderDate(dateString: string): string {
 	const [year, month, day] = dateString.split('-').map(Number);
