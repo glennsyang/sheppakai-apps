@@ -2,14 +2,21 @@ import { inArray, min, sql, sum } from 'drizzle-orm';
 
 import type {
 	Budget,
+	CategoryStatus,
 	ExcludedExpense,
 	ExcludedSpendCategory,
 	MonthEndForecast,
+	MonthlySpentChartData,
 	SavingsGoalWithEta,
 	SpendingSpike,
 	TimeRangeInOutData,
 	Expense
 } from '#lib';
+import {
+	buildCategoryStatuses,
+	toBudgetInputs,
+	toSpendInputs
+} from '#lib/server/budgets/category-status.js';
 import {
 	computeGoalEta,
 	computeMonthEndForecast,
@@ -182,6 +189,10 @@ export async function loadMonthlyDashboard(url: URL) {
 		plannedExpenses.reduce((acc, b) => acc + b.amount, 0) + recurringBillsMonthlyTotal;
 	const totalIncome = incomeRecords.reduce((acc, inc) => acc + inc.amount, 0);
 	const remainingBalance = totalIncome - plannedExpensesTotal;
+	const categoryStatuses = buildCategoryStatuses(
+		toBudgetInputs(plannedExpenses),
+		toSpendInputs(actualExpenses)
+	);
 
 	const forecast: MonthEndForecast | null = forecastHistory
 		? computeMonthEndForecast({
@@ -254,6 +265,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		year,
 		actualExpenses,
 		plannedExpenses,
+		categoryStatuses,
 		recurringBills,
 		recurringBillsMonthlyTotal,
 		actualExpensesTotal,
@@ -270,6 +282,29 @@ export async function loadMonthlyDashboard(url: URL) {
 		goalsWithProgress,
 		savingsAccountsTotal
 	};
+}
+
+/**
+ * Per-Category chart series for the yearly view: every chart month for every Category that has a
+ * Budget or spend in any of them. Over Budget comes from Category Status, not the chart.
+ */
+function toCategoryMonthly(
+	statusesByMonth: Array<{ month: string; statuses: Map<string, CategoryStatus> }>
+): Record<string, MonthlySpentChartData[]> {
+	const categoryIds = new Set(statusesByMonth.flatMap(({ statuses }) => [...statuses.keys()]));
+	const series: Record<string, MonthlySpentChartData[]> = {};
+	for (const categoryId of categoryIds) {
+		series[categoryId] = statusesByMonth.map(({ month, statuses }) => {
+			const status = statuses.get(categoryId);
+			return {
+				month,
+				spent: status?.spent ?? 0,
+				budget: status && status.budgeted > 0 ? status.budgeted : undefined,
+				overbudget: status?.overBy ?? 0
+			};
+		});
+	}
+	return series;
 }
 
 export async function loadYearlyDashboard(url: URL) {
@@ -335,6 +370,7 @@ export async function loadYearlyDashboard(url: URL) {
 	const remainingBalance = totalIncome - plannedExpensesTotal;
 
 	const timeRangeData: TimeRangeInOutData[] = [];
+	const statusesByMonth: Array<{ month: string; statuses: Map<string, CategoryStatus> }> = [];
 
 	if (monthRanges.length > 0) {
 		const chartStart = monthRanges[0].startDate;
@@ -359,10 +395,19 @@ export async function loadYearlyDashboard(url: URL) {
 				billPriceHistory,
 				toMonthKey(range.month, range.year)
 			);
+			const monthBudgets = chartBudgets.filter(
+				(b) => Number(b.month) === range.month && Number(b.year) === range.year
+			);
 			// Same definition as the monthly view's planned budget: category budgets + recurring.
-			const monthBudgeted = chartBudgets
-				.filter((b) => Number(b.month) === range.month && Number(b.year) === range.year)
-				.reduce((acc, b) => acc + b.amount, 0);
+			const monthBudgeted = monthBudgets.reduce((acc, b) => acc + b.amount, 0);
+			const monthStatuses = buildCategoryStatuses(
+				toBudgetInputs(monthBudgets),
+				toSpendInputs(monthTx)
+			);
+			statusesByMonth.push({
+				month: monthNames[range.month - 1],
+				statuses: new Map(monthStatuses.map((st) => [st.categoryId, st]))
+			});
 
 			timeRangeData.push({
 				month: monthNames[range.month - 1],
@@ -375,6 +420,7 @@ export async function loadYearlyDashboard(url: URL) {
 
 	return {
 		mode: 'yearly' as const,
+		categoryMonthly: toCategoryMonthly(statusesByMonth),
 		view,
 		year,
 		actualExpenses,

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
 	select: vi.fn<() => unknown>(),
+	getCategoryStatuses: vi.fn<() => Promise<unknown[]>>(),
 	sendWeeklySummaryEmail: vi.fn<(payload: { to: string }) => Promise<unknown>>(),
 	loggerInfo: vi.fn<() => void>(),
 	loggerWarn: vi.fn<() => void>(),
@@ -10,6 +11,10 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock('#lib/server/db/index.js', () => ({
 	getDb: () => ({ select: mockState.select })
+}));
+
+vi.mock('#lib/server/budgets/category-status.js', () => ({
+	getCategoryStatuses: mockState.getCategoryStatuses
 }));
 
 vi.mock('#lib/server/email/index.js', () => ({
@@ -54,12 +59,18 @@ function capturingQueryResult(rows: unknown[], captured: { where?: SQL }) {
 	};
 }
 
+const { buildCategoryStatuses } = await vi.importActual<
+	typeof import('#lib/server/budgets/category-status.js')
+>('#lib/server/budgets/category-status.js');
+
 const MONDAY_PACIFIC = new Date('2026-09-14T16:10:00Z'); // 9:10am PDT, Monday
 const TUESDAY_PACIFIC = new Date('2026-09-15T16:10:00Z');
 
 describe('runWeeklySummaryEmail', () => {
 	beforeEach(() => {
 		mockState.select.mockReset();
+		mockState.getCategoryStatuses.mockReset();
+		mockState.getCategoryStatuses.mockResolvedValue([]);
 		mockState.sendWeeklySummaryEmail.mockReset();
 		mockState.loggerInfo.mockReset();
 		mockState.loggerWarn.mockReset();
@@ -80,9 +91,9 @@ describe('runWeeklySummaryEmail', () => {
 	});
 
 	it('skips when no budgets exist for the current month', async () => {
-		mockState.select
-			.mockReturnValueOnce(queryResult([{ name: 'Glenn', email: 'glenn@example.com' }]))
-			.mockReturnValueOnce(queryResult([]));
+		mockState.select.mockReturnValueOnce(
+			queryResult([{ name: 'Glenn', email: 'glenn@example.com' }])
+		);
 
 		const result = await runWeeklySummaryEmail(MONDAY_PACIFIC);
 
@@ -94,9 +105,7 @@ describe('runWeeklySummaryEmail', () => {
 
 	it('only emails verified, non-banned users with an email address', async () => {
 		const recipientsQuery: { where?: SQL } = {};
-		mockState.select
-			.mockReturnValueOnce(capturingQueryResult([], recipientsQuery))
-			.mockReturnValueOnce(queryResult([]));
+		mockState.select.mockReturnValueOnce(capturingQueryResult([], recipientsQuery));
 
 		await runWeeklySummaryEmail(MONDAY_PACIFIC);
 
@@ -117,24 +126,27 @@ describe('runWeeklySummaryEmail', () => {
 			)
 			.mockReturnValueOnce(
 				queryResult([
-					{ categoryId: 'cat-groceries', categoryName: 'Groceries', amount: 100 },
-					{ categoryId: 'cat-fuel', categoryName: 'Fuel', amount: 50 },
-					{ categoryId: 'cat-fun', categoryName: 'Fun', amount: 20 }
-				])
-			)
-			.mockReturnValueOnce(
-				queryResult([
-					{ categoryId: 'cat-groceries', amount: 120 }, // over by 20
-					{ categoryId: 'cat-fuel', amount: 48 }, // within 10% (>= 45)
-					{ categoryId: 'cat-fun', amount: 5 } // well under threshold
-				])
-			)
-			.mockReturnValueOnce(
-				queryResult([
 					{ date: '2026-09-10', payee: 'Airline', categoryName: 'Travel', amount: 400 },
 					{ date: '2026-09-02', payee: 'Hotel', categoryName: 'Travel', amount: 250 }
 				])
 			);
+
+		mockState.getCategoryStatuses.mockResolvedValue(
+			buildCategoryStatuses(
+				[
+					{ categoryId: 'cat-groceries', categoryName: 'Groceries', amount: 100 },
+					{ categoryId: 'cat-fuel', categoryName: 'Fuel', amount: 50 },
+					{ categoryId: 'cat-fun', categoryName: 'Fun', amount: 20 },
+					{ categoryId: 'cat-gifts', categoryName: 'Gifts', amount: 0 }
+				],
+				[
+					{ categoryId: 'cat-groceries', categoryName: 'Groceries', amount: 120 }, // over by 20
+					{ categoryId: 'cat-fuel', categoryName: 'Fuel', amount: 48 }, // within 10% (>= 45)
+					{ categoryId: 'cat-fun', categoryName: 'Fun', amount: 5 }, // well under threshold
+					{ categoryId: 'cat-gifts', categoryName: 'Gifts', amount: 30 } // $0 Budget: unbudgeted, not over
+				]
+			)
+		);
 
 		const result = await runWeeklySummaryEmail(MONDAY_PACIFIC);
 
@@ -173,11 +185,13 @@ describe('runWeeklySummaryEmail', () => {
 					{ name: 'Sam', email: 'sam@example.com' }
 				])
 			)
-			.mockReturnValueOnce(
-				queryResult([{ categoryId: 'cat-groceries', categoryName: 'Groceries', amount: 100 }])
-			)
-			.mockReturnValueOnce(queryResult([]))
 			.mockReturnValueOnce(queryResult([]));
+		mockState.getCategoryStatuses.mockResolvedValue(
+			buildCategoryStatuses(
+				[{ categoryId: 'cat-groceries', categoryName: 'Groceries', amount: 100 }],
+				[]
+			)
+		);
 
 		const sendError = new Error('Brevo rejected the request');
 		mockState.sendWeeklySummaryEmail
@@ -203,20 +217,15 @@ describe('runWeeklySummaryEmail', () => {
 		);
 	});
 
-	it('leaves excluded expenses out of budget spend', async () => {
-		const spendQuery: { where?: SQL } = {};
-		mockState.select
-			.mockReturnValueOnce(queryResult([{ name: 'Glenn', email: 'glenn@example.com' }]))
-			.mockReturnValueOnce(
-				queryResult([{ categoryId: 'cat-groceries', categoryName: 'Groceries', amount: 100 }])
-			)
-			.mockReturnValueOnce(capturingQueryResult([], spendQuery))
-			.mockReturnValueOnce(queryResult([]));
+	it('asks Category Status for the month to date', async () => {
+		mockState.select.mockReturnValueOnce(queryResult([]));
 
 		await runWeeklySummaryEmail(MONDAY_PACIFIC);
 
-		expect(spendQuery.where).toBeDefined();
-		const { sql } = new SQLiteSyncDialect().sqlToQuery(spendQuery.where as SQL);
-		expect(sql).toContain('"excluded_from_budget" = ?');
+		expect(mockState.getCategoryStatuses).toHaveBeenCalledWith({
+			month: 9,
+			year: 2026,
+			through: '2026-09-14'
+		});
 	});
 });

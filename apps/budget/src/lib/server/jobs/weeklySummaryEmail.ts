@@ -1,7 +1,8 @@
-import { and, eq, inArray, ne } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 
+import { getCategoryStatuses } from '#lib/server/budgets/category-status.js';
 import { getDb } from '#lib/server/db/index.js';
-import { budget, category, expense, user } from '#lib/server/db/schema/index.js';
+import { category, expense, user } from '#lib/server/db/schema/index.js';
 import { dateInRange } from '#lib/server/db/utils.js';
 import {
 	sendWeeklySummaryEmail,
@@ -9,6 +10,7 @@ import {
 	type WeeklySummaryExcludedExpense
 } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';
+import type { CategoryStatus } from '#lib/types.js';
 
 type WeeklySummaryRunResult = {
 	success: boolean;
@@ -32,7 +34,6 @@ type PacificDateParts = {
 };
 
 const PACIFIC_TIMEZONE = 'America/Los_Angeles';
-const TEN_PERCENT_THRESHOLD = 0.9;
 
 function getPacificDateParts(date: Date): PacificDateParts {
 	const formatter = new Intl.DateTimeFormat('en-US', {
@@ -96,44 +97,30 @@ function shouldRunAtScheduledPacificTime(date: Date): boolean {
 	return pacificParts.weekday === 1;
 }
 
-function toSummaryRows(params: {
-	budgets: Array<{ categoryId: string; categoryName: string; amount: number }>;
-	spendByCategoryId: Map<string, number>;
-}): { overBudgetRows: WeeklySummaryCategory[]; nearLimitRows: WeeklySummaryCategory[] } {
-	const overBudgetRows: WeeklySummaryCategory[] = [];
-	const nearLimitRows: WeeklySummaryCategory[] = [];
+/** Over and near rows come straight from the Category Status states. */
+function toSummaryRows(statuses: CategoryStatus[]): {
+	overBudgetRows: WeeklySummaryCategory[];
+	nearLimitRows: WeeklySummaryCategory[];
+} {
+	const overBudgetRows: WeeklySummaryCategory[] = statuses
+		.filter((s) => s.state === 'over')
+		.map((s) => ({
+			categoryName: s.categoryName,
+			budgetAmount: s.budgeted,
+			spentAmount: s.spent,
+			overByAmount: s.overBy
+		}))
+		.toSorted((a, b) => (b.overByAmount ?? 0) - (a.overByAmount ?? 0));
 
-	for (const item of params.budgets) {
-		const spent = params.spendByCategoryId.get(item.categoryId) ?? 0;
-		const overBy = spent - item.amount;
-
-		if (overBy > 0) {
-			overBudgetRows.push({
-				categoryName: item.categoryName,
-				budgetAmount: item.amount,
-				spentAmount: spent,
-				overByAmount: overBy
-			});
-			continue;
-		}
-
-		if (item.amount <= 0) {
-			continue;
-		}
-
-		const thresholdAmount = item.amount * TEN_PERCENT_THRESHOLD;
-		if (spent >= thresholdAmount) {
-			nearLimitRows.push({
-				categoryName: item.categoryName,
-				budgetAmount: item.amount,
-				spentAmount: spent,
-				remainingAmount: Math.max(item.amount - spent, 0)
-			});
-		}
-	}
-
-	overBudgetRows.sort((a, b) => (b.overByAmount ?? 0) - (a.overByAmount ?? 0));
-	nearLimitRows.sort((a, b) => (b.spentAmount ?? 0) - (a.spentAmount ?? 0));
+	const nearLimitRows: WeeklySummaryCategory[] = statuses
+		.filter((s) => s.state === 'near')
+		.map((s) => ({
+			categoryName: s.categoryName,
+			budgetAmount: s.budgeted,
+			spentAmount: s.spent,
+			remainingAmount: Math.max(s.budgeted - s.spent, 0)
+		}))
+		.toSorted((a, b) => (b.spentAmount ?? 0) - (a.spentAmount ?? 0));
 
 	return { overBudgetRows, nearLimitRows };
 }
@@ -166,17 +153,13 @@ export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySu
 		.from(user)
 		.where(and(eq(user.banned, false), eq(user.emailVerified, true), ne(user.email, '')));
 
-	const monthlyBudgets = await db
-		.select({
-			categoryId: budget.categoryId,
-			categoryName: category.name,
-			amount: budget.amount
-		})
-		.from(budget)
-		.innerJoin(category, eq(budget.categoryId, category.id))
-		.where(and(eq(budget.month, monthRange.month), eq(budget.year, monthRange.year)));
+	const statuses = await getCategoryStatuses({
+		month: Number(monthRange.month),
+		year: Number(monthRange.year),
+		through: monthRange.endDate
+	});
 
-	if (monthlyBudgets.length === 0) {
+	if (!statuses.some((s) => s.budgeted > 0)) {
 		logger.info('No monthly budgets found for weekly summary email run', {
 			month: monthRange.month,
 			year: monthRange.year
@@ -194,40 +177,6 @@ export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySu
 			excludedCount: 0
 		};
 	}
-
-	const dedupedBudgetByCategory = new Map<string, { categoryName: string; amount: number }>();
-	for (const row of monthlyBudgets) {
-		const existing = dedupedBudgetByCategory.get(row.categoryId);
-		if (!existing) {
-			dedupedBudgetByCategory.set(row.categoryId, {
-				categoryName: row.categoryName,
-				amount: row.amount
-			});
-			continue;
-		}
-		dedupedBudgetByCategory.set(row.categoryId, {
-			categoryName: row.categoryName,
-			amount: existing.amount + row.amount
-		});
-	}
-
-	const budgetedCategoryIds = Array.from(dedupedBudgetByCategory.keys());
-	const monthExpenses =
-		budgetedCategoryIds.length > 0
-			? await db
-					.select({
-						categoryId: expense.categoryId,
-						amount: expense.amount
-					})
-					.from(expense)
-					.where(
-						and(
-							inArray(expense.categoryId, budgetedCategoryIds),
-							eq(expense.excludedFromBudget, false),
-							...dateInRange(expense.date, monthRange.startDate, monthRange.endDate)
-						)
-					)
-			: [];
 
 	// Excluded expenses don't count toward any budget; they're listed separately in the email.
 	const excludedExpenses: WeeklySummaryExcludedExpense[] = await db
@@ -247,22 +196,7 @@ export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySu
 		);
 	excludedExpenses.sort((a, b) => a.date.localeCompare(b.date));
 
-	const spendByCategoryId = new Map<string, number>();
-	for (const txn of monthExpenses) {
-		const current = spendByCategoryId.get(txn.categoryId) ?? 0;
-		spendByCategoryId.set(txn.categoryId, current + txn.amount);
-	}
-
-	const budgetRows = Array.from(dedupedBudgetByCategory.entries()).map(([categoryId, value]) => ({
-		categoryId,
-		categoryName: value.categoryName,
-		amount: value.amount
-	}));
-
-	const { overBudgetRows, nearLimitRows } = toSummaryRows({
-		budgets: budgetRows,
-		spendByCategoryId
-	});
+	const { overBudgetRows, nearLimitRows } = toSummaryRows(statuses);
 
 	const emailResults = await Promise.allSettled(
 		recipients.map((recipient) =>

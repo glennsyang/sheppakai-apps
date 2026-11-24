@@ -1,15 +1,13 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
+import { classifyCategoryStatus, getCategoryStatus } from '#lib/server/budgets/category-status.js';
 import { formatCurrency } from '#lib/utils.js';
-import { getMonthDateRange, padMonth } from '#lib/utils/dates.js';
 
 import { getDb } from '../db';
-import { budget, expense } from '../db/schema';
-import { dateInRange } from '../db/utils';
+import { expense } from '../db/schema';
 import { logger } from '../logger';
 import { sendBudgetAlerts } from './index';
 
-const NEAR_BUDGET_THRESHOLD_RATIO = 0.9;
 const NEAR_BUDGET_ALERT_PRIORITY = 3;
 const OVER_BUDGET_ALERT_PRIORITY = 4;
 
@@ -29,34 +27,19 @@ type ExpenseBudgetAlertUpdateContext = {
 	previousExpense: ExpenseBudgetAlertRecord | null;
 };
 
-type BudgetCategorySnapshot = {
-	amount: number;
-	categoryName: string;
-};
-
 type BudgetThresholdNotification = {
 	title: string;
 	message: string;
 	priority: number;
 };
 
+/** Alert view of the Category Status rule: only `over` and `near` are alert-worthy. */
 export function getBudgetThresholdState(
 	spentAmount: number,
 	budgetAmount: number
 ): BudgetThresholdState {
-	if (budgetAmount <= 0) {
-		return 'below';
-	}
-
-	if (spentAmount > budgetAmount) {
-		return 'over';
-	}
-
-	if (spentAmount >= budgetAmount * NEAR_BUDGET_THRESHOLD_RATIO) {
-		return 'near';
-	}
-
-	return 'below';
+	const state = classifyCategoryStatus(budgetAmount, spentAmount);
+	return state === 'over' || state === 'near' ? state : 'below';
 }
 
 export function getBudgetThresholdAlertType(
@@ -134,67 +117,20 @@ function buildBudgetThresholdNotification(params: {
 	};
 }
 
-// Budgets belong to the Household, so match them whoever created them.
-async function loadBudgetCategorySnapshot(
-	categoryId: string,
-	month: number,
-	year: number
-): Promise<BudgetCategorySnapshot | null> {
-	const monthlyBudgets = await getDb().query.budget.findMany({
-		with: {
-			category: true
-		},
-		where: and(
-			eq(budget.categoryId, categoryId),
-			eq(budget.month, padMonth(month)),
-			eq(budget.year, year.toString())
-		)
-	});
-
-	if (monthlyBudgets.length === 0) {
-		return null;
-	}
-
-	return {
-		amount: monthlyBudgets.reduce((sum, row) => sum + row.amount, 0),
-		categoryName: monthlyBudgets[0]?.category?.name ?? 'Category'
-	};
-}
-
-async function loadCategoryMonthSpend(
-	categoryId: string,
-	month: number,
-	year: number
-): Promise<number> {
-	const { startDate, endDate } = getMonthDateRange(month, year);
-	const [row] = await getDb()
-		.select({ total: sql<number>`coalesce(sum(${expense.amount}), 0)` })
-		.from(expense)
-		.where(
-			and(
-				eq(expense.categoryId, categoryId),
-				eq(expense.excludedFromBudget, false),
-				...dateInRange(expense.date, startDate, endDate)
-			)
-		);
-
-	return row?.total ?? 0;
-}
-
+/**
+ * `previousSpentFrom` turns the month's current spend into what it was before this write, so the
+ * alert fires only on the transition into near/over.
+ */
 async function maybeSendBudgetThresholdAlert(params: {
 	categoryId: string;
 	month: number;
 	year: number;
-	previousSpentAmount: number;
-	currentSpentAmount: number;
+	previousSpentFrom: (currentSpentAmount: number) => number;
 }): Promise<void> {
-	const budgetSnapshot = await loadBudgetCategorySnapshot(
-		params.categoryId,
-		params.month,
-		params.year
-	);
+	// Budgets belong to the Household, so the status matches them whoever created them.
+	const status = await getCategoryStatus(params.categoryId, params.month, params.year);
 
-	if (!budgetSnapshot) {
+	if (!status || status.budgeted <= 0) {
 		logger.info('No budget found for category threshold evaluation', {
 			categoryId: params.categoryId,
 			month: params.month,
@@ -203,8 +139,12 @@ async function maybeSendBudgetThresholdAlert(params: {
 		return;
 	}
 
-	const previousState = getBudgetThresholdState(params.previousSpentAmount, budgetSnapshot.amount);
-	const nextState = getBudgetThresholdState(params.currentSpentAmount, budgetSnapshot.amount);
+	const budgetSnapshot = { amount: status.budgeted, categoryName: status.categoryName };
+	const currentSpentAmount = status.spent;
+	const previousSpentAmount = Math.max(params.previousSpentFrom(currentSpentAmount), 0);
+
+	const previousState = getBudgetThresholdState(previousSpentAmount, budgetSnapshot.amount);
+	const nextState = getBudgetThresholdState(currentSpentAmount, budgetSnapshot.amount);
 	const alertType = getBudgetThresholdAlertType(previousState, nextState);
 
 	logger.info('Evaluated budget threshold transition', {
@@ -213,8 +153,8 @@ async function maybeSendBudgetThresholdAlert(params: {
 		year: params.year,
 		previousState,
 		nextState,
-		previousSpentAmount: params.previousSpentAmount,
-		currentSpentAmount: params.currentSpentAmount
+		previousSpentAmount,
+		currentSpentAmount
 	});
 
 	if (!alertType) {
@@ -224,7 +164,7 @@ async function maybeSendBudgetThresholdAlert(params: {
 	const notification = buildBudgetThresholdNotification({
 		alertType,
 		categoryName: budgetSnapshot.categoryName,
-		spentAmount: params.currentSpentAmount,
+		spentAmount: currentSpentAmount,
 		budgetAmount: budgetSnapshot.amount,
 		month: params.month,
 		year: params.year
@@ -276,15 +216,11 @@ export async function evaluateCreatedExpenseBudgetAlert(
 	}
 
 	const { month, year } = getMonthYearFromStoredExpenseDate(expenseRecord.date);
-	const currentSpentAmount = await loadCategoryMonthSpend(expenseRecord.categoryId, month, year);
-	const previousSpentAmount = Math.max(currentSpentAmount - expenseRecord.amount, 0);
-
 	await maybeSendBudgetThresholdAlert({
 		categoryId: expenseRecord.categoryId,
 		month,
 		year,
-		previousSpentAmount,
-		currentSpentAmount
+		previousSpentFrom: (current) => current - expenseRecord.amount
 	});
 }
 
@@ -334,39 +270,20 @@ export async function evaluateUpdatedExpenseBudgetAlert(
 		previousMonthYear.year === nextMonthYear.year;
 
 	if (isSameBudgetBucket) {
-		const currentSpentAmount = await loadCategoryMonthSpend(
-			nextExpense.categoryId,
-			nextMonthYear.month,
-			nextMonthYear.year
-		);
-		const previousSpentAmount = Math.max(
-			currentSpentAmount - nextExpense.amount + previousExpense.amount,
-			0
-		);
-
 		await maybeSendBudgetThresholdAlert({
 			categoryId: nextExpense.categoryId,
 			month: nextMonthYear.month,
 			year: nextMonthYear.year,
-			previousSpentAmount,
-			currentSpentAmount
+			previousSpentFrom: (current) => current - nextExpense.amount + previousExpense.amount
 		});
 		return;
 	}
-
-	const currentSpentAmount = await loadCategoryMonthSpend(
-		nextExpense.categoryId,
-		nextMonthYear.month,
-		nextMonthYear.year
-	);
-	const previousSpentAmount = Math.max(currentSpentAmount - nextExpense.amount, 0);
 
 	await maybeSendBudgetThresholdAlert({
 		categoryId: nextExpense.categoryId,
 		month: nextMonthYear.month,
 		year: nextMonthYear.year,
-		previousSpentAmount,
-		currentSpentAmount
+		previousSpentFrom: (current) => current - nextExpense.amount
 	});
 }
 
