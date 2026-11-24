@@ -1,13 +1,20 @@
+import { superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import type { z } from 'zod';
 
 import { budgetSchema } from '#lib/formSchemas/index.js';
-import { createAction, updateAction } from '#lib/server/actions/crud-helpers.js';
+import { requireAuth } from '#lib/server/actions/auth-guard.js';
+import { updateAction } from '#lib/server/actions/crud-helpers.js';
+import { handleDomainAction } from '#lib/server/actions/domain-action.js';
+import { invalidForm } from '#lib/server/actions/form-responses.js';
+import { getCrudMessage } from '#lib/server/actions/messages.js';
 import {
 	budgetQueries,
 	recurringBillQueries,
 	expenseQueries
 } from '#lib/server/db/queries/index.js';
 import { budget } from '#lib/server/db/schema/index.js';
+import { saveBudget } from '#lib/server/db/writes/budgets.js';
 import { logger } from '#lib/server/logger.js';
 import { recurringBillsTotalForMonth, toMonthKey } from '#lib/server/recurring-bill-history.js';
 import { getMonthYearFromUrl, padMonth } from '#lib/utils/dates.js';
@@ -102,14 +109,6 @@ const budgetActionConfig = {
 		createSuccess: 'Budget saved successfully',
 		updateSuccess: 'Budget saved successfully'
 	},
-	transformCreate: (data: z.infer<typeof budgetSchema>, userId: string) => ({
-		amount: data.amount,
-		year: data.year,
-		month: data.month,
-		presetType: data.presetType || null,
-		categoryId: data.categoryId,
-		userId
-	}),
 	transformUpdate: (data: z.infer<typeof budgetSchema>) => ({
 		amount: data.amount,
 		year: data.year,
@@ -120,6 +119,17 @@ const budgetActionConfig = {
 };
 
 export const actions = {
-	create: createAction(budgetActionConfig),
+	// Saves onto the existing Budget for that category and month if there is one (#380).
+	create: requireAuth(async ({ request }, user) => {
+		const form = await superValidate(request, zod4(budgetSchema));
+		if (!form.valid) return invalidForm(form);
+
+		return handleDomainAction(form, async () => saveBudget(form.data, user.id), {
+			loggerContext: 'Failed to create budget',
+			fallbackMessage: getCrudMessage('createError', 'Budget'),
+			successMessage: 'Budget saved successfully',
+			logFields: { userId: user.id }
+		});
+	}),
 	update: updateAction(budgetActionConfig)
 } satisfies Actions;
