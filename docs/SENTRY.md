@@ -2,8 +2,7 @@
 
 Single source of truth for how Sentry is wired into `hooks.server.ts` /
 `hooks.client.ts` across the three apps (`apps/synapse`, `apps/budget`,
-`apps/mealplanner`). Originally tracked by glennsyang/sheppakai-budget#441, before the apps
-moved into this monorepo.
+`apps/mealplanner`).
 
 ## `sentryHandle()` — used in all three
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { addWeeks, getMondayOf, parseIsoDate, toLocalIsoDate } from '../../lib/dates';
 import { weekStartDateSchema } from '../../lib/schemas/mealPlan';
 
-describe('dates helpers (#165)', () => {
+describe('dates helpers', () => {
 	it('formats with local components, not UTC', () => {
 		// Local midnight — toISOString() would shift this to the previous day east of UTC.
 		expect(toLocalIsoDate(new Date(2026, 9, 5))).toBe('2026-10-05');

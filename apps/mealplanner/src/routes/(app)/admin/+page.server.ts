@@ -44,7 +44,7 @@ export const load: PageServerLoad = async ({ request, locals }) => {
 
 // Role, ban, unban, remove, create and welcome-email actions, shared by every app. Shared
 // household rows (pantry, recipes, plans) survive a removed user: their creator `user_id`
-// FK is ON DELETE SET NULL, so only auth data goes with the user (#164).
+// FK is ON DELETE SET NULL, so only auth data goes with the user.
 export const actions: Actions = createAdminUserActions({
 	appName: 'Meal Planner',
 	auth,

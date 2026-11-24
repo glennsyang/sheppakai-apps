@@ -32,7 +32,7 @@ function layout(title: string, heading: string, body: string): string {
 }
 
 /**
- * Welcome email for an account an admin created from /admin (#138). The account's password
+ * Welcome email for an account an admin created from /admin. The account's password
  * is a random one nobody knows, so the email carries a 24-hour set-password link. Unlike the
  * other auth emails this one throws on failure: the admin action awaits it and tells the
  * admin to resend, since the new user has no other way to learn the account exists.

@@ -15,7 +15,7 @@ const valid = {
 	servings: 4
 };
 
-describe('suggestionSchema (#171)', () => {
+describe('suggestionSchema', () => {
 	it('accepts a well-formed suggestion and rounds fractional numbers', () => {
 		expect(suggestionSchema.parse({ ...valid, prepTimeMinutes: 37.5 }).prepTimeMinutes).toBe(38);
 	});

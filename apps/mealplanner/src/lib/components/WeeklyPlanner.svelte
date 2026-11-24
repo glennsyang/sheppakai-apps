@@ -50,7 +50,7 @@
 	}
 
 	// Remove goes through a real form + use:enhance so SvelteKit sends it as an
-	// action request and hands back a typed ActionResult (#167).
+	// action request and hands back a typed ActionResult.
 	function removeEnhance(entryId: string): SubmitFunction {
 		return ({ cancel }) => {
 			if (removingIds.has(entryId)) return cancel();

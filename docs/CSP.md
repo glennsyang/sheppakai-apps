@@ -1,8 +1,7 @@
 # Content-Security-Policy Strategy
 
 Single source of truth for how CSP is configured across the three apps
-(`apps/synapse`, `apps/budget`, `apps/mealplanner`). Originally tracked by
-glennsyang/sheppakai-budget#440, before the apps moved into this monorepo.
+(`apps/synapse`, `apps/budget`, `apps/mealplanner`).
 
 ## Strategy — SvelteKit `csp` nonce mode
 
@@ -30,8 +29,8 @@ overrides the nonce-bearing header SvelteKit emits. The other security headers
 
 > Historical note: `synapse` previously hand-built CSP in `hooks.server.ts` — a
 > per-request nonce plus a `transformPageChunk` pass that rewrote every `<script>` tag,
-> and a manually assembled header. That approach was replaced with SvelteKit's `csp` nonce mode
-> for #440. Do not reintroduce it.
+> and a manually assembled header. That approach was replaced with SvelteKit's `csp` nonce mode.
+> Do not reintroduce it.
 
 ## `script-src` — `'self'` only
 
@@ -41,7 +40,7 @@ scripts; the app ships no other inline scripts.
 - **`layerchart` (2.x) / `d3-scale` / `d3-shape` do not use `Function()` or `eval()`.**
   `synapse` and `budget` both render layerchart charts under `script-src 'self'` with no
   `unsafe-eval`. `mealplanner` has no charts at all (no `layerchart`/`d3-*` dependency) —
-  its former `script-src 'unsafe-eval'` was stale copy-paste and was removed for #440.
+  its former `script-src 'unsafe-eval'` was stale copy-paste and was removed.
 - **The `sveltekit-superforms` → `arktype` (`@ark/util`) CSP probe is expected to be
   blocked.** On first import it runs `new Function("return false")()` once; CSP blocks it
   (by design), the library catches the error and falls back to its jitless path for the
