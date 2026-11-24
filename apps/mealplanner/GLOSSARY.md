@@ -36,7 +36,8 @@ _Avoid_: Scrape, upload
 _Avoid_: Pantry item (that's what's on hand, not what's needed)
 
 **Suggestion**: A dinner idea proposed by the AI that has not been saved. It becomes a recipe only
-when someone saves it or plans it.
+when someone saves it or plans it. A suggestion with the same name as a recipe already in the
+library is that recipe: saving or planning it uses the library's recipe instead of adding another.
 
 _Avoid_: Recommendation, idea, AI recipe
 
