@@ -12,7 +12,7 @@ import type {
 import { getDb } from '../db';
 import { mealPlans, mealPlanEntries, recipes } from '../db/schema';
 import { generateId, withTimestampsForCreate, withTimestampsForUpdate } from '../db/utils';
-import { insertRecipe, rowToRecipe, type Tx } from './recipes';
+import { findLibraryRecipeByName, insertRecipe, rowToRecipe, type Tx } from './recipes';
 
 function rowToMealPlan(row: typeof mealPlans.$inferSelect): MealPlan {
 	return {
@@ -87,8 +87,9 @@ export class RecipeNotFoundError extends Error {
 }
 
 /**
- * What goes on the day: a Library Recipe, a Suggestion (saved as a `suggested` Recipe) or a
- * written-in dinner (saved as a `custom` Recipe with no ingredients or steps).
+ * What goes on the day: a Library Recipe, a Suggestion (the Library Recipe of the same name if
+ * there is one, else saved as a `suggested` Recipe) or a written-in dinner (saved as a `custom`
+ * Recipe with no ingredients or steps).
  */
 export type Dinner =
 	| { recipeId: string }
@@ -98,8 +99,10 @@ export type Dinner =
 /**
  * Plan a dinner on one day of a week. One transaction saves the Recipe if it's new, gets or
  * creates the week's plan and upserts the Planned Dinner, so a failure leaves no orphan
- * Recipe. Planning the same Suggestion twice saves two Recipes. Returns the week's Planned
- * Dinners. Throws `RecipeNotFoundError` for an unknown `recipeId`.
+ * Recipe. A Suggestion whose name matches a Library Recipe (`normalizeRecipeName`, any Source,
+ * oldest first) plans that Recipe, unchanged, instead of saving another, so planning the same
+ * Suggestion twice leaves one Recipe. Returns the week's Planned Dinners. Throws
+ * `RecipeNotFoundError` for an unknown `recipeId`.
  */
 export async function planDinner({
 	userId,
@@ -149,6 +152,11 @@ function resolveRecipe(tx: Tx, userId: string, dinner: Dinner, now: Date): Pick<
 	}
 	if ('suggestion' in dinner) {
 		const { name, description, ingredients, steps, prepTimeMinutes, servings } = dinner.suggestion;
+		const existing = findLibraryRecipeByName(tx, name);
+		if (existing) {
+			logger.debug('planDinner: Suggestion matches a Library Recipe', { recipeId: existing.id });
+			return existing;
+		}
 		return insertRecipe(
 			tx,
 			userId,

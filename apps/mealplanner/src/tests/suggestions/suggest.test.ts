@@ -135,6 +135,14 @@ describe('suggest: model output', () => {
 		expect(v.system).toContain('2 to 3');
 		expect(v.prompt).toContain('<dish_name>\nCurry\n</dish_name>');
 	});
+
+	it('tells a variation to take a name different from its dish (#345)', async () => {
+		const fake = fakeModels(answer('x'));
+		await suggester(fake.models)(variation);
+		const [[v]] = fake.gemini.mock.calls;
+		expect(v.system).toContain('differs from the name of the dish it varies');
+		expect(v.prompt).toContain('each named differently from this dish');
+	});
 });
 
 describe('suggest: Gemini first, Claude as fallback', () => {
