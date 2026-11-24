@@ -2,11 +2,10 @@ import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { incomeSchema } from '#lib/formSchemas/index.js';
-import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
+import { createWriteActions } from '#lib/server/actions/crud-helpers.js';
 import { completedMonthsAverage } from '#lib/server/budgets/category-history.js';
 import { incomeQueries } from '#lib/server/db/queries/index.js';
-import { income } from '#lib/server/db/schema/index.js';
-import { toIncomeRow } from '#lib/server/db/writes/income.js';
+import { createIncome, deleteIncome, updateIncome } from '#lib/server/db/writes/income.js';
 import { logger } from '#lib/server/logger.js';
 import {
 	calculateMonthsSinceJanuary,
@@ -54,10 +53,10 @@ export const load: PageServerLoad = async ({ url }) => {
 	}
 };
 
-export const actions = createCrudActions({
+export const actions = createWriteActions({
 	schema: incomeSchema,
-	table: income,
 	entityName: 'Income',
-	transformCreate: (data, userId) => ({ ...toIncomeRow(data), userId }),
-	transformUpdate: (data) => toIncomeRow(data)
+	create: createIncome,
+	update: updateIncome,
+	delete: deleteIncome
 }) satisfies Actions;

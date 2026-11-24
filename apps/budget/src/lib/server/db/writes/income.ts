@@ -1,18 +1,22 @@
+import { eq } from 'drizzle-orm';
+
 import { getDb } from '#lib/server/db/index.js';
 import { incomeQueries } from '#lib/server/db/queries/index.js';
 import { income } from '#lib/server/db/schema/index.js';
+import { withUpdatedAt } from '#lib/server/db/utils.js';
 import type { Income } from '#lib/types.js';
 import { formatDateForStorage } from '#lib/utils/dates.js';
 
-export type CreateIncomeInput = {
+/** The single write path for Income: the `/income` form actions and `/api/v1/income` (#373). */
+
+export type IncomeInput = {
 	name: string;
 	description: string;
 	date: string;
 	amount: number;
 };
 
-/** Input → row mapping shared by the UI form actions and the API write path. */
-export function toIncomeRow(input: CreateIncomeInput) {
+function toIncomeRow(input: IncomeInput) {
 	return {
 		name: input.name,
 		description: input.description,
@@ -21,12 +25,7 @@ export function toIncomeRow(input: CreateIncomeInput) {
 	};
 }
 
-/**
- * Insert path for API-key-driven income creation — a narrow write path kept separate from
- * the generic `createCrudActions` form-action helper the UI uses, so an API change can't
- * regress the UI's own create flow.
- */
-export async function createIncome(input: CreateIncomeInput, userId: string): Promise<Income> {
+export async function createIncome(input: IncomeInput, userId: string): Promise<Income> {
 	const [inserted] = await getDb()
 		.insert(income)
 		.values({ ...toIncomeRow(input), userId })
@@ -37,4 +36,15 @@ export async function createIncome(input: CreateIncomeInput, userId: string): Pr
 		throw new Error(`Failed to re-fetch income ${inserted.id} after creation`);
 	}
 	return withRelations;
+}
+
+export async function updateIncome(id: string, input: IncomeInput): Promise<void> {
+	await getDb()
+		.update(income)
+		.set(withUpdatedAt(toIncomeRow(input)))
+		.where(eq(income.id, id));
+}
+
+export async function deleteIncome(id: string): Promise<void> {
+	await getDb().delete(income).where(eq(income.id, id));
 }

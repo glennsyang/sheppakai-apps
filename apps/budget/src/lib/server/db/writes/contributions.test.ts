@@ -24,13 +24,28 @@ const mockFindById = vi.hoisted(() =>
 	}))
 );
 
-vi.mock('#lib/server/db/index.js', () => ({ getDb: () => ({ insert: mockInsert }) }));
+const mockUpdateWhere = vi.hoisted(() => vi.fn<(where: unknown) => Promise<void>>(async () => {}));
+const mockUpdateSet = vi.hoisted(() =>
+	vi.fn<(values: Record<string, unknown>) => { where: typeof mockUpdateWhere }>(() => ({
+		where: mockUpdateWhere
+	}))
+);
+const mockDeleteWhere = vi.hoisted(() => vi.fn<(where: unknown) => Promise<void>>(async () => {}));
+
+vi.mock('#lib/server/db/index.js', () => ({
+	getDb: () => ({
+		insert: mockInsert,
+		update: () => ({ set: mockUpdateSet }),
+		delete: () => ({ where: mockDeleteWhere })
+	})
+}));
+vi.mock('drizzle-orm', () => ({ eq: (field: unknown, value: unknown) => ({ field, value }) }));
 vi.mock('#lib/server/db/queries/index.js', () => ({
 	contributionQueries: { findById: mockFindById }
 }));
-vi.mock('#lib/server/db/schema/index.js', () => ({ contribution: {} }));
+vi.mock('#lib/server/db/schema/index.js', () => ({ contribution: { id: 'contribution.id' } }));
 
-import { createContribution } from './contributions';
+import { createContribution, deleteContribution, updateContribution } from './contributions';
 
 const input = { amount: 100, date: '2026-08-12', description: 'Monthly deposit' };
 
@@ -66,5 +81,27 @@ describe('createContribution', () => {
 		await expect(createContribution('goal-1', input, 'user-1')).rejects.toThrow(
 			'Failed to re-fetch contribution contrib-1 after creation'
 		);
+	});
+});
+
+describe('updateContribution', () => {
+	it('keeps the goal, nulls an empty description and stamps updatedAt', async () => {
+		await updateContribution('con-1', 'goal-1', {
+			amount: 50,
+			date: '2026-06-15',
+			description: ''
+		});
+
+		const row = mockUpdateSet.mock.calls[0][0];
+		expect(row).toMatchObject({ goalId: 'goal-1', amount: 50, description: null });
+		expect(row.updatedAt).toBeInstanceOf(Date);
+		expect(mockUpdateWhere).toHaveBeenCalledWith({ field: 'contribution.id', value: 'con-1' });
+	});
+});
+
+describe('deleteContribution', () => {
+	it('deletes the row by id', async () => {
+		await deleteContribution('con-2');
+		expect(mockDeleteWhere).toHaveBeenCalledWith({ field: 'contribution.id', value: 'con-2' });
 	});
 });

@@ -64,6 +64,12 @@ This repo already has a shared helper for the repeated "list page + form + serve
   create/update/delete actions given a Zod schema, a Drizzle table, an entity name, and optional
   `transformCreate`/`transformUpdate` hooks. Handles superforms validation, audit fields
   (`withAuditFieldsForCreate/Update`), and consistent success/error messages (`CrudMessages`).
+- **`createWriteActions()`** (and `writeCreateAction`/`writeUpdateAction`/`writeDeleteAction`) in
+  the same file — the form envelope only, for entities with a **write module** in
+  `src/lib/server/db/writes/` (Expense, Income, Contribution, Customer, Job). The write module owns
+  row mapping, `updatedAt` and side effects (e.g. the Budget alert on Expense writes), and `/api/v1`
+  calls the same functions — never map rows in the route. Use `createCrudActions()` only for
+  entities with no write module.
 - **Query objects** per domain in `src/lib/server/db/queries` (e.g. `expenseQueries`,
   `budgetQueries`) — encapsulate the Drizzle queries for that entity (`findByDateRange`, `search`,
   etc.) rather than querying inline in `+page.server.ts`.

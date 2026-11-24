@@ -286,19 +286,3 @@ export async function evaluateUpdatedExpenseBudgetAlert(
 		previousSpentFrom: (current) => current - nextExpense.amount
 	});
 }
-
-export const expenseBudgetAlertHooks = {
-	afterCreate: async (_id: string, data: ExpenseBudgetAlertRecord) => {
-		await evaluateCreatedExpenseBudgetAlert(data);
-	},
-	beforeUpdate: async (id: string) => {
-		return buildExpenseBudgetAlertUpdateContext(id);
-	},
-	afterUpdate: async (
-		_id: string,
-		data: Partial<ExpenseBudgetAlertRecord>,
-		context?: ExpenseBudgetAlertUpdateContext
-	) => {
-		await evaluateUpdatedExpenseBudgetAlert(data, context);
-	}
-};

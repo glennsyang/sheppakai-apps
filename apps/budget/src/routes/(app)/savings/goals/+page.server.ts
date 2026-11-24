@@ -2,14 +2,31 @@ import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { contributionSchema, savingsGoalSchema } from '#lib/formSchemas/index.js';
-import { createAction, deleteAction, updateAction } from '#lib/server/actions/crud-helpers.js';
+import {
+	createAction,
+	createWriteActions,
+	deleteAction,
+	updateAction
+} from '#lib/server/actions/crud-helpers.js';
 import { contributionQueries, savingsGoalQueries } from '#lib/server/db/queries/index.js';
-import { contribution, savingsGoal } from '#lib/server/db/schema/index.js';
-import { toContributionRow } from '#lib/server/db/writes/contributions.js';
+import { savingsGoal } from '#lib/server/db/schema/index.js';
+import {
+	createContribution,
+	deleteContribution,
+	updateContribution
+} from '#lib/server/db/writes/contributions.js';
 import { logger } from '#lib/server/logger.js';
 import { formatDateForStorage } from '#lib/utils/dates.js';
 
 import type { Actions, PageServerLoad } from './$types';
+
+const contributionActions = createWriteActions({
+	schema: contributionSchema,
+	entityName: 'Contribution',
+	create: (data, userId) => createContribution(data.goalId, data, userId),
+	update: (id, data) => updateContribution(id, data.goalId, data),
+	delete: deleteContribution
+});
 
 export const load: PageServerLoad = async () => {
 	const savingsGoalForm = await superValidate(zod4(savingsGoalSchema));
@@ -112,25 +129,7 @@ export const actions = {
 		}
 	}),
 
-	createContribution: createAction({
-		schema: contributionSchema,
-		table: contribution,
-		entityName: 'Contribution',
-		transformCreate: (data, userId) => ({
-			...toContributionRow(data.goalId, data),
-			userId
-		})
-	}),
-
-	updateContribution: updateAction({
-		schema: contributionSchema,
-		table: contribution,
-		entityName: 'Contribution',
-		transformUpdate: (data) => toContributionRow(data.goalId, data)
-	}),
-
-	deleteContribution: deleteAction({
-		table: contribution,
-		entityName: 'Contribution'
-	})
+	createContribution: contributionActions.create,
+	updateContribution: contributionActions.update,
+	deleteContribution: contributionActions.delete
 } satisfies Actions;
