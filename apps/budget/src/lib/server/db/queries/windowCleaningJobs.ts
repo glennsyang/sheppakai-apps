@@ -1,8 +1,7 @@
-import { and, desc, eq, max, sql } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
 import type { WindowCleaningJob } from '#lib/types.js';
 
-import { getDb } from '../index';
 import { windowCleaningJob } from '../schema';
 import { dateInRange } from '../utils';
 import { createQueryBuilder } from './factory';
@@ -19,21 +18,6 @@ export const windowCleaningJobQueries = {
 	// Find all jobs across all customers, date-sorted
 	findAll: async (): Promise<WindowCleaningJob[]> => {
 		return baseBuilder.findAll();
-	},
-
-	// Aggregated per-customer stats via a single GROUP BY query
-	getStatsPerCustomer: async (): Promise<
-		{ customerId: string; totalEarned: number; lastJobDate: string | null }[]
-	> => {
-		const db = getDb();
-		return db
-			.select({
-				customerId: windowCleaningJob.customerId,
-				totalEarned: sql<number>`coalesce(sum(${windowCleaningJob.amountCharged} + ${windowCleaningJob.tip}), 0)`,
-				lastJobDate: max(windowCleaningJob.jobDate)
-			})
-			.from(windowCleaningJob)
-			.groupBy(windowCleaningJob.customerId);
 	},
 
 	// Find jobs for a specific customer

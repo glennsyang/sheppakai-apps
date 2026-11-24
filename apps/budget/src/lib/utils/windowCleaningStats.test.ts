@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { customerRates, medianGapDays, recleanDue, revenueByMonth } from './windowCleaningStats';
+import {
+	customerRates,
+	medianGapDays,
+	recleanDue,
+	revenue,
+	revenueByMonth
+} from './windowCleaningStats';
 
 const job = (
 	jobDate: string,
@@ -12,6 +18,13 @@ const job = (
 	amountCharged,
 	tip,
 	durationHours
+});
+
+describe('revenue', () => {
+	it('is the amount charged plus the tip', () => {
+		expect(revenue({ amountCharged: 120, tip: 15 })).toBe(135);
+		expect(revenue({ amountCharged: 80, tip: 0 })).toBe(80);
+	});
 });
 
 describe('medianGapDays', () => {

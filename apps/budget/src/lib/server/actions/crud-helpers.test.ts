@@ -1,3 +1,4 @@
+import { ApiWriteError } from '@sheppakai/shared/api-write';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -600,6 +601,20 @@ describe('crud-helpers', () => {
 			expect(result).toMatchObject({
 				status: 400,
 				message: { type: 'error', text: 'Not allowed' }
+			});
+		});
+
+		it("update answers with an ApiWriteError's own text and status", async () => {
+			writes.update.mockRejectedValueOnce(
+				new ApiWriteError('not_found', 'This customer has been deleted.', 404)
+			);
+
+			const result = await actions().update(makeEvent() as never);
+
+			expect(mockState.loggerError).not.toHaveBeenCalled();
+			expect(result).toMatchObject({
+				status: 404,
+				message: { type: 'error', text: 'This customer has been deleted.' }
 			});
 		});
 

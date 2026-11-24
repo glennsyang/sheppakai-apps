@@ -5,6 +5,7 @@ import DataTableSortButton from '#lib/components/DataTableSortButton.svelte';
 import { moneyCell } from '#lib/components/table/cells.js';
 import { type Features, renderComponent } from '#lib/components/ui/data-table/index.js';
 import { formatLocalTimestamp } from '#lib/utils/dates.js';
+import { revenue } from '#lib/utils/windowCleaningStats.js';
 
 import DataTableActions from './data-table-actions.svelte';
 
@@ -76,9 +77,8 @@ export const columns: ColumnDef<Features, WindowCleaningJob>[] = [
 				columnName: 'Total',
 				onclick: column.getToggleSortingHandler()
 			}),
-		accessorFn: (row) => row.amountCharged + row.tip,
-		cell: ({ row }) =>
-			moneyCell(row.original.amountCharged + row.original.tip, { currency: 'CAD' }),
+		accessorFn: (row) => revenue(row),
+		cell: ({ row }) => moneyCell(revenue(row.original), { currency: 'CAD' }),
 		meta: { mobile: 'value', align: 'end' }
 	},
 	{

@@ -1,3 +1,4 @@
+import { ApiWriteError } from '@sheppakai/shared/api-write';
 import type { RequestEvent } from '@sveltejs/kit';
 import { eq, getTableColumns } from 'drizzle-orm';
 import type { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
@@ -29,6 +30,13 @@ type InferInsertType<TTable extends AnySQLiteTable> = TTable['$inferInsert'];
  * is shown to the user as a 400 banner; a thrown error is still treated as an unexpected 500.
  */
 type HookError = { error: string };
+
+type MessageStatus = NonNullable<NonNullable<Parameters<typeof message>[2]>['status']>;
+
+/** `message()` only accepts 4xx/5xx statuses. */
+function isErrorStatus(code: number): code is MessageStatus {
+	return Number.isInteger(code) && code >= 400 && code <= 599;
+}
 
 function isHookError(value: unknown): value is HookError {
 	return (
@@ -71,7 +79,8 @@ type Operation = 'create' | 'update' | 'delete';
 
 /**
  * Runs one write inside the form envelope: a `HookError` result becomes a 400 banner, a thrown
- * error is logged and becomes a 500 banner, and anything else is the success message.
+ * `ApiWriteError` becomes a banner with its own text and status, any other thrown error is logged
+ * and becomes a 500 banner, and anything else is the success message.
  */
 async function runWrite<TForm extends Record<string, unknown>>(
 	form: SuperValidated<TForm>,
@@ -87,6 +96,14 @@ async function runWrite<TForm extends Record<string, unknown>>(
 		}
 		logger.info(`${config.entityName} ${operation}d successfully`, logFields);
 	} catch (error) {
+		// A write module's expected refusal: the same text and status the API answers with
+		if (error instanceof ApiWriteError) {
+			return message(
+				form,
+				{ type: 'error', text: error.message },
+				{ status: isErrorStatus(error.status) ? error.status : 400 }
+			);
+		}
 		logger.error(`Failed to ${operation} ${config.entityName.toLowerCase()}`, error);
 		return message(
 			form,

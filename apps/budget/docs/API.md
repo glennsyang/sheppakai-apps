@@ -170,7 +170,15 @@ Returns `404` (`not_found`) if the id doesn't exist.
 ### `GET /api/v1/window-cleaning/customers`
 
 Requires `windowCleaningCustomers:read`. No parameters — returns every active (non-deleted)
-customer.
+customer, each with its status as of today (Pacific time):
+
+- `totalEarned` — Revenue (amount charged + tip) across all their jobs
+- `lastJobDate` — date of their latest job, or `null`
+- `hourlyRate` / `tipPct` — Revenue per logged hour and tips as a share of charges, or `null`
+- `reclean` — `{ intervalDays, dueDate, overdueDays }`, or `null` when there's no interval to go on
+- `overdue` — `true` for an Overdue Customer (their reclean interval has passed since the last job)
+
+Jobs themselves aren't nested; fetch them from `GET /api/v1/window-cleaning/jobs`.
 
 ```bash
 curl -H "Authorization: Bearer sk_live_xxx" \
@@ -194,7 +202,8 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
 ### `PATCH /api/v1/window-cleaning/customers/:id`
 
 Requires `windowCleaningCustomers:write`. A full replace of the editable fields (matches the UI's
-update behavior), not a partial patch. Returns `404` (`not_found`) if the id doesn't exist.
+update behavior), not a partial patch. Returns `404` (`not_found`) if the id doesn't exist, or `404`
+with `This customer has been deleted.` for a Deleted Customer (nothing is changed).
 
 ```bash
 curl -X PATCH -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: application/json" \
@@ -222,7 +231,8 @@ curl -H "Authorization: Bearer sk_live_xxx" \
 
 ### `POST /api/v1/window-cleaning/jobs`
 
-Requires `windowCleaningJobs:write`. Body:
+Requires `windowCleaningJobs:write`. Returns `404` (`not_found`) when `customerId` is missing or a
+Deleted Customer. Body:
 
 ```bash
 curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: application/json" \
