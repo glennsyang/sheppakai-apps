@@ -3,7 +3,7 @@ import type { z } from 'zod';
 
 import { storedIngredientListSchema, storedInstructionListSchema } from '#lib/schemas/mealPlan.js';
 import { logger } from '#lib/server/logger.js';
-import type { Recipe, Ingredient, RecipeListItem, RecipeSource } from '#lib/types.js';
+import type { Recipe, Ingredient, RecipeListItem, RecipeSource, Suggestion } from '#lib/types.js';
 
 import { getDb } from '../db';
 import { recipeCooks, recipes } from '../db/schema';
@@ -118,6 +118,41 @@ export function findLibraryRecipeByName(tx: Tx, name: string): Pick<Recipe, 'id'
 export async function saveRecipe(userId: string, data: NewRecipe): Promise<Recipe> {
 	logger.debug('saveRecipe', { userId, name: data.name });
 	return getDb().transaction((tx) => insertRecipe(tx, userId, data, new Date()));
+}
+
+/**
+ * Keep a Suggestion in the Library without planning it. Uses the same match rule as
+ * `planDinner`: a Library Recipe with the same name (`findLibraryRecipeByName`) is returned
+ * unchanged with `reused: true`; otherwise a new `suggested` Recipe is inserted. One
+ * transaction, so two quick saves can't both insert.
+ */
+export async function saveSuggestion(
+	userId: string,
+	suggestion: Suggestion
+): Promise<{ recipe: Recipe; reused: boolean }> {
+	logger.debug('saveSuggestion', { userId, name: suggestion.name });
+	return getDb().transaction((tx) => {
+		const existing = findLibraryRecipeByName(tx, suggestion.name);
+		if (existing) {
+			const row = tx.select().from(recipes).where(eq(recipes.id, existing.id)).get();
+			if (row) return { recipe: rowToRecipe(row), reused: true };
+		}
+		const recipe = insertRecipe(
+			tx,
+			userId,
+			{
+				name: suggestion.name,
+				description: suggestion.description,
+				ingredientsJson: suggestion.ingredients,
+				instructionsJson: suggestion.steps,
+				prepTimeMinutes: suggestion.prepTimeMinutes,
+				servings: suggestion.servings,
+				source: 'suggested'
+			},
+			new Date()
+		);
+		return { recipe, reused: false };
+	});
 }
 
 /** Overwrite a saved recipe's content. Keeps its source, so a written-in meal stays custom. */

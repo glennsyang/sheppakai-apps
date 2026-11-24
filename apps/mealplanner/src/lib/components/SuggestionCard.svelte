@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
+
+	import { actionFailureText } from '#lib/action-result.js';
 	import Icon from '#lib/components/Icon.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import type { Suggestion } from '#lib/types.js';
@@ -17,6 +20,14 @@
 	const moreCount = $derived(Math.max(0, suggestion.ingredients.length - KEY_INGREDIENTS));
 	// Cards are stuck on one after another, and each hangs a hair off true.
 	const tilt = $derived([-0.6, 0.45, -0.25, 0.7, -0.5][index % 5]);
+
+	// "Save to Library" posts to the one action on the Recipes route. The result is handled
+	// here without update(): SvelteKit would otherwise navigate to /recipes and the
+	// Suggestions on screen (client state only) would be lost.
+	const SAVE_FAILED = 'Could not save that dinner to your Library. Please try again.';
+	let saving = $state(false);
+	let saved = $state<{ recipeId: string; reused: boolean } | null>(null);
+	let saveError = $state<string | null>(null);
 </script>
 
 <article
@@ -67,5 +78,53 @@
 				Recipe
 			</Button>
 		</div>
+
+		{#if saved}
+			<div class="flex flex-wrap items-center gap-x-3" role="status">
+				<Button href="/recipes/{saved.recipeId}" variant="link" class="px-0 text-[0.95rem]">
+					<Icon name="check" size={16} />
+					In your Library
+				</Button>
+				<span class="ink-soft text-sm font-semibold">
+					{saved.reused ? 'Already in your Library' : 'Saved to your Library'}
+				</span>
+			</div>
+		{:else}
+			<form
+				method="POST"
+				action="/recipes?/saveSuggestion"
+				use:enhance={() => {
+					saving = true;
+					saveError = null;
+					return async ({ result }) => {
+						saving = false;
+						const data = result.type === 'success' ? result.data : undefined;
+						if (typeof data?.recipeId === 'string') {
+							saved = { recipeId: data.recipeId, reused: data.reused === true };
+						} else {
+							saveError = actionFailureText(result, SAVE_FAILED);
+						}
+					};
+				}}
+			>
+				<input type="hidden" name="name" value={suggestion.name} />
+				<input type="hidden" name="description" value={suggestion.description} />
+				<input
+					type="hidden"
+					name="ingredientsJson"
+					value={JSON.stringify(suggestion.ingredients)}
+				/>
+				<input type="hidden" name="instructionsJson" value={JSON.stringify(suggestion.steps)} />
+				<input type="hidden" name="prepTimeMinutes" value={suggestion.prepTimeMinutes} />
+				<input type="hidden" name="servings" value={suggestion.servings} />
+				<Button type="submit" variant="link" disabled={saving} class="px-0 text-[0.95rem]">
+					<Icon name="plus" size={16} />
+					{saving ? 'Saving…' : 'Save to Library'}
+				</Button>
+			</form>
+			{#if saveError}
+				<p class="text-destructive text-sm font-semibold" role="alert">{saveError}</p>
+			{/if}
+		{/if}
 	</div>
 </article>
