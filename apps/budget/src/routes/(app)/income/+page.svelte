@@ -31,17 +31,6 @@
 	// Calculate yearly total income
 	let yearlyTotalIncome = $derived(data.yearlyIncomes.reduce((sum, item) => sum + item.amount, 0));
 
-	let yearlyAverageIncomePerMonth = $derived.by(() => {
-		const hasIncomes = data.yearlyIncomes.length > 0;
-		const completedMonthsSinceJanuary = data.completedMonthsSinceJanuary ?? 0;
-
-		if (!hasIncomes || completedMonthsSinceJanuary <= 0) {
-			return null;
-		}
-
-		return yearlyTotalIncome / completedMonthsSinceJanuary;
-	});
-
 	const monthYear = useMonthYearParams('/income');
 
 	let periodLabel = $derived(`${monthNames[monthYear.month - 1]} ${monthYear.year}`);
@@ -54,8 +43,7 @@
 		{ label: `Income in ${monthYear.year}`, value: formatCurrency(yearlyTotalIncome) },
 		{
 			label: 'Monthly average',
-			value:
-				yearlyAverageIncomePerMonth === null ? '—' : formatCurrency(yearlyAverageIncomePerMonth),
+			value: data.monthlyAverage === null ? '—' : formatCurrency(data.monthlyAverage),
 			subtext: 'Completed months this year'
 		}
 	]);

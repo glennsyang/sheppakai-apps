@@ -7,13 +7,8 @@
 
 	let { data }: PageProps = $props();
 
-	function averagePerMonth(yearlyTotalAmount: number) {
-		const completedMonthsSinceJanuary = data.completedMonthsSinceJanuary ?? 0;
-		const average =
-			data.yearlyExpenses.length === 0 || completedMonthsSinceJanuary <= 0
-				? null
-				: yearlyTotalAmount / completedMonthsSinceJanuary;
-
+	function averagePerMonth() {
+		const average = data.monthlyAverage;
 		return [
 			{
 				label: 'Monthly average',
