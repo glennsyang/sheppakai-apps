@@ -6,87 +6,26 @@
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Chart from '#lib/components/ui/chart/index.js';
 	import type { logMealSchema } from '#lib/schemas/fitness.js';
-	import { getTodayString, parseLocalDateString } from '#lib/utils/date.js';
+	import type { FitnessInsights } from '#lib/utils/fitness-insights.js';
 
 	import FitnessStatusCard from './FitnessStatusCard.svelte';
 
-	interface Meal {
-		id: string;
-		date: string;
-		timeOfDay: string;
-		description: string;
-		caloriesEstimate: number | null;
-	}
-
-	interface CalorieTarget {
-		targetCalories: number;
-	}
-
 	interface Props {
-		meals: Meal[];
-		calorieTarget: CalorieTarget | null | undefined;
+		insights: FitnessInsights['nutrition'];
+		hasFoodEntries: boolean;
 		mealForm: SuperValidated<Infer<typeof logMealSchema>>;
 	}
 
-	let { meals, calorieTarget, mealForm }: Props = $props();
+	let { insights, hasFoodEntries, mealForm }: Props = $props();
 
-	const target = $derived(calorieTarget?.targetCalories ?? null);
-
-	// Last 7 days adherence data
-	const adherenceData = $derived.by(() => {
-		const today = getTodayString();
-		const todayDate = parseLocalDateString(today);
-		const days: { day: string; calories: number; target: number | null }[] = [];
-
-		for (let i = 6; i >= 0; i--) {
-			const d = new Date(todayDate);
-			d.setDate(d.getDate() - i);
-			const dateStr = d.toISOString().slice(0, 10);
-			const label = d.toLocaleDateString('en-US', { weekday: 'short' });
-
-			const dayCals = meals
-				.filter((m) => m.date === dateStr)
-				.reduce((sum, m) => sum + (m.caloriesEstimate ?? 0), 0);
-
-			days.push({ day: label, calories: dayCals, target });
-		}
-		return days;
-	});
-
-	// Today's stats
-	const todayCalories = $derived.by(() => {
-		const today = getTodayString();
-		return meals.filter((m) => m.date === today).reduce((s, m) => s + (m.caloriesEstimate ?? 0), 0);
-	});
-
-	const todayPercentage = $derived(target ? Math.round((todayCalories / target) * 100) : null);
-	const todayRemaining = $derived(target ? Math.max(target - todayCalories, 0) : null);
-	const todayOver = $derived(target && todayCalories > target ? todayCalories - target : null);
-
-	// 7-day average
-	const sevenDayAvg = $derived.by(() => {
-		const withCals = adherenceData.filter((d) => d.calories > 0);
-		if (withCals.length === 0) return null;
-		return Math.round(withCals.reduce((s, d) => s + d.calories, 0) / withCals.length);
-	});
-
-	// Avg delta vs target (last 7 days)
-	const avgDelta = $derived.by(() => {
-		if (!target) return null;
-		const withCals = adherenceData.filter((d) => d.calories > 0);
-		if (withCals.length === 0) return null;
-		const avg = withCals.reduce((s, d) => s + d.calories, 0) / withCals.length;
-		return Math.round(avg - target);
-	});
-
-	// Most consistent meal period
-	const topMealPeriod = $derived.by(() => {
-		const counts: Record<string, number> = {};
-		for (const m of meals) {
-			counts[m.timeOfDay] = (counts[m.timeOfDay] ?? 0) + 1;
-		}
-		return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-	});
+	const target = $derived(insights.target);
+	const todayCalories = $derived(insights.todayCalories);
+	const todayPercentage = $derived(insights.todayAdherence);
+	const todayRemaining = $derived(insights.todayRemaining);
+	const todayOver = $derived(insights.todayOver);
+	const sevenDayAvg = $derived(insights.sevenDayAvg);
+	const avgDelta = $derived(insights.avgDeltaVsTarget);
+	const topMealPeriod = $derived(insights.topMealPeriod);
 
 	const chartConfig = {
 		calories: { label: 'Calories', color: 'var(--chart-2)' }
@@ -153,7 +92,7 @@
 	</div>
 
 	<!-- 7-day calorie adherence chart -->
-	{#if meals.length > 0}
+	{#if hasFoodEntries}
 		<Card.Root class="bg-card dark:bg-muted border-0 dark:shadow-zinc-800/50">
 			<Card.Header>
 				<Card.Title class="text-foreground dark:text-muted-foreground text-sm font-medium">
@@ -166,7 +105,7 @@
 			<Card.Content>
 				<Chart.Container config={chartConfig} class="h-36 w-full">
 					<BarChart
-						data={adherenceData}
+						data={insights.lastSevenDays}
 						x="day"
 						series={[{ key: 'calories', label: 'Calories', color: chartConfig.calories.color }]}
 					>

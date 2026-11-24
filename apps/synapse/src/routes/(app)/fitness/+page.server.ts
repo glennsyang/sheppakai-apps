@@ -1,6 +1,6 @@
 import { toAiImage } from '@sheppakai/shared/ai-vision';
 import { redirect } from '@sveltejs/kit';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, gte } from 'drizzle-orm';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import type { z } from 'zod';
@@ -49,7 +49,7 @@ import {
 	UnreadableMealError
 } from '#lib/server/meal-estimate/index.js';
 import { createUserRateLimiter } from '#lib/server/rate-limiter.js';
-import { getTodayString } from '#lib/utils/date.js';
+import { addDaysToDateString, getTodayString } from '#lib/utils/date.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -64,6 +64,14 @@ const toMealRow = (data: z.infer<typeof logMealSchema>) => ({
 	description: data.description,
 	caloriesEstimate: data.caloriesEstimate || null
 });
+
+/**
+ * How far back Fitness Insights and the frequent-meal re-log look at Food Entries. A separate,
+ * date-bounded query on purpose: the 50 most recent entries (the list) can cover under two weeks
+ * for someone logging every meal, which would hide most re-log candidates and part of the
+ * 14-day momentum strip.
+ */
+const INSIGHT_FOOD_DAYS = 90;
 
 const toReminderRow = (data: z.infer<typeof workoutReminderSchema>) => ({
 	workoutType: data.workoutType,
@@ -116,12 +124,28 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			}
 		});
 
-		// Load meals (limited to recent)
+		// Load meals (limited to recent) for the entry lists
 		const meals = await db.query.mealLogs.findMany({
 			where: eq(mealLogs.userId, userId),
 			orderBy: [desc(mealLogs.date)],
 			limit: 50
 		});
+
+		// Food Entries in the insight window, for Fitness Insights and the frequent-meal re-log
+		const insightFoodEntries = await db
+			.select({
+				date: mealLogs.date,
+				timeOfDay: mealLogs.timeOfDay,
+				description: mealLogs.description,
+				caloriesEstimate: mealLogs.caloriesEstimate
+			})
+			.from(mealLogs)
+			.where(
+				and(
+					eq(mealLogs.userId, userId),
+					gte(mealLogs.date, addDaysToDateString(getTodayString(), -INSIGHT_FOOD_DAYS))
+				)
+			);
 
 		// Load calorie target
 		const calorieTarget = await db.query.dailyCalorieTargets.findFirst({
@@ -134,20 +158,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			orderBy: [desc(workoutReminders.createdAt)]
 		});
 
-		// Calculate weight stats
-		const currentWeight = weights.length > 0 ? weights[0].weightLbs : null;
-		const startWeight = weights.length > 0 ? weights[weights.length - 1].weightLbs : null;
-		const remainingToGoal =
-			currentWeight && goalWeight ? currentWeight - goalWeight.targetWeightLbs : null;
-
-		// Calculate trend (simple comparison of last 2 entries)
-		let trend: 'up' | 'down' | 'stable' = 'stable';
-		if (weights.length >= 2) {
-			const diff = weights[0].weightLbs - weights[1].weightLbs;
-			if (diff < -0.5) trend = 'down';
-			else if (diff > 0.5) trend = 'up';
-		}
-
 		return {
 			tab,
 			mealEstimateEnabled: isMealEstimateEnabled(),
@@ -156,13 +166,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			goalWeight,
 			workouts,
 			meals,
+			insightFoodEntries,
 			calorieTarget,
-			weightStats: {
-				currentWeight,
-				startWeight,
-				remainingToGoal,
-				trend
-			},
 			calorieForm,
 			weightForm,
 			goalForm,
@@ -181,13 +186,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			goalWeight: null,
 			workouts: [],
 			meals: [],
+			insightFoodEntries: [],
 			calorieTarget: null,
-			weightStats: {
-				currentWeight: null,
-				startWeight: null,
-				remainingToGoal: null,
-				trend: 'stable'
-			},
 			calorieForm,
 			weightForm,
 			goalForm,
