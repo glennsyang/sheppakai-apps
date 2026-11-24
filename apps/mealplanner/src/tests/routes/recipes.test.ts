@@ -8,6 +8,7 @@ const { recipesMock, cooksMock, mealPlanMock, importMock, limiterCheck, loggerMo
 		return {
 			recipesMock: {
 				saveRecipe: vi.fn<() => Promise<unknown>>().mockResolvedValue({ id: 'recipe_1' }),
+				saveSuggestion: vi.fn<() => Promise<unknown>>(),
 				updateRecipe: vi.fn<() => Promise<unknown>>().mockResolvedValue({ id: 'recipe_1' }),
 				deleteRecipe: vi.fn<() => Promise<boolean>>().mockResolvedValue(true),
 				setRecipeRating: vi.fn<() => Promise<boolean>>().mockResolvedValue(true),
@@ -52,7 +53,7 @@ vi.mock('#lib/server/rate-limiter.js', () => ({
 }));
 vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 
-import { load as listLoad } from '../../routes/(app)/recipes/+page.server';
+import { actions as listActions, load as listLoad } from '../../routes/(app)/recipes/+page.server';
 import { actions as detailActions } from '../../routes/(app)/recipes/[id]/+page.server';
 import { actions as newActions } from '../../routes/(app)/recipes/new/+page.server';
 
@@ -82,6 +83,7 @@ beforeEach(() => {
 
 describe('recipe actions: unauthenticated', () => {
 	it.each([
+		['saveSuggestion', listActions.saveSuggestion],
 		['create', newActions.create],
 		['importUrl', newActions.importUrl],
 		['update', detailActions.update],
@@ -111,6 +113,56 @@ describe('list load', () => {
 			q: 'a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a',
 			limit: 500
 		});
+	});
+});
+
+describe('saveSuggestion', () => {
+	const fields = {
+		name: 'Fried Rice',
+		description: 'From the pantry',
+		ingredientsJson: '[{"name":"rice","quantity":"1","unit":"cup"}]',
+		instructionsJson: '["Cook."]',
+		prepTimeMinutes: '25',
+		servings: '2'
+	};
+
+	it('saves a new Suggestion and returns its Recipe id', async () => {
+		recipesMock.saveSuggestion.mockResolvedValue({ recipe: { id: 'recipe_9' }, reused: false });
+		const result = await listActions.saveSuggestion(ctx(fields));
+
+		expect(recipesMock.saveSuggestion).toHaveBeenCalledWith('user_1', {
+			name: 'Fried Rice',
+			description: 'From the pantry',
+			ingredients: [{ name: 'rice', quantity: '1', unit: 'cup' }],
+			steps: ['Cook.'],
+			prepTimeMinutes: 25,
+			servings: 2
+		});
+		expect(result).toMatchObject({ recipeId: 'recipe_9', reused: false });
+		expect(messageOf(result)).toEqual({ type: 'success', text: 'Saved to your Library' });
+		expect(recipesMock.saveRecipe).not.toHaveBeenCalled();
+	});
+
+	it('says "Already in your Library" when a Library Recipe is reused', async () => {
+		recipesMock.saveSuggestion.mockResolvedValue({ recipe: { id: 'recipe_old' }, reused: true });
+		const result = await listActions.saveSuggestion(ctx(fields));
+
+		expect(result).toMatchObject({ recipeId: 'recipe_old', reused: true });
+		expect(messageOf(result)).toEqual({ type: 'success', text: 'Already in your Library' });
+	});
+
+	it('rejects invalid input without saving', async () => {
+		const result = await listActions.saveSuggestion(ctx({ ...fields, ingredientsJson: 'nope' }));
+		expect(result).toMatchObject({ status: 400 });
+		expect(recipesMock.saveSuggestion).not.toHaveBeenCalled();
+	});
+
+	it('answers a service failure with a 500 message', async () => {
+		recipesMock.saveSuggestion.mockRejectedValue(new Error('db down'));
+		const result = await listActions.saveSuggestion(ctx(fields));
+		expect(result).toMatchObject({ status: 500 });
+		expect(messageOf(result)).toMatchObject({ type: 'error' });
+		expect(loggerMock.error).toHaveBeenCalled();
 	});
 });
 

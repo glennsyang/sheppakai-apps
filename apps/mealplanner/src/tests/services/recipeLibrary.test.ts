@@ -69,6 +69,50 @@ describe('saveRecipe', () => {
 	});
 });
 
+describe('saveSuggestion', () => {
+	const suggestion = (name: string) => ({
+		name,
+		description: 'From the pantry',
+		ingredients: [{ name: 'rice', quantity: '1', unit: 'cup' }],
+		steps: ['Cook.'],
+		prepTimeMinutes: 25,
+		servings: 2
+	});
+
+	async function libraryNames() {
+		return (await recipes.listRecipes({ limit: 50 })).map((r) => r.name);
+	}
+
+	it('saves a new name as one suggested Recipe', async () => {
+		const { recipe, reused } = await recipes.saveSuggestion('u1', suggestion('Fried Rice'));
+		expect(reused).toBe(false);
+		expect(recipe).toMatchObject({
+			name: 'Fried Rice',
+			source: 'suggested',
+			ingredientsJson: [{ name: 'rice', quantity: '1', unit: 'cup' }],
+			instructionsJson: ['Cook.'],
+			prepTimeMinutes: 25,
+			servings: 2
+		});
+		expect(await libraryNames()).toEqual(['Fried Rice']);
+	});
+
+	it('reuses a Library Recipe of any Source whose name matches after normalizing', async () => {
+		const existing = await save('Fried  Rice', ['leftover rice']);
+		const { recipe, reused } = await recipes.saveSuggestion('u1', suggestion('  fried rice '));
+		expect(reused).toBe(true);
+		expect(recipe).toEqual(existing);
+		expect(await libraryNames()).toEqual(['Fried  Rice']);
+	});
+
+	it('leaves one Recipe when the same Suggestion is saved twice', async () => {
+		const first = await recipes.saveSuggestion('u1', suggestion('Fried Rice'));
+		const second = await recipes.saveSuggestion('u1', suggestion('Fried Rice'));
+		expect(second).toEqual({ recipe: first.recipe, reused: true });
+		expect(await libraryNames()).toEqual(['Fried Rice']);
+	});
+});
+
 describe('searchRecipes', () => {
 	it('matches the name or an ingredient, case-insensitively', async () => {
 		await save('Chicken Curry', ['chicken', 'coconut milk']);
