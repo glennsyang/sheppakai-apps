@@ -37,9 +37,15 @@ _Avoid_: Tax, HST, VAT
 _Avoid_: Limit, allowance, envelope
 
 **Preset**: How a budget's amount was chosen: last month's spending, last month's budget, the
-average, or a custom amount.
+monthly average over the 12 months before, or a custom amount.
 
 _Avoid_: Template, default
+
+**Monthly Average**: Spending over the full months in a window, divided by the number of those
+months. The window starts at the first month with spending if that is later, and empty months after
+it count as zero. The current month, later months and excluded expenses never count.
+
+_Avoid_: Mean, typical spend, trailing average
 
 **Excluded**: An expense that does not count against its category's budget.
 
@@ -50,7 +56,7 @@ its budget.
 
 _Avoid_: Overspent, in the red
 
-**Spending Spike**: A category spending well above its usual monthly average.
+**Spending Spike**: A category spending well above its monthly average over the months before.
 
 _Avoid_: Anomaly, outlier, unusual spending
 

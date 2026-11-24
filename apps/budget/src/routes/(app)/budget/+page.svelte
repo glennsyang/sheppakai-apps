@@ -11,13 +11,19 @@
 	import { getCategoriesContext } from '#lib/contexts/index.js';
 	import { formatCurrency, monthNames } from '#lib/utils.js';
 	import { categoryColorMap } from '#lib/utils/categoryColors.js';
-	import { padMonth } from '#lib/utils/dates.js';
 	import { useMonthYearParams } from '#lib/utils/monthYearParams.svelte.js';
 	import { usePendingReload } from '#lib/utils/pendingNavigation.svelte.js';
 
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+
+	const NO_PRESETS = {
+		lastMonthSpent: 0,
+		lastMonthBudget: 0,
+		averageSpent: 0,
+		suggested: null
+	} as const;
 
 	let selectedCategoryId = $state<string | null>(null);
 	let editAmount = $state<string>('');
@@ -109,37 +115,16 @@
 		}
 	});
 
-	// Auto-select preset based on budget data
+	// Preset amounts for the selected category, computed on the server (Category History)
+	let presetAmounts = $derived(
+		(selectedCategoryId ? data.presets[selectedCategoryId] : undefined) ?? NO_PRESETS
+	);
+
+	// Auto-select preset from the server's suggestion for this month's budget
 	$effect(() => {
 		if (selectedCategoryId && selectedBudget) {
-			// If we haven't set a selection for this category yet, determine it from database
-			if (!categoryPresetSelections[selectedCategoryId]) {
-				if (selectedBudget.presetType) {
-					// Use presetType from database
-					categoryPresetSelections[selectedCategoryId] = selectedBudget.presetType as
-						| 'lastMonth'
-						| 'lastMonthBudget'
-						| 'average'
-						| 'custom';
-				} else {
-					// Legacy budget without presetType - try to infer from amount
-					const budgetAmount = selectedBudget.amount;
-					const lastMonthSpent = getLastMonthSpent(selectedCategoryId);
-					const lastMonthBudget = getLastMonthBudget(selectedCategoryId);
-					const averageSpent = getAverageSpent(selectedCategoryId);
-
-					// Check if budget matches any preset
-					if (budgetAmount === lastMonthSpent && lastMonthSpent > 0) {
-						categoryPresetSelections[selectedCategoryId] = 'lastMonth';
-					} else if (budgetAmount === lastMonthBudget && lastMonthBudget > 0) {
-						categoryPresetSelections[selectedCategoryId] = 'lastMonthBudget';
-					} else if (budgetAmount === averageSpent && averageSpent > 0) {
-						categoryPresetSelections[selectedCategoryId] = 'average';
-					} else if (budgetAmount > 0) {
-						// Custom amount entered
-						categoryPresetSelections[selectedCategoryId] = 'custom';
-					}
-				}
+			if (!categoryPresetSelections[selectedCategoryId] && presetAmounts.suggested) {
+				categoryPresetSelections[selectedCategoryId] = presetAmounts.suggested;
 			}
 		} else if (selectedCategoryId && !selectedBudget) {
 			// No budget exists - do not auto-select anything
@@ -166,72 +151,6 @@
 			editAmount = '';
 		}
 	}
-
-	// Calculate preset amounts for the selected category
-	function getLastMonthSpent(categoryId: string): number {
-		// Calculate previous month and year
-		let prevMonth = selectedMonth - 1;
-		let prevYear = selectedYear;
-
-		if (prevMonth === 0) {
-			prevMonth = 12;
-			prevYear -= 1;
-		}
-
-		const prevMonthStr = padMonth(prevMonth.toString());
-		const prevYearStr = prevYear.toString();
-
-		// Find expense total for previous month and category
-		const expense = data.historicalExpenses?.find(
-			(t) => t.categoryId === categoryId && t.month === prevMonthStr && t.year === prevYearStr
-		);
-
-		return expense?.total || 0;
-	}
-
-	function getLastMonthBudget(categoryId: string): number {
-		// Calculate previous month and year
-		let prevMonth = selectedMonth - 1;
-		let prevYear = selectedYear;
-
-		if (prevMonth === 0) {
-			prevMonth = 12;
-			prevYear -= 1;
-		}
-
-		const prevMonthStr = padMonth(prevMonth.toString());
-		const prevYearStr = prevYear.toString();
-
-		// Find budget for previous month and category
-		const budgetRecord = data.historicalBudgets?.find(
-			(b) => b.category?.id === categoryId && b.month === prevMonthStr && b.year === prevYearStr
-		);
-
-		return budgetRecord?.amount || 0;
-	}
-
-	function getAverageSpent(categoryId: string): number {
-		// Filter expenses for this category
-		const categoryExpenses =
-			data.historicalExpenses?.filter((t) => t.categoryId === categoryId) || [];
-
-		if (categoryExpenses.length === 0) {
-			return 0;
-		}
-
-		// Calculate average by summing totals and dividing by count
-		const sum = categoryExpenses.reduce((acc, t) => acc + t.total, 0);
-		const average = sum / categoryExpenses.length;
-
-		return Math.round(average * 100) / 100; // Round to 2 decimal places
-	}
-
-	// Derived preset amounts for selected category
-	let presetAmounts = $derived({
-		lastMonthSpent: selectedCategoryId ? getLastMonthSpent(selectedCategoryId) : 0,
-		lastMonthBudget: selectedCategoryId ? getLastMonthBudget(selectedCategoryId) : 0,
-		averageSpent: selectedCategoryId ? getAverageSpent(selectedCategoryId) : 0
-	});
 
 	function selectPresetAmount(
 		type: 'lastMonth' | 'lastMonthBudget' | 'average' | 'custom',

@@ -107,9 +107,7 @@
 		return `${n} ${n === 1 ? 'expense' : 'expenses'} in ${periodLabel}`;
 	});
 
-	let summary = $derived(
-		calculateExpenseSummary(data.expenses, data.yearlyExpenses, data.completedMonthsSinceJanuary)
-	);
+	let summary = $derived(calculateExpenseSummary(data.expenses, data.yearlyExpenses));
 
 	let stats = $derived<Stat[]>([
 		{
@@ -124,7 +122,7 @@
 		{ label: `Spent in ${monthYear.year}`, value: formatCurrency(summary.yearlyTotal) },
 		{
 			label: 'Monthly average',
-			value: summary.monthlyAverage === null ? '—' : formatCurrency(summary.monthlyAverage),
+			value: data.monthlyAverage === null ? '—' : formatCurrency(data.monthlyAverage),
 			subtext: 'Completed months this year'
 		}
 	]);

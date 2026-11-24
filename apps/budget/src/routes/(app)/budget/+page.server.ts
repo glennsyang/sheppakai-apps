@@ -9,6 +9,14 @@ import { handleDomainAction } from '#lib/server/actions/domain-action.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import { getCrudMessage } from '#lib/server/actions/messages.js';
 import {
+	buildCategoryHistory,
+	monthWindow,
+	PRESET_WINDOW_MONTHS,
+	suggestPreset,
+	type PresetAmounts,
+	type PresetType
+} from '#lib/server/budgets/category-history.js';
+import {
 	budgetQueries,
 	recurringBillQueries,
 	expenseQueries
@@ -21,49 +29,20 @@ import { getMonthYearFromUrl, padMonth } from '#lib/utils/dates.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
-// Helper function to calculate a month range ending at the selected month/year
-type MonthEntry = { month: string; year: string; date: Date };
+type CategoryPresets = PresetAmounts & { suggested: PresetType | null };
 
-function getLastMonthsRange(
-	currentMonth: number,
-	currentYear: number,
-	count: number
-): MonthEntry[] {
-	const months: MonthEntry[] = [];
-
-	for (let i = count - 1; i >= 0; i--) {
-		// Calculate target month and year, handling negative months
-		let targetMonth = currentMonth - i;
-		let targetYear = currentYear;
-
-		// Handle month underflow (going into previous year)
-		while (targetMonth <= 0) {
-			targetMonth += 12;
-			targetYear -= 1;
-		}
-
-		// Use noon UTC to avoid timezone issues during serialization
-		// Midnight UTC is the previous evening in Pacific time, so noon UTC stays on the correct calendar day
-		const targetDate = new Date(Date.UTC(targetYear, targetMonth - 1, 1, 12, 0, 0));
-
-		months.push({
-			month: padMonth(targetMonth.toString()),
-			year: targetYear.toString(),
-			date: targetDate
-		});
-	}
-
-	return months;
-}
+const NO_HISTORY: PresetAmounts = { lastMonthSpent: 0, lastMonthBudget: 0, averageSpent: 0 };
 
 export const load: PageServerLoad = async ({ url }) => {
 	// Get month and year from URL params or use current month/year
 	const { month, year } = getMonthYearFromUrl(url);
 
-	// Calculate date range for last 12 months (UI can filter to last 3/6/12)
-	const last12Months = getLastMonthsRange(month, year, 12);
-	const earliestMonth = last12Months[0];
-	const latestMonth = last12Months.at(-1) ?? earliestMonth;
+	// The chart shows the 12 months ending at the selected month; Preset amounts look at the
+	// full months before it, so the history query reaches one month further back.
+	const historyMonths = monthWindow(month, year, PRESET_WINDOW_MONTHS + 1);
+	const last12Months = historyMonths.slice(1);
+	const earliestMonth = historyMonths[0];
+	const latestMonth = historyMonths[historyMonths.length - 1];
 
 	// Calculate start and end dates for expense filtering
 	const startDate = `${earliestMonth.year}-${earliestMonth.month}-01`;
@@ -81,8 +60,25 @@ export const load: PageServerLoad = async ({ url }) => {
 				recurringBillQueries.findHistory(monthKey, monthKey)
 			]);
 
+		const history = buildCategoryHistory({
+			month,
+			year,
+			expenseTotals: historicalExpenses,
+			budgets: historicalBudgets
+		});
+		const presets: Record<string, CategoryPresets> = {};
+		for (const [categoryId, amounts] of history) {
+			presets[categoryId] = { ...amounts, suggested: null };
+		}
+		for (const b of monthBudget) {
+			const categoryId = b.category?.id ?? b.categoryId;
+			const amounts = presets[categoryId] ?? NO_HISTORY;
+			presets[categoryId] = { ...amounts, suggested: suggestPreset(b, amounts) };
+		}
+
 		return {
 			budget: monthBudget,
+			presets,
 			historicalBudgets,
 			historicalExpenses,
 			last12Months,
@@ -92,6 +88,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		logger.error('Failed to load budget:', error);
 		return {
 			budget: [],
+			presets: {} as Record<string, CategoryPresets>,
 			historicalBudgets: [],
 			historicalExpenses: [],
 			last12Months,

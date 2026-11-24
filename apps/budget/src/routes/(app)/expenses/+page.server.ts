@@ -5,6 +5,7 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 import { receiptScanResultSchema, expenseSchema } from '#lib/formSchemas/index.js';
 import { requireAuth } from '#lib/server/actions/auth-guard.js';
 import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
+import { completedMonthsAverage } from '#lib/server/budgets/category-history.js';
 import {
 	buildCategoryStatuses,
 	toBudgetInputs,
@@ -38,8 +39,6 @@ export const load: PageServerLoad = async ({ url }) => {
 	// Get yearly date range
 	const { startDate: yearStartDate, endDate: yearEndDate } = getYearDateRange(year);
 
-	const completedMonthsSinceJanuary = calculateMonthsSinceJanuary(year);
-
 	// Normalize on the server regardless of what the client sends: trim whitespace and cap at
 	// the notes column max length (800 chars) so a crafted URL can't trigger an oversized query.
 	const searchQuery = (url.searchParams.get('search') ?? '').trim().slice(0, 800);
@@ -54,7 +53,7 @@ export const load: PageServerLoad = async ({ url }) => {
 				categoryStatuses: [] as CategoryStatus[],
 				excludedFromBudgetTotal: 0,
 				yearlyExpenses: [],
-				completedMonthsSinceJanuary: 0,
+				monthlyAverage: null,
 				form,
 				searchQuery,
 				searchLimitReached: limitReached,
@@ -83,7 +82,12 @@ export const load: PageServerLoad = async ({ url }) => {
 			categoryStatuses,
 			excludedFromBudgetTotal,
 			yearlyExpenses,
-			completedMonthsSinceJanuary,
+			// Completed months only: this month's and future-dated Expenses don't count (#372).
+			monthlyAverage: completedMonthsAverage(
+				yearlyExpenses,
+				year,
+				calculateMonthsSinceJanuary(year)
+			),
 			form,
 			searchQuery,
 			receiptScanEnabled: isReceiptScanEnabled()
@@ -95,7 +99,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			categoryStatuses: [] as CategoryStatus[],
 			excludedFromBudgetTotal: 0,
 			yearlyExpenses: [],
-			completedMonthsSinceJanuary,
+			monthlyAverage: null,
 			loadError: 'Failed to load expense data. Please try refreshing the page.',
 			form,
 			searchQuery
