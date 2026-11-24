@@ -7,7 +7,7 @@ import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiUpdateTaskSchema } from '#lib/server/api/schemas/tasks.js';
 import { getDb } from '#lib/server/db/index.js';
 import { tasks } from '#lib/server/db/schema/index.js';
-import { updateTask } from '#lib/server/db/writes/tasks.js';
+import { updateTaskFromApi } from '#lib/server/db/writes/tasks.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
@@ -47,7 +47,7 @@ export const PATCH: RequestHandler = async ({ request, params, url }) => {
 			path: url.pathname,
 			action: 'tasks:write'
 		},
-		() => updateTask(auth.userId, params.id, parsed.data),
+		() => updateTaskFromApi(auth.userId, params.id, parsed.data),
 		{ successStatus: 200, failureMessage: 'Failed to update task' }
 	);
 };

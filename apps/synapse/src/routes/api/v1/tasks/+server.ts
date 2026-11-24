@@ -7,7 +7,7 @@ import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiCreateTaskSchema, apiTaskListQuerySchema } from '#lib/server/api/schemas/tasks.js';
 import { getDb } from '#lib/server/db/index.js';
 import { tasks } from '#lib/server/db/schema/index.js';
-import { createTask } from '#lib/server/db/writes/tasks.js';
+import { createTaskFromApi } from '#lib/server/db/writes/tasks.js';
 import { logger } from '#lib/server/logger.js';
 
 import type { RequestHandler } from './$types';
@@ -54,7 +54,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 			path: url.pathname,
 			action: 'tasks:write'
 		},
-		() => createTask(auth.userId, parsed.data),
+		() => createTaskFromApi(auth.userId, parsed.data),
 		{ successStatus: 201, failureMessage: 'Failed to create task' }
 	);
 };
