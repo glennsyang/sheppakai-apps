@@ -1,7 +1,8 @@
+import { monthlyAverage, monthsWithHistory } from '#lib/server/budgets/category-history.js';
 import type { Budget, SpendingSpike, Expense } from '#lib/types.js';
 
-// Require at least this many prior months of history before flagging anything, so a
-// category with only 1-2 months on record doesn't produce a noisy "spike" on day one.
+// Require at least this many prior months of history (counted from the category's first month
+// with spend) before flagging it, so a new category doesn't produce a noisy "spike" on day one.
 const MIN_PRIOR_MONTHS = 3;
 // Skip categories whose trailing average is trivially small (e.g. a $5/mo category jumping
 // to $8 isn't a meaningful spike, even though it's a large percentage change).
@@ -32,29 +33,29 @@ export function computeSpendingSpikes(
 	const currentRange = historicalMonths[historicalMonths.length - 1];
 	const priorRanges = historicalMonths.slice(0, -1);
 
-	const categoryTotals = new Map<string, { name: string; current: number; priorTotal: number }>();
+	const categoryTotals = new Map<string, { name: string; current: number; prior: number[] }>();
 
 	for (const tx of expenses) {
 		if (!tx.category) continue;
 
 		const datePart = tx.date.substring(0, 10);
 		const inCurrent = datePart >= currentRange.monthStart && datePart <= currentRange.monthEnd;
-		const inPrior = priorRanges.some(
+		const priorIndex = priorRanges.findIndex(
 			(range) => datePart >= range.monthStart && datePart <= range.monthEnd
 		);
 
-		if (!inCurrent && !inPrior) continue;
+		if (!inCurrent && priorIndex === -1) continue;
 
 		const existing = categoryTotals.get(tx.category.id) ?? {
 			name: tx.category.name,
 			current: 0,
-			priorTotal: 0
+			prior: priorRanges.map(() => 0)
 		};
 
 		if (inCurrent) {
 			existing.current += tx.amount;
 		} else {
-			existing.priorTotal += tx.amount;
+			existing.prior[priorIndex] += tx.amount;
 		}
 
 		categoryTotals.set(tx.category.id, existing);
@@ -62,9 +63,9 @@ export function computeSpendingSpikes(
 
 	const spikes: SpendingSpike[] = [];
 
-	for (const [categoryId, { name, current, priorTotal }] of categoryTotals) {
-		const trailingAverage = priorTotal / priorRanges.length;
-
+	for (const [categoryId, { name, current, prior }] of categoryTotals) {
+		if (monthsWithHistory(prior) < MIN_PRIOR_MONTHS) continue;
+		const trailingAverage = monthlyAverage(prior);
 		if (trailingAverage < MIN_BASELINE_AMOUNT) continue;
 		if (current <= trailingAverage * SPIKE_RATIO) continue;
 

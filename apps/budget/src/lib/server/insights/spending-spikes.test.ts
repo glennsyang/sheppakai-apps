@@ -123,6 +123,29 @@ describe('computeSpendingSpikes', () => {
 		expect(computeSpendingSpikes(expenses, shortRange)).toEqual([]);
 	});
 
+	it('does not flag a category with fewer than 3 months since its first spend', () => {
+		const expenses = [
+			buildTx('new', 'New Category', 100, '2026-04-15'),
+			buildTx('new', 'New Category', 100, '2026-05-15'),
+			buildTx('new', 'New Category', 500, '2026-06-15')
+		];
+
+		expect(computeSpendingSpikes(expenses, sixMonthRange)).toEqual([]);
+	});
+
+	it('averages from the first month with spend, counting later empty months as zero', () => {
+		const expenses = [
+			buildTx('gifts', 'Gifts', 120, '2026-02-10'),
+			buildTx('gifts', 'Gifts', 120, '2026-03-10'),
+			buildTx('gifts', 'Gifts', 120, '2026-05-10'),
+			buildTx('gifts', 'Gifts', 200, '2026-06-15')
+		];
+
+		const [spike] = computeSpendingSpikes(expenses, sixMonthRange);
+
+		expect(spike.trailingAverage).toBe(90); // (120 + 120 + 0 + 120) / 4, January not counted
+	});
+
 	it('sorts by percent-over descending and caps at 5 results', () => {
 		const expenses = Array.from({ length: 6 }, (_, i) => {
 			const categoryId = `cat-${i}`;
