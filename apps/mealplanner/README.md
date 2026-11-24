@@ -113,9 +113,8 @@ src/
 │       │   ├── schema.ts        # All Drizzle tables (auth + app)
 │       │   └── index.ts         # Drizzle client (WAL mode)
 │       ├── auth/index.ts        # betterAuth instance
-│       ├── ai/
-│       │   ├── claude.ts        # Variations API (suggestVariations)
-│       │   └── gemini.ts        # Meal suggestions (suggestMeals, suggestMealsStream)
+│       ├── ai/                # createAiEndpoint, model IDs, prompt safety
+│       ├── suggestions/         # suggest(): pantry Suggestions + Variations (Gemini, Claude fallback)
 │       └── services/
 │           ├── pantry.ts
 │           ├── recipes.ts

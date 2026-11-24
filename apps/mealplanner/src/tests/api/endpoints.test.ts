@@ -7,8 +7,7 @@ const mocks = vi.hoisted(() => ({
 	requireApiKey: vi.fn<(request: Request, scope: string) => Promise<unknown>>(),
 	recordApiWrite: vi.fn<(entry: unknown) => Promise<void>>(),
 	limiterCheck: vi.fn<() => Promise<{ limited: boolean; retryAfter: number }>>(),
-	suggestMeals: vi.fn<(items: string[], history?: unknown) => Promise<unknown>>(),
-	getSuggestionHistory: vi.fn<(today: Date) => Promise<unknown>>(),
+	suggest: vi.fn<(request: unknown) => Promise<unknown>>(),
 	pantry: {
 		listPantryItems: vi.fn<() => Promise<unknown[]>>(),
 		addPantryItem: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
@@ -36,10 +35,7 @@ vi.mock('#lib/server/api/audit-log.js', () => ({ recordApiWrite: mocks.recordApi
 vi.mock('#lib/server/rate-limiter.js', () => ({
 	createUserRateLimiter: () => ({ check: mocks.limiterCheck })
 }));
-vi.mock('#lib/server/ai/gemini.js', () => ({ suggestMeals: mocks.suggestMeals }));
-vi.mock('#lib/server/services/suggestionHistory.js', () => ({
-	getSuggestionHistory: mocks.getSuggestionHistory
-}));
+vi.mock('#lib/server/suggestions/index.js', () => ({ suggest: mocks.suggest }));
 vi.mock('#lib/server/services/pantry.js', () => mocks.pantry);
 vi.mock('#lib/server/services/recipes.js', () => mocks.recipes);
 vi.mock('#lib/server/services/mealPlan.js', () => mocks.mealPlan);
@@ -327,16 +323,14 @@ describe('plans', () => {
 
 describe('suggestions', () => {
 	it('returns suggestions and audits the call', async () => {
-		const history = { recentlyCooked: ['Congee'], favorites: [], disliked: [] };
-		mocks.getSuggestionHistory.mockResolvedValue(history);
-		mocks.suggestMeals.mockResolvedValue([{ name: 'Fried rice' }]);
+		mocks.suggest.mockResolvedValue([{ name: 'Fried rice' }]);
 		const res = await call(suggestions.POST, '/api/v1/suggestions', {
 			method: 'POST',
 			body: { items: ['rice', 'egg'] }
 		});
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ data: [{ name: 'Fried rice' }] });
-		expect(mocks.suggestMeals).toHaveBeenCalledWith(['rice', 'egg'], history);
+		expect(mocks.suggest).toHaveBeenCalledWith({ kind: 'pantry', items: ['rice', 'egg'] });
 		expect(mocks.limiterCheck).toHaveBeenCalledWith(expect.anything(), { userId: 'apikey:key-1' });
 		expect(mocks.recordApiWrite).toHaveBeenCalledWith(
 			expect.objectContaining({ action: 'suggest:write', statusCode: 200 })
@@ -351,6 +345,6 @@ describe('suggestions', () => {
 		});
 		expect(res.status).toBe(429);
 		expect(res.headers.get('Retry-After')).toBe('30');
-		expect(mocks.suggestMeals).not.toHaveBeenCalled();
+		expect(mocks.suggest).not.toHaveBeenCalled();
 	});
 });

@@ -1,41 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const { anthropicCreate, geminiGenerate, geminiOptions, loggerMock } = vi.hoisted(() => ({
-	geminiOptions: [] as unknown[],
-	anthropicCreate: vi.fn<() => Promise<unknown>>(),
-	geminiGenerate: vi.fn<() => Promise<unknown>>(),
-	loggerMock: {
-		debug: vi.fn<() => void>(),
-		info: vi.fn<() => void>(),
-		warn: vi.fn<() => void>(),
-		error: vi.fn<() => void>()
-	}
-}));
-
-vi.mock('$app/env/private', () => ({ ANTHROPIC_API_KEY: 'test', GEMINI_API_KEY: 'test' }));
-vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
-vi.mock('@anthropic-ai/sdk', () => ({
-	default: class {
-		messages = { create: anthropicCreate };
-	}
-}));
-vi.mock('@google/genai', () => ({
-	GoogleGenAI: class {
-		models = { generateContent: geminiGenerate };
-		constructor(options: unknown) {
-			geminiOptions.push(options);
-		}
-	},
-	Type: { OBJECT: 'OBJECT', ARRAY: 'ARRAY', STRING: 'STRING', NUMBER: 'NUMBER' }
-}));
+import { describe, expect, it } from 'vitest';
 
 import {
 	suggestionSchema,
 	pickValidSuggestions,
 	saveRecipeSchema
 } from '../../lib/schemas/mealPlan';
-import { suggestVariations } from '../../lib/server/ai/claude';
-import { suggestMeals } from '../../lib/server/ai/gemini';
 
 const valid = {
 	name: 'Chicken Curry',
@@ -45,8 +14,6 @@ const valid = {
 	prepTimeMinutes: 40,
 	servings: 4
 };
-
-beforeEach(() => vi.clearAllMocks());
 
 describe('suggestionSchema (#171)', () => {
 	it('accepts a well-formed suggestion and rounds fractional numbers', () => {
@@ -83,52 +50,5 @@ describe('suggestionSchema (#171)', () => {
 			rejected: 2
 		});
 		expect(pickValidSuggestions('nope')).toEqual({ suggestions: [], rejected: 0 });
-	});
-});
-
-describe('Gemini client (#290)', () => {
-	it('uses the v1beta API, since preview models 404 on the SDK default v1', () => {
-		expect(geminiOptions).toEqual([expect.objectContaining({ apiVersion: 'v1beta' })]);
-	});
-});
-
-describe('suggestMeals (Gemini) validates model output (#171)', () => {
-	it('drops malformed suggestions and logs a warning', async () => {
-		geminiGenerate.mockResolvedValue({
-			text: JSON.stringify({ suggestions: [valid, { ...valid, steps: 'not an array' }] })
-		});
-
-		await expect(suggestMeals(['chicken'])).resolves.toEqual([valid]);
-		expect(loggerMock.warn).toHaveBeenCalledWith(
-			'Dropped malformed AI suggestions',
-			expect.objectContaining({ rejected: 1, kept: 1 })
-		);
-	});
-
-	it.each([
-		['non-JSON text', 'not json'],
-		['no valid items', JSON.stringify({ suggestions: [{ name: 'x' }] })],
-		['missing array', JSON.stringify({ meals: [valid] })]
-	])('throws on %s', async (_label, text) => {
-		geminiGenerate.mockResolvedValue({ text });
-		await expect(suggestMeals(['chicken'])).rejects.toThrow('Invalid response structure from AI');
-	});
-});
-
-describe('suggestVariations (Claude) validates tool input (#171)', () => {
-	const toolResponse = (input: unknown) => ({
-		content: [{ type: 'tool_use', name: 'suggest_variations', input }]
-	});
-
-	it('returns only valid variations', async () => {
-		anthropicCreate.mockResolvedValue(
-			toolResponse({ variations: [valid, { ...valid, servings: 'four' }] })
-		);
-		await expect(suggestVariations('Curry')).resolves.toEqual([valid]);
-	});
-
-	it('throws when nothing valid comes back', async () => {
-		anthropicCreate.mockResolvedValue(toolResponse({ variations: [{ name: 'x' }] }));
-		await expect(suggestVariations('Curry')).rejects.toThrow('Invalid response structure from AI');
 	});
 });
