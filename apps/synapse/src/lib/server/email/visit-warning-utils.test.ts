@@ -1,49 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { addDaysToDateString, getTodayString } from '#lib/utils/date.js';
-
 import {
 	buildVisitWarningEntityId,
 	buildVisitWarningSubject,
 	formatVisitWarningDate,
-	getVisitWarningStatus
+	toVisitWarningStatus
 } from './visit-warning-utils';
 
-function dateDaysAgo(daysAgo: number): string {
-	return addDaysToDateString(getTodayString(), -daysAgo);
-}
-
 describe('visit warning utilities', () => {
-	it('returns null for non-warning status windows', () => {
-		const recentVisitDate = dateDaysAgo(200);
-		expect(getVisitWarningStatus(recentVisitDate)).toBeNull();
-	});
-
-	it('maps yellow and red visit statuses to warning statuses', () => {
-		const yellowVisitDate = dateDaysAgo(300);
-		const redVisitDate = dateDaysAgo(400);
-
-		expect(getVisitWarningStatus(yellowVisitDate)).toBe('yellow');
-		expect(getVisitWarningStatus(redVisitDate)).toBe('critical');
-	});
-
-	it('uses custom thresholds when provided', () => {
-		const nowYellowByCustomRules = dateDaysAgo(100);
-		const nowCriticalByCustomRules = dateDaysAgo(150);
-		const thresholds = {
-			recentToOverdueDays: 90,
-			overdueToCriticalDays: 120
-		};
-
-		expect(getVisitWarningStatus(nowYellowByCustomRules, null, thresholds)).toBe('yellow');
-		expect(getVisitWarningStatus(nowCriticalByCustomRules, null, thresholds)).toBe('critical');
-	});
-
-	it('suppresses warnings when the member has an upcoming Next Visit', () => {
-		const redVisitDate = dateDaysAgo(400);
-		const futureNextVisitDate = dateDaysAgo(-10);
-
-		expect(getVisitWarningStatus(redVisitDate, futureNextVisitDate)).toBeNull();
+	it('warns only for Overdue and Critical', () => {
+		expect(toVisitWarningStatus('yellow')).toBe('yellow');
+		expect(toVisitWarningStatus('red')).toBe('critical');
+		for (const status of ['green', 'scheduled', 'none', 'exempt'] as const) {
+			expect(toVisitWarningStatus(status)).toBeNull();
+		}
 	});
 
 	it('formats visit date as Month D, YYYY', () => {

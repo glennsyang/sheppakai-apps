@@ -12,6 +12,7 @@ import {
 	visits,
 	workoutLogs
 } from '#lib/server/db/schema/index.js';
+import { loadGroupStatuses } from '#lib/server/group-status.js';
 
 import type { DashboardDateRanges } from './agenda-stats';
 
@@ -37,8 +38,7 @@ export async function runDashboardQueries(
 		openHighPriorityTitlesRaw,
 		openTotalTitlesRaw,
 		workoutTypeBreakdownRaw,
-		allPeopleRaw,
-		allVisitsRaw,
+		groupStatuses,
 		recentTaskRaw,
 		recentVisitRaw,
 		upcomingVisitsByDateRaw,
@@ -164,33 +164,7 @@ export async function runDashboardQueries(
 			.from(workoutLogs)
 			.where(and(eq(workoutLogs.userId, userId), gte(workoutLogs.date, r.workout4WeeksStart)))
 			.groupBy(workoutLogs.type),
-		db
-			.select({
-				id: people.id,
-				name: people.name,
-				isExempt: people.isExempt,
-				scheduledVisitDate: people.scheduledVisitDate
-			})
-			.from(people)
-			.where(and(eq(people.userId, userId), eq(people.isArchived, false))),
-		(() => {
-			const subq = db
-				.select({
-					personId: visits.personId,
-					date: visits.date,
-					rn: sql<number>`row_number() over (partition by ${visits.personId} order by ${visits.date} desc, ${visits.createdAt} desc)`.as(
-						'rn'
-					)
-				})
-				.from(visits)
-				.innerJoin(people, and(eq(visits.personId, people.id), eq(people.isArchived, false)))
-				.where(eq(visits.userId, userId))
-				.as('latest_visits_subq');
-			return db
-				.select({ personId: subq.personId, date: subq.date })
-				.from(subq)
-				.where(sql`${subq.rn} = 1`);
-		})(),
+		loadGroupStatuses(db, { userId, today: r.today }),
 		db.query.tasks.findMany({
 			where: and(eq(tasks.userId, userId), eq(tasks.state, 'done')),
 			orderBy: [desc(tasks.completedAt)],
@@ -262,8 +236,7 @@ export async function runDashboardQueries(
 		openHighPriorityTitlesRaw,
 		openTotalTitlesRaw,
 		workoutTypeBreakdownRaw,
-		allPeopleRaw,
-		allVisitsRaw,
+		groupStatuses,
 		recentTaskRaw,
 		recentVisitRaw,
 		upcomingVisitsByDateRaw,

@@ -1,12 +1,8 @@
-import { and, desc, eq } from 'drizzle-orm';
-
 import { getUser } from '#lib/server/actions/auth-guard.js';
 import { getDb } from '#lib/server/db/index.js';
-import { people } from '#lib/server/db/schema/index.js';
+import { loadGroupStatuses } from '#lib/server/group-status.js';
 import { stringListSchema, safeParse } from '#lib/server/json.js';
 import { logger } from '#lib/server/logger.js';
-import { getVisitStatusThresholdsForUser } from '#lib/server/visit-status-settings.js';
-import { getLatestVisitsByPersonId, getPersonVisitStatus } from '#lib/server/visits.js';
 import { getTodayString } from '#lib/utils/date.js';
 import { getStatusPriority, type PersonWithStatus } from '#lib/utils/visit-status.js';
 
@@ -14,53 +10,41 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	try {
-		const db = getDb();
-		const today = getTodayString();
-		const userId = getUser(locals).id;
-		const visitStatusThresholds = await getVisitStatusThresholdsForUser(userId, db);
-
-		// Load all people for the user
-		const userPeople = await db.query.people.findMany({
-			where: and(eq(people.userId, userId), eq(people.isArchived, false)),
-			orderBy: [desc(people.createdAt)]
+		const groupStatuses = await loadGroupStatuses(getDb(), {
+			userId: getUser(locals).id,
+			today: getTodayString()
 		});
 
-		const latestVisitsByPersonId = await getLatestVisitsByPersonId(
-			userPeople.map((person) => person.id),
-			userId,
-			db
-		);
-
-		const peopleWithStatus: PersonWithStatus[] = userPeople.map((person) => {
-			const latestVisit = latestVisitsByPersonId.get(person.id);
-			const statusInfo = getPersonVisitStatus(person, latestVisit, today, visitStatusThresholds);
-			const nextVisitDate =
-				statusInfo.nextVisitDate && statusInfo.nextVisitDate >= today
-					? statusInfo.nextVisitDate
-					: null;
-
-			return {
+		const peopleWithStatus: PersonWithStatus[] = groupStatuses.map(
+			({
+				person,
+				lastVisit,
+				nextVisitDate,
+				status,
+				daysSinceLastVisit,
+				daysUntilStatusChange
+			}) => ({
 				id: person.id,
 				name: person.name,
 				isExempt: person.isExempt,
 				nextVisitDate,
-				lastVisit: latestVisit
+				lastVisit: lastVisit
 					? {
-							date: latestVisit.date,
+							date: lastVisit.date,
 							companions: safeParse(
-								latestVisit.companions,
+								lastVisit.companions,
 								stringListSchema,
 								null,
 								'visit.companions'
 							)
 						}
 					: null,
-				status: statusInfo.status,
-				daysSinceLastVisit: statusInfo.daysSinceLastVisit,
-				daysUntilStatusChange: statusInfo.daysUntilStatusChange,
+				status,
+				daysSinceLastVisit,
+				daysUntilStatusChange,
 				createdAt: person.createdAt
-			};
-		});
+			})
+		);
 
 		// Sort by status priority, then by days since last visit
 		peopleWithStatus.sort((a, b) => {

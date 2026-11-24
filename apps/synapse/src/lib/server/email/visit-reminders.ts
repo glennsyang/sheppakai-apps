@@ -1,8 +1,6 @@
-import { and, eq } from 'drizzle-orm';
-
+import { loadGroupStatuses, type GroupMemberStatus } from '#lib/server/group-status.js';
 import { addDaysToDateString } from '#lib/utils/date.js';
 
-import { people, user } from '../db/schema';
 import type { Db, NotificationJob } from '../notification-jobs/run-job';
 import {
 	buildScheduledVisitReminderEntityIdForPerson,
@@ -16,19 +14,20 @@ import {
 import { buildScheduledVisitReminderEmail, buildVisitTodayReminderEmail } from './templates';
 
 type NextVisitCandidate = {
-	person: typeof people.$inferSelect;
-	user: typeof user.$inferSelect;
+	person: GroupMemberStatus['person'];
+	user: GroupMemberStatus['owner'];
 };
 
-/** Non-archived, non-exempt group members whose Next Visit is on `date`. */
-function loadNextVisitsOn(db: Db, date: string): NextVisitCandidate[] {
-	return db
-		.select({ person: people, user })
-		.from(people)
-		.innerJoin(user, eq(people.userId, user.id))
-		.where(and(eq(people.scheduledVisitDate, date), eq(people.isArchived, false)))
-		.all()
-		.filter(({ person }) => !person.isExempt);
+/** Group members whose Next Visit is on `date`; Exempt members get no reminders. */
+async function loadNextVisitsOn(
+	db: Db,
+	today: string,
+	date: string
+): Promise<NextVisitCandidate[]> {
+	const members = await loadGroupStatuses(db, { today });
+	return members
+		.filter(({ person, nextVisitDate }) => nextVisitDate === date && !person.isExempt)
+		.map(({ person, owner }) => ({ person, user: owner }));
 }
 
 /** Email + push on the day of a group member's Next Visit. */
@@ -36,7 +35,7 @@ export const visitTodayReminderJob: NotificationJob<NextVisitCandidate> = {
 	type: VISIT_TODAY_REMINDER_NOTIFICATION_TYPE,
 	label: 'visit-today reminders',
 	dedupe: 'pacific-day',
-	candidates: ({ db, clock }) => loadNextVisitsOn(db, clock.today),
+	candidates: ({ db, clock }) => loadNextVisitsOn(db, clock.today, clock.today),
 	recipient: (candidate) => candidate.user,
 	entityId: ({ person }) => buildVisitTodayReminderEntityIdForPerson(person.id),
 	message: ({ person, user: owner }, { clock }) => {
@@ -65,7 +64,7 @@ export const scheduledVisitReminderJob: NotificationJob<NextVisitCandidate> = {
 	type: SCHEDULED_VISIT_REMINDER_NOTIFICATION_TYPE,
 	label: 'scheduled visit reminders',
 	dedupe: 'pacific-day',
-	candidates: ({ db, clock }) => loadNextVisitsOn(db, oneWeekAhead(clock.today)),
+	candidates: ({ db, clock }) => loadNextVisitsOn(db, clock.today, oneWeekAhead(clock.today)),
 	recipient: (candidate) => candidate.user,
 	entityId: ({ person }) => buildScheduledVisitReminderEntityIdForPerson(person.id),
 	message: ({ person, user: owner }, { clock }) => {
