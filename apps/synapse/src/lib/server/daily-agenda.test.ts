@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
 	assertDateIsEditable,
@@ -164,35 +164,27 @@ describe('getEntriesToDeleteForDays', () => {
 });
 
 describe('assertDateIsEditable', () => {
-	beforeEach(() => {
-		// Fix "today" to 2026-05-12 in Pacific time (UTC-7 during PDT)
-		vi.useFakeTimers();
-		vi.setSystemTime(new Date('2026-05-12T12:00:00.000-07:00'));
-	});
-
-	afterEach(() => {
-		vi.useRealTimers();
-	});
+	const TODAY = '2026-05-12';
 
 	it('does not throw for today', () => {
-		expect(() => assertDateIsEditable('2026-05-12')).not.toThrow();
+		expect(() => assertDateIsEditable('2026-05-12', TODAY)).not.toThrow();
 	});
 
 	it('does not throw for future dates', () => {
-		expect(() => assertDateIsEditable('2026-05-13')).not.toThrow();
-		expect(() => assertDateIsEditable('2027-01-01')).not.toThrow();
+		expect(() => assertDateIsEditable('2026-05-13', TODAY)).not.toThrow();
+		expect(() => assertDateIsEditable('2027-01-01', TODAY)).not.toThrow();
 	});
 
 	it('throws DailyAgendaMutationError for past dates', () => {
-		expect(() => assertDateIsEditable('2026-05-11')).toThrow(DailyAgendaMutationError);
-		expect(() => assertDateIsEditable('2026-01-01')).toThrow(DailyAgendaMutationError);
+		expect(() => assertDateIsEditable('2026-05-11', TODAY)).toThrow(DailyAgendaMutationError);
+		expect(() => assertDateIsEditable('2026-01-01', TODAY)).toThrow(DailyAgendaMutationError);
 	});
 
 	it('sets the error code to read_only', () => {
 		let caughtError: unknown;
 
 		try {
-			assertDateIsEditable('2026-05-11');
+			assertDateIsEditable('2026-05-11', TODAY);
 		} catch (e) {
 			caughtError = e;
 		}

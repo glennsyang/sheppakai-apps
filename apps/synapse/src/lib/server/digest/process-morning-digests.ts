@@ -89,7 +89,10 @@ export const morningDigestJob: NotificationJob<MorningDigestCandidate> = {
 		const title = buildMorningDigestTitle(clock.today);
 		const message = buildMorningDigestMessage(
 			{
-				agenda: await loadDailyAgendaEntriesForDate(userId, clock.today),
+				agenda: await loadDailyAgendaEntriesForDate(
+					{ db, userId, today: clock.today },
+					clock.today
+				),
 				tasksDue: await loadTasksDueToday(db, userId, clock.today),
 				dinner,
 				bills,

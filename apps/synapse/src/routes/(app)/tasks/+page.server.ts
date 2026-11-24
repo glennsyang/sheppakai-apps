@@ -24,6 +24,7 @@ import { getUser, requireAuth } from '#lib/server/actions/auth-guard.js';
 import { deleteAction } from '#lib/server/actions/crud-helpers.js';
 import { invalidForm } from '#lib/server/actions/form-responses.js';
 import {
+	type AgendaContext,
 	createDailyAgendaCustomEntry,
 	createDailyAgendaTemplate,
 	deleteDailyAgendaCustomEntry,
@@ -62,6 +63,10 @@ import { isMoodValue } from '#lib/utils/mood.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
+function agendaContext(userId: string): AgendaContext {
+	return { db: getDb(), userId, today: getTodayString() };
+}
+
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const userId = getUser(locals).id;
 	const today = getTodayString();
@@ -75,7 +80,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	let agenda: Awaited<ReturnType<typeof loadDailyAgendaData>> | null = null;
 	let agendaLoadError: string | undefined;
 	try {
-		agenda = await loadDailyAgendaData(userId, agendaWeek);
+		agenda = await loadDailyAgendaData({ db: getDb(), userId, today }, agendaWeek);
 	} catch (error) {
 		logger.error('Failed to load daily agenda', error, { userId });
 		agendaLoadError = 'Failed to load your daily agenda. Please try refreshing the page.';
@@ -248,7 +253,11 @@ export const actions = {
 		}
 
 		try {
-			await createDailyAgendaTemplate(user.id, form.data.title, form.data.daysOfWeek);
+			await createDailyAgendaTemplate(
+				agendaContext(user.id),
+				form.data.title,
+				form.data.daysOfWeek
+			);
 
 			return buildAgendaActionPayload('create-template', {
 				type: 'success',
@@ -270,7 +279,12 @@ export const actions = {
 		}
 
 		try {
-			await updateDailyAgendaTemplate(user.id, form.data.id, form.data.title, form.data.daysOfWeek);
+			await updateDailyAgendaTemplate(
+				agendaContext(user.id),
+				form.data.id,
+				form.data.title,
+				form.data.daysOfWeek
+			);
 
 			return buildAgendaActionPayload('update-template', {
 				type: 'success',
@@ -294,7 +308,7 @@ export const actions = {
 		}
 
 		try {
-			await deleteDailyAgendaTemplate(user.id, form.data.id);
+			await deleteDailyAgendaTemplate(agendaContext(user.id), form.data.id);
 
 			return buildAgendaActionPayload('delete-template', {
 				type: 'success',
@@ -318,7 +332,7 @@ export const actions = {
 		}
 
 		try {
-			await createDailyAgendaCustomEntry(user.id, form.data);
+			await createDailyAgendaCustomEntry(agendaContext(user.id), form.data);
 
 			return buildAgendaActionPayload('create-entry', {
 				type: 'success',
@@ -342,7 +356,7 @@ export const actions = {
 		}
 
 		try {
-			await updateDailyAgendaCustomEntry(user.id, form.data.id, form.data.title);
+			await updateDailyAgendaCustomEntry(agendaContext(user.id), form.data.id, form.data.title);
 
 			return buildAgendaActionPayload('update-entry', {
 				type: 'success',
@@ -366,7 +380,7 @@ export const actions = {
 		}
 
 		try {
-			await deleteDailyAgendaCustomEntry(user.id, form.data.id);
+			await deleteDailyAgendaCustomEntry(agendaContext(user.id), form.data.id);
 
 			return buildAgendaActionPayload('delete-entry', {
 				type: 'success',
@@ -390,7 +404,7 @@ export const actions = {
 		}
 
 		try {
-			await toggleDailyAgendaEntry(user.id, form.data.id, form.data.completed);
+			await toggleDailyAgendaEntry(agendaContext(user.id), form.data.id, form.data.completed);
 
 			return buildAgendaActionPayload('toggle-entry', {
 				type: 'success',
