@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 import { generateId } from '../utils';
 import category from './category';
@@ -26,13 +26,9 @@ const budget = sqliteTable(
 			.notNull()
 			.$defaultFn(() => new Date())
 	},
+	// Budgets belong to the Household: one per category per month, whoever set it (#380).
 	(table) => [
-		index('budget_user_category_period_idx').on(
-			table.userId,
-			table.categoryId,
-			table.year,
-			table.month
-		)
+		uniqueIndex('budget_category_period_unique').on(table.categoryId, table.year, table.month)
 	]
 );
 
