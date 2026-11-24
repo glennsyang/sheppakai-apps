@@ -29,7 +29,7 @@ export interface Ingredient {
 	unit: string;
 }
 
-// Derived from the runtime schema so the type and the validation can't drift (#171).
+// Derived from the runtime schema so the type and the validation can't drift.
 export type Suggestion = z.output<typeof suggestionSchema>;
 
 export type RecipeSource = 'suggested' | 'custom' | 'imported';

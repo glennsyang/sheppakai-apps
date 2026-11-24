@@ -58,7 +58,7 @@ function seedRecipe(sqlite: Database.Database, id: string, userId: string) {
 		.run(id, userId, id);
 }
 
-describe('0005 migration (#164)', () => {
+describe('0005 migration', () => {
 	it('keeps meal plan entries, collapses duplicate plans/days, and adds unique indexes', () => {
 		const sqlite = new Database(':memory:');
 		const lastTag = TAGS.findIndex((t) => t.startsWith('0005_'));
@@ -107,7 +107,7 @@ describe('0005 migration (#164)', () => {
 	});
 });
 
-describe('shared rows survive user removal (#164)', () => {
+describe('shared rows survive user removal', () => {
 	it('sets creator user_id to NULL instead of cascade-deleting', () => {
 		const sqlite = new Database(':memory:');
 		applyMigrations(sqlite, TAGS);
@@ -130,7 +130,7 @@ describe('shared rows survive user removal (#164)', () => {
 	});
 });
 
-describe('planDinner: plan and day upsert (#164)', () => {
+describe('planDinner: plan and day upsert', () => {
 	let sqlite: Database.Database;
 
 	beforeEach(() => {
@@ -332,7 +332,7 @@ describe('planDinner (#347)', () => {
 	});
 });
 
-describe('getMealPlanWithEntries (#170)', () => {
+describe('getMealPlanWithEntries', () => {
 	let sqlite: Database.Database;
 	let queries: string[];
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { actionFailureText } from '../../lib/action-result';
 
-describe('actionFailureText (#167)', () => {
+describe('actionFailureText', () => {
 	it('returns the superforms message text from a failure', () => {
 		expect(
 			actionFailureText(

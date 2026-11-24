@@ -60,7 +60,7 @@
 	const isCurrentWeek = $derived(data.weekStartDate === getMondayOf(new Date()));
 	const takenDays = $derived(new Map(entries.map((e) => [e.entry.dayOfWeek, e.recipe.name])));
 
-	// Single page-level banner for failed planner actions (#166).
+	// Single page-level banner for failed planner actions.
 	let actionError = $state<string | null>(null);
 
 	$effect(() => {
@@ -161,7 +161,7 @@
 
 		// Triggered from the variations panel / recipe drawer rather than a form, so call
 		// the action programmatically — with the `x-sveltekit-action` header SvelteKit
-		// answers with a serialized ActionResult instead of re-rendering the page (#167).
+		// answers with a serialized ActionResult instead of re-rendering the page.
 		let result: ActionResult;
 		try {
 			const res = await fetch('?/saveAndAdd', {

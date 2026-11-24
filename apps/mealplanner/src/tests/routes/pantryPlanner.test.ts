@@ -93,7 +93,7 @@ describe('pantry/planner actions: authenticated', () => {
 	});
 });
 
-describe('pantry/planner actions: consistent { form } results (#166)', () => {
+describe('pantry/planner actions: consistent { form } results', () => {
 	const recipeFields = {
 		weekStartDate: '2026-09-28',
 		dayOfWeek: '2',
@@ -196,7 +196,7 @@ describe('pantry/planner actions: consistent { form } results (#166)', () => {
 	});
 });
 
-describe('planner load: ?week= validation (#165)', () => {
+describe('planner load: ?week= validation', () => {
 	const loadCtx = (search: string) =>
 		({
 			request: new Request(`https://example.com/planner${search}`),

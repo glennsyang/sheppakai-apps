@@ -17,7 +17,7 @@
 
 	// Track what the user switched *off* rather than what's on: every pantry item is
 	// selected by default (including ones added later), and the user's choices survive
-	// load invalidations instead of being reset by an effect (#168).
+	// load invalidations instead of being reset by an effect.
 	let deselected = $state<Set<string>>(new Set());
 	const selectedItems = $derived(
 		new Set(data.pantryItems.map((i) => i.name).filter((name) => !deselected.has(name)))
