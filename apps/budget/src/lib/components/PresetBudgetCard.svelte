@@ -61,7 +61,7 @@
 
 			toast[type](text);
 
-			await update();
+			await update({ navigate: false });
 		};
 </script>
 
