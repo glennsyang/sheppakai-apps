@@ -32,11 +32,9 @@
 		"db:studio": "drizzle-kit studio"
 	},
 	"dependencies": {
-		"@anthropic-ai/sdk": "^1.13.0",
 		"@better-auth/api-key": "catalog:",
 		"@better-auth/passkey": "catalog:",
 		"@getbrevo/brevo": "catalog:",
-		"@google/genai": "^3.6.1",
 		"@sentry/sveltekit": "catalog:",
 		"@sheppakai/logger": "workspace:*",
 		"@sheppakai/shared": "workspace:*",

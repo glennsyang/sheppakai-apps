@@ -29,6 +29,8 @@ export type ExtractJsonRequest = {
 	apiKey: string | undefined;
 	model: string;
 	prompt: string;
+	/** System instructions, sent apart from the prompt. Left out when not set. */
+	system?: string;
 	/** Left out for text-only requests. */
 	image?: AiImage | null;
 	/**
@@ -72,6 +74,7 @@ async function extractWithClaude({
 	apiKey,
 	model,
 	prompt,
+	system,
 	image,
 	schemas
 }: ExtractJsonRequest): Promise<unknown> {
@@ -95,6 +98,7 @@ async function extractWithClaude({
 		body: JSON.stringify({
 			model,
 			max_tokens: 4096,
+			...(system ? { system } : {}),
 			output_config: { effort: 'low', format: { type: 'json_schema', schema: schemas.claude } },
 			messages: [{ role: 'user', content }]
 		}),
@@ -152,6 +156,7 @@ async function extractWithGemini({
 	apiKey,
 	model,
 	prompt,
+	system,
 	image,
 	schemas
 }: ExtractJsonRequest): Promise<unknown> {
@@ -164,6 +169,7 @@ async function extractWithGemini({
 		method: 'POST',
 		headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
 		body: JSON.stringify({
+			...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
 			contents: [{ parts }],
 			generationConfig: {
 				// 'low' measured ~2.5s vs ~12s at the default, with the same extraction.

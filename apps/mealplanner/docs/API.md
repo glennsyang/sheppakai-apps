@@ -132,11 +132,13 @@ updated week. `404` if nothing was planned.
 
 ### Suggestions
 
-`POST /api/v1/suggestions` — requires `suggest:write`. Runs the same Gemini dinner suggestion as the
-Suggest page. Body: `{ "items": ["chicken", "rice", "broccoli"] }` (1-15 pantry item names). Returns
-`200` with an array of suggestions (`name`, `description`, `ingredients`, `steps`,
-`prepTimeMinutes`, `servings`). Nothing is saved: save one with `POST /api/v1/recipes`, then plan it
-with `PUT /api/v1/plans/…`.
+`POST /api/v1/suggestions` — requires `suggest:write`. Runs the same pantry Suggestion as the
+Suggest page (household history included; Gemini first, Claude as the fallback). Body:
+`{ "items": ["chicken", "rice", "broccoli"] }` (1-15 pantry item names). Returns `200` with an array
+of suggestions (`name`, `description`, `ingredients`, `steps`, `prepTimeMinutes`, `servings`).
+Nothing is saved: save one with `POST /api/v1/recipes`, then plan it with `PUT /api/v1/plans/…`.
 
 Each call spends AI tokens, so this endpoint has its own limit of **10 requests per minute per key**
-(`429 rate_limited` with a `Retry-After` header), on top of the general per-key limit.
+(`429 rate_limited` with a `Retry-After` header and the message
+`Too many requests. Please try again in N seconds.`), on top of the general per-key limit. Each call
+is recorded in the API audit log, success or failure.

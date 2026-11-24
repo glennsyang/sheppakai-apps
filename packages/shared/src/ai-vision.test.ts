@@ -97,6 +97,17 @@ describe('extractJson with Gemini', () => {
 		expect(sentRequest().body.contents[0].parts).toEqual([{ text: 'Read this.' }]);
 	});
 
+	it('sends system instructions only when given', async () => {
+		fetchMock.mockResolvedValue(geminiResponse(JSON.stringify(payload)));
+		await extractJson(request());
+		expect(sentRequest().body).not.toHaveProperty('systemInstruction');
+
+		fetchMock.mockClear();
+		fetchMock.mockResolvedValue(geminiResponse(JSON.stringify(payload)));
+		await extractJson(request({ system: 'Be a chef.' }));
+		expect(sentRequest().body.systemInstruction).toEqual({ parts: [{ text: 'Be a chef.' }] });
+	});
+
 	it('throws on a non-2xx response', async () => {
 		fetchMock.mockResolvedValue(new Response('quota', { status: 429 }));
 		await expect(extractJson(request())).rejects.toThrow('status 429');
@@ -157,6 +168,17 @@ describe('extractJson with Claude', () => {
 		await extractJson(request({ provider: 'claude', image: null }));
 
 		expect(sentRequest().body.messages[0].content).toEqual([{ type: 'text', text: 'Read this.' }]);
+	});
+
+	it('sends system instructions only when given', async () => {
+		fetchMock.mockResolvedValue(claudeResponse(JSON.stringify(payload)));
+		await extractJson(request({ provider: 'claude' }));
+		expect(sentRequest().body).not.toHaveProperty('system');
+
+		fetchMock.mockClear();
+		fetchMock.mockResolvedValue(claudeResponse(JSON.stringify(payload)));
+		await extractJson(request({ provider: 'claude', system: 'Be a chef.' }));
+		expect(sentRequest().body.system).toBe('Be a chef.');
 	});
 
 	it('throws when Claude stops for any reason but end_turn', async () => {

@@ -110,11 +110,14 @@ src/
 │       │   └── index.ts         # betterAuth instance
 │       ├── api/                 # /api/v1 bindings: requireApiKey, audit log, handleApiWrite, request schemas
 │       ├── ai/
-│       │   ├── gemini.ts        # suggestMeals() — pantry → dinner suggestions
-│       │   ├── claude.ts        # suggestVariations() — variations on a meal
-│       │   ├── endpoint.ts      # createAiEndpoint() — auth, rate limit, body parse for both
-│       │   ├── models.ts        # GEMINI_MODEL + GEMINI_API_VERSION (v1beta) for gemini.ts and recipe import
+│       │   ├── endpoint.ts      # createAiEndpoint() + sessionCaller / apiKeyCaller(scope)
+│       │   ├── models.ts        # GEMINI_MODEL, CLAUDE_SUGGESTION_MODEL, CLAUDE_IMPORT_MODEL
 │       │   └── promptSafety.ts  # sanitizePromptText() for user text sent to either model
+│       ├── suggestions/         # suggest() — pantry Suggestions and Variations (see AI Integration)
+│       │   ├── index.ts         # default suggest(), bound to Gemini + Claude via extractJson
+│       │   ├── suggester.ts     # createSuggester({ models, now }): history → prompt → model → filter
+│       │   ├── prompts.ts       # system prompts, user prompts, output schemas
+│       │   └── history.ts       # Recently Cooked / Favorites / Disliked from the DB; repeat filter
 │       ├── recipe-import/       # URL + photo import: safe-fetch (SSRF guard), json-ld, html-text, ai-extract
 │       └── services/
 │           ├── pantry.ts
@@ -134,11 +137,12 @@ src/
 │   │   └── admin/               # Users, API keys, API logs
 │   ├── api/auth/[...all]/       # better-auth request handler
 │   ├── api/healthz/
-│   ├── api/suggest/             # Gemini meal suggestions
-│   ├── api/variations/          # Claude recipe variations
+│   ├── api/suggest/             # pantry Suggestions
+│   ├── api/variations/          # Variations on a dish
 │   └── api/v1/                  # External API (API keys + scopes), see docs/API.md
 └── tests/                       # Vitest suites
     ├── lib/                     # server helpers, AI endpoint, prompt safety, email, …
+    ├── suggestions/             # suggest() with in-memory SQLite and fake model adapters
     ├── routes/                  # load/action tests per route
     ├── schemas/                 # pantry.test.ts, mealPlan.test.ts
     └── services/                # pantry, mealPlan, mealPlanAtomicity
@@ -198,21 +202,26 @@ pnpm db:studio    # Open Drizzle visual browser
 
 ## AI Integration
 
-Two providers, one per feature. Both return typed `MealSuggestion[]` and validate the model output
-with `pickValidSuggestions` (`#lib/schemas/mealPlan.js`).
+One module for every **Suggestion**: `suggest(request)` in `src/lib/server/suggestions/`, where
+`request` is `{ kind: 'pantry', items }` or `{ kind: 'variation', of: recipeName }`. Counts (3–5 vs
+2–3) and prompts are internal. Routes never load history or pick a provider themselves.
 
-- **Suggestions — Gemini** (`src/lib/server/ai/gemini.ts`, model `GEMINI_MODEL` in `ai/models.ts`,
-  `GEMINI_API_KEY`). The client is pinned to the `v1beta` API: preview models 404 on
-  `@google/genai`'s default `v1` (#290). `suggestMeals(pantryItems, history?)` uses a JSON response
-  schema. Served by `POST /api/suggest` and `POST /api/v1/suggestions`, which both pass
-  `getSuggestionHistory()` (`services/suggestionHistory.ts`): recipes cooked in the last 14 days
-  (never re-suggested; also filtered from the output), 4–5★ favorites and 1–2★ dislikes.
-- **Variations — Claude** (`src/lib/server/ai/claude.ts`, model `claude-sonnet-4-6`,
-  `ANTHROPIC_API_KEY`): `suggestVariations(mealName)` uses tool use for typed output. Served by
-  `POST /api/variations`.
-- Both routes are built with `createAiEndpoint()` (`ai/endpoint.ts`): session check, per-user rate
-  limit (10/min), JSON body validated with the route's Zod schema, `apiSuccess` / `apiError`
-  responses.
+- **History** is loaded by the module (`history.ts`): **Recently Cooked** (cooked in the last 14
+  days) and **Disliked** (1–2★) for both kinds, plus **Favorites** (4–5★, not cooked recently) for
+  pantry Suggestions. Recently Cooked dishes are also filtered from the output; if that leaves
+  nothing, the unfiltered list is returned.
+- **Models**: both kinds go through `extractJson` (`@sheppakai/shared/ai-vision`, with its optional
+  `system` field). **Gemini first** (`GEMINI_MODEL`), **Claude as the fallback**
+  (`CLAUDE_SUGGESTION_MODEL`) on any Gemini failure: timeout, 429, 5xx, no text, malformed JSON, or
+  zero suggestions passing `pickValidSuggestions`. No `GEMINI_API_KEY` → straight to Claude. There
+  is no retry loop; the fallback replaces it.
+- **Testing**: `createSuggester({ models, now })` takes fake model adapters; see
+  `src/tests/suggestions/suggest.test.ts`.
+- **Routes** are built with `createAiEndpoint({ caller, … })` (`ai/endpoint.ts`): rate limit (10/min
+  per caller), JSON body validated with the route's Zod schema, shared 429 wording, `apiSuccess` /
+  `apiError` responses. `caller` is `sessionCaller` (signed-in user; `POST /api/suggest`,
+  `POST /api/variations`) or `apiKeyCaller(scope)` (`requireApiKey`, `handleApiWrite` audit,
+  rate-limit key `apikey:<id>`; `POST /api/v1/suggestions`).
 - User text goes through `sanitizePromptText()` (`ai/promptSafety.ts`) and is wrapped in delimiter
   tags the system prompts treat as data only.
 - **Recipe import** (`src/lib/server/recipe-import/`, `/recipes/new`): a URL is fetched by
