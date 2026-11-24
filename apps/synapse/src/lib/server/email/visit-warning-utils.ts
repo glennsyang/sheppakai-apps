@@ -1,4 +1,4 @@
-import { getTodayString } from '#lib/utils/date.js';
+import { addDaysToDateString, getTodayString } from '#lib/utils/date.js';
 import { calculatePersonVisitStatus, type VisitStatusThresholds } from '#lib/utils/visit-status.js';
 
 type VisitWarningStatus = 'yellow' | 'critical';
@@ -33,6 +33,17 @@ export function getVisitWarningStatus(
 	}
 
 	return null;
+}
+
+const VISIT_WARNING_RESEND_DAYS = 7;
+
+/**
+ * True when a warning sent at `sentAt` falls within the last 7 Pacific days
+ * (today and the 6 days before it), so it should not be sent again yet.
+ */
+export function wasVisitWarningSentRecently(sentAt: Date, now: Date = new Date()): boolean {
+	const cutoff = addDaysToDateString(getTodayString(now), -VISIT_WARNING_RESEND_DAYS);
+	return getTodayString(sentAt) > cutoff;
 }
 
 export function formatVisitWarningDate(lastVisitDate: string): string {

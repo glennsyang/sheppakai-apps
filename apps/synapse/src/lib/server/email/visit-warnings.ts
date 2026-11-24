@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { logger } from '#lib/server/logger.js';
 import { getVisitStatusThresholdsByUserIds } from '#lib/server/visit-status-settings.js';
@@ -11,7 +11,8 @@ import {
 	buildVisitWarningEntityId,
 	buildVisitWarningSubject,
 	formatVisitWarningDate,
-	getVisitWarningStatus
+	getVisitWarningStatus,
+	wasVisitWarningSentRecently
 } from './visit-warning-utils';
 
 type VisitWarningCandidate = {
@@ -97,22 +98,20 @@ export async function processVisitWarnings(): Promise<void> {
 		const formattedLastVisitDate = formatVisitWarningDate(lastVisitDate);
 		const warningEntityId = buildVisitWarningEntityId(person.id, warningStatus);
 
-		// Check if already sent a warning in the last 7 days
-		const sevenDaysAgo = new Date();
-		sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-		const recentWarning = db
-			.select()
+		// Check if already sent a warning in the last 7 Pacific days
+		const lastWarning = db
+			.select({ sentAt: emailNotifications.sentAt })
 			.from(emailNotifications)
 			.where(
 				and(
 					eq(emailNotifications.userId, userData.id),
 					eq(emailNotifications.notificationType, 'visit_warning'),
-					eq(emailNotifications.entityId, warningEntityId),
-					gte(emailNotifications.sentAt, sevenDaysAgo)
+					eq(emailNotifications.entityId, warningEntityId)
 				)
 			)
+			.orderBy(sql`${emailNotifications.sentAt} DESC`)
 			.get();
+		const recentWarning = !!lastWarning && wasVisitWarningSentRecently(lastWarning.sentAt);
 
 		if (recentWarning) {
 			logger.debug(`   ⏭️  Already sent ${warningStatus} warning in last 7 days`, {
