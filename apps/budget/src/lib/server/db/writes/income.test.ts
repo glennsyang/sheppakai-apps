@@ -41,11 +41,26 @@ const mockFindById = vi.hoisted(() =>
 	}))
 );
 
-vi.mock('#lib/server/db/index.js', () => ({ getDb: () => ({ insert: mockInsert }) }));
-vi.mock('#lib/server/db/queries/index.js', () => ({ incomeQueries: { findById: mockFindById } }));
-vi.mock('#lib/server/db/schema/index.js', () => ({ income: {} }));
+const mockUpdateWhere = vi.hoisted(() => vi.fn<(where: unknown) => Promise<void>>(async () => {}));
+const mockUpdateSet = vi.hoisted(() =>
+	vi.fn<(values: Record<string, unknown>) => { where: typeof mockUpdateWhere }>(() => ({
+		where: mockUpdateWhere
+	}))
+);
+const mockDeleteWhere = vi.hoisted(() => vi.fn<(where: unknown) => Promise<void>>(async () => {}));
 
-import { createIncome } from './income';
+vi.mock('#lib/server/db/index.js', () => ({
+	getDb: () => ({
+		insert: mockInsert,
+		update: () => ({ set: mockUpdateSet }),
+		delete: () => ({ where: mockDeleteWhere })
+	})
+}));
+vi.mock('drizzle-orm', () => ({ eq: (field: unknown, value: unknown) => ({ field, value }) }));
+vi.mock('#lib/server/db/queries/index.js', () => ({ incomeQueries: { findById: mockFindById } }));
+vi.mock('#lib/server/db/schema/index.js', () => ({ income: { id: 'income.id' } }));
+
+import { createIncome, deleteIncome, updateIncome } from './income';
 
 describe('createIncome', () => {
 	beforeEach(() => {
@@ -87,5 +102,30 @@ describe('createIncome', () => {
 				'user-1'
 			)
 		).rejects.toThrow('Failed to re-fetch income income-1 after creation');
+	});
+});
+
+describe('updateIncome', () => {
+	it('formats the date for storage and stamps updatedAt', async () => {
+		await updateIncome('inc-1', {
+			name: 'Pay',
+			description: 'June',
+			date: '2026-06-15',
+			amount: 3000
+		});
+
+		const row = mockUpdateSet.mock.calls[0][0];
+		expect(row).toMatchObject({ name: 'Pay', description: 'June', amount: 3000 });
+		expect(String(row.date)).toMatch(/^2026-06-15/);
+		expect(row.updatedAt).toBeInstanceOf(Date);
+		expect(row).not.toHaveProperty('userId');
+		expect(mockUpdateWhere).toHaveBeenCalledWith({ field: 'income.id', value: 'inc-1' });
+	});
+});
+
+describe('deleteIncome', () => {
+	it('deletes the row by id', async () => {
+		await deleteIncome('inc-2');
+		expect(mockDeleteWhere).toHaveBeenCalledWith({ field: 'income.id', value: 'inc-2' });
 	});
 });

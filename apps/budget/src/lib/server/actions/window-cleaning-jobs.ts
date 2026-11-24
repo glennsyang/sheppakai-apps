@@ -3,29 +3,24 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { sendInvoiceSchema, windowCleaningJobSchema } from '#lib/formSchemas/index.js';
 import { windowCleaningJobQueries } from '#lib/server/db/queries/index.js';
-import { windowCleaningJob } from '#lib/server/db/schema/index.js';
 import {
+	deleteWindowCleaningJob,
 	markWindowCleaningJobInvoiced,
-	toWindowCleaningJobRow
+	updateWindowCleaningJob
 } from '#lib/server/db/writes/window-cleaning-jobs.js';
 import { sendWindowCleaningInvoiceEmail } from '#lib/server/email/index.js';
 import { logger } from '#lib/server/logger.js';
 
 import { requireAuth } from './auth-guard';
-import { deleteAction, updateAction } from './crud-helpers';
+import { writeDeleteAction, writeUpdateAction } from './crud-helpers';
 import { invalidForm } from './form-responses';
 
-export const updateJob = updateAction({
-	schema: windowCleaningJobSchema,
-	table: windowCleaningJob,
-	entityName: 'Job',
-	transformUpdate: (data) => toWindowCleaningJobRow(data)
-});
+export const updateJob = writeUpdateAction(
+	{ schema: windowCleaningJobSchema, entityName: 'Job' },
+	updateWindowCleaningJob
+);
 
-export const deleteJob = deleteAction({
-	table: windowCleaningJob,
-	entityName: 'Job'
-});
+export const deleteJob = writeDeleteAction({ entityName: 'Job' }, deleteWindowCleaningJob);
 
 /** Emails the customer an invoice for one job and stamps `invoiceSentAt`. */
 export const sendInvoice = requireAuth(async (event, user) => {

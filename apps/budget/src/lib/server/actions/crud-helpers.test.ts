@@ -21,15 +21,10 @@ type MockState = {
 	beforeCreate: Mock<
 		(data: Record<string, unknown>, userId: string) => Promise<void | { error: string }>
 	>;
-	afterCreate: Mock<(id: string, data: Record<string, unknown>) => Promise<void>>;
 	beforeUpdate: Mock<
 		(id: string, data: Record<string, unknown>, userId: string) => Promise<unknown>
 	>;
-	afterUpdate: Mock<
-		(id: string, data: Partial<Record<string, unknown>>, context: unknown) => Promise<void>
-	>;
 	beforeDelete: Mock<(id: string, userId: string) => Promise<void | { error: string }>>;
-	afterDelete: Mock<(id: string) => Promise<void>>;
 	loggerInfo: ReturnType<typeof vi.fn>;
 	loggerError: ReturnType<typeof vi.fn>;
 	requireAuth: ReturnType<typeof vi.fn>;
@@ -76,11 +71,8 @@ const mockState: MockState = vi.hoisted((): MockState => {
 			delete: vi.fn<() => void>()
 		},
 		beforeCreate: vi.fn<() => void>(),
-		afterCreate: vi.fn<() => void>(),
 		beforeUpdate: vi.fn<() => void>(),
-		afterUpdate: vi.fn<() => void>(),
 		beforeDelete: vi.fn<() => void>(),
-		afterDelete: vi.fn<() => void>(),
 		loggerInfo: vi.fn<() => void>(),
 		loggerError: vi.fn<() => void>(),
 		requireAuth: vi.fn<() => void>()
@@ -102,19 +94,12 @@ const mockState: MockState = vi.hoisted((): MockState => {
 	state.beforeCreate = vi.fn<
 		(data: Record<string, unknown>, userId: string) => Promise<void | { error: string }>
 	>(async () => undefined);
-	state.afterCreate = vi.fn<(id: string, data: Record<string, unknown>) => Promise<void>>(
-		async () => undefined
-	);
 	state.beforeUpdate = vi.fn<
 		(id: string, data: Record<string, unknown>, userId: string) => Promise<unknown>
-	>(async () => undefined);
-	state.afterUpdate = vi.fn<
-		(id: string, data: Partial<Record<string, unknown>>, context: unknown) => Promise<void>
 	>(async () => undefined);
 	state.beforeDelete = vi.fn<(id: string, userId: string) => Promise<void | { error: string }>>(
 		async () => undefined
 	);
-	state.afterDelete = vi.fn<(id: string) => Promise<void>>(async () => undefined);
 	state.requireAuth = vi.fn<
 		(
 			handler: (event: unknown, user: { id: string }) => Promise<unknown>
@@ -173,7 +158,7 @@ vi.mock('./auth-guard', () => ({
 	requireAuth: mockState.requireAuth
 }));
 
-import { createAction, deleteAction, updateAction } from './crud-helpers';
+import { createAction, createWriteActions, deleteAction, updateAction } from './crud-helpers';
 
 describe('crud-helpers', () => {
 	const baseSchema = z.object({
@@ -216,11 +201,8 @@ describe('crud-helpers', () => {
 		mockState.deleteWhere.mockClear();
 		mockState.deleteFrom.mockClear();
 		mockState.beforeCreate.mockClear();
-		mockState.afterCreate.mockClear();
 		mockState.beforeUpdate.mockClear();
-		mockState.afterUpdate.mockClear();
 		mockState.beforeDelete.mockClear();
-		mockState.afterDelete.mockClear();
 		mockState.loggerInfo.mockClear();
 		mockState.loggerError.mockClear();
 	});
@@ -251,12 +233,9 @@ describe('crud-helpers', () => {
 		});
 	});
 
-	it('createAction inserts transformed data, and runs hooks', async () => {
+	it('createAction inserts transformed data after the beforeCreate hook', async () => {
 		const beforeCreate = mockState.beforeCreate as unknown as NonNullable<
 			Parameters<typeof createAction>[0]['beforeCreate']
-		>;
-		const afterCreate = mockState.afterCreate as unknown as NonNullable<
-			Parameters<typeof createAction>[0]['afterCreate']
 		>;
 
 		const action = createAction({
@@ -264,7 +243,6 @@ describe('crud-helpers', () => {
 			table: mockTable,
 			entityName: 'Thing',
 			beforeCreate,
-			afterCreate,
 			transformCreate: (data) => ({ ...data, id: 'should-be-removed' })
 		});
 
@@ -281,10 +259,6 @@ describe('crud-helpers', () => {
 		expect(inserted.userId).toBe('user-1');
 		expect(inserted).not.toHaveProperty('createdBy');
 		expect(inserted).not.toHaveProperty('updatedBy');
-		expect(mockState.afterCreate).toHaveBeenCalledWith('new-id', {
-			id: 'new-id',
-			name: 'created'
-		});
 		expect(mockState.message).toHaveBeenCalledWith(mockState.superValidateResult, {
 			type: 'success',
 			text: 'Thing created successfully'
@@ -320,12 +294,9 @@ describe('crud-helpers', () => {
 		});
 	});
 
-	it('updateAction updates record and runs hooks', async () => {
+	it('updateAction updates the record after the beforeUpdate hook', async () => {
 		const beforeUpdate = mockState.beforeUpdate as unknown as NonNullable<
 			Parameters<typeof updateAction>[0]['beforeUpdate']
-		>;
-		const afterUpdate = mockState.afterUpdate as unknown as NonNullable<
-			Parameters<typeof updateAction>[0]['afterUpdate']
 		>;
 
 		const action = updateAction({
@@ -333,7 +304,6 @@ describe('crud-helpers', () => {
 			table: mockTable,
 			entityName: 'Thing',
 			beforeUpdate,
-			afterUpdate,
 			transformUpdate: (data) => ({ ...data, id: 'remove-me' })
 		});
 
@@ -353,11 +323,6 @@ describe('crud-helpers', () => {
 			field: 'id-column',
 			value: 'record-1'
 		});
-		expect(mockState.afterUpdate).toHaveBeenCalledWith(
-			'record-1',
-			expect.objectContaining({ name: 'Row 1' }),
-			undefined
-		);
 		expect(mockState.message).toHaveBeenCalledWith(mockState.superValidateResult, {
 			type: 'success',
 			text: 'Thing updated successfully'
@@ -368,32 +333,6 @@ describe('crud-helpers', () => {
 			message: { type: 'success', text: 'Thing updated successfully' },
 			__message: true
 		});
-	});
-
-	it('updateAction passes beforeUpdate context to afterUpdate', async () => {
-		mockState.beforeUpdate.mockResolvedValue({ previousAmount: 10 });
-		const beforeUpdate = mockState.beforeUpdate as unknown as NonNullable<
-			Parameters<typeof updateAction>[0]['beforeUpdate']
-		>;
-		const afterUpdate = mockState.afterUpdate as unknown as NonNullable<
-			Parameters<typeof updateAction>[0]['afterUpdate']
-		>;
-
-		const action = updateAction({
-			schema: baseSchema,
-			table: mockTable,
-			entityName: 'Thing',
-			beforeUpdate,
-			afterUpdate
-		});
-
-		await action(makeEvent() as never);
-
-		expect(mockState.afterUpdate).toHaveBeenCalledWith(
-			'record-1',
-			expect.objectContaining({ name: 'Row 1' }),
-			{ previousAmount: 10 }
-		);
 	});
 
 	it('createAction returns hook error from beforeCreate without inserting', async () => {
@@ -430,16 +369,12 @@ describe('crud-helpers', () => {
 		const beforeUpdate = mockState.beforeUpdate as unknown as NonNullable<
 			Parameters<typeof updateAction>[0]['beforeUpdate']
 		>;
-		const afterUpdate = mockState.afterUpdate as unknown as NonNullable<
-			Parameters<typeof updateAction>[0]['afterUpdate']
-		>;
 
 		const action = updateAction({
 			schema: baseSchema,
 			table: mockTable,
 			entityName: 'Thing',
-			beforeUpdate,
-			afterUpdate
+			beforeUpdate
 		});
 
 		const result = await action(makeEvent() as never);
@@ -451,7 +386,6 @@ describe('crud-helpers', () => {
 			__message: true
 		});
 		expect(mockState.update).not.toHaveBeenCalled();
-		expect(mockState.afterUpdate).not.toHaveBeenCalled();
 		expect(mockState.loggerError).not.toHaveBeenCalled();
 	});
 
@@ -480,14 +414,10 @@ describe('crud-helpers', () => {
 
 	it('deleteAction deletes the record and returns a success message', async () => {
 		mockState.superValidateResult = { valid: true, data: { id: 'row-1' } };
-		const afterDelete = mockState.afterDelete as unknown as NonNullable<
-			Parameters<typeof deleteAction>[0]['afterDelete']
-		>;
 
 		const action = deleteAction({
 			table: mockTable,
-			entityName: 'Thing',
-			afterDelete
+			entityName: 'Thing'
 		});
 
 		const result = await action(makeEvent([['id', 'row-1']]) as never);
@@ -497,7 +427,6 @@ describe('crud-helpers', () => {
 			field: 'id-column',
 			value: 'row-1'
 		});
-		expect(mockState.afterDelete).toHaveBeenCalledWith('row-1');
 		expect(result).toEqual({
 			status: 200,
 			form: mockState.superValidateResult,
@@ -587,6 +516,104 @@ describe('crud-helpers', () => {
 				text: 'Failed to create thing. A database error occurred.'
 			},
 			__message: true
+		});
+	});
+
+	describe('createWriteActions (write-module envelope)', () => {
+		const writes = {
+			create: vi.fn<(data: Record<string, unknown>, userId: string) => Promise<unknown>>(),
+			update:
+				vi.fn<(id: string, data: Record<string, unknown>, userId: string) => Promise<unknown>>(),
+			delete: vi.fn<(id: string, userId: string) => Promise<unknown>>()
+		};
+		const actions = () =>
+			createWriteActions({ schema: baseSchema, entityName: 'Thing', ...writes });
+
+		beforeEach(() => {
+			writes.create.mockReset().mockResolvedValue({ id: 'new-id' });
+			writes.update.mockReset().mockResolvedValue(undefined);
+			writes.delete.mockReset().mockResolvedValue(undefined);
+		});
+
+		it('create passes the validated data and user to the write, and touches no table', async () => {
+			const result = await actions().create(makeEvent() as never);
+
+			expect(writes.create).toHaveBeenCalledWith(
+				{ id: 'record-1', name: 'Row 1', amount: 10 },
+				'user-1'
+			);
+			expect(mockState.insert).not.toHaveBeenCalled();
+			expect(result).toEqual({
+				status: 200,
+				form: mockState.superValidateResult,
+				message: { type: 'success', text: 'Thing created successfully' },
+				__message: true
+			});
+		});
+
+		it('create answers a 500 message when the write throws', async () => {
+			writes.create.mockRejectedValueOnce(new Error('write failed'));
+
+			const result = await actions().create(makeEvent() as never);
+
+			expect(mockState.loggerError).toHaveBeenCalled();
+			expect(result).toEqual({
+				status: 500,
+				form: mockState.superValidateResult,
+				message: { type: 'error', text: 'Failed to create thing. A database error occurred.' },
+				__message: true
+			});
+		});
+
+		it('update passes the form id, data and user to the write', async () => {
+			const result = await actions().update(makeEvent() as never);
+
+			expect(writes.update).toHaveBeenCalledWith(
+				'record-1',
+				{ id: 'record-1', name: 'Row 1', amount: 10 },
+				'user-1'
+			);
+			expect(result).toMatchObject({
+				status: 200,
+				message: { type: 'success', text: 'Thing updated successfully' }
+			});
+		});
+
+		it('update requires an id and does not call the write without one', async () => {
+			mockState.superValidateResult = { valid: true, data: { name: 'No ID' } };
+
+			const result = await actions().update(makeEvent() as never);
+
+			expect(writes.update).not.toHaveBeenCalled();
+			expect(result).toMatchObject({
+				status: 400,
+				message: { type: 'error', text: 'ID is required for update' }
+			});
+		});
+
+		it('update answers a 400 banner when the write rejects on a business rule', async () => {
+			writes.update.mockResolvedValueOnce({ error: 'Not allowed' });
+
+			const result = await actions().update(makeEvent() as never);
+
+			expect(mockState.loggerError).not.toHaveBeenCalled();
+			expect(result).toMatchObject({
+				status: 400,
+				message: { type: 'error', text: 'Not allowed' }
+			});
+		});
+
+		it('delete passes the id and user to the write', async () => {
+			mockState.superValidateResult = { valid: true, data: { id: 'row-9' } };
+
+			const result = await actions().delete(makeEvent([['id', 'row-9']]) as never);
+
+			expect(writes.delete).toHaveBeenCalledWith('row-9', 'user-1');
+			expect(mockState.deleteFrom).not.toHaveBeenCalled();
+			expect(result).toMatchObject({
+				status: 200,
+				message: { type: 'success', text: 'Thing deleted successfully' }
+			});
 		});
 	});
 });

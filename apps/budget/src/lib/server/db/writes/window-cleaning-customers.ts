@@ -18,8 +18,12 @@ export type WindowCleaningCustomerInput = {
 	recleanIntervalDays?: number;
 };
 
-/** Input → row mapping shared by the UI form actions and the API write path. */
-export function toWindowCleaningCustomerRow(input: WindowCleaningCustomerInput) {
+/**
+ * The single write path for Customers: the `/window-cleaning` form actions and
+ * `/api/v1/window-cleaning/customers` (#373).
+ */
+
+function toWindowCleaningCustomerRow(input: WindowCleaningCustomerInput) {
 	return {
 		name: input.name,
 		address: input.address,

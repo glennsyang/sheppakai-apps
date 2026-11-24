@@ -7,7 +7,7 @@ import { withUpdatedAt } from '#lib/server/db/utils.js';
 import type { WindowCleaningJob } from '#lib/types.js';
 import { formatDateForStorage } from '#lib/utils/dates.js';
 
-export type CreateWindowCleaningJobInput = {
+export type WindowCleaningJobInput = {
 	customerId: string;
 	jobDate: string;
 	jobTime?: string;
@@ -17,8 +17,12 @@ export type CreateWindowCleaningJobInput = {
 	notes?: string;
 };
 
-/** Input → row mapping shared by the UI form actions and the API write path. */
-export function toWindowCleaningJobRow(input: CreateWindowCleaningJobInput) {
+/**
+ * The single write path for Jobs: the `/window-cleaning` form actions and
+ * `/api/v1/window-cleaning/jobs` (#373).
+ */
+
+function toWindowCleaningJobRow(input: WindowCleaningJobInput) {
 	return {
 		customerId: input.customerId,
 		jobDate: formatDateForStorage(input.jobDate),
@@ -31,7 +35,7 @@ export function toWindowCleaningJobRow(input: CreateWindowCleaningJobInput) {
 }
 
 export async function createWindowCleaningJob(
-	input: CreateWindowCleaningJobInput,
+	input: WindowCleaningJobInput,
 	userId: string
 ): Promise<WindowCleaningJob> {
 	const [inserted] = await getDb()
@@ -44,6 +48,20 @@ export async function createWindowCleaningJob(
 		throw new Error(`Failed to re-fetch window cleaning job ${inserted.id} after creation`);
 	}
 	return withRelations;
+}
+
+export async function updateWindowCleaningJob(
+	id: string,
+	input: WindowCleaningJobInput
+): Promise<void> {
+	await getDb()
+		.update(windowCleaningJob)
+		.set(withUpdatedAt(toWindowCleaningJobRow(input)))
+		.where(eq(windowCleaningJob.id, id));
+}
+
+export async function deleteWindowCleaningJob(id: string): Promise<void> {
+	await getDb().delete(windowCleaningJob).where(eq(windowCleaningJob.id, id));
 }
 
 /** Records when the job's invoice email went out. */

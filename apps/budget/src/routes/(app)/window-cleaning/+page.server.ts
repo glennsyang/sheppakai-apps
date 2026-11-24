@@ -8,17 +8,20 @@ import {
 	windowCleaningJobSchema
 } from '#lib/formSchemas/index.js';
 import { requireAuth } from '#lib/server/actions/auth-guard.js';
-import { createAction, updateAction } from '#lib/server/actions/crud-helpers.js';
+import { writeCreateAction, writeUpdateAction } from '#lib/server/actions/crud-helpers.js';
 import { deleteJob, sendInvoice, updateJob } from '#lib/server/actions/window-cleaning-jobs.js';
 import { getDb } from '#lib/server/db/index.js';
 import {
 	windowCleaningCustomerQueries,
 	windowCleaningJobQueries
 } from '#lib/server/db/queries/index.js';
-import { windowCleaningCustomer, windowCleaningJob } from '#lib/server/db/schema/index.js';
+import { windowCleaningCustomer } from '#lib/server/db/schema/index.js';
 import { withUpdatedAt } from '#lib/server/db/utils.js';
-import { toWindowCleaningCustomerRow } from '#lib/server/db/writes/window-cleaning-customers.js';
-import { toWindowCleaningJobRow } from '#lib/server/db/writes/window-cleaning-jobs.js';
+import {
+	createWindowCleaningCustomer,
+	updateWindowCleaningCustomer
+} from '#lib/server/db/writes/window-cleaning-customers.js';
+import { createWindowCleaningJob } from '#lib/server/db/writes/window-cleaning-jobs.js';
 import { logger } from '#lib/server/logger.js';
 import type { WindowCleaningJob } from '#lib/types.js';
 import { getCurrentPacificMonthYear, getPacificTodayDate } from '#lib/utils/dates.js';
@@ -129,19 +132,15 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions = {
-	createCustomer: createAction({
-		schema: windowCleaningCustomerSchema,
-		table: windowCleaningCustomer,
-		entityName: 'Customer',
-		transformCreate: (data, userId) => ({ ...toWindowCleaningCustomerRow(data), userId })
-	}),
+	createCustomer: writeCreateAction(
+		{ schema: windowCleaningCustomerSchema, entityName: 'Customer' },
+		createWindowCleaningCustomer
+	),
 
-	updateCustomer: updateAction({
-		schema: windowCleaningCustomerSchema,
-		table: windowCleaningCustomer,
-		entityName: 'Customer',
-		transformUpdate: (data) => toWindowCleaningCustomerRow(data)
-	}),
+	updateCustomer: writeUpdateAction(
+		{ schema: windowCleaningCustomerSchema, entityName: 'Customer' },
+		updateWindowCleaningCustomer
+	),
 
 	// Soft-delete: set deletedAt/deletedBy instead of hard delete, so this cannot use deleteAction
 	deleteCustomer: requireAuth(async (event, user) => {
@@ -172,12 +171,10 @@ export const actions = {
 		}
 	}),
 
-	createJob: createAction({
-		schema: windowCleaningJobSchema,
-		table: windowCleaningJob,
-		entityName: 'Job',
-		transformCreate: (data, userId) => ({ ...toWindowCleaningJobRow(data), userId })
-	}),
+	createJob: writeCreateAction(
+		{ schema: windowCleaningJobSchema, entityName: 'Job' },
+		createWindowCleaningJob
+	),
 
 	updateJob,
 	sendInvoice,

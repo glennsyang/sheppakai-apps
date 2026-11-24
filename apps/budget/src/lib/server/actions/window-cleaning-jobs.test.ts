@@ -7,8 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 type MessagePayload = { type: string; text: string };
 
 type MockState = {
-	updateAction: ReturnType<typeof vi.fn>;
-	deleteAction: ReturnType<typeof vi.fn>;
+	writeUpdateAction: ReturnType<typeof vi.fn>;
+	writeDeleteAction: ReturnType<typeof vi.fn>;
 	superValidateResult: { valid: boolean; data: Record<string, unknown> };
 	findById: ReturnType<typeof vi.fn>;
 	markInvoiced: ReturnType<typeof vi.fn>;
@@ -18,8 +18,8 @@ type MockState = {
 
 const mockState: MockState = vi.hoisted((): MockState => {
 	return {
-		updateAction: vi.fn<() => ReturnType<typeof vi.fn<() => void>>>(() => vi.fn<() => void>()),
-		deleteAction: vi.fn<() => ReturnType<typeof vi.fn<() => void>>>(() => vi.fn<() => void>()),
+		writeUpdateAction: vi.fn<() => ReturnType<typeof vi.fn<() => void>>>(() => vi.fn<() => void>()),
+		writeDeleteAction: vi.fn<() => ReturnType<typeof vi.fn<() => void>>>(() => vi.fn<() => void>()),
 		superValidateResult: { valid: true, data: { id: 'job-1' } },
 		findById: vi.fn<(id: string) => Promise<unknown>>(),
 		markInvoiced: vi.fn<(id: string, at: Date) => Promise<void>>(),
@@ -55,20 +55,17 @@ vi.mock('#lib/server/email/index.js', () => ({
 vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn<() => void>(), error: mockState.loggerError }
 }));
-// Keep the real row mapper (the transformUpdate tests below exercise it); stub only the write
+// Keep the real writes so the wiring below can be checked against them; stub only the invoice stamp
 vi.mock('#lib/server/db/writes/window-cleaning-jobs.js', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	markWindowCleaningJobInvoiced: mockState.markInvoiced
 }));
 // The writes module pulls in the db client
 vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => void>() }));
-vi.mock('#lib/utils/dates.js', () => ({
-	formatDateForStorage: (d: string) => `stored:${d}`
-}));
 
 vi.mock('./crud-helpers', () => ({
-	updateAction: mockState.updateAction,
-	deleteAction: mockState.deleteAction
+	writeUpdateAction: mockState.writeUpdateAction,
+	writeDeleteAction: mockState.writeDeleteAction
 }));
 
 // Mock schema and schema-dependent modules after mocks are wired
@@ -83,80 +80,29 @@ vi.mock('#lib/server/db/queries/index.js', () => ({
 	windowCleaningJobQueries: { findById: mockState.findById }
 }));
 
+import {
+	deleteWindowCleaningJob,
+	updateWindowCleaningJob
+} from '#lib/server/db/writes/window-cleaning-jobs.js';
+
 import { sendInvoice } from './window-cleaning-jobs';
 
 // Capture the config objects synchronously, right after the import above
 // registers them — Vitest's `clearMocks` (on by default) wipes call history
 // before each `it` runs, so reading `mock.calls` from inside a test would
 // always see an empty array.
-const [updateConfig] = mockState.updateAction.mock.calls[0] ?? [];
-const [deleteConfig] = mockState.deleteAction.mock.calls[0] ?? [];
+const [updateConfig, updateWrite] = mockState.writeUpdateAction.mock.calls[0] ?? [];
+const [deleteConfig, deleteWrite] = mockState.writeDeleteAction.mock.calls[0] ?? [];
 
 // ---------------------------------------------------------------------------
 // updateJob
 // ---------------------------------------------------------------------------
 
 describe('updateJob', () => {
-	it('calls updateAction with the correct entityName and schema', () => {
-		expect(updateConfig).toEqual(
-			expect.objectContaining({
-				entityName: 'Job',
-				schema: { _tag: 'mock-schema' },
-				table: expect.objectContaining({ _tag: 'mock-table' })
-			})
-		);
-	});
-
-	it('transformUpdate maps all fields correctly', () => {
-		const config = updateConfig as {
-			transformUpdate: (data: Record<string, unknown>) => Record<string, unknown>;
-		};
-
-		const result = config.transformUpdate({
-			customerId: 'cust-1',
-			jobDate: '2026-06-20',
-			jobTime: '10:00',
-			amountCharged: 150,
-			tip: 20,
-			durationHours: 2.5,
-			notes: 'Back windows'
-		});
-
-		expect(result).toEqual({
-			customerId: 'cust-1',
-			jobDate: 'stored:2026-06-20',
-			jobTime: '10:00',
-			amountCharged: 150,
-			tip: 20,
-			durationHours: 2.5,
-			notes: 'Back windows'
-		});
-	});
-
-	it('transformUpdate coerces falsy optional fields to null', () => {
-		const config = updateConfig as {
-			transformUpdate: (data: Record<string, unknown>) => Record<string, unknown>;
-		};
-
-		const result = config.transformUpdate({
-			customerId: 'cust-2',
-			jobDate: '2026-06-01',
-			jobTime: '',
-			amountCharged: 100,
-			tip: undefined,
-			durationHours: undefined,
-			notes: ''
-		});
-
-		expect(result).toEqual({
-			customerId: 'cust-2',
-			jobDate: 'stored:2026-06-01',
-			jobTime: null,
-			amountCharged: 100,
-			tip: 0,
-			durationHours: null,
-			notes: null
-		});
+	// The row mapping lives in the Job write module and is tested in writes/window-cleaning-jobs.test.ts.
+	it('wraps the Job write module in the update envelope', () => {
+		expect(updateConfig).toEqual({ entityName: 'Job', schema: { _tag: 'mock-schema' } });
+		expect(updateWrite).toBe(updateWindowCleaningJob);
 	});
 });
 
@@ -165,13 +111,10 @@ describe('updateJob', () => {
 // ---------------------------------------------------------------------------
 
 describe('deleteJob', () => {
-	// deleteJob is now nothing but a deleteAction, so all this file owes is the wiring —
-	// validation, the delete itself, and the response contract are covered in crud-helpers.test.ts.
-	it('delegates to deleteAction with the correct table and entityName', () => {
-		expect(deleteConfig).toEqual({
-			entityName: 'Job',
-			table: expect.objectContaining({ _tag: 'mock-table' })
-		});
+	// Validation and the response contract are covered in crud-helpers.test.ts.
+	it('wraps the Job write module in the delete envelope', () => {
+		expect(deleteConfig).toEqual({ entityName: 'Job' });
+		expect(deleteWrite).toBe(deleteWindowCleaningJob);
 	});
 });
 

@@ -4,10 +4,8 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 
 import type { Category } from '#lib';
 import { expenseSchema } from '#lib/formSchemas/index.js';
-import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
-import { expense } from '#lib/server/db/schema/index.js';
-import { toExpenseRow } from '#lib/server/db/writes/expenses.js';
-import { expenseBudgetAlertHooks } from '#lib/server/notifications/budget-threshold-alerts.js';
+import { createWriteActions } from '#lib/server/actions/crud-helpers.js';
+import { createExpense, deleteExpense, updateExpense } from '#lib/server/db/writes/expenses.js';
 import { getMonthRangeFromUrl, getYearDateRange } from '#lib/utils/dates.js';
 
 /** Fuel receipts are the expenses in this category; business receipts are everything else. */
@@ -26,11 +24,10 @@ export async function getReceiptLoadContext(url: URL, categories: Category[] | u
 }
 
 /** CRUD actions shared by both receipt pages; receipts are ordinary expenses. */
-export const receiptActions = createCrudActions({
+export const receiptActions = createWriteActions({
 	schema: expenseSchema,
-	table: expense,
 	entityName: 'Expense',
-	...expenseBudgetAlertHooks,
-	transformCreate: (data, userId) => ({ ...toExpenseRow(data), userId }),
-	transformUpdate: (data) => toExpenseRow(data)
+	create: createExpense,
+	update: updateExpense,
+	delete: deleteExpense
 });

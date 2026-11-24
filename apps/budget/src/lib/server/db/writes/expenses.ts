@@ -1,11 +1,24 @@
+import { eq } from 'drizzle-orm';
+
 import { getDb } from '#lib/server/db/index.js';
 import { expenseQueries } from '#lib/server/db/queries/index.js';
 import { expense } from '#lib/server/db/schema/index.js';
-import { evaluateCreatedExpenseBudgetAlert } from '#lib/server/notifications/budget-threshold-alerts.js';
+import { withUpdatedAt } from '#lib/server/db/utils.js';
+import {
+	buildExpenseBudgetAlertUpdateContext,
+	evaluateCreatedExpenseBudgetAlert,
+	evaluateUpdatedExpenseBudgetAlert
+} from '#lib/server/notifications/budget-threshold-alerts.js';
 import type { Expense } from '#lib/types.js';
 import { formatDateForStorage } from '#lib/utils/dates.js';
 
-export type CreateExpenseInput = {
+/**
+ * The single write path for Expenses (#373). The form actions (`/expenses`, the receipt pages)
+ * and `/api/v1/expenses` all go through here, so the Budget threshold alert runs whichever way
+ * an Expense is saved.
+ */
+
+export type ExpenseInput = {
 	amount: number;
 	payee: string;
 	notes: string;
@@ -15,8 +28,7 @@ export type CreateExpenseInput = {
 	categoryId: string;
 };
 
-/** Input → row mapping shared by the UI form actions and the API write path. */
-export function toExpenseRow(input: CreateExpenseInput) {
+function toExpenseRow(input: ExpenseInput) {
 	return {
 		amount: input.amount,
 		gstAmount: input.gstAmount ?? null,
@@ -28,13 +40,8 @@ export function toExpenseRow(input: CreateExpenseInput) {
 	};
 }
 
-/**
- * Insert path for API-key-driven expense creation. Deliberately separate from the
- * generic `createCreateAction` factory in `src/lib/server/actions/crud-helpers.ts` so this
- * narrower write path can't regress the form-action UI. Runs the same budget-threshold-alert
- * hook, so an API-created expense behaves the same as a UI-created one.
- */
-export async function createExpense(input: CreateExpenseInput, userId: string): Promise<Expense> {
+/** Insert an Expense, then check whether it tipped its category over a Budget threshold. */
+export async function createExpense(input: ExpenseInput, userId: string): Promise<Expense> {
 	const [inserted] = await getDb()
 		.insert(expense)
 		.values({ ...toExpenseRow(input), userId })
@@ -47,4 +54,21 @@ export async function createExpense(input: CreateExpenseInput, userId: string): 
 		throw new Error(`Failed to re-fetch expense ${inserted.id} after creation`);
 	}
 	return withRelations;
+}
+
+/**
+ * Update an Expense, then check the Budget threshold. The alert compares against the Expense as
+ * it was before the update, so it is read first.
+ */
+export async function updateExpense(id: string, input: ExpenseInput): Promise<void> {
+	const alertContext = await buildExpenseBudgetAlertUpdateContext(id);
+	const row = withUpdatedAt(toExpenseRow(input));
+
+	await getDb().update(expense).set(row).where(eq(expense.id, id));
+
+	await evaluateUpdatedExpenseBudgetAlert(row, alertContext);
+}
+
+export async function deleteExpense(id: string): Promise<void> {
+	await getDb().delete(expense).where(eq(expense.id, id));
 }

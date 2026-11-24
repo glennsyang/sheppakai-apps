@@ -24,13 +24,32 @@ const mockFindById = vi.hoisted(() =>
 	}))
 );
 
-vi.mock('#lib/server/db/index.js', () => ({ getDb: () => ({ insert: mockInsert }) }));
+const mockUpdateWhere = vi.hoisted(() => vi.fn<(where: unknown) => Promise<void>>(async () => {}));
+const mockUpdateSet = vi.hoisted(() =>
+	vi.fn<(values: Record<string, unknown>) => { where: typeof mockUpdateWhere }>(() => ({
+		where: mockUpdateWhere
+	}))
+);
+const mockDeleteWhere = vi.hoisted(() => vi.fn<(where: unknown) => Promise<void>>(async () => {}));
+
+vi.mock('#lib/server/db/index.js', () => ({
+	getDb: () => ({
+		insert: mockInsert,
+		update: () => ({ set: mockUpdateSet }),
+		delete: () => ({ where: mockDeleteWhere })
+	})
+}));
+vi.mock('drizzle-orm', () => ({ eq: (field: unknown, value: unknown) => ({ field, value }) }));
 vi.mock('#lib/server/db/queries/index.js', () => ({
 	windowCleaningJobQueries: { findById: mockFindById }
 }));
-vi.mock('#lib/server/db/schema/index.js', () => ({ windowCleaningJob: {} }));
+vi.mock('#lib/server/db/schema/index.js', () => ({ windowCleaningJob: { id: 'job.id' } }));
 
-import { createWindowCleaningJob, toWindowCleaningJobRow } from './window-cleaning-jobs';
+import {
+	createWindowCleaningJob,
+	deleteWindowCleaningJob,
+	updateWindowCleaningJob
+} from './window-cleaning-jobs';
 
 const input = { customerId: 'cust-1', jobDate: '2026-08-12', amountCharged: 120, tip: 20 };
 
@@ -69,18 +88,31 @@ describe('createWindowCleaningJob', () => {
 	});
 });
 
-describe('toWindowCleaningJobRow', () => {
-	it('defaults tip to 0 and coerces empty optional fields to null', () => {
-		const row = toWindowCleaningJobRow({
+describe('updateWindowCleaningJob', () => {
+	beforeEach(() => mockUpdateSet.mockClear());
+
+	it('defaults tip to 0, coerces empty optional fields to null and stamps updatedAt', async () => {
+		await updateWindowCleaningJob('job-1', {
 			customerId: 'cust-1',
 			jobDate: '2026-03-01',
 			jobTime: '',
 			amountCharged: 80,
 			notes: ''
 		});
+
+		const row = mockUpdateSet.mock.calls[0][0];
 		expect(row.tip).toBe(0);
 		expect(row.jobTime).toBeNull();
 		expect(row.durationHours).toBeNull();
 		expect(row.notes).toBeNull();
+		expect(row.updatedAt).toBeInstanceOf(Date);
+		expect(mockUpdateWhere).toHaveBeenCalledWith({ field: 'job.id', value: 'job-1' });
+	});
+});
+
+describe('deleteWindowCleaningJob', () => {
+	it('deletes the row by id', async () => {
+		await deleteWindowCleaningJob('job-2');
+		expect(mockDeleteWhere).toHaveBeenCalledWith({ field: 'job.id', value: 'job-2' });
 	});
 });

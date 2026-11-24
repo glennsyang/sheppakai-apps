@@ -4,7 +4,7 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { receiptScanResultSchema, expenseSchema } from '#lib/formSchemas/index.js';
 import { requireAuth } from '#lib/server/actions/auth-guard.js';
-import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
+import { createWriteActions } from '#lib/server/actions/crud-helpers.js';
 import { completedMonthsAverage } from '#lib/server/budgets/category-history.js';
 import {
 	buildCategoryStatuses,
@@ -12,10 +12,8 @@ import {
 	toSpendInputs
 } from '#lib/server/budgets/category-status.js';
 import { budgetQueries, categoryQueries, expenseQueries } from '#lib/server/db/queries/index.js';
-import { expense } from '#lib/server/db/schema/index.js';
-import { toExpenseRow } from '#lib/server/db/writes/expenses.js';
+import { createExpense, deleteExpense, updateExpense } from '#lib/server/db/writes/expenses.js';
 import { logger } from '#lib/server/logger.js';
-import { expenseBudgetAlertHooks } from '#lib/server/notifications/budget-threshold-alerts.js';
 import { createUserRateLimiter } from '#lib/server/rate-limiter.js';
 import {
 	isReceiptScanEnabled,
@@ -111,13 +109,12 @@ export const load: PageServerLoad = async ({ url }) => {
 const scanLimiter = createUserRateLimiter([20, 'h']);
 
 export const actions = {
-	...createCrudActions({
+	...createWriteActions({
 		schema: expenseSchema,
-		table: expense,
 		entityName: 'Expense',
-		...expenseBudgetAlertHooks,
-		transformCreate: (data, userId) => ({ ...toExpenseRow(data), userId }),
-		transformUpdate: (data) => toExpenseRow(data)
+		create: createExpense,
+		update: updateExpense,
+		delete: deleteExpense
 	}),
 
 	/**
