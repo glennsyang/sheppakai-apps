@@ -1,5 +1,5 @@
 import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
 	findByCategory: vi.fn<() => Promise<unknown[]>>(),
@@ -96,5 +96,52 @@ describe.each(Object.entries(loads))('receipts/%s load', (_name, load) => {
 		expect(result.yearlyExpenses).toEqual([]);
 		expect(result.form).toBeDefined();
 		expect(mockState.loggerError).toHaveBeenCalledOnce();
+	});
+});
+
+describe('receipts/fuel monthly average', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.useFakeTimers();
+		// Mid-March 2026 Pacific: January and February are the completed months.
+		vi.setSystemTime(new Date('2026-03-15T20:00:00Z'));
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	const fuel = (date: string, amount: number, excludedFromBudget = false) => ({
+		date,
+		amount,
+		excludedFromBudget
+	});
+
+	it("ignores the current month's and future-dated receipts, counting Excluded ones", async () => {
+		mockState.findByCategory.mockResolvedValue([
+			fuel('2026-01-10', 100),
+			fuel('2026-02-10', 200, true), // Excluded: still in the page's yearly total
+			fuel('2026-03-05', 5000), // current month
+			fuel('2026-11-01', 800) // future-dated
+		]);
+
+		const result = (await fuelLoad(event(async () => ({ categories: [GAS] })))) as Record<
+			string,
+			unknown
+		>;
+
+		expect(result.monthlyAverage).toBe(150);
+		expect(result).not.toHaveProperty('completedMonthsSinceJanuary');
+	});
+
+	it('is null when there are no fuel receipts', async () => {
+		mockState.findByCategory.mockResolvedValue([]);
+
+		const result = (await fuelLoad(event(async () => ({ categories: [GAS] })))) as Record<
+			string,
+			unknown
+		>;
+
+		expect(result.monthlyAverage).toBeNull();
 	});
 });

@@ -3,6 +3,7 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 
 import { incomeSchema } from '#lib/formSchemas/index.js';
 import { createCrudActions } from '#lib/server/actions/crud-helpers.js';
+import { completedMonthsAverage } from '#lib/server/budgets/category-history.js';
 import { incomeQueries } from '#lib/server/db/queries/index.js';
 import { income } from '#lib/server/db/schema/index.js';
 import { toIncomeRow } from '#lib/server/db/writes/income.js';
@@ -23,8 +24,6 @@ export const load: PageServerLoad = async ({ url }) => {
 	// Get yearly date range
 	const { startDate: yearStartDate, endDate: yearEndDate } = getYearDateRange(year);
 
-	const completedMonthsSinceJanuary = calculateMonthsSinceJanuary(year);
-
 	const form = await superValidate(zod4(incomeSchema));
 
 	try {
@@ -35,7 +34,12 @@ export const load: PageServerLoad = async ({ url }) => {
 		return {
 			monthlyIncomes,
 			yearlyIncomes,
-			completedMonthsSinceJanuary,
+			// Completed months only: this month's and future-dated Income don't count (#385).
+			monthlyAverage: completedMonthsAverage(
+				yearlyIncomes,
+				year,
+				calculateMonthsSinceJanuary(year)
+			),
 			form
 		};
 	} catch (error) {
@@ -43,7 +47,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		return {
 			monthlyIncomes: [],
 			yearlyIncomes: [],
-			completedMonthsSinceJanuary,
+			monthlyAverage: null,
 			loadError: 'Failed to load income data. Please try refreshing the page.',
 			form
 		};

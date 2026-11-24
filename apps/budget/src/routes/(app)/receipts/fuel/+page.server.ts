@@ -1,3 +1,4 @@
+import { completedMonthsAverage } from '#lib/server/budgets/category-history.js';
 import { expenseQueries } from '#lib/server/db/queries/index.js';
 import { logger } from '#lib/server/logger.js';
 import { getReceiptLoadContext } from '#lib/server/receipts/index.js';
@@ -11,8 +12,6 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 		await getReceiptLoadContext(url, categories);
 
 	try {
-		const completedMonthsSinceJanuary = calculateMonthsSinceJanuary(year);
-
 		const [monthlyExpenses, yearlyExpenses] = await Promise.all([
 			expenseQueries.findByCategory(gasCategory.id, { start: startDate, end: endDate }),
 			expenseQueries.findByCategory(gasCategory.id, { start: yearStartDate, end: yearEndDate })
@@ -21,7 +20,13 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 		return {
 			monthlyExpenses,
 			yearlyExpenses,
-			completedMonthsSinceJanuary,
+			// Completed months only (#385). Excluded Expenses still count: the page's yearly
+			// total is every fuel receipt for the business books, so the average matches it.
+			monthlyAverage: completedMonthsAverage(
+				yearlyExpenses.map(({ date, amount }) => ({ date, amount })),
+				year,
+				calculateMonthsSinceJanuary(year)
+			),
 			form
 		};
 	} catch (error) {
@@ -29,7 +34,7 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 		return {
 			monthlyExpenses: [],
 			yearlyExpenses: [],
-			completedMonthsSinceJanuary: 0,
+			monthlyAverage: null,
 			loadError: 'Failed to load fuel receipts. Please try refreshing the page.',
 			form
 		};

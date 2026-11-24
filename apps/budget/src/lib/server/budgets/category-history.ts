@@ -137,9 +137,9 @@ export function suggestPreset(
 }
 
 /**
- * Monthly Average of household spend over the completed months of `year` (January up to
- * `completedMonths`). Expenses in the current or later months, and Excluded ones, don't
- * count. Null when no month has completed or nothing was spent.
+ * Monthly Average of dated amounts (Expenses or Income) over the completed months of `year`
+ * (January up to `completedMonths`). Rows in the current or later months, and Excluded
+ * Expenses, don't count. Null when no month has completed or nothing was recorded.
  */
 export function completedMonthsAverage(
 	expenses: Array<{ date: string; amount: number; excludedFromBudget?: boolean | null }>,
