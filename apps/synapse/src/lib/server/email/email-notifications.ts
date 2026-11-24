@@ -2,78 +2,59 @@
  * Email Notifications Cron Job
  *
  * Runs every 30 minutes (skipping overnight; see synapse-notifications-cron.yml) to send scheduled reminders:
- * - Workout reminders (based on workout_reminders table)
- * - Meditation reminders (based on meditation_schedules table)
- * - Visit warnings (for people in yellow/red visit status)
  * - Morning digest push at each user's send time (default 6:00 AM PT): agenda, tasks due,
  *   tonight's dinner (mealplanner API), bills due this week (budget API) and overdue visits
  * - Tasks due-today digest emails at 6:00 AM PT (based on tasks.due_date)
+ * - Workout reminders (based on workout_reminders table)
+ * - Meditation reminders (based on meditation_schedules table)
+ * - Visit warnings (for people in yellow/red visit status)
+ * - Visit-today and one-week-ahead Next Visit reminders
  *
- * Logs all sent emails in email_notifications table to prevent duplicates.
+ * Every job runs through `runNotificationJob`, which logs each send in the email_notifications
+ * table to prevent duplicates.
  */
 
 import { logger } from '#lib/server/logger.js';
-import { APP_TIME_ZONE, getTodayString } from '#lib/utils/date.js';
 
-import { processMorningDigests } from '../digest/process-morning-digests';
-import { processTasksDueTodayDigests } from './digests';
-import { processMeditationReminders } from './meditation-reminders';
-import { processScheduledVisitReminders, processVisitsTodayReminders } from './visit-reminders';
-import { processVisitWarnings } from './visit-warnings';
-import { processWorkoutReminders } from './workout-reminders';
+import { getDb } from '../db';
+import { morningDigestJob } from '../digest/process-morning-digests';
+import { createJobClock } from '../notification-jobs/clock';
+import type { Notifier } from '../notification-jobs/notifier';
+import { productionNotifier } from '../notification-jobs/production-notifier';
+import { runNotificationJob, type Db } from '../notification-jobs/run-job';
+import { tasksDueTodayDigestJob } from './digests';
+import { meditationReminderJob } from './meditation-reminders';
+import { scheduledVisitReminderJob, visitTodayReminderJob } from './visit-reminders';
+import { visitWarningJob } from './visit-warnings';
+import { workoutReminderJob } from './workout-reminders';
+
+type RunOptions = { now?: Date; db?: Db; notifier?: Notifier };
 
 /**
- * Main execution
+ * Main execution. One clock reading (`now`) is shared by every job in the run.
  */
-export async function runEmailNotifications(): Promise<{ ok: true } | { ok: false; error: Error }> {
-	logger.debug('🚀 Starting email notifications job run...');
-	logger.debug(`📅 Current time (UTC): ${new Date().toISOString()}`);
+export async function runEmailNotifications({
+	now = new Date(),
+	db = getDb(),
+	notifier = productionNotifier
+}: RunOptions = {}): Promise<{ ok: true } | { ok: false; error: Error }> {
+	const clock = createJobClock(now);
+	const ctx = { db, clock };
 
-	// Get current time info
-	const now = new Date();
-
-	// Convert UTC time to PST/PDT (automatically handles DST)
-	const pstFormatter = new Intl.DateTimeFormat('en-US', {
-		timeZone: APP_TIME_ZONE,
-		hour: '2-digit',
-		hour12: false,
-		minute: '2-digit'
+	logger.debug('🚀 Starting email notifications job run...', {
+		utc: now.toISOString(),
+		pacific: `${clock.today} ${clock.hour}:${clock.minute}`,
+		weekday: clock.weekday
 	});
-
-	const pstTime = pstFormatter.format(now); // e.g., "07:30"
-	const [currentHour, currentMinute] = pstTime.split(':');
-	const currentTime = `${currentHour}:${currentMinute}`;
-
-	// Get day of week in PST (important for weekly reminders)
-	const pstDayFormatter = new Intl.DateTimeFormat('en-US', {
-		timeZone: APP_TIME_ZONE,
-		weekday: 'short'
-	});
-	const pstDayStr = pstDayFormatter.format(now);
-	const dayMap: Record<string, number> = {
-		Sun: 0,
-		Mon: 1,
-		Tue: 2,
-		Wed: 3,
-		Thu: 4,
-		Fri: 5,
-		Sat: 6
-	};
-	const currentDay: number = dayMap[pstDayStr] || 0;
-	const todayPacific = getTodayString(now);
-
-	logger.debug(
-		`⏰ Current time (PST/PDT): ${currentTime}, Day: ${currentDay}, Date: ${todayPacific}`
-	);
 
 	try {
-		await processMorningDigests(currentHour, currentMinute, todayPacific);
-		await processTasksDueTodayDigests(currentHour, currentMinute, todayPacific);
-		await processWorkoutReminders(currentDay, currentHour, currentMinute);
-		await processMeditationReminders(currentDay, currentHour, currentMinute);
-		await processVisitWarnings();
-		await processVisitsTodayReminders(todayPacific);
-		await processScheduledVisitReminders();
+		await runNotificationJob(morningDigestJob, ctx, notifier);
+		await runNotificationJob(tasksDueTodayDigestJob, ctx, notifier);
+		await runNotificationJob(workoutReminderJob, ctx, notifier);
+		await runNotificationJob(meditationReminderJob, ctx, notifier);
+		await runNotificationJob(visitWarningJob, ctx, notifier);
+		await runNotificationJob(visitTodayReminderJob, ctx, notifier);
+		await runNotificationJob(scheduledVisitReminderJob, ctx, notifier);
 
 		logger.debug('\n✅ Email notifications cron job completed successfully!');
 		return { ok: true };

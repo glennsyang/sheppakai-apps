@@ -158,3 +158,10 @@ planned dinner from Meal Planner, recurring bills due this week from Budget, and
 section appears only when it has something in it.
 
 _Avoid_: Summary, daily email
+
+**Notification Job**: One kind of scheduled reminder or digest (Workout Reminder, Visit Warning,
+Morning Digest, ...) run by the notifications cron. Each job says who is due and what to send; the
+shared runner (`src/lib/server/notification-jobs/`) owns the clock, dedupe, the notification log and
+sending through the Notifier (Brevo email + ntfy push).
+
+_Avoid_: Cron task, processor

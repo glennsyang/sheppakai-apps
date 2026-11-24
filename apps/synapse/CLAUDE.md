@@ -93,7 +93,8 @@ src/
 │       ├── db/schema/        # Drizzle tables, one file per domain
 │       ├── auth.ts           # betterAuth instance (drizzleAdapter, Brevo emails)
 │       ├── auth/             # form-helpers, auth-guard
-│       ├── email/            # digests: daily-agenda, tasks-due-today, visit-warning
+│       ├── email/            # reminder/digest job definitions + email templates
+│       ├── notification-jobs/ # Notification Job runner: clock, dedupe, log, Notifier seam
 │       └── notifications/    # admin alert pings (new user, verification sent, etc.)
 └── routes/
     ├── (auth)/

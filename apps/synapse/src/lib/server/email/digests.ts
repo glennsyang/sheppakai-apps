@@ -1,44 +1,20 @@
 import { and, eq, sql } from 'drizzle-orm';
 
-import { logger } from '#lib/server/logger.js';
-
-import { getDb } from '../db';
-import { emailNotifications, tasks, user } from '../db/schema';
-import { DAILY_AGENDA_DIGEST_TIME, isWithinDailyDigestWindow } from './daily-agenda-digest';
-import { sendTasksDueTodayEmail } from './index';
-import { logNotification } from './notification-log';
+import { tasks, user } from '../db/schema';
+import type { Db, NotificationJob } from '../notification-jobs/run-job';
+import { isWithinDailyDigestWindow } from './daily-agenda-digest';
 import {
-	buildTasksDueTodayDigestTitle,
 	TASKS_DUE_TODAY_NOTIFICATION_TYPE,
 	type TasksDueTodayTaskSummary
 } from './tasks-due-today-digest';
-
-async function alreadySentTasksDueTodayDigest(
-	userId: string,
-	dateString: string
-): Promise<boolean> {
-	const db = getDb();
-	const existing = db
-		.select({ id: emailNotifications.id })
-		.from(emailNotifications)
-		.where(
-			and(
-				eq(emailNotifications.userId, userId),
-				eq(emailNotifications.notificationType, TASKS_DUE_TODAY_NOTIFICATION_TYPE),
-				eq(emailNotifications.entityId, dateString)
-			)
-		)
-		.get();
-
-	return !!existing;
-}
+import { buildTasksDueTodayEmail } from './templates';
 
 export async function loadTasksDueToday(
+	db: Db,
 	userId: string,
 	dateString: string
 ): Promise<TasksDueTodayTaskSummary[]> {
-	const db = getDb();
-	const dueTodayTasks = await db.query.tasks.findMany({
+	return db.query.tasks.findMany({
 		where: and(
 			eq(tasks.userId, userId),
 			eq(tasks.dueDate, dateString),
@@ -54,80 +30,30 @@ export async function loadTasksDueToday(
 		},
 		orderBy: [tasks.priority, tasks.taskNumber]
 	});
-
-	return dueTodayTasks.map((task) => ({
-		id: task.id,
-		taskNumber: task.taskNumber,
-		title: task.title,
-		priority: task.priority,
-		dueDate: task.dueDate,
-		state: task.state
-	}));
 }
+
+type TasksDueTodayCandidate = { id: string; email: string; name: string };
 
 /**
- * Email each user the tasks due today. The phone push for these tasks is part of the
- * morning digest (see #lib/server/digest).
+ * Email each user the tasks due today, from 6:00 AM PT. The phone push for these tasks is
+ * part of the morning digest (see #lib/server/digest). Users with nothing due are skipped
+ * without logging, so tasks added later today still get an email.
  */
-export async function processTasksDueTodayDigests(
-	currentHour: string,
-	currentMinute: string,
-	todayPacific: string
-): Promise<void> {
-	const db = getDb();
-	logger.debug('\n🗂️ Processing Tasks due-today digests...');
+export const tasksDueTodayDigestJob: NotificationJob<TasksDueTodayCandidate> = {
+	type: TASKS_DUE_TODAY_NOTIFICATION_TYPE,
+	label: 'Tasks due-today digests',
+	dedupe: 'pacific-day',
+	candidates: ({ db, clock }) =>
+		isWithinDailyDigestWindow(clock.hour, clock.minute)
+			? db.select({ id: user.id, email: user.email, name: user.name }).from(user).all()
+			: [],
+	recipient: (candidate) => candidate,
+	entityId: (_candidate, { clock }) => clock.today,
+	message: async (candidate, { db, clock }) => {
+		const dueTodayTasks = await loadTasksDueToday(db, candidate.id, clock.today);
+		if (dueTodayTasks.length === 0) return null;
 
-	if (!isWithinDailyDigestWindow(currentHour, currentMinute)) {
-		logger.debug(`   ⏭️  Before Tasks digest start time (${DAILY_AGENDA_DIGEST_TIME} PT)`);
-		return;
+		const email = buildTasksDueTodayEmail(candidate.name, dueTodayTasks, clock.today);
+		return { logSubject: email.subject, email };
 	}
-
-	const allUsers = db
-		.select({
-			id: user.id,
-			email: user.email,
-			name: user.name
-		})
-		.from(user)
-		.all();
-
-	logger.debug(`   Found ${allUsers.length} users for Tasks due-today digests`);
-
-	let sentCount = 0;
-
-	for (const userData of allUsers) {
-		if (await alreadySentTasksDueTodayDigest(userData.id, todayPacific)) {
-			logger.debug('   ⏭️  Already sent Tasks due-today digest', {
-				userId: userData.id,
-				date: todayPacific
-			});
-			continue;
-		}
-
-		const dueTodayTasks = await loadTasksDueToday(userData.id, todayPacific);
-		if (dueTodayTasks.length === 0) {
-			logger.debug('   ⏭️  No Tasks due today', { userId: userData.id });
-			continue;
-		}
-
-		const title = buildTasksDueTodayDigestTitle(todayPacific);
-
-		logger.debug('   📧 Sending Tasks due-today digest', {
-			userId: userData.id,
-			taskCount: dueTodayTasks.length
-		});
-
-		try {
-			await sendTasksDueTodayEmail(userData.email, userData.name, dueTodayTasks, todayPacific);
-
-			await logNotification(userData.id, TASKS_DUE_TODAY_NOTIFICATION_TYPE, todayPacific, title);
-
-			sentCount++;
-			logger.debug('   ✅ Sent successfully');
-		} catch (error) {
-			logger.error('   ❌ Failed to send Tasks due-today digest', error, { userId: userData.id });
-		}
-	}
-
-	logger.debug(`   📊 Sent ${sentCount} Tasks due-today digests`);
-}
+};

@@ -10,7 +10,7 @@
 
 import { parseDateTime } from '@internationalized/date';
 
-export const APP_TIME_ZONE = 'America/Los_Angeles';
+const APP_TIME_ZONE = 'America/Los_Angeles';
 
 const appDateFormatter = new Intl.DateTimeFormat('en-US', {
 	timeZone: APP_TIME_ZONE,

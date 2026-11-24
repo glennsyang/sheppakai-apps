@@ -1,4 +1,4 @@
-export const DAILY_AGENDA_DIGEST_TIME = '06:00';
+const DAILY_AGENDA_DIGEST_TIME = '06:00';
 // Allow delivery any time after 6:00 AM PT through the end of the same day.
 const DAILY_AGENDA_DIGEST_WINDOW_MINUTES = 1079;
 
