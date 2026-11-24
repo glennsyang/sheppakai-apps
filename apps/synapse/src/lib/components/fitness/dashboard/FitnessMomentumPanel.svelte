@@ -3,37 +3,16 @@
 
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
-	import { getTodayString, parseLocalDateString } from '#lib/utils/date.js';
+	import type { FitnessInsights } from '#lib/utils/fitness-insights.js';
 	import { calorieLegendItems, getCalorieAdherenceClass } from '#lib/utils/weight.js';
 	import { getWorkoutChartColor, workoutTypeOptions } from '#lib/utils/workout.js';
 
-	interface Workout {
-		id: string;
-		date: string;
-		type: string;
-		durationMinutes: number | null;
-	}
-
-	interface WeightEntry {
-		id: string;
-		date: string;
-		weightLbs: number;
-	}
-
-	interface Meal {
-		id: string;
-		date: string;
-		caloriesEstimate: number | null;
-	}
-
 	interface Props {
-		workouts: Workout[];
-		weightEntries: WeightEntry[];
-		meals: Meal[];
+		momentum: FitnessInsights['momentum'];
 		calorieTarget: number | null;
 	}
 
-	let { workouts, weightEntries, meals, calorieTarget }: Props = $props();
+	let { momentum, calorieTarget }: Props = $props();
 
 	const workoutColorMap: Record<string, string> = {
 		'var(--chart-1)': 'bg-pen-tasks',
@@ -50,60 +29,19 @@
 			color: workoutColorMap[option.chartColor] ?? 'bg-muted'
 		}));
 
-	// Build last 14 days data
-	const dayData = $derived.by(() => {
-		const days: {
-			date: string;
-			label: string;
-			shortLabel: string;
-			workoutTypes: string[];
-			color: string;
-			hasWeight: boolean;
-			calories: number | null;
-		}[] = [];
-
-		const today = getTodayString();
-		const todayDate = parseLocalDateString(today);
-
-		for (let i = 13; i >= 0; i--) {
-			const d = new Date(todayDate.getTime() - i * 24 * 60 * 60 * 1000);
-			const dateStr = d.toISOString().slice(0, 10);
-			const label = d.toLocaleDateString('en-US', {
-				weekday: 'short',
-				month: 'short',
-				day: 'numeric'
-			});
-			const shortLabel = d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1);
-
-			const dayWorkouts = workouts.filter((w) => w.date === dateStr);
-			const dayWeight = weightEntries.find((w) => w.date === dateStr);
-			const dayMeals = meals.filter((m) => m.date === dateStr);
-			const dayCals = dayMeals.reduce((sum, m) => sum + (m.caloriesEstimate ?? 0), 0);
-
-			const types = dayWorkouts.map((w) => w.type);
-			days.push({
-				date: dateStr,
-				label,
-				shortLabel,
-				workoutTypes: types,
-				color:
-					types.length > 0
-						? (workoutColorMap[getWorkoutChartColor(types[0])] ?? 'bg-muted')
-						: 'bg-muted',
-				hasWeight: !!dayWeight,
-				calories: dayCals > 0 ? dayCals : null
-			});
-		}
-
-		return days;
-	});
+	const dayData = $derived(
+		momentum.days.map((day) => ({
+			...day,
+			color:
+				day.workoutTypes.length > 0
+					? (workoutColorMap[getWorkoutChartColor(day.workoutTypes[0])] ?? 'bg-muted')
+					: 'bg-muted'
+		}))
+	);
 
 	// Interpretation sentence
 	const interpretation = $derived.by(() => {
-		const last7 = dayData.slice(7);
-		const workoutDays = last7.filter((d) => d.workoutTypes.length > 0).length;
-		const weightDays = last7.filter((d) => d.hasWeight).length;
-		const calDays = last7.filter((d) => d.calories !== null).length;
+		const { workoutDays, weighInDays: weightDays, calorieDays: calDays } = momentum.lastWeek;
 
 		const parts: string[] = [];
 
@@ -132,7 +70,7 @@
 		<div class="grid grid-cols-14 gap-1" style="grid-template-columns: repeat(14, 1fr);">
 			{#each dayData as day (day.date)}
 				<div class="text-muted-foreground text-center text-[10px] font-medium">
-					{day.shortLabel}
+					{day.initial}
 				</div>
 			{/each}
 		</div>
@@ -171,13 +109,13 @@
 						<Tooltip.Root>
 							<Tooltip.Trigger>
 								<div
-									class="h-3 w-3 rounded-full transition-all {day.hasWeight
+									class="h-3 w-3 rounded-full transition-all {day.hasWeighIn
 										? 'bg-pen-fitness'
 										: 'bg-muted'}"
 								></div>
 							</Tooltip.Trigger>
 							<Tooltip.Content>
-								{day.hasWeight ? `${day.label}: weighed in` : day.label}
+								{day.hasWeighIn ? `${day.label}: weighed in` : day.label}
 							</Tooltip.Content>
 						</Tooltip.Root>
 					</div>

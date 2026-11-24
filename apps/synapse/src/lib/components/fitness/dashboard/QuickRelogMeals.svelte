@@ -5,18 +5,10 @@
 	import { toast } from 'svelte-sonner';
 
 	import { getTodayString } from '#lib/utils/date.js';
-	import { getFrequentMeals } from '#lib/utils/meal.js';
+	import type { FrequentMeal } from '#lib/utils/meal.js';
 
-	interface Meal {
-		date: string;
-		timeOfDay: string;
-		description: string;
-		caloriesEstimate: number | null;
-	}
-
-	let { meals }: { meals: Meal[] } = $props();
-
-	const frequentMeals = $derived(getFrequentMeals(meals));
+	/** Ranked by Fitness Insights over the last 90 days of Food Entries, not the 50-entry list. */
+	let { frequentMeals }: { frequentMeals: FrequentMeal[] } = $props();
 
 	// The description of the meal being logged, so its chip shows progress and others wait.
 	let pending = $state<string | null>(null);

@@ -23,7 +23,8 @@
 	import PageSkeleton from '#lib/components/skeletons/PageSkeleton.svelte';
 	import * as Accordion from '#lib/components/ui/accordion/index.js';
 	import type { WorkoutType } from '#lib/schemas/fitness.js';
-	import { getTodayString, parseLocalDateString } from '#lib/utils/date.js';
+	import { getTodayString } from '#lib/utils/date.js';
+	import { fitnessInsights } from '#lib/utils/fitness-insights.js';
 
 	import type { PageData } from './$types.js';
 
@@ -118,47 +119,22 @@
 		else if (notice === 'reminder-deleted') toast.success('Reminder deleted successfully!');
 	});
 
-	// ─── Hero KPI derivations ──────────────────────────────────────────────────────
-	const today = $derived(getTodayString());
-
-	const todayCalories = $derived(
-		data.meals.filter((m) => m.date === today).reduce((s, m) => s + (m.caloriesEstimate ?? 0), 0)
+	// ─── Fitness Insights ──────────────────────────────────────────────────────────
+	const insights = $derived(
+		fitnessInsights({
+			workouts: data.workouts,
+			weighIns: data.weightEntries,
+			foodEntries: data.insightFoodEntries,
+			calorieTarget: data.calorieTarget?.targetCalories ?? null,
+			goalWeight: data.goalWeight?.targetWeightLbs ?? null,
+			today: getTodayString()
+		})
 	);
-
-	const calorieAdherence = $derived(
-		data.calorieTarget
-			? Math.round((todayCalories / data.calorieTarget.targetCalories) * 100)
-			: null
-	);
-
-	const weeklySessionCount = $derived.by(() => {
-		const todayDate = parseLocalDateString(today);
-		const startOfWeek = new Date(todayDate);
-		startOfWeek.setDate(todayDate.getDate() - ((todayDate.getDay() + 6) % 7));
-		startOfWeek.setHours(0, 0, 0, 0);
-		return data.workouts.filter((w) => parseLocalDateString(w.date) >= startOfWeek).length;
-	});
-
-	const dayStreak = $derived.by(() => {
-		const workoutDates = new Set(data.workouts.map((w) => w.date));
-		let streak = 0;
-		const d = new Date(parseLocalDateString(today));
-		while (true) {
-			const dateStr = d.toISOString().slice(0, 10);
-			if (workoutDates.has(dateStr)) {
-				streak++;
-				d.setDate(d.getDate() - 1);
-			} else {
-				break;
-			}
-		}
-		return streak;
-	});
-
-	const weightDelta = $derived.by(() => {
-		if (data.weightEntries.length < 2) return null;
-		return data.weightEntries[0].weightLbs - data.weightEntries[1].weightLbs;
-	});
+	const weeklySessionCount = $derived(insights.workouts.weeklyCount);
+	const dayStreak = $derived(insights.workouts.dayStreak);
+	const weightDelta = $derived(insights.weight.delta);
+	const todayCalories = $derived(insights.nutrition.todayCalories);
+	const calorieAdherence = $derived(insights.nutrition.todayAdherence);
 
 	// ─── Toggle reminder ───────────────────────────────────────────────────────────
 	const toggleReminderDialogTitle = $derived(
@@ -218,8 +194,8 @@
 			/>
 			<FitnessStatusCard
 				label="Weight"
-				value={data.weightStats.currentWeight ?? '—'}
-				unit={data.weightStats.currentWeight ? 'lbs' : ''}
+				value={insights.weight.currentWeight ?? '—'}
+				unit={insights.weight.currentWeight ? 'lbs' : ''}
 				gradient=""
 				trendLabel={weightDelta != null
 					? weightDelta < 0
@@ -239,13 +215,11 @@
 		</div>
 
 		<!-- One-tap re-log of frequent meals -->
-		<QuickRelogMeals meals={data.meals} />
+		<QuickRelogMeals frequentMeals={insights.nutrition.frequentMeals} />
 
 		<!-- Momentum Panel: 14-day visual strip -->
 		<FitnessMomentumPanel
-			workouts={data.workouts}
-			weightEntries={data.weightEntries}
-			meals={data.meals}
+			momentum={insights.momentum}
 			calorieTarget={data.calorieTarget?.targetCalories ?? null}
 		/>
 
@@ -260,7 +234,11 @@
 					</div>
 				</Accordion.Trigger>
 				<Accordion.Content class="px-6 pb-6">
-					<WorkoutInsightsSection workouts={data.workouts} workoutForm={data.workoutForm} />
+					<WorkoutInsightsSection
+						insights={insights.workouts}
+						hasWorkouts={data.workouts.length > 0}
+						workoutForm={data.workoutForm}
+					/>
 				</Accordion.Content>
 			</Accordion.Item>
 
@@ -275,7 +253,7 @@
 				<Accordion.Content class="px-6 pb-6">
 					<WeightInsightsSection
 						weightEntries={data.weightEntries}
-						weightStats={data.weightStats}
+						insights={insights.weight}
 						goalWeight={data.goalWeight}
 						weightForm={data.weightForm}
 					/>
@@ -292,8 +270,8 @@
 				</Accordion.Trigger>
 				<Accordion.Content class="px-6 pb-6">
 					<NutritionInsightsSection
-						meals={data.meals}
-						calorieTarget={data.calorieTarget}
+						insights={insights.nutrition}
+						hasFoodEntries={data.insightFoodEntries.length > 0}
 						mealForm={data.mealForm}
 					/>
 				</Accordion.Content>

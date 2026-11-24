@@ -5,7 +5,7 @@
 	import LogWeightDialog from '#lib/components/fitness/dialogs/LogWeightDialog.svelte';
 	import WeightChart from '#lib/components/fitness/WeightChart.svelte';
 	import type { logWeightSchema } from '#lib/schemas/fitness.js';
-	import { parseLocalDateString } from '#lib/utils/date.js';
+	import type { FitnessInsights } from '#lib/utils/fitness-insights.js';
 
 	import FitnessStatusCard from './FitnessStatusCard.svelte';
 
@@ -17,58 +17,32 @@
 		createdAt: Date;
 	}
 
-	interface WeightStats {
-		currentWeight: number | null;
-		startWeight: number | null;
-		remainingToGoal: number | null;
-		trend: string;
-	}
-
 	interface GoalWeight {
 		targetWeightLbs: number;
 	}
 
 	interface Props {
 		weightEntries: WeightEntry[];
-		weightStats: WeightStats;
+		insights: FitnessInsights['weight'];
 		goalWeight: GoalWeight | null | undefined;
 		weightForm: SuperValidated<Infer<typeof logWeightSchema>>;
 	}
 
-	let { weightEntries, weightStats, goalWeight, weightForm }: Props = $props();
+	let { weightEntries, insights, goalWeight, weightForm }: Props = $props();
 
-	// Weekly rate of change (lbs/week)
-	const weeklyRate = $derived.by(() => {
-		if (weightEntries.length < 2) return null;
-		const newest = weightEntries[0];
-		const oldest = weightEntries[weightEntries.length - 1];
-		const daysDiff = Math.max(
-			1,
-			(parseLocalDateString(newest.date).getTime() - parseLocalDateString(oldest.date).getTime()) /
-				(1000 * 60 * 60 * 24)
-		);
-		const change = newest.weightLbs - oldest.weightLbs;
-		return (change / daysDiff) * 7;
-	});
-
-	// Estimated weeks to goal
-	const weeksToGoal = $derived.by(() => {
-		if (!weeklyRate || !weightStats.remainingToGoal || weeklyRate === 0) return null;
-		const weeks = weightStats.remainingToGoal / weeklyRate;
-		if (weeks < 0 || weeks > 200) return null;
-		return Math.round(Math.abs(weeks));
-	});
+	const weeklyRate = $derived(insights.weeklyRate);
+	const weeksToGoal = $derived(insights.weeksToGoal);
 
 	const trendIcon = $derived(
-		weightStats.trend === 'down' ? TrendingDown : weightStats.trend === 'up' ? TrendingUp : Minus
+		insights.direction === 'down' ? TrendingDown : insights.direction === 'up' ? TrendingUp : Minus
 	);
 
 	const remainingTrend = $derived(
-		!weightStats.remainingToGoal
+		!insights.remainingToGoal
 			? 'neutral'
-			: weightStats.remainingToGoal < 0
+			: insights.remainingToGoal < 0
 				? 'positive'
-				: weightStats.trend === 'down'
+				: insights.direction === 'down'
 					? 'positive'
 					: 'neutral'
 	);
@@ -87,8 +61,8 @@
 	>
 		<FitnessStatusCard
 			label="Current"
-			value={weightStats.currentWeight ?? '—'}
-			unit={weightStats.currentWeight ? 'lbs' : ''}
+			value={insights.currentWeight ?? '—'}
+			unit={insights.currentWeight ? 'lbs' : ''}
 		/>
 		<FitnessStatusCard
 			label="Goal"
@@ -98,12 +72,10 @@
 		/>
 		<FitnessStatusCard
 			label="To go"
-			value={weightStats.remainingToGoal != null
-				? Math.abs(weightStats.remainingToGoal).toFixed(1)
-				: '—'}
-			unit={weightStats.remainingToGoal != null ? 'lbs' : ''}
+			value={insights.remainingToGoal != null ? Math.abs(insights.remainingToGoal).toFixed(1) : '—'}
+			unit={insights.remainingToGoal != null ? 'lbs' : ''}
 			trend={remainingTrend}
-			trendLabel={weightStats.remainingToGoal && weightStats.remainingToGoal < 0
+			trendLabel={insights.remainingToGoal && insights.remainingToGoal < 0
 				? 'Past goal weight'
 				: undefined}
 		/>
