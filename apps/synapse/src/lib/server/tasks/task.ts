@@ -4,6 +4,11 @@
 //
 // The better-sqlite3 driver runs transaction callbacks synchronously, so every query inside a
 // transaction uses its sync execution method (`.all()` / `.get()` / `.run()`) rather than `await`.
+//
+// Every write runs as an IMMEDIATE transaction: it takes SQLite's write lock before its first
+// read, so a second connection waits rather than reading the same max Task Number or sort order.
+// A deferred transaction would only lock at its first write, and in WAL mode a connection that
+// lost that race fails with SQLITE_BUSY_SNAPSHOT instead of retrying.
 import { and, asc, eq, ne, sql } from 'drizzle-orm';
 
 import type { TaskState } from '#lib/schemas/task.js';
@@ -37,6 +42,7 @@ export type TaskMoveResult =
 
 type WriteOptions = { now?: Date };
 
+const IMMEDIATE = { behavior: 'immediate' } as const;
 const MAX_TASK_NUMBER_ATTEMPTS = 3;
 const TASK_NUMBER_CONSTRAINT_TEXT = 'UNIQUE constraint failed: tasks.task_number';
 
@@ -158,8 +164,8 @@ function moveWithin(
 
 /**
  * Creates a task with the next global Task Number at the bottom of its column. Task Numbers are
- * unique across all users, so a concurrent create can claim the same number; the insert is then
- * retried with a freshly read number.
+ * unique across all users. The immediate transaction stops two connections reading the same
+ * number; if a unique conflict still occurs, the insert is retried with a freshly read number.
  */
 export function createTask(
 	db: Db,
@@ -205,7 +211,7 @@ export function createTask(
 					.get();
 
 				return { ok: true, task };
-			});
+			}, IMMEDIATE);
 		} catch (error) {
 			if (isTaskNumberConflict(error) && attempt < MAX_TASK_NUMBER_ATTEMPTS) continue;
 			throw error;
@@ -252,7 +258,7 @@ export function updateTask(
 
 		const task = findOwnedTask(tx, userId, taskId);
 		return task ? { ok: true, task } : { ok: false, reason: 'not_found' };
-	});
+	}, IMMEDIATE);
 }
 
 /**
@@ -267,5 +273,5 @@ export function moveTask(
 	toIndex: number,
 	{ now = new Date() }: WriteOptions = {}
 ): TaskMoveResult {
-	return db.transaction((tx) => moveWithin(tx, userId, taskId, toState, toIndex, now));
+	return db.transaction((tx) => moveWithin(tx, userId, taskId, toState, toIndex, now), IMMEDIATE);
 }

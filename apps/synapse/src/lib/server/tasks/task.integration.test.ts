@@ -1,6 +1,15 @@
-// Runs the Task module against the app's real schema and migrations in in-memory SQLite.
+// Runs the Task module against the app's real schema and migrations in in-memory SQLite, plus one
+// file-backed test that races two real connections.
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import Database from 'better-sqlite3';
 import { and, asc, eq } from 'drizzle-orm';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TaskState } from '#lib/schemas/task.js';
 
@@ -67,7 +76,7 @@ describe('createTask', () => {
 		expect(create('C').taskNumber).toBe(3);
 	});
 
-	it('gives every concurrent create a distinct Task Number', async () => {
+	it('gives creates queued together distinct, ordered Task Numbers', async () => {
 		const results = await Promise.all(
 			Array.from({ length: 10 }, (_, i) =>
 				Promise.resolve().then(() =>
@@ -80,11 +89,11 @@ describe('createTask', () => {
 		expect([...numbers].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 	});
 
-	it('retries with a fresh Task Number when a concurrent create claims the same one', () => {
+	it('retries with a fresh Task Number after a unique conflict', () => {
 		create('A');
 		const realTransaction = db.transaction.bind(db);
 		let raced = false;
-		const spy = vi.spyOn(db, 'transaction').mockImplementation((fn) => {
+		const spy = vi.spyOn(db, 'transaction').mockImplementation((fn, config) => {
 			if (!raced) {
 				raced = true;
 				// Another request inserts Task Number 2 between our read and our insert.
@@ -93,9 +102,11 @@ describe('createTask', () => {
 					.run();
 				throw new Error('UNIQUE constraint failed: tasks.task_number');
 			}
-			return realTransaction(fn);
+			return realTransaction(fn, config);
 		});
 
+		// A unique conflict should not happen under the immediate transaction, but if one does
+		// the create retries with a freshly read number.
 		const result = createTask(db, TEST_USER.id, fields('B'));
 		spy.mockRestore();
 
@@ -265,5 +276,65 @@ describe('ownership and updates', () => {
 			priority: 1,
 			tags: null
 		});
+	});
+});
+
+describe('two connections to one database file', () => {
+	const migrationsFolder = fileURLToPath(new URL('../db/migrations', import.meta.url));
+	let dir: string;
+	let raw: Database.Database[] = [];
+
+	beforeEach(() => {
+		dir = mkdtempSync(join(tmpdir(), 'synapse-task-race-'));
+	});
+
+	afterEach(() => {
+		for (const connection of raw) connection.close();
+		raw = [];
+		rmSync(dir, { recursive: true, force: true });
+	});
+
+	function open(file: string, onQuery?: (sql: string) => void) {
+		const client = new Database(file);
+		client.pragma('journal_mode = WAL');
+		client.pragma('busy_timeout = 0');
+		raw.push(client);
+		return drizzle(client, {
+			schema,
+			logger: onQuery ? { logQuery: (query) => onQuery(query) } : undefined
+		});
+	}
+
+	it('blocks a second connection while a create holds the Task Number', () => {
+		const file = join(dir, 'race.db');
+		const other = open(file);
+		migrate(other, { migrationsFolder });
+		other
+			.insert(schema.user)
+			.values({ ...TEST_USER, createdAt: T0, updatedAt: T0 })
+			.run();
+
+		// Connection B tries to create its task at the moment connection A reads the max Task
+		// Number, i.e. after A's transaction has begun and before A inserts.
+		let otherCreate: ReturnType<typeof createTask> | Error | undefined;
+		const mineDb = open(file, (query) => {
+			if (otherCreate === undefined && query.includes('max("task_number")')) {
+				try {
+					otherCreate = createTask(other, TEST_USER.id, fields('From B'));
+				} catch (error) {
+					otherCreate = error as Error;
+				}
+			}
+		});
+
+		const mine = createTask(mineDb, TEST_USER.id, fields('From A'));
+
+		expect(otherCreate).toBeInstanceOf(Error);
+		expect((otherCreate as Error & { code?: string }).code).toBe('SQLITE_BUSY');
+		expect(mine.ok && mine.task.taskNumber).toBe(1);
+
+		// Once A has committed, B's retried create gets the next number.
+		const retried = createTask(other, TEST_USER.id, fields('From B'));
+		expect(retried.ok && retried.task.taskNumber).toBe(2);
 	});
 });
