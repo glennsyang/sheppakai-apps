@@ -1,5 +1,3 @@
-// `/api/v1/expenses` replaced `/api/v1/transactions` (#321). The old path stays as an alias for
-// one release, so both must answer the same way.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockRequireApiKey = vi.hoisted(() => vi.fn<(...args: unknown[]) => Promise<unknown>>());
@@ -22,7 +20,6 @@ vi.mock('#lib/server/logger.js', () => ({
 	}
 }));
 
-import { GET as aliasGet, POST as aliasPost } from '../transactions/+server';
 import { GET, POST } from './+server';
 
 const expense = { id: 'tx1', amount: 42.5, payee: 'Grocery Store', date: '2026-08-12' };
@@ -64,29 +61,15 @@ beforeEach(() => {
 });
 
 describe('GET /api/v1/expenses', () => {
-	it.each([
-		['/api/v1/expenses', GET],
-		['/api/v1/transactions', aliasGet]
-	])('%s lists expenses', async (path, handler) => {
+	it('lists expenses', async () => {
 		mockFindAll.mockResolvedValue([expense]);
 
-		const response = await call(handler, path);
+		const response = await call(GET, '/api/v1/expenses');
 
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({ data: [expense] });
 		expect(mockRequireApiKey).toHaveBeenCalledWith(expect.any(Request), 'transactions:read');
 		expect(mockFindAll).toHaveBeenCalledWith({ limit: 50 });
-	});
-
-	it('returns the same body from both paths', async () => {
-		mockFindAll.mockResolvedValue([expense]);
-
-		const [current, alias] = await Promise.all([
-			call(GET, '/api/v1/expenses'),
-			call(aliasGet, '/api/v1/transactions')
-		]);
-
-		expect(await alias.json()).toEqual(await current.json());
 	});
 
 	it('returns only the owner’s id and name, never their email or role', async () => {
@@ -101,19 +84,18 @@ describe('GET /api/v1/expenses', () => {
 });
 
 describe('POST /api/v1/expenses', () => {
-	it.each([
-		['/api/v1/expenses', POST],
-		['/api/v1/transactions', aliasPost]
-	])('%s creates an expense', async (path, handler) => {
+	it('creates an expense', async () => {
 		mockCreate.mockResolvedValue(expense);
 
-		const response = await post(handler, path);
+		const response = await post(POST, '/api/v1/expenses');
 
 		expect(response.status).toBe(201);
 		expect(await response.json()).toEqual({ data: expense });
 		expect(mockRequireApiKey).toHaveBeenCalledWith(expect.any(Request), 'transactions:write');
 		expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining(body), 'user1');
-		expect(mockRecordApiWrite).toHaveBeenCalledWith(expect.objectContaining({ path }));
+		expect(mockRecordApiWrite).toHaveBeenCalledWith(
+			expect.objectContaining({ path: '/api/v1/expenses' })
+		);
 	});
 
 	it('returns only the owner’s id and name for the created expense', async () => {
@@ -126,18 +108,14 @@ describe('POST /api/v1/expenses', () => {
 		});
 	});
 
-	it('rejects an invalid body on both paths', async () => {
-		for (const [path, handler] of [
-			['/api/v1/expenses', POST],
-			['/api/v1/transactions', aliasPost]
-		] as const) {
-			const response = await call(handler, path, {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ ...body, amount: -1 })
-			});
-			expect(response.status).toBe(400);
-		}
+	it('rejects an invalid body', async () => {
+		const response = await call(POST, '/api/v1/expenses', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ ...body, amount: -1 })
+		});
+
+		expect(response.status).toBe(400);
 		expect(mockCreate).not.toHaveBeenCalled();
 	});
 });

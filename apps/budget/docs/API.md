@@ -55,10 +55,6 @@ curl -H "Authorization: Bearer sk_live_xxx" \
   "https://budget.example.com/api/v1/expenses?startDate=2026-08-01&endDate=2026-08-31"
 ```
 
-> **Deprecated alias:** `GET /api/v1/transactions` and `POST /api/v1/transactions` still work and
-> return the same responses, but will be removed after one release. Switch callers to
-> `/api/v1/expenses`. The scope names (`transactions:read`, `transactions:write`) are unchanged.
-
 ### `POST /api/v1/expenses`
 
 Requires `transactions:write`. Body:
@@ -157,10 +153,6 @@ Requires `recurring:read`. No parameters — returns every active recurring bill
 ```bash
 curl -H "Authorization: Bearer sk_live_xxx" "https://budget.example.com/api/v1/recurring-bills"
 ```
-
-> **Deprecated alias:** `GET /api/v1/recurring` and `PATCH /api/v1/recurring/:id` still work and
-> return the same responses, but will be removed after one release. Switch callers to
-> `/api/v1/recurring-bills`. The scope names (`recurring:read`, `recurring:markPaid`) are unchanged.
 
 ### `PATCH /api/v1/recurring-bills/:id`
 
