@@ -8,40 +8,19 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Separator from '#lib/components/ui/separator/index.js';
-	import type { RecurringBill } from '#lib/types.js';
+	import type { UpcomingBill } from '#lib/types.js';
 	import { formatCurrency } from '#lib/utils.js';
-	import { getCurrentPeriodDueDate, getDaysUntilDue } from '#lib/utils/dates.js';
 
 	interface Props {
-		recurringBills: RecurringBill[];
+		upcomingBills: UpcomingBill[];
 	}
 
-	let { recurringBills }: Props = $props();
-
-	const UPCOMING_WINDOW_DAYS = 14;
-
-	type UpcomingBill = { item: RecurringBill; daysUntilDue: number };
-
-	let upcoming = $derived.by<UpcomingBill[]>(() => {
-		const now = new Date();
-
-		return recurringBills
-			.filter((item) => !item.paid && item.dueDay != null)
-			.map((item) => ({
-				item,
-				daysUntilDue: getDaysUntilDue(
-					getCurrentPeriodDueDate(item.dueDay as number, item.dueMonth, item.cadence, now),
-					now
-				)
-			}))
-			.filter(({ daysUntilDue }) => daysUntilDue <= UPCOMING_WINDOW_DAYS)
-			.sort((a, b) => a.daysUntilDue - b.daysUntilDue);
-	});
+	let { upcomingBills }: Props = $props();
 
 	let togglingId = $state<string | null>(null);
 
-	function dueLabel(daysUntilDue: number): string {
-		if (daysUntilDue < 0) {
+	function dueLabel({ daysUntilDue, overdue }: UpcomingBill): string {
+		if (overdue) {
 			const overdueDays = Math.abs(daysUntilDue);
 			return `Overdue Bill · ${overdueDays} day${overdueDays === 1 ? '' : 's'}`;
 		}
@@ -50,8 +29,8 @@
 		return `Due in ${daysUntilDue} days`;
 	}
 
-	function badgeClass(daysUntilDue: number): string {
-		if (daysUntilDue < 0) return 'bg-destructive hover:bg-destructive text-white';
+	function badgeClass({ daysUntilDue, overdue }: UpcomingBill): string {
+		if (overdue) return 'bg-destructive hover:bg-destructive text-white';
 		if (daysUntilDue <= 1) return 'bg-amber-500 hover:bg-amber-500 text-white';
 		return 'bg-muted-foreground/30 hover:bg-muted-foreground/30 text-white';
 	}
@@ -62,18 +41,19 @@
 		<Card.Title class="text-base tracking-tight">Upcoming recurring bills</Card.Title>
 	</Card.Header>
 	<Card.Content class="pt-0">
-		{#if upcoming.length === 0}
+		{#if upcomingBills.length === 0}
 			<p class="text-muted-foreground py-4 text-center text-sm">No recurring bills due soon</p>
 		{:else}
 			<div>
-				{#each upcoming as { item, daysUntilDue }, i (item.id)}
+				{#each upcomingBills as upcoming, i (upcoming.bill.id)}
+					{@const item = upcoming.bill}
 					{#if i > 0}
 						<Separator.Root class="my-0" />
 					{/if}
 					<div class="flex flex-wrap items-center justify-between gap-2 py-2.5">
 						<p class="text-sm font-medium">{item.merchant}</p>
 						<div class="flex items-center gap-2">
-							<Badge class="text-xs {badgeClass(daysUntilDue)}">{dueLabel(daysUntilDue)}</Badge>
+							<Badge class="text-xs {badgeClass(upcoming)}">{dueLabel(upcoming)}</Badge>
 							<span class="text-sm font-semibold tabular-nums">{formatCurrency(item.amount)}</span>
 							<form
 								method="POST"
