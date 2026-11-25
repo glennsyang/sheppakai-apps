@@ -1,3 +1,4 @@
+import type { UpcomingBill } from '#lib/types.js';
 import { getPacificTodayDate, padMonth } from '#lib/utils/dates.js';
 
 /**
@@ -85,4 +86,53 @@ export function recurringBillsForMonth<R extends PaymentPeriods & { merchant: st
 			cadence: price.cadence
 		}))
 		.toSorted((a, b) => a.merchant.localeCompare(b.merchant));
+}
+
+/** How far ahead, in days, a Recurring Bill counts as upcoming. */
+const UPCOMING_WINDOW_DAYS = 14;
+
+type DueBill = {
+	paid: boolean;
+	dueDay: number | null;
+	dueMonth: number | null;
+	cadence: Cadence;
+};
+
+function dayNumber(isoDate: string): number {
+	const [year, month, day] = isoDate.split('-').map(Number);
+	return Date.UTC(year, month - 1, day) / 86_400_000;
+}
+
+/**
+ * The due date of a bill in `monthKey`'s payment period: Monthly bills on `dueDay` of that
+ * month, Yearly bills on `dueDay` of `dueMonth` (or that month when unset) in that year.
+ * `dueDay` is clamped to the month's last day (31 in February → 28/29).
+ */
+function dueDateIn(dueDay: number, dueMonth: number | null, cadence: Cadence, monthKey: string) {
+	const [year, viewedMonth] = monthKey.split('-').map(Number);
+	const month = cadence === 'Yearly' && dueMonth ? dueMonth : viewedMonth;
+	const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+	return `${toMonthKey(month, year)}-${padMonth(Math.min(dueDay, lastDay))}`;
+}
+
+/**
+ * Unpaid Recurring Bills due within {@link UPCOMING_WINDOW_DAYS} of `today` (a Pacific
+ * `YYYY-MM-DD`), including Overdue Bills, soonest first. `bills` carry `monthKey`'s paid state
+ * (see `recurringBillsForMonth`).
+ */
+export function upcomingBills<B extends DueBill>(
+	bills: B[],
+	monthKey: string,
+	today: string
+): UpcomingBill<B>[] {
+	const todayNumber = dayNumber(today);
+	return bills
+		.flatMap((bill) => {
+			if (bill.paid || bill.dueDay == null) return [];
+			const dueDate = dueDateIn(bill.dueDay, bill.dueMonth, bill.cadence, monthKey);
+			const daysUntilDue = dayNumber(dueDate) - todayNumber;
+			return [{ bill, dueDate, daysUntilDue, overdue: daysUntilDue < 0 }];
+		})
+		.filter(({ daysUntilDue }) => daysUntilDue <= UPCOMING_WINDOW_DAYS)
+		.toSorted((a, b) => a.daysUntilDue - b.daysUntilDue);
 }

@@ -673,7 +673,7 @@
 
 		{#if isSectionVisible('upcomingBills') && monthStatus === 'current'}
 			<div class="mb-8">
-				<UpcomingBillsCard recurringBills={data.recurringBills || []} />
+				<UpcomingBillsCard upcomingBills={data.upcomingBills || []} />
 			</div>
 		{/if}
 

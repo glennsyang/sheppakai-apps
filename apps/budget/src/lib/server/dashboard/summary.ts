@@ -26,7 +26,8 @@ import { computeSpendingSpikes } from '#lib/server/insights/spending-spikes.js';
 import {
 	recurringBillsForMonth,
 	recurringBillsTotalForMonth,
-	toMonthKey
+	toMonthKey,
+	upcomingBills
 } from '#lib/server/recurring-bill-history.js';
 import { goalsWithProgress as loadGoalsWithProgress } from '#lib/server/savings/goals.js';
 import { monthNames } from '#lib/utils.js';
@@ -36,6 +37,7 @@ import {
 	getMonthDateRange,
 	getMonthProgress,
 	getMonthRangeFromUrl,
+	getPacificTodayDate,
 	getPreviousMonthsRange,
 	getYearDateRange,
 	parseYearParam
@@ -216,6 +218,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		plannedExpenses,
 		categoryStatuses,
 		recurringBills,
+		upcomingBills: upcomingBills(recurringBills, selectedMonthKey, getPacificTodayDate()),
 		recurringBillsMonthlyTotal,
 		actualExpensesTotal,
 		excludedExpensesTotal,

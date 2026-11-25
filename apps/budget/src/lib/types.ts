@@ -71,6 +71,17 @@ export type CategoryStatus = {
  */
 export type RecurringBill = QueryRow<'recurringBill', { user: true }> & { paid: boolean };
 
+/** A Recurring Bill due soon or an Overdue Bill (see `upcomingBills`). */
+export type UpcomingBill<B = RecurringBill> = {
+	bill: B;
+	/** `YYYY-MM-DD` due date in the viewed month's payment period. */
+	dueDate: string;
+	/** Calendar days from `today` to `dueDate`; negative once the due date has passed. */
+	daysUntilDue: number;
+	/** An Overdue Bill: unpaid and past its due date. */
+	overdue: boolean;
+};
+
 export type Income = QueryRow<'income'>;
 
 export type SavingsAccount = QueryRow<'savingsAccount', { user: true }>;
