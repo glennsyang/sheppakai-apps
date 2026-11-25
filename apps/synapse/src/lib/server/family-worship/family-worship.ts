@@ -179,7 +179,7 @@ function findOwnedTopic(db: DbClient, userId: string, topicId: string): TopicRow
 	return db.select().from(familyWorshipTopics).where(ownedTopic(userId, topicId)).get();
 }
 
-/** Hides a topic from the catalog and takes it out of the Topic Queue, keeping its history. */
+/** Hides a topic, takes it out of the Topic Queue and clears its unstudied Planned Weeks. */
 export function archiveTopic(
 	db: Db,
 	userId: string,
@@ -194,6 +194,18 @@ export function archiveTopic(
 		tx.update(familyWorshipTopics)
 			.set({ isArchived: true, archivedAt: now, queuePosition: null, updatedAt: now })
 			.where(ownedTopic(userId, topicId))
+			.run();
+		// An archived topic leaves the rotation: the weeks it was planned for (and not yet studied)
+		// go back to suggestions. A session can't be logged for an archived topic, so keeping those
+		// plans would make "We did it" fail. Weeks with a session keep their plan as history.
+		tx.delete(familyWorshipPlannedWeeks)
+			.where(
+				and(
+					eq(familyWorshipPlannedWeeks.userId, userId),
+					eq(familyWorshipPlannedWeeks.topicId, topicId),
+					sql`not exists (select 1 from ${familyWorshipSessions} where ${familyWorshipSessions.userId} = ${userId} and ${familyWorshipSessions.weekStart} = ${familyWorshipPlannedWeeks.weekStart})`
+				)
+			)
 			.run();
 		writeQueueOrder(tx, userId, activeTopicIds(tx, userId), now);
 		return { ok: true };

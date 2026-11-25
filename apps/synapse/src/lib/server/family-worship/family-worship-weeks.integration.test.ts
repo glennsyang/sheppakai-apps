@@ -7,6 +7,7 @@ import * as schema from '../db/schema';
 import type { Db } from '../notification-jobs/run-job';
 import { buildTestDb, TEST_USER } from '../notification-jobs/test-harness';
 import {
+	archiveTopic,
 	clearWeek,
 	createTopic,
 	deleteSession,
@@ -491,6 +492,45 @@ describe('deleting topics', () => {
 
 		expect(db.select().from(schema.familyWorshipSessions).all()).toEqual([]);
 		expect(db.select().from(schema.familyWorshipTopics).all()).toEqual([]);
+	});
+});
+
+describe('archiving topics', () => {
+	it('clears the weeks an archived topic was planned for, so they get a suggestion', () => {
+		const a = topic('Prayer');
+		const b = topic('Love');
+		planWeek(db, me, W0, a.id, opts);
+		planWeek(db, me, W1, a.id, opts);
+
+		expect(archiveTopic(db, me, a.id, opts)).toEqual({ ok: true });
+
+		expect(planTitles(2)).toEqual([
+			{ week: W0, planned: null, suggestion: 'Love' },
+			{ week: W1, planned: null, suggestion: null }
+		]);
+		expect(log(TODAY, b.id)).toMatchObject({ ok: true });
+	});
+
+	it('clears an unlogged past week, so it can still be logged late', () => {
+		const a = topic('Prayer');
+		const b = topic('Love');
+		planWeek(db, me, LAST_WEEK, a.id, opts);
+
+		archiveTopic(db, me, a.id, opts);
+
+		expect(db.select().from(schema.familyWorshipPlannedWeeks).all()).toEqual([]);
+		expect(log('2026-11-18', b.id)).toMatchObject({ ok: true });
+	});
+
+	it('keeps the plan of a week that already has a session', () => {
+		const a = topic('Prayer');
+		log(TODAY, a.id);
+
+		archiveTopic(db, me, a.id, opts);
+
+		const [week] = getPlan(db, me, { today: TODAY, weeks: 1, lookbackWeeks: 0 });
+		expect(week?.plannedTopic?.title).toBe('Prayer');
+		expect(week?.session?.topicTitle).toBe('Prayer');
 	});
 });
 
