@@ -63,7 +63,7 @@
 	<LoadErrorAlert message={data.loadError} />
 	<div class="ruled mb-6 flex items-center justify-between gap-3 pb-4">
 		<div>
-			<h1 class="page-title" style="--pen: oklch(var(--color-amber))">Family Worship</h1>
+			<h1 class="page-title" style="--pen: oklch(var(--color-brown))">Family Worship</h1>
 			<p class="text-muted-foreground mt-1">Plan the topics you study together each week</p>
 		</div>
 		<TopicDialog formData={data.topicForm} instanceId="add" />

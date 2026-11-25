@@ -13,11 +13,13 @@ export type SidebarNav = {
 		url?: string;
 		icon?: Component;
 		/** Pen colour: the --color-<pen> triplet this section writes in. */
-		pen: 'teal' | 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'amber';
+		pen: 'teal' | 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'brown';
 		/** Label short enough for an index tab. */
 		short: string;
 		items?: { title: string; url: string }[];
 		adminOnly?: boolean;
+		/** On phones, listed under the More tab instead of getting a tab of its own. */
+		mobileMore?: boolean;
 	}[];
 };
 

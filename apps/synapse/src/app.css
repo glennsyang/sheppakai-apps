@@ -66,6 +66,7 @@
 	--color-orange: 0.6 0.19 38; /* tasks: vermilion */
 	--color-purple: 0.5 0.16 300; /* meditation: violet */
 	--color-pink: 0.56 0.19 350; /* visits: magenta */
+	--color-brown: 0.47 0.08 55; /* family worship: walnut */
 	--color-amber: 0.66 0.15 70; /* warnings */
 }
 
@@ -117,6 +118,7 @@
 	--color-orange: 0.74 0.15 42;
 	--color-purple: 0.72 0.13 300;
 	--color-pink: 0.74 0.15 352;
+	--color-brown: 0.72 0.08 60;
 	--color-amber: 0.8 0.13 75;
 }
 
@@ -186,7 +188,7 @@
 	--color-pen-tasks: oklch(var(--color-orange));
 	--color-pen-mind: oklch(var(--color-purple));
 	--color-pen-people: oklch(var(--color-pink));
-	--color-pen-worship: oklch(var(--color-amber));
+	--color-pen-worship: oklch(var(--color-brown));
 	--color-pen-warn: oklch(var(--color-amber));
 
 	/* Legacy section colour names, now resolving to the pens */
@@ -196,6 +198,7 @@
 	--color-orange: oklch(var(--color-orange));
 	--color-purple: oklch(var(--color-purple));
 	--color-pink: oklch(var(--color-pink));
+	--color-brown: oklch(var(--color-brown));
 }
 
 @layer base {

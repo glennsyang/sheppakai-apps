@@ -22,14 +22,6 @@ export const navItems: SidebarNav = {
 			short: 'Today'
 		},
 		{
-			title: 'Journal',
-			description: 'Capture your daily thoughts and experiences',
-			url: '/journal',
-			icon: Book,
-			pen: 'blue',
-			short: 'Journal'
-		},
-		{
 			title: 'Tasks',
 			description: 'Track work on a kanban board with priorities and states',
 			url: '/tasks',
@@ -46,12 +38,12 @@ export const navItems: SidebarNav = {
 			short: 'Fitness'
 		},
 		{
-			title: 'Meditation',
-			description: 'Build mindfulness habits with guided routines',
-			url: '/meditation',
-			icon: Heart,
-			pen: 'purple',
-			short: 'Meditation'
+			title: 'Family Worship',
+			description: 'Plan the topics you study at home each week',
+			url: '/family-worship',
+			icon: BookOpen,
+			pen: 'brown',
+			short: 'FW'
 		},
 		{
 			title: 'Visits',
@@ -62,12 +54,22 @@ export const navItems: SidebarNav = {
 			short: 'Visits'
 		},
 		{
-			title: 'Family Worship',
-			description: 'Plan the topics you study at home each week',
-			url: '/family-worship',
-			icon: BookOpen,
-			pen: 'amber',
-			short: 'Worship'
+			title: 'Journal',
+			description: 'Capture your daily thoughts and experiences',
+			url: '/journal',
+			icon: Book,
+			pen: 'blue',
+			short: 'Journal',
+			mobileMore: true
+		},
+		{
+			title: 'Meditation',
+			description: 'Build mindfulness habits with guided routines',
+			url: '/meditation',
+			icon: Heart,
+			pen: 'purple',
+			short: 'Meditation',
+			mobileMore: true
 		},
 		{
 			title: 'Admin',
