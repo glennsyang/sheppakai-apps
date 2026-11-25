@@ -21,6 +21,18 @@ export function apiSuccess<T>(data: T, status = 200): Response {
 	return Response.json({ data }, { status });
 }
 
-export function apiError(code: ApiErrorCode, message: string, status: number): Response {
-	return Response.json({ error: { code, message } }, { status });
+/**
+ * `reason` is an optional machine-readable detail under the `code`, for clients that need to tell
+ * apart several rule violations sharing one code (e.g. which `conflict` it was).
+ */
+export function apiError(
+	code: ApiErrorCode,
+	message: string,
+	status: number,
+	reason?: string
+): Response {
+	return Response.json(
+		{ error: reason ? { code, message, reason } : { code, message } },
+		{ status }
+	);
 }

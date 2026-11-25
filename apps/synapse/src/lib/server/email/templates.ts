@@ -1,4 +1,9 @@
-import { escapeHtml, renderEmailLayout, type EmailLayoutOptions } from '@sheppakai/shared/email';
+import {
+	EMAIL_BUTTON_STYLE,
+	escapeHtml,
+	renderEmailLayout,
+	type EmailLayoutOptions
+} from '@sheppakai/shared/email';
 
 import type { EmailContent } from '#lib/server/notification-jobs/notifier.js';
 import { getWorkoutEmoji } from '#lib/utils/workout.js';
@@ -211,6 +216,71 @@ export function buildVisitTodayReminderEmail(
 			Make it a great visit!
 		</p>${FLOCK_QUOTE}`,
 			{ accent: '#43e97b 0%, #38f9d7 100%' }
+		)
+	};
+}
+
+const FAMILY_WORSHIP_ACCENT = '#f6d365 0%, #fda085 100%';
+
+function familyWorshipButton(url: string, label: string): string {
+	return `
+		<div style="text-align: center; margin: 30px 0;">
+			<a href="${escapeHtml(url)}" style="${EMAIL_BUTTON_STYLE}">${escapeHtml(label)}</a>
+		</div>`;
+}
+
+/** Monday evening, when this week has no Planned Week yet. */
+export function buildPlanningReminderEmail(
+	name: string,
+	suggestedTopic: string | null,
+	familyWorshipUrl: string
+): EmailContent {
+	const suggestion = suggestedTopic
+		? `The next topic in your Topic Queue is <strong>${escapeHtml(suggestedTopic)}</strong>. You can plan it with one tap, or choose another.`
+		: 'Your Topic Queue is empty, so add a topic and plan it for this week.';
+	return {
+		subject: "[Synapse] 📖 Plan this week's family worship",
+		label: 'family worship planning reminder email',
+		html: layout(
+			'Planning Reminder',
+			'📖 Plan Family Worship',
+			`
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			This week doesn't have a Planned Week yet. ${suggestion}
+		</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			Not studying this week? Mark it as a Skipped Week and this reminder won't come back.
+		</p>${familyWorshipButton(familyWorshipUrl, 'Plan this week')}`,
+			{ accent: FAMILY_WORSHIP_ACCENT }
+		)
+	};
+}
+
+/** The morning after the Usual Weekday, when that week has no session logged. */
+export function buildLoggingReminderEmail(
+	name: string,
+	plannedTopic: string | null,
+	familyWorshipUrl: string
+): EmailContent {
+	const topic = plannedTopic
+		? `The Planned Week's topic was <strong>${escapeHtml(plannedTopic)}</strong>.`
+		: 'This week had no Planned Week.';
+	return {
+		subject: "[Synapse] 📖 Log this week's family worship",
+		label: 'family worship logging reminder email',
+		html: layout(
+			'Logging Reminder',
+			'📖 Log Family Worship',
+			`
+		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			No family worship session is logged for this week yet. ${topic} Log it while you still remember.
+		</p>
+		<p style="font-size: 16px; margin-bottom: 20px;">
+			Didn't study this week? Mark it as a Skipped Week instead.
+		</p>${familyWorshipButton(familyWorshipUrl, 'Log the session')}`,
+			{ accent: FAMILY_WORSHIP_ACCENT }
 		)
 	};
 }

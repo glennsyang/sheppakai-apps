@@ -913,6 +913,23 @@ export function deleteSession(db: Db, userId: string, sessionId: string): TopicR
 	return deleted ? { ok: true } : { ok: false, reason: 'not_found' };
 }
 
+/** One session, or `null` when it isn't the user's. */
+export function getSession(db: Db, userId: string, sessionId: string): SessionEntry | null {
+	const [row] = sessionsWithTitles(db, userId, [eq(familyWorshipSessions.id, sessionId)]);
+	return row ? toSessionEntry(row) : null;
+}
+
+/** Sessions newest first, optionally only one topic's, up to `limit`. */
+export function listSessions(
+	db: Db,
+	userId: string,
+	{ topicId, limit = 50 }: { topicId?: string; limit?: number } = {}
+): SessionEntry[] {
+	return sessionsWithTitles(db, userId, topicId ? [eq(familyWorshipSessions.topicId, topicId)] : [])
+		.slice(0, limit)
+		.map(toSessionEntry);
+}
+
 export type TopicHistory = {
 	topic: Topic;
 	sessions: SessionEntry[];

@@ -21,10 +21,18 @@ vi.mock('../digest/remote-sections', () => ({
 import { morningDigestJob } from '../digest/process-morning-digests';
 import { tasksDueTodayDigestJob } from '../email/digests';
 import { runEmailNotifications } from '../email/email-notifications';
+import { loggingReminderJob, planningReminderJob } from '../email/family-worship-reminders';
 import { meditationReminderJob } from '../email/meditation-reminders';
 import { scheduledVisitReminderJob, visitTodayReminderJob } from '../email/visit-reminders';
 import { visitWarningJob } from '../email/visit-warnings';
 import { workoutReminderJob } from '../email/workout-reminders';
+import {
+	createTopic,
+	logSession,
+	planWeek,
+	setUsualWeekday,
+	skipWeek
+} from '../family-worship/family-worship';
 import { runNotificationJob } from './run-job';
 import {
 	buildTestDb,
@@ -510,6 +518,205 @@ describe('morningDigestJob', () => {
 		await runNotificationJob(morningDigestJob, contextAt(db, MORNING), notifier);
 		expect(notifier.pushes).toHaveLength(0);
 		expect(readNotificationLog(db)).toHaveLength(0);
+	});
+});
+
+// Family Worship: week of Monday 2026-01-12; the default Usual Weekday is Wednesday 2026-01-14.
+const FW_WEEK = '2026-01-12';
+const MONDAY_BEFORE_FIVE = '2026-01-13T00:55:00Z'; // Mon 4:55 PM PST
+const MONDAY_AFTER_FIVE = '2026-01-13T01:05:00Z'; // Mon 5:05 PM PST
+const MONDAY_LATE = '2026-01-13T07:00:00Z'; // Mon 11:00 PM PST
+const THURSDAY_BEFORE_NINE = '2026-01-15T16:55:00Z'; // Thu 8:55 AM PST
+const THURSDAY_AFTER_NINE = '2026-01-15T17:05:00Z'; // Thu 9:05 AM PST
+
+function addTopic(title: string) {
+	return createTopic(
+		db,
+		TEST_USER.id,
+		{
+			title,
+			description: `${title} study`,
+			notes: null,
+			scriptureReferences: null,
+			publicationLinks: []
+		},
+		{ now: new Date(MORNING) }
+	);
+}
+
+describe('planningReminderJob', () => {
+	beforeEach(() => {
+		addTopic('Psalm 23');
+		addTopic('Being content');
+	});
+
+	it('sends on Monday after 5pm for an empty week, naming the top of the queue, once', async () => {
+		const result = await runNotificationJob(
+			planningReminderJob,
+			contextAt(db, MONDAY_AFTER_FIVE),
+			notifier
+		);
+
+		expect(result).toEqual({ sent: 1, failed: 0 });
+		expect(notifier.pushes[0].message).toContain('Psalm 23');
+		expect(notifier.pushes[0].click).toMatch(/\/family-worship$/);
+		expect(notifier.emails[0].html).toContain('Psalm 23');
+		expect(notifier.emails[0].html).toContain('/family-worship');
+		expect(readNotificationLog(db)).toEqual([
+			expect.objectContaining({ type: 'family_worship_planning_reminder', entityId: FW_WEEK })
+		]);
+
+		notifier.reset();
+		await runNotificationJob(planningReminderJob, contextAt(db, MONDAY_LATE), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+		expect(notifier.emails).toHaveLength(0);
+	});
+
+	it('sends again the next Monday for the new week', async () => {
+		await runNotificationJob(planningReminderJob, contextAt(db, MONDAY_AFTER_FIVE), notifier);
+		notifier.reset();
+
+		await runNotificationJob(planningReminderJob, contextAt(db, '2026-01-20T01:05:00Z'), notifier);
+		expect(notifier.pushes).toHaveLength(1);
+	});
+
+	it('does not send before 5pm or on another day', async () => {
+		await runNotificationJob(planningReminderJob, contextAt(db, MONDAY_BEFORE_FIVE), notifier);
+		await runNotificationJob(planningReminderJob, contextAt(db, '2026-01-14T01:05:00Z'), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+		expect(readNotificationLog(db)).toHaveLength(0);
+	});
+
+	it('does not send when the week is planned', async () => {
+		const topic = addTopic('Kindness');
+		planWeek(db, TEST_USER.id, FW_WEEK, topic.id, { now: new Date(MORNING) });
+
+		await runNotificationJob(planningReminderJob, contextAt(db, MONDAY_AFTER_FIVE), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+	});
+
+	it('does not send for a Skipped Week', async () => {
+		skipWeek(db, TEST_USER.id, FW_WEEK, 'Convention', { now: new Date(MORNING) });
+
+		await runNotificationJob(planningReminderJob, contextAt(db, MONDAY_AFTER_FIVE), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+	});
+
+	it('does not send to a user with no Family Worship topics', async () => {
+		db.delete(schema.familyWorshipTopics).run();
+
+		await runNotificationJob(planningReminderJob, contextAt(db, MONDAY_AFTER_FIVE), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+	});
+});
+
+describe('loggingReminderJob', () => {
+	let topicId: string;
+
+	beforeEach(() => {
+		topicId = addTopic('Psalm 23').id;
+		planWeek(db, TEST_USER.id, FW_WEEK, topicId, { now: new Date(MORNING) });
+	});
+
+	it('sends the morning after the Usual Weekday, naming the planned topic, once', async () => {
+		const result = await runNotificationJob(
+			loggingReminderJob,
+			contextAt(db, THURSDAY_AFTER_NINE),
+			notifier
+		);
+
+		expect(result).toEqual({ sent: 1, failed: 0 });
+		expect(notifier.pushes[0].message).toContain('Psalm 23');
+		expect(notifier.pushes[0].click).toMatch(/\/family-worship$/);
+		expect(notifier.emails[0].html).toContain('Psalm 23');
+		expect(readNotificationLog(db)).toEqual([
+			expect.objectContaining({ type: 'family_worship_logging_reminder', entityId: FW_WEEK })
+		]);
+
+		notifier.reset();
+		await runNotificationJob(loggingReminderJob, contextAt(db, '2026-01-16T03:00:00Z'), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+	});
+
+	it('does not send before 9am', async () => {
+		await runNotificationJob(loggingReminderJob, contextAt(db, THURSDAY_BEFORE_NINE), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+	});
+
+	it('does not send once a session is logged', async () => {
+		logSession(db, TEST_USER.id, { date: TODAY, topicId, note: null }, { now: new Date(EVENING) });
+
+		await runNotificationJob(loggingReminderJob, contextAt(db, THURSDAY_AFTER_NINE), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+	});
+
+	it('does not send for a Skipped Week', async () => {
+		skipWeek(db, TEST_USER.id, FW_WEEK, null, { now: new Date(MORNING) });
+
+		await runNotificationJob(loggingReminderJob, contextAt(db, THURSDAY_AFTER_NINE), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+	});
+
+	it('follows a changed Usual Weekday, checking the Sunday week on Monday morning', async () => {
+		await setUsualWeekday(db, TEST_USER.id, 0);
+
+		await runNotificationJob(loggingReminderJob, contextAt(db, THURSDAY_AFTER_NINE), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+
+		// Monday 2026-01-19 9:05 AM PST: the Sunday (18th) belongs to the week of the 12th.
+		await runNotificationJob(loggingReminderJob, contextAt(db, '2026-01-19T17:05:00Z'), notifier);
+		expect(notifier.pushes).toHaveLength(1);
+		expect(notifier.pushes[0].message).toContain('Psalm 23');
+		expect(readNotificationLog(db)).toEqual([
+			expect.objectContaining({ type: 'family_worship_logging_reminder', entityId: FW_WEEK })
+		]);
+	});
+
+	it('does not send on the Monday after a logged Sunday session', async () => {
+		await setUsualWeekday(db, TEST_USER.id, 0);
+		logSession(
+			db,
+			TEST_USER.id,
+			{ date: '2026-01-18', topicId, note: null },
+			{ now: new Date('2026-01-19T03:00:00Z') }
+		);
+
+		await runNotificationJob(loggingReminderJob, contextAt(db, '2026-01-19T17:05:00Z'), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+	});
+});
+
+describe('morningDigestJob Family Worship line', () => {
+	let topicId: string;
+
+	beforeEach(() => {
+		topicId = addTopic('Psalm 23').id;
+	});
+
+	it('names the planned topic on the Usual Weekday', async () => {
+		planWeek(db, TEST_USER.id, FW_WEEK, topicId, { now: new Date(MORNING) });
+
+		await runNotificationJob(morningDigestJob, contextAt(db, MORNING), notifier);
+		expect(notifier.pushes[0].message).toContain('📖 Family Worship tonight: Psalm 23');
+	});
+
+	it('leaves the line out on another weekday', async () => {
+		planWeek(db, TEST_USER.id, FW_WEEK, topicId, { now: new Date(MORNING) });
+		await setUsualWeekday(db, TEST_USER.id, 4);
+
+		await runNotificationJob(morningDigestJob, contextAt(db, MORNING), notifier);
+		expect(notifier.pushes[0].message).not.toContain('Family Worship');
+	});
+
+	it('leaves the line out when the week has no plan or is skipped', async () => {
+		await runNotificationJob(morningDigestJob, contextAt(db, MORNING), notifier);
+		expect(notifier.pushes[0].message).not.toContain('Family Worship');
+
+		db.delete(schema.emailNotifications).run();
+		notifier.reset();
+		skipWeek(db, TEST_USER.id, FW_WEEK, null, { now: new Date(MORNING) });
+		await runNotificationJob(morningDigestJob, contextAt(db, MORNING), notifier);
+		expect(notifier.pushes[0].message).not.toContain('Family Worship');
 	});
 });
 

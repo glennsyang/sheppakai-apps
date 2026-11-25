@@ -9,6 +9,8 @@
  * - Meditation reminders (based on meditation_schedules table)
  * - Visit warnings (for people in yellow/red visit status)
  * - Visit-today and one-week-ahead Next Visit reminders
+ * - Family Worship Planning Reminder (Monday 5:00 PM PT, week not planned) and Logging Reminder
+ *   (9:00 AM PT the morning after the Usual Weekday, no session logged); neither for a Skipped Week
  *
  * Every job runs through `runNotificationJob`, which logs each send in the email_notifications
  * table to prevent duplicates.
@@ -23,6 +25,7 @@ import type { Notifier } from '../notification-jobs/notifier';
 import { productionNotifier } from '../notification-jobs/production-notifier';
 import { runNotificationJob, type Db } from '../notification-jobs/run-job';
 import { tasksDueTodayDigestJob } from './digests';
+import { loggingReminderJob, planningReminderJob } from './family-worship-reminders';
 import { meditationReminderJob } from './meditation-reminders';
 import { scheduledVisitReminderJob, visitTodayReminderJob } from './visit-reminders';
 import { visitWarningJob } from './visit-warnings';
@@ -55,6 +58,8 @@ export async function runEmailNotifications({
 		await runNotificationJob(visitWarningJob, ctx, notifier);
 		await runNotificationJob(visitTodayReminderJob, ctx, notifier);
 		await runNotificationJob(scheduledVisitReminderJob, ctx, notifier);
+		await runNotificationJob(planningReminderJob, ctx, notifier);
+		await runNotificationJob(loggingReminderJob, ctx, notifier);
 
 		logger.debug('\n✅ Email notifications cron job completed successfully!');
 		return { ok: true };

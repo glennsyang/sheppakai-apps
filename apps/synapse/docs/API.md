@@ -15,23 +15,25 @@ synapse.
 
 ## Scopes
 
-| Scope             | Grants                                                 |
-| ----------------- | ------------------------------------------------------ |
-| `tasks:read`      | `GET /api/v1/tasks`, `GET /api/v1/tasks/{id}`          |
-| `tasks:write`     | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/{id}`       |
-| `mood:read`       | `GET /api/v1/mood`                                     |
-| `mood:write`      | `POST /api/v1/mood`                                    |
-| `workouts:read`   | `GET /api/v1/workouts`, `GET /api/v1/workouts/{id}`    |
-| `workouts:write`  | `POST /api/v1/workouts`, `PATCH /api/v1/workouts/{id}` |
-| `meals:read`      | `GET /api/v1/meals`, `GET /api/v1/meals/{id}`          |
-| `meals:write`     | `POST /api/v1/meals`, `PATCH /api/v1/meals/{id}`       |
-| `visits:read`     | `GET /api/v1/visits`, `GET /api/v1/visits/{id}`        |
-| `visits:write`    | `POST /api/v1/visits`, `PATCH /api/v1/visits/{id}`     |
-| `people:read`     | `GET /api/v1/people`                                   |
-| `journal:read`    | `GET /api/v1/journal`, `GET /api/v1/journal/{id}`      |
-| `journal:write`   | `POST /api/v1/journal`, `PATCH /api/v1/journal/{id}`   |
-| `meditation:read` | `GET /api/v1/meditation`                               |
-| `agenda:read`     | `GET /api/v1/agenda`                                   |
+| Scope                  | Grants                                                                                                                                                                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tasks:read`           | `GET /api/v1/tasks`, `GET /api/v1/tasks/{id}`                                                                                                                                             |
+| `tasks:write`          | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/{id}`                                                                                                                                          |
+| `mood:read`            | `GET /api/v1/mood`                                                                                                                                                                        |
+| `mood:write`           | `POST /api/v1/mood`                                                                                                                                                                       |
+| `workouts:read`        | `GET /api/v1/workouts`, `GET /api/v1/workouts/{id}`                                                                                                                                       |
+| `workouts:write`       | `POST /api/v1/workouts`, `PATCH /api/v1/workouts/{id}`                                                                                                                                    |
+| `meals:read`           | `GET /api/v1/meals`, `GET /api/v1/meals/{id}`                                                                                                                                             |
+| `meals:write`          | `POST /api/v1/meals`, `PATCH /api/v1/meals/{id}`                                                                                                                                          |
+| `visits:read`          | `GET /api/v1/visits`, `GET /api/v1/visits/{id}`                                                                                                                                           |
+| `visits:write`         | `POST /api/v1/visits`, `PATCH /api/v1/visits/{id}`                                                                                                                                        |
+| `people:read`          | `GET /api/v1/people`                                                                                                                                                                      |
+| `journal:read`         | `GET /api/v1/journal`, `GET /api/v1/journal/{id}`                                                                                                                                         |
+| `journal:write`        | `POST /api/v1/journal`, `PATCH /api/v1/journal/{id}`                                                                                                                                      |
+| `meditation:read`      | `GET /api/v1/meditation`                                                                                                                                                                  |
+| `agenda:read`          | `GET /api/v1/agenda`                                                                                                                                                                      |
+| `family-worship:read`  | `GET /api/v1/family-worship/topics`, `GET /api/v1/family-worship/plan`, `GET /api/v1/family-worship/sessions`                                                                             |
+| `family-worship:write` | `PUT`/`DELETE /api/v1/family-worship/plan/{weekStart}`, `POST /api/v1/family-worship/sessions`, `PATCH /api/v1/family-worship/sessions/{id}`, `POST /api/v1/family-worship/skipped-weeks` |
 
 `people:read` exists mainly to resolve a `personId` for the visits endpoints — a visit is tied to an
 existing person record, not a free-text name.
@@ -232,7 +234,86 @@ curl -H "Authorization: Bearer sk_live_xxx" "https://synapse.example.com/api/v1/
 `sourceType` is `default` for an item from a recurring template and `custom` for a one-off item.
 Read-only: check items off from the web UI.
 
+### Family Worship
+
+Terms (Topic, Topic Queue, Planned Week, Skipped Week, Usual Weekday) are defined in the Family
+Worship section of [GLOSSARY.md](../GLOSSARY.md). A week is named by its Monday (`weekStart`,
+`YYYY-MM-DD`, Pacific calendar). The rules are the same as in the web UI: these routes are thin
+adapters over the Family Worship module.
+
+`GET /api/v1/family-worship/topics` — requires `family-worship:read`. Active topics in Topic Queue
+order, front first: `id`, `title`, `description`, `notes`, `scriptureReferences`,
+`publicationLinks`, `queuePosition`.
+
+`GET /api/v1/family-worship/plan` — requires `family-worship:read`. Query params (optional): `weeks`
+(1-26, default 8: this week plus the next 7) and `lookbackWeeks` (0-12, default 4: past weeks shown
+only while unlogged). One row per week:
+
+```json
+{
+	"weekStart": "2026-11-23",
+	"date": "2026-11-25",
+	"isCurrent": true,
+	"isPast": false,
+	"plannedTopic": { "id": "t1", "title": "Psalm 23" },
+	"session": null,
+	"skip": null,
+	"suggestion": null
+}
+```
+
+`date` is the week's Usual Weekday. `suggestion` is the next topic from the Topic Queue for an empty
+current or upcoming week; it is computed on read, not stored.
+
+`PUT /api/v1/family-worship/plan/{weekStart}` — requires `family-worship:write`. Body:
+`{ "topicId": "t1" }`. Plans an active topic for the week, replacing any planned topic.
+`DELETE /api/v1/family-worship/plan/{weekStart}` clears the week's plan; its topic goes back to the
+front of the queue.
+
+`GET /api/v1/family-worship/sessions` — requires `family-worship:read`. Sessions newest first. Query
+params (optional): `topicId`, `limit` (1-200, default 50).
+
+`POST /api/v1/family-worship/sessions` — requires `family-worship:write`. Returns the session (201).
+
+```bash
+curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "date": "2026-11-25",
+    "topicId": "t1",
+    "note": "Good questions from the kids",
+    "continueNextWeek": false
+  }' \
+  "https://synapse.example.com/api/v1/family-worship/sessions"
+```
+
+Optional flags: `confirmUnskip` (must be `true` to log into a Skipped Week; this removes the skip),
+`continueNextWeek` (plan the same topic for next week) and `nextWeekConflict` (`"replace"` or
+`"shift"`, needed when next week already holds a different topic).
+
+`PATCH /api/v1/family-worship/sessions/{id}` — requires `family-worship:write`. Any of `date`,
+`topicId`, `note` (`null` clears it), plus `confirmUnskip` when moving into a Skipped Week.
+
+`POST /api/v1/family-worship/skipped-weeks` — requires `family-worship:write`. Body:
+`{ "weekStart": "2026-11-30", "reason": "Convention" }` (`reason` optional). The week's planned
+topic goes back to the front of the queue.
+
+Rule violations return an error with an `error.reason`, so a client can explain what went wrong and
+how to fix it:
+
+| Status | `error.code`        | `error.reason`          | When                                                                               |
+| ------ | ------------------- | ----------------------- | ---------------------------------------------------------------------------------- |
+| 400    | `validation_failed` | `invalid_week`          | `weekStart` isn't a Monday                                                         |
+| 400    | `validation_failed` | `future_date`           | A session dated after today                                                        |
+| 404    | `not_found`         | `not_found`             | Unknown or archived topic, or unknown session                                      |
+| 409    | `conflict`          | `week_has_session`      | The week already has a session (one per week)                                      |
+| 409    | `conflict`          | `week_skipped`          | Planning a Skipped Week, or logging into one without `confirmUnskip`               |
+| 409    | `conflict`          | `next_week_conflict`    | `continueNextWeek` while next week holds another topic, without `nextWeekConflict` |
+| 409    | `conflict`          | `next_week_skipped`     | `continueNextWeek` into a Skipped Week                                             |
+| 409    | `conflict`          | `next_week_has_session` | `continueNextWeek` into a week that already has a session                          |
+
+Topics are managed in the web UI: there's no API to create, archive, reorder or delete them.
+
 ## Out of scope
 
 Beyond the [shared list](../../../docs/API_CONVENTIONS.md#out-of-scope): there are no delete
-endpoints. Delete records from the web UI.
+endpoints, apart from clearing a Family Worship week's plan. Delete records from the web UI.

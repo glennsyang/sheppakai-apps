@@ -14,9 +14,11 @@ import {
 	deleteTopic,
 	getHistory,
 	getPlan,
+	getSession,
 	getThisWeek,
 	getTopicHistory,
 	getTopicQueue,
+	listSessions,
 	logSession,
 	planWeek,
 	setUsualWeekday,
@@ -393,6 +395,42 @@ describe('editing and deleting sessions', () => {
 			session: null,
 			plannedTopic: { title: 'Prayer' }
 		});
+	});
+});
+
+describe('reading sessions', () => {
+	it('lists sessions newest first, filtered by topic and capped by limit', () => {
+		const a = topic('A');
+		const b = topic('B');
+		log('2026-11-04', a.id);
+		log('2026-11-11', b.id);
+		log('2026-11-18', a.id);
+
+		expect(listSessions(db, me).map((s) => s.date)).toEqual([
+			'2026-11-18',
+			'2026-11-11',
+			'2026-11-04'
+		]);
+		expect(listSessions(db, me, { topicId: a.id }).map((s) => s.date)).toEqual([
+			'2026-11-18',
+			'2026-11-04'
+		]);
+		expect(listSessions(db, me, { limit: 1 })).toHaveLength(1);
+		expect(listSessions(db, OTHER_USER.id)).toEqual([]);
+	});
+
+	it("reads one session with its topic title, and not another user's", () => {
+		const a = topic('A');
+		const result = log('2026-11-18', a.id);
+		if (!result.ok) throw new Error('expected a session');
+
+		expect(getSession(db, me, result.sessionId)).toMatchObject({
+			id: result.sessionId,
+			date: '2026-11-18',
+			topicId: a.id,
+			topicTitle: 'A'
+		});
+		expect(getSession(db, OTHER_USER.id, result.sessionId)).toBeNull();
 	});
 });
 

@@ -44,6 +44,19 @@ describe('sendNtfy', () => {
 		expect(init?.headers).toEqual({ Title: 'Alert', Priority: '3', Tags: 'rotating_light' });
 	});
 
+	it('sends a Click header when a click URL is given', async () => {
+		fetchMock.mockResolvedValue({ ok: true });
+
+		await sendNtfy('https://ntfy.example.com/topic', 'hello', {
+			title: 'Alert',
+			click: 'https://app.example.com/family-worship',
+			logger
+		});
+
+		const [, init] = fetchMock.mock.calls[0];
+		expect(init?.headers).toMatchObject({ Click: 'https://app.example.com/family-worship' });
+	});
+
 	it.each(['https://invalid/topic', 'https://alerts.invalid/topic'])(
 		'skips an unset (.invalid) URL without fetching: %s',
 		async (url) => {

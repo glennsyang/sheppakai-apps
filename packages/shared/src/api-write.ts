@@ -11,12 +11,15 @@ import { apiError, apiSuccess, type ApiErrorCode } from './api-response';
 export class ApiWriteError extends Error {
 	code: ApiErrorCode;
 	status: number;
+	/** Optional machine-readable detail returned as `error.reason`. */
+	reason?: string;
 
-	constructor(code: ApiErrorCode, message: string, status: number) {
+	constructor(code: ApiErrorCode, message: string, status: number, reason?: string) {
 		super(message);
 		this.name = 'ApiWriteError';
 		this.code = code;
 		this.status = status;
+		this.reason = reason;
 	}
 }
 
@@ -101,7 +104,7 @@ export function createHandleApiWrite(deps: {
 			await recordApiWrite({ ...context, statusCode });
 
 			if (error instanceof ApiWriteError) {
-				return apiError(error.code, error.message, error.status);
+				return apiError(error.code, error.message, error.status, error.reason);
 			}
 
 			logger.error(`API: ${options.failureMessage}`, error);

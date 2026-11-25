@@ -63,6 +63,10 @@ Every response is one of exactly two shapes:
 | 400         | `invalid_json`                                           | Request body wasn't valid JSON                                                                                                                                                       |
 | 500         | `internal_error`                                         | Something went wrong server-side; check the server logs                                                                                                                              |
 
+An error may also carry an optional `error.reason`: a stable, machine-readable string that says
+which rule failed when several share one `code` (for example, which kind of `409 conflict` it was).
+Endpoints that set it document their reasons.
+
 This is the JSON form of the form-action contract in
 [ERROR_HANDLING_POLICY.md](./ERROR_HANDLING_POLICY.md).
 

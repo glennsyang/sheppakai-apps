@@ -18,12 +18,14 @@ export async function sendAuthAlerts(message: string, title = 'App Alert', prior
  * @param message The main body of the notification
  * @param title Optional title
  * @param priority 1-5 (5 is max/urgent)
+ * @param click Optional URL opened when the notification is tapped
  */
 export async function sendReminderAlerts(
 	message: string,
 	title = 'Synapse - Reminder Alert',
 	priority = 3,
-	tags = 'rotating_light'
+	tags = 'rotating_light',
+	click?: string
 ) {
-	return sendNtfy(REMINDER_ALERTS_URL, message, { title, priority, tags, logger });
+	return sendNtfy(REMINDER_ALERTS_URL, message, { title, priority, tags, click, logger });
 }
