@@ -47,6 +47,8 @@ Don't port one app's convention into another.
 
 - Svelte 5 runes only: `$state`, `$derived`, `$effect`, `$props`, `$bindable`. No `$:` reactive statements.
 - Forms submit through SvelteKit form actions with `use:enhance` (which revalidates for you), e.g. `<form method="POST" action="?/updateName" use:enhance>`. Never listen for `submit` on `window` or call `invalidateAll()` from a DOM listener.
+- **Any form with a field the user types into or picks from goes through sveltekit-superforms**: `superForm` on the client (initialised once; use `defaults(zod4Client(schema))` when the load has no form) and `superValidate` in the action. Plain `use:enhance` with `actionMessage()` is only for button-only forms (hidden inputs plus a submit: delete, confirm, toggle, sign-out).
+- Never `fetch` a form action (`fetch('?/…')`, the `x-sveltekit-action` header) from a component to save data. To submit without a visible form, keep a hidden superForm and call its `submit()`. The only exceptions are drag-and-drop saves (Synapse Task board, Topic Queue), which have no form to enhance, and the Synapse Daily Agenda forms (see `docs/ERROR_HANDLING_POLICY.md`).
 - After a manual `fetch` to an API route, call `invalidateAll()` from `$app/navigation`.
 - Avoid `onMount` unless you need a browser-only API (canvas, IntersectionObserver, measurements) or a third-party library init. Fetch data in `+page.server.ts` loads; react to changes with `$derived` / `$effect`.
 - Use element event attributes (`onclick={...}`), not `addEventListener`.
