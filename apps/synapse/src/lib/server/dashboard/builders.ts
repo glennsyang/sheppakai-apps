@@ -1,3 +1,4 @@
+import type { FamilyWorshipCard, PlannedWeekView } from '#lib/schemas/family-worship.js';
 import type { MealType } from '#lib/schemas/fitness.js';
 import { DEFAULT_DASHBOARD_GOALS } from '#lib/utils/dashboard-goals.js';
 import {
@@ -335,7 +336,33 @@ export function emptyDashboardReturn() {
 			total: 0,
 			items: [] as { id: string; title: string; completed: boolean }[]
 		},
-		dashboardGoals: DEFAULT_DASHBOARD_GOALS
+		dashboardGoals: DEFAULT_DASHBOARD_GOALS,
+		familyWorship: null as FamilyWorshipCard | null
+	};
+}
+
+/** This week's Family Worship, for the dashboard card. */
+export function buildFamilyWorshipCard(week: PlannedWeekView, today: string): FamilyWorshipCard {
+	const tomorrow = addDaysToDateString(today, 1);
+	const topic = week.session
+		? { id: week.session.topicId, title: week.session.topicTitle }
+		: (week.plannedTopic ?? week.suggestion);
+	const state: FamilyWorshipCard['state'] = week.session
+		? 'done'
+		: week.skip
+			? 'skipped'
+			: week.plannedTopic
+				? 'planned'
+				: week.suggestion
+					? 'suggested'
+					: 'empty';
+
+	return {
+		state,
+		topic: state === 'skipped' ? null : topic,
+		dayLabel: getDayLabel(week.session?.date ?? week.date, today, tomorrow),
+		skipReason: week.skip?.reason ?? null,
+		logDefaults: { date: today, topicId: topic?.id ?? null }
 	};
 }
 

@@ -1,9 +1,12 @@
 <script lang="ts">
-	import { BookOpen } from '@lucide/svelte/icons';
+	import { BookOpen, History } from '@lucide/svelte/icons';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 
 	import PageShell from '#lib/components/app/PageShell.svelte';
+	import LogSessionDialog from '#lib/components/family-worship/LogSessionDialog.svelte';
+	import PlannedWeekRow from '#lib/components/family-worship/PlannedWeekRow.svelte';
+	import SkipWeekDialog from '#lib/components/family-worship/SkipWeekDialog.svelte';
 	import TopicActionButton from '#lib/components/family-worship/TopicActionButton.svelte';
 	import TopicCard from '#lib/components/family-worship/TopicCard.svelte';
 	import TopicDialog from '#lib/components/family-worship/TopicDialog.svelte';
@@ -14,13 +17,53 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as Select from '#lib/components/ui/select/index.js';
 	import * as Tabs from '#lib/components/ui/tabs/index.js';
-	import { type TopicEntry, WEEKDAY_NAMES } from '#lib/schemas/family-worship.js';
+	import {
+		type PlannedWeekView,
+		type SessionEntry,
+		type TopicEntry,
+		WEEKDAY_NAMES
+	} from '#lib/schemas/family-worship.js';
+	import { formatDateMedium } from '#lib/utils/date.js';
 
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
-	let activeTab = $state<'queue' | 'archived'>('queue');
+	let activeTab = $state<'plan' | 'queue' | 'archived'>('plan');
+
+	const upcomingWeeks = $derived(data.plan.filter((week) => !week.isPast));
+	// Most recent first: last week is the one most likely to need logging.
+	const unloggedWeeks = $derived(data.plan.filter((week) => week.isPast).toReversed());
+
+	const topicOptions = $derived(data.topicQueue.map(({ id, title }) => ({ id, title })));
+
+	let logDefaults = $state<{ date: string; topicId: string | null }>();
+	let showLogDialog = $state(false);
+
+	let sessionToEdit = $state<SessionEntry | null>(null);
+	let showEditSessionDialog = $state(false);
+
+	let weekToSkip = $state<{ weekStart: string; dateLabel: string } | null>(null);
+	let showSkipDialog = $state(false);
+
+	/** A session starts on the week's Usual Weekday, or today if that hasn't come yet. */
+	function logWeek(week: PlannedWeekView) {
+		logDefaults = {
+			date: week.date <= data.today ? week.date : data.today,
+			topicId: week.plannedTopic?.id ?? week.suggestion?.id ?? null
+		};
+		showLogDialog = true;
+	}
+
+	function editSession(session: SessionEntry) {
+		sessionToEdit = session;
+		showEditSessionDialog = true;
+	}
+
+	function skipWeek(week: PlannedWeekView) {
+		weekToSkip = { weekStart: week.weekStart, dateLabel: formatDateMedium(week.date) };
+		showSkipDialog = true;
+	}
 
 	let topicToEdit = $state<TopicEntry | null>(null);
 	let showEditDialog = $state(false);
@@ -75,6 +118,12 @@
 				class="font-display bg-muted text-muted-foreground inline-flex h-10 min-w-max items-center justify-start rounded-md p-1"
 			>
 				<Tabs.Trigger
+					value="plan"
+					class="data-[state=active]:border-pen-worship border-b-2 border-transparent"
+				>
+					Plan
+				</Tabs.Trigger>
+				<Tabs.Trigger
 					value="queue"
 					class="data-[state=active]:border-pen-worship border-b-2 border-transparent"
 				>
@@ -88,6 +137,36 @@
 				</Tabs.Trigger>
 			</Tabs.List>
 		</div>
+
+		<Tabs.Content value="plan" class="w-full">
+			<div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+				<p class="text-muted-foreground text-sm">
+					Each week shows its {WEEKDAY_NAMES[$weekdayForm.usualWeekday] ?? 'Usual Weekday'}. Accept
+					a suggestion or choose any topic.
+				</p>
+				<Button href="/family-worship/history" variant="outline" size="sm">
+					<History class="mr-1 size-4" aria-hidden="true" />
+					History
+				</Button>
+			</div>
+			{#if data.topicQueue.length === 0 && data.plan.every((week) => !week.plannedTopic && !week.session)}
+				<p class="text-muted-foreground border-rule border-y border-dashed py-8 text-center">
+					Add topics to the Topic Queue to start planning.
+				</p>
+			{/if}
+
+			{@render weekList(upcomingWeeks, 'Planned Weeks')}
+
+			{#if unloggedWeeks.length > 0}
+				<section class="mt-8" aria-labelledby="unlogged-weeks">
+					<h2 id="unlogged-weeks" class="mb-1 text-lg font-semibold">Not logged yet</h2>
+					<p class="text-muted-foreground mb-3 text-sm">
+						Recent weeks with no session. Log one late, or mark it as skipped.
+					</p>
+					{@render weekList(unloggedWeeks, 'Weeks not logged')}
+				</section>
+			{/if}
+		</Tabs.Content>
 
 		<Tabs.Content value="queue" class="w-full">
 			{#if data.topicQueue.length === 0}
@@ -176,6 +255,22 @@
 	</section>
 </PageShell>
 
+{#snippet weekList(weeks: PlannedWeekView[], label: string)}
+	<ul class="grid gap-2.5 sm:grid-cols-2" aria-label={label}>
+		{#each weeks as week (week.weekStart)}
+			<li>
+				<PlannedWeekRow
+					{week}
+					topics={topicOptions}
+					onLog={logWeek}
+					onEditSession={editSession}
+					onSkip={skipWeek}
+				/>
+			</li>
+		{/each}
+	</ul>
+{/snippet}
+
 <TopicDialog
 	bind:open={showEditDialog}
 	formData={data.editTopicForm}
@@ -184,6 +279,40 @@
 	onClose={() => {
 		showEditDialog = false;
 		topicToEdit = null;
+	}}
+/>
+
+<LogSessionDialog
+	bind:open={showLogDialog}
+	formData={data.sessionForm}
+	topics={topicOptions}
+	defaults={logDefaults}
+	today={data.today}
+	instanceId="plan"
+	onClose={() => {
+		showLogDialog = false;
+	}}
+/>
+
+<LogSessionDialog
+	bind:open={showEditSessionDialog}
+	formData={data.editSessionForm}
+	editEntry={sessionToEdit}
+	topics={topicOptions}
+	today={data.today}
+	instanceId="edit-plan"
+	onClose={() => {
+		showEditSessionDialog = false;
+		sessionToEdit = null;
+	}}
+/>
+
+<SkipWeekDialog
+	bind:open={showSkipDialog}
+	week={weekToSkip}
+	onClose={() => {
+		showSkipDialog = false;
+		weekToSkip = null;
 	}}
 />
 

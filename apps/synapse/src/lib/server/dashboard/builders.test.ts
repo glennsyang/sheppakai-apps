@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import type { PlannedWeekView } from '#lib/schemas/family-worship.js';
 import type { VisitStatus } from '#lib/utils/visit-status.js';
 
 import {
 	buildAgendaCompletionTrend,
 	buildCountByDateMap,
 	buildDaysSinceLastWorkout,
+	buildFamilyWorshipCard,
 	buildTaskStats,
 	buildTodayAgendaSummary,
 	buildTodayMeals,
@@ -213,5 +215,70 @@ describe('buildTodayMeals', () => {
 		const result = buildTodayMeals([meal('dinner', 'Leftovers', null)], []);
 		expect(result.slots[2]).toEqual({ type: 'dinner', description: 'Leftovers', calories: null });
 		expect(result.totalCalories).toBe(0);
+	});
+});
+
+describe('buildFamilyWorshipCard', () => {
+	const FW_TODAY = '2026-11-24';
+	const prayer = { id: 't1', title: 'Prayer' };
+	const kindness = { id: 't2', title: 'Kindness' };
+	const week = (overrides: Partial<PlannedWeekView> = {}): PlannedWeekView => ({
+		weekStart: '2026-11-23',
+		date: '2026-11-25',
+		isCurrent: true,
+		isPast: false,
+		plannedTopic: null,
+		session: null,
+		skip: null,
+		suggestion: null,
+		...overrides
+	});
+
+	it("shows the week's planned topic and its day", () => {
+		expect(buildFamilyWorshipCard(week({ plannedTopic: prayer }), FW_TODAY)).toEqual({
+			state: 'planned',
+			topic: prayer,
+			dayLabel: 'Tomorrow',
+			skipReason: null,
+			logDefaults: { date: FW_TODAY, topicId: 't1' }
+		});
+	});
+
+	it('falls back to the suggestion, and to nothing', () => {
+		expect(buildFamilyWorshipCard(week({ suggestion: kindness }), FW_TODAY)).toMatchObject({
+			state: 'suggested',
+			topic: kindness,
+			logDefaults: { topicId: 't2' }
+		});
+		expect(buildFamilyWorshipCard(week(), FW_TODAY)).toMatchObject({
+			state: 'empty',
+			topic: null,
+			logDefaults: { topicId: null }
+		});
+	});
+
+	it('shows a logged week as done, with the topic actually covered and its day', () => {
+		const card = buildFamilyWorshipCard(
+			week({
+				plannedTopic: kindness,
+				session: { id: 's1', date: FW_TODAY, topicId: 't2', topicTitle: 'Kindness', note: null }
+			}),
+			FW_TODAY
+		);
+		expect(card).toMatchObject({ state: 'done', topic: kindness, dayLabel: 'Today' });
+	});
+
+	it('shows a Skipped Week with its reason', () => {
+		expect(buildFamilyWorshipCard(week({ skip: { reason: 'Assembly' } }), FW_TODAY)).toMatchObject({
+			state: 'skipped',
+			topic: null,
+			skipReason: 'Assembly'
+		});
+	});
+
+	it('labels a later day by its date', () => {
+		expect(buildFamilyWorshipCard(week({ date: '2026-11-28' }), FW_TODAY).dayLabel).toBe(
+			'Sat, Nov 28'
+		);
 	});
 });

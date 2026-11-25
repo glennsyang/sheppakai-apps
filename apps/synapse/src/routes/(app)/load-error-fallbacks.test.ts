@@ -25,6 +25,7 @@ vi.mock('#lib/server/logger.js', () => ({
 import { load as adminLoad } from './admin/+page.server';
 import { load as dashboardLoad } from './dashboard/+page.server';
 import { load as familyWorshipLoad } from './family-worship/+page.server';
+import { load as familyWorshipHistoryLoad } from './family-worship/history/+page.server';
 import { load as fitnessLoad } from './fitness/+page.server';
 import { load as journalLoad } from './journal/+page.server';
 import { load as meditationLoad } from './meditation/+page.server';
@@ -68,8 +69,16 @@ const cases: LoadCase[] = [
 		name: 'family-worship',
 		load: familyWorshipLoad,
 		path: '/family-worship',
-		fallback: { topicQueue: [], archivedTopics: [] },
-		forms: ['topicForm', 'editTopicForm', 'usualWeekdayForm'],
+		fallback: { plan: [], topicQueue: [], archivedTopics: [] },
+		forms: ['topicForm', 'editTopicForm', 'sessionForm', 'editSessionForm', 'usualWeekdayForm'],
+		logContext: [expect.any(Object)]
+	},
+	{
+		name: 'family-worship history',
+		load: familyWorshipHistoryLoad,
+		path: '/family-worship/history',
+		fallback: { months: [], filterTopics: [] },
+		forms: ['editSessionForm'],
 		logContext: [expect.any(Object)]
 	},
 	{
