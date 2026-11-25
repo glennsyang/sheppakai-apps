@@ -4,6 +4,8 @@ export interface NtfyOptions {
 	priority?: number;
 	/** Comma-separated ntfy emoji tags. */
 	tags?: string;
+	/** URL opened when the notification is tapped (ntfy `Click` header). */
+	click?: string;
 	logger: {
 		info(message: string, meta?: Record<string, unknown>): void;
 		error(message: string, error?: unknown): void;
@@ -21,7 +23,7 @@ export interface NtfyOptions {
 export async function sendNtfy(
 	url: string,
 	message: string,
-	{ title, priority = 3, tags = 'rotating_light', logger }: NtfyOptions
+	{ title, priority = 3, tags = 'rotating_light', click, logger }: NtfyOptions
 ): Promise<boolean> {
 	let target: URL;
 	try {
@@ -42,7 +44,8 @@ export async function sendNtfy(
 			headers: {
 				Title: title,
 				Priority: priority.toString(),
-				Tags: tags
+				Tags: tags,
+				...(click ? { Click: click } : {})
 			}
 		});
 

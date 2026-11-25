@@ -1,8 +1,11 @@
+import { getThisWeek, getUsualWeekday } from '#lib/server/family-worship/family-worship.js';
+
 import { loadDailyAgendaEntriesForDate } from '../daily-agenda';
 import { user } from '../db/schema';
 import { loadTasksDueToday } from '../email/digests';
 import { loadVisitWarningCandidates } from '../email/visit-warnings';
 import { getMorningDigestSettingsByUserIds } from '../morning-digest-settings';
+import type { JobClock } from '../notification-jobs/clock';
 import type { JobContext, NotificationJob } from '../notification-jobs/run-job';
 import {
 	buildMorningDigestMessage,
@@ -48,9 +51,20 @@ function householdSections(ctx: JobContext): Promise<HouseholdSections> {
 	return sections;
 }
 
+/** Tonight's Family Worship topic: only on the Usual Weekday, from a planned, unskipped week. */
+async function tonightsFamilyWorship(
+	db: JobContext['db'],
+	userId: string,
+	clock: JobClock
+): Promise<string | null> {
+	if (clock.weekday !== (await getUsualWeekday(db, userId))) return null;
+	const week = getThisWeek(db, userId, clock.today);
+	return week.skip ? null : (week.plannedTopic?.title ?? null);
+}
+
 /**
  * Send each opted-in user one combined push once their send time has passed: agenda,
- * tasks due, tonight's dinner (mealplanner), bills due this week (budget) and overdue
+ * tasks due, tonight's dinner (mealplanner), tonight's Family Worship topic, bills due this week (budget) and overdue
  * visits. Dinner and bills are household-wide, so they are fetched once per run, and only
  * when someone is due; an unreachable app only drops its own section. An empty digest is still logged, so later
  * runs today don't rebuild it.
@@ -95,6 +109,7 @@ export const morningDigestJob: NotificationJob<MorningDigestCandidate> = {
 				),
 				tasksDue: await loadTasksDueToday(db, userId, clock.today),
 				dinner,
+				familyWorship: await tonightsFamilyWorship(db, userId, clock),
 				bills,
 				visits
 			},

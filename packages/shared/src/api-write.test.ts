@@ -61,6 +61,21 @@ describe('handleApiWrite', () => {
 		expect(mockLoggerError).not.toHaveBeenCalled();
 	});
 
+	it('passes an ApiWriteError reason through as error.reason', async () => {
+		const response = await handleApiWrite(
+			context,
+			async () => {
+				throw new ApiWriteError('conflict', 'That week is skipped.', 409, 'week_skipped');
+			},
+			{ failureMessage: 'Failed to log session' }
+		);
+
+		expect(response.status).toBe(409);
+		expect(await response.json()).toEqual({
+			error: { code: 'conflict', message: 'That week is skipped.', reason: 'week_skipped' }
+		});
+	});
+
 	it('maps an unexpected error to a logged 500', async () => {
 		const response = await handleApiWrite(
 			context,

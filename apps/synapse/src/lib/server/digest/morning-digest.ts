@@ -42,6 +42,8 @@ export type MorningDigestSections = {
 	tasksDue: TasksDueTodayTaskSummary[];
 	/** Tonight's recipe name, or null when nothing is planned or mealplanner was unreachable. */
 	dinner: string | null;
+	/** Tonight's Family Worship topic: set only on the Usual Weekday when the week is planned. */
+	familyWorship: string | null;
 	bills: DigestBill[];
 	visits: DigestVisit[];
 };
@@ -135,6 +137,10 @@ export function buildMorningDigestMessage(
 
 	if (sections.dinner) {
 		blocks.push(`🍽️ Dinner tonight\n${sections.dinner}`);
+	}
+
+	if (sections.familyWorship) {
+		blocks.push(`📖 Family Worship tonight: ${sections.familyWorship}`);
 	}
 
 	if (sections.bills.length > 0) {

@@ -58,10 +58,15 @@ Every response is one of exactly two shapes:
 | 401         | `invalid_api_key`                                        | Key doesn't exist, is disabled, expired, or lacks the scope the endpoint requires (deliberately indistinguishable from an unknown key, so a caller can't probe which reason applies) |
 | 401         | `unauthorized`                                           | Session-authenticated in-app JSON routes (not `/api/v1`): no signed-in user                                                                                                          |
 | 404         | `not_found`                                              | The record named by the URL doesn't exist (in synapse, also when it belongs to another user)                                                                                         |
+| 409         | `conflict`                                               | The request breaks a rule about the current state of the data (e.g. a duplicate, or a record already taken); the endpoint documents its `error.reason` values |
 | 429         | `rate_limited`                                           | This key's rate limit or request quota was exceeded. Wait and retry                                                                                                                  |
 | 400         | `validation_failed`                                      | Request body or query parameters failed validation                                                                                                                                   |
 | 400         | `invalid_json`                                           | Request body wasn't valid JSON                                                                                                                                                       |
 | 500         | `internal_error`                                         | Something went wrong server-side; check the server logs                                                                                                                              |
+
+An error may also carry an optional `error.reason`: a stable, machine-readable string that says
+which rule failed when several share one `code` (for example, which kind of `409 conflict` it was).
+Endpoints that set it document their reasons.
 
 This is the JSON form of the form-action contract in
 [ERROR_HANDLING_POLICY.md](./ERROR_HANDLING_POLICY.md).

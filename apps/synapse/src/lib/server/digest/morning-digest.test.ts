@@ -58,6 +58,7 @@ const emptySections: MorningDigestSections = {
 	agenda: [],
 	tasksDue: [],
 	dinner: null,
+	familyWorship: null,
 	bills: [],
 	visits: []
 };
@@ -131,6 +132,7 @@ describe('buildMorningDigestMessage', () => {
 				],
 				tasksDue: [createTask()],
 				dinner: 'Chicken tikka masala',
+				familyWorship: 'Psalm 23',
 				bills: [
 					{ merchant: 'Phone', amount: 45.5, dueDate: TODAY },
 					{ merchant: 'Hydro', amount: 120, dueDate: '2026-10-30' }
@@ -143,6 +145,7 @@ describe('buildMorningDigestMessage', () => {
 		expect(message).toContain('🗓️ Agenda\n✅ Stretch\n⚪ Read');
 		expect(message).toContain('🗂️ Tasks due today\n• Submit grocery list');
 		expect(message).toContain('🍽️ Dinner tonight\nChicken tikka masala');
+		expect(message).toContain('📖 Family Worship tonight: Psalm 23');
 		expect(message).toContain('💸 Recurring bills due this week\n');
 		expect(message).toContain('• Phone $45.50 — today');
 		expect(message).toContain('• Hydro $120.00 — Oct 30');
@@ -174,6 +177,16 @@ describe('buildMorningDigestMessage', () => {
 		expect(message).not.toContain('Tasks due');
 		expect(message).not.toContain('bills due');
 		expect(message).not.toContain('Visits');
+		expect(message).not.toContain('Family Worship');
+	});
+
+	it('sends a digest with only the Family Worship line', () => {
+		const message = buildMorningDigestMessage(
+			{ ...emptySections, familyWorship: 'Being content' },
+			TODAY
+		);
+
+		expect(message).toMatch(/^📖 Family Worship tonight: Being content\n\n🚀 /);
 	});
 });
 

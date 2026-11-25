@@ -7,7 +7,14 @@ export type EmailContent = { subject: string; html: string; label: string };
 
 export type EmailMessage = EmailContent & { to: string; name: string };
 
-export type PushMessage = { message: string; title: string; tags: string; priority?: number };
+export type PushMessage = {
+	message: string;
+	title: string;
+	tags: string;
+	priority?: number;
+	/** Absolute URL opened when the push is tapped. */
+	click?: string;
+};
 
 export type Notifier = {
 	/** Throws when the email could not be sent. */
