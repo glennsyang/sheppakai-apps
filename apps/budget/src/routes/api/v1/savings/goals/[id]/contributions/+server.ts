@@ -4,8 +4,7 @@ import { handleApiWrite } from '#lib/server/api/handle-write.js';
 import { requireApiKey } from '#lib/server/api/require-api-key.js';
 import { apiError } from '#lib/server/api/response.js';
 import { apiCreateContributionSchema } from '#lib/server/api/schemas/contributions.js';
-import { savingsGoalQueries } from '#lib/server/db/queries/index.js';
-import { createContribution } from '#lib/server/db/writes/contributions.js';
+import { addContribution } from '#lib/server/savings/goals.js';
 
 import type { RequestHandler } from './$types';
 
@@ -16,11 +15,6 @@ export const POST: RequestHandler = async ({ request, url, params }) => {
 	const parsed = await parseJsonBody(request, apiCreateContributionSchema);
 	if (!parsed.ok) return parsed.response;
 
-	const goal = await savingsGoalQueries.findById(params.id);
-	if (!goal) {
-		return apiError('not_found', 'Savings goal not found.', 404);
-	}
-
 	return handleApiWrite(
 		{
 			apiKeyId: auth.apiKeyId,
@@ -29,7 +23,8 @@ export const POST: RequestHandler = async ({ request, url, params }) => {
 			path: url.pathname,
 			action: 'contributions:write'
 		},
-		() => createContribution(params.id, parsed.data, auth.userId),
+		// Refuses a missing (404) or Archived (409) goal; may move the goal to Completed
+		() => addContribution(params.id, parsed.data, auth.userId),
 		{ successStatus: 201, failureMessage: 'Failed to create contribution' }
 	);
 };

@@ -21,7 +21,6 @@ type MockBillPrice = {
 	effectiveTo: string | null;
 	recurringBill: { id: string; merchant: string; payments: Array<{ period: string }> };
 };
-type MockGoal = { id: string; status: string; targetAmount: number };
 
 const mockExpenseQueries = vi.hoisted(() => ({
 	findByDateRangeIncludedInBudget: vi.fn<
@@ -43,9 +42,6 @@ const mockIncomeQueries = vi.hoisted(() => ({
 		async () => []
 	)
 }));
-const mockSavingsGoalQueries = vi.hoisted(() => ({
-	findAll: vi.fn<() => Promise<MockGoal[]>>(async () => [])
-}));
 const mockSavingsAccountQueries = vi.hoisted(() => ({
 	getTotal: vi.fn<() => Promise<number>>(async () => 0)
 }));
@@ -55,11 +51,12 @@ vi.mock('#lib/server/db/queries/index.js', () => ({
 	budgetQueries: mockBudgetQueries,
 	recurringBillQueries: mockRecurringBillQueries,
 	incomeQueries: mockIncomeQueries,
-	savingsGoalQueries: mockSavingsGoalQueries,
 	savingsAccountQueries: mockSavingsAccountQueries
 }));
-vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => unknown>(() => undefined) }));
-vi.mock('#lib/server/db/schema/index.js', () => ({ contribution: {} }));
+// Savings Goal progress is the Savings Goal module's job (see savings/goals.test.ts)
+vi.mock('#lib/server/savings/goals.js', () => ({
+	goalsWithProgress: vi.fn<() => Promise<unknown[]>>(async () => [])
+}));
 
 import { getDashboardSummary, loadMonthlyDashboard, loadYearlyDashboard } from './summary';
 
@@ -93,7 +90,6 @@ const priceChangeHistory: MockBillPrice[] = [
 describe('loadMonthlyDashboard', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockSavingsGoalQueries.findAll.mockResolvedValue([]);
 		mockRecurringBillQueries.findHistory.mockResolvedValue([]);
 		mockExpenseQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
 	});
@@ -223,7 +219,6 @@ describe('loadMonthlyDashboard', () => {
 describe('loadYearlyDashboard', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockSavingsGoalQueries.findAll.mockResolvedValue([]);
 		mockRecurringBillQueries.findHistory.mockResolvedValue([]);
 		mockExpenseQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
 	});
@@ -384,7 +379,6 @@ describe('loadYearlyDashboard', () => {
 describe('getDashboardSummary', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockSavingsGoalQueries.findAll.mockResolvedValue([]);
 		mockRecurringBillQueries.findHistory.mockResolvedValue([]);
 		mockExpenseQueries.findByDateRangeIncludedInBudget.mockResolvedValue([]);
 	});

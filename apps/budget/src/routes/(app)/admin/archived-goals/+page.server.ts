@@ -5,8 +5,8 @@ import { unArchiveSchema } from '#lib/formSchemas/index.js';
 import { adminFormAction } from '#lib/server/actions/admin-guard.js';
 import { assertAdmin } from '#lib/server/actions/auth-guard.js';
 import { savingsGoalQueries } from '#lib/server/db/queries/index.js';
-import { unarchiveSavingsGoal } from '#lib/server/db/writes/savings-goals.js';
 import { logger } from '#lib/server/logger.js';
+import { unarchiveGoal } from '#lib/server/savings/goals.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions = {
 	unarchive: adminFormAction(unArchiveSchema, async (_event, form) => {
 		try {
-			await unarchiveSavingsGoal(form.data.goalId);
+			await unarchiveGoal(form.data.goalId);
 
 			logger.info(`Goal with ID ${form.data.goalId} updated successfully`);
 			return message(form, { type: 'success', text: 'Goal unarchived successfully' });

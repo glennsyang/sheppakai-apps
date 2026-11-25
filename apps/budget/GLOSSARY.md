@@ -96,8 +96,11 @@ _Avoid_: Target, objective
 _Avoid_: Deposit, transfer
 
 **Goal Status**: Where a savings goal stands: **Active** (being saved toward), **Paused** (on hold,
-still visible), **Completed** (target reached) or **Archived** (put away for any reason and hidden
-from everyday views; an admin can restore it).
+still visible), **Completed** (target reached) or **Archived** (put away and hidden from everyday
+views; an admin can restore it). Completed is automatic: a goal becomes Completed when its
+contributions reach the target, and goes back to Active if they drop below it. Only a Completed goal
+can be archived, an Archived goal takes no contributions, and a goal with contributions can't be
+deleted.
 
 _Avoid_: State, stage
 
