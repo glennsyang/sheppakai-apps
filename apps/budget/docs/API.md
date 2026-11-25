@@ -259,4 +259,5 @@ curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: applicatio
   "https://budget.example.com/api/v1/savings/goals/goal_123/contributions"
 ```
 
-Returns `404` (`not_found`) if the goal id doesn't exist.
+Returns `404` (`not_found`) if the goal id doesn't exist, and `409` (`conflict`) if the goal is
+Archived. A contribution that brings the goal to its target marks the goal Completed.

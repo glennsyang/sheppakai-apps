@@ -1,5 +1,3 @@
-import { inArray, min, sql, sum } from 'drizzle-orm';
-
 import type {
 	Budget,
 	CategoryStatus,
@@ -7,7 +5,6 @@ import type {
 	ExcludedSpendCategory,
 	MonthEndForecast,
 	MonthlySpentChartData,
-	SavingsGoalWithEta,
 	SpendingSpike,
 	TimeRangeInOutData,
 	Expense
@@ -17,28 +14,21 @@ import {
 	toBudgetInputs,
 	toSpendInputs
 } from '#lib/server/budgets/category-status.js';
-import {
-	computeGoalEta,
-	computeMonthEndForecast,
-	getBaselineRange,
-	getGoalRateWindowStart
-} from '#lib/server/dashboard/forecast.js';
-import { getDb } from '#lib/server/db/index.js';
+import { computeMonthEndForecast, getBaselineRange } from '#lib/server/dashboard/forecast.js';
 import {
 	budgetQueries,
 	incomeQueries,
 	recurringBillQueries,
-	savingsGoalQueries,
 	savingsAccountQueries,
 	expenseQueries
 } from '#lib/server/db/queries/index.js';
-import { contribution } from '#lib/server/db/schema/index.js';
 import { computeSpendingSpikes } from '#lib/server/insights/spending-spikes.js';
 import {
 	recurringBillsForMonth,
 	recurringBillsTotalForMonth,
 	toMonthKey
 } from '#lib/server/recurring-bill-history.js';
+import { goalsWithProgress as loadGoalsWithProgress } from '#lib/server/savings/goals.js';
 import { monthNames } from '#lib/utils.js';
 import {
 	filterByDateRange,
@@ -46,7 +36,6 @@ import {
 	getMonthDateRange,
 	getMonthProgress,
 	getMonthRangeFromUrl,
-	getPacificTodayDate,
 	getPreviousMonthsRange,
 	getYearDateRange,
 	parseYearParam
@@ -82,46 +71,6 @@ function toExcludedExpenseRows(excludedExpenses: Expense[]): ExcludedExpense[] {
 			categoryName: e.category?.name ?? 'Uncategorized'
 		}))
 		.toSorted((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-}
-
-async function getGoalsWithProgress(): Promise<SavingsGoalWithEta[]> {
-	const goals = await savingsGoalQueries.findAll();
-	const includedGoals = goals.filter((g) => g.status !== 'archived');
-
-	if (includedGoals.length === 0) return [];
-
-	const includedGoalIds = includedGoals.map((g) => g.id);
-	const today = getPacificTodayDate();
-	const rateWindowStart = getGoalRateWindowStart(today);
-
-	const totalsRows = await getDb()
-		.select({
-			goalId: contribution.goalId,
-			total: sum(contribution.amount),
-			recentTotal: sql<number>`coalesce(sum(case when date(${contribution.date}) >= date(${rateWindowStart}) then ${contribution.amount} else 0 end), 0)`,
-			firstDate: min(contribution.date)
-		})
-		.from(contribution)
-		.where(inArray(contribution.goalId, includedGoalIds))
-		.groupBy(contribution.goalId);
-
-	const totalsMap = new Map(totalsRows.map((r) => [r.goalId, r]));
-
-	return includedGoals.map((goal) => {
-		const row = totalsMap.get(goal.id);
-		const total = Number(row?.total ?? 0);
-		const percentage = goal.targetAmount > 0 ? (total / goal.targetAmount) * 100 : 0;
-		const eta = computeGoalEta({
-			status: goal.status,
-			currentAmount: total,
-			targetAmount: goal.targetAmount,
-			targetDate: goal.targetDate,
-			recentContributions: Number(row?.recentTotal ?? 0),
-			firstContributionDate: row?.firstDate ?? null,
-			today
-		});
-		return { ...goal, currentAmount: total, percentage: Math.min(percentage, 100), ...eta };
-	});
 }
 
 /** Current-month forecast inputs that `loadMonthlyDashboard` doesn't already load. */
@@ -171,7 +120,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		// Prices in effect over the 6-month chart window, so each month uses its own amounts.
 		recurringBillQueries.findHistory(chartStartKey, selectedMonthKey),
 		incomeQueries.findByDateRange(startDate, endDate),
-		getGoalsWithProgress(),
+		loadGoalsWithProgress(),
 		savingsAccountQueries.getTotal(),
 		isCurrentMonth ? loadForecastHistory(startDate, month, year) : null
 	]);
@@ -339,7 +288,7 @@ export async function loadYearlyDashboard(url: URL) {
 		recurringBillQueries.findHistory(historyStartKey, toMonthKey(12, year)),
 		budgetQueries.findByYear(year),
 		Promise.all(otherChartYears.map((y) => budgetQueries.findByYear(y))),
-		getGoalsWithProgress(),
+		loadGoalsWithProgress(),
 		savingsAccountQueries.getTotal()
 	]);
 	const chartBudgets: Budget[] = [...allYearBudgets, ...otherYearBudgets.flat()];

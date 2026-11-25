@@ -75,6 +75,11 @@ This repo already has a shared helper for the repeated "list page + form + serve
   which also owns the customer list with Overdue Customer status, Revenue totals and the Deleted
   Customer guard (no update or new Job for a Deleted Customer). Revenue itself is `revenue(job)` in
   `src/lib/utils/windowCleaningStats.ts` (client-safe) — never write `amountCharged + tip`.
+- **Savings Goal** progress and Goal Status rules live in the Savings Goal module,
+  `src/lib/server/savings/goals.ts`: `goalsWithProgress()` (progress + ETA, used by the goals page
+  and the dashboard), automatic Completed, archive/unarchive, and the Contribution guards (no
+  Contribution writes on an Archived goal). Goal and Contribution writes go through it, never
+  straight to `db/writes/contributions.ts`.
 - **Query objects** per domain in `src/lib/server/db/queries` (e.g. `expenseQueries`,
   `budgetQueries`) — encapsulate the Drizzle queries for that entity (`findByDateRange`, `search`,
   etc.) rather than querying inline in `+page.server.ts`.
