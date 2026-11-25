@@ -1,6 +1,7 @@
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 
+import { sessionSchema } from '#lib/schemas/family-worship.js';
 import { logMealSchema } from '#lib/schemas/fitness.js';
 import { getUser } from '#lib/server/actions/auth-guard.js';
 import { getDashboardGoalsForUser } from '#lib/server/dashboard-goal-settings.js';
@@ -10,6 +11,7 @@ import {
 	buildAgendaCompletionTrend,
 	buildCountByDateMap,
 	buildDaysSinceLastWorkout,
+	buildFamilyWorshipCard,
 	buildMeditationCountByDate,
 	buildTaskStats,
 	buildTodayAgendaSummary,
@@ -22,6 +24,7 @@ import {
 } from '#lib/server/dashboard/builders.js';
 import { runDashboardQueries } from '#lib/server/dashboard/queries.js';
 import { getDb } from '#lib/server/db/index.js';
+import { getThisWeek, getTopicQueue } from '#lib/server/family-worship/family-worship.js';
 import { logger } from '#lib/server/logger.js';
 import { isMealEstimateEnabled } from '#lib/server/meal-estimate/index.js';
 import { formatTodayLabel, getISODayOfWeek, getTodayString } from '#lib/utils/date.js';
@@ -38,6 +41,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		mealForm: await superValidate(zod4(logMealSchema)),
 		mealEstimateEnabled: isMealEstimateEnabled()
 	};
+	// The Family Worship card's "We did it" dialog posts to /family-worship.
+	const sessionForm = await superValidate(zod4(sessionSchema));
 
 	try {
 		const db = getDb();
@@ -105,12 +110,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			todayAgendaSummary: buildTodayAgendaSummary(data.agendaEntriesForTrend, today),
 			todayMeals: buildTodayMeals(data.todayMealsRaw, data.calorieTargetRaw),
 			dashboardGoals,
+			familyWorship: buildFamilyWorshipCard(getThisWeek(db, user.id, today), today),
+			familyWorshipTopics: getTopicQueue(db, user.id).map(({ id, title }) => ({ id, title })),
+			sessionForm,
 			...mealLogging
 		};
 	} catch (error) {
 		logger.error('Failed to load dashboard data', error);
 		return {
 			...emptyDashboardReturn(),
+			familyWorshipTopics: [],
+			sessionForm,
 			...mealLogging,
 			loadError: 'Failed to load dashboard data. Please try refreshing the page.'
 		};

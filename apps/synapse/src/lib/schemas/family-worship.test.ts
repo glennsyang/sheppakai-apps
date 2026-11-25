@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { topicQueueOrderSchema, topicSchema, usualWeekdaySchema } from './family-worship';
+import {
+	sessionSchema,
+	skipWeekSchema,
+	topicQueueOrderSchema,
+	topicSchema,
+	usualWeekdaySchema
+} from './family-worship';
 
 const valid = { title: 'Prayer', description: 'How and why we pray' };
 
@@ -64,5 +70,39 @@ describe('usualWeekdaySchema', () => {
 
 	it.each(['7', '-1', '2.5', 'wed'])('rejects %j as a weekday', (usualWeekday) => {
 		expect(usualWeekdaySchema.safeParse({ usualWeekday }).success).toBe(false);
+	});
+});
+
+describe('sessionSchema', () => {
+	it('defaults the note and the follow-up flags', () => {
+		expect(sessionSchema.parse({ date: '2026-11-24', topicId: 't1' })).toEqual({
+			date: '2026-11-24',
+			topicId: 't1',
+			note: '',
+			confirmUnskip: false,
+			continueNextWeek: false,
+			nextWeekConflict: ''
+		});
+	});
+
+	it('requires a YYYY-MM-DD date and a topic', () => {
+		const result = sessionSchema.safeParse({ date: '24/11/2026', topicId: '' });
+		expect(result.error?.issues.map((issue) => issue.path[0])).toEqual(['date', 'topicId']);
+	});
+
+	it('only accepts replace or shift for a next-week conflict', () => {
+		expect(
+			sessionSchema.safeParse({ date: '2026-11-24', topicId: 't1', nextWeekConflict: 'drop' })
+				.success
+		).toBe(false);
+	});
+});
+
+describe('skipWeekSchema', () => {
+	it('takes an optional reason', () => {
+		expect(skipWeekSchema.parse({ weekStart: '2026-11-23' })).toEqual({
+			weekStart: '2026-11-23',
+			reason: ''
+		});
 	});
 });
