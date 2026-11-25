@@ -3,7 +3,6 @@ import type {
 	CategoryStatus,
 	ExcludedExpense,
 	ExcludedSpendCategory,
-	MonthEndForecast,
 	MonthlySpentChartData,
 	SpendingSpike,
 	TimeRangeInOutData,
@@ -14,7 +13,8 @@ import {
 	toBudgetInputs,
 	toSpendInputs
 } from '#lib/server/budgets/category-status.js';
-import { computeMonthEndForecast, getBaselineRange } from '#lib/server/dashboard/forecast.js';
+import { monthProgress, type ForecastHistory } from '#lib/server/dashboard/cash-flow.js';
+import { getBaselineRange } from '#lib/server/dashboard/forecast.js';
 import {
 	budgetQueries,
 	incomeQueries,
@@ -76,7 +76,11 @@ function toExcludedExpenseRows(excludedExpenses: Expense[]): ExcludedExpense[] {
 }
 
 /** Current-month forecast inputs that `loadMonthlyDashboard` doesn't already load. */
-async function loadForecastHistory(startDate: string, month: number, year: number) {
+async function loadForecastHistory(
+	startDate: string,
+	month: number,
+	year: number
+): Promise<ForecastHistory> {
 	const baseline = getBaselineRange(startDate);
 	const previousMonths = [3, 2, 1].map((back) => {
 		const d = new Date(year, month - 1 - back, 1);
@@ -100,8 +104,8 @@ async function loadForecastHistory(startDate: string, month: number, year: numbe
 
 export async function loadMonthlyDashboard(url: URL) {
 	const { month, year, startDate, endDate } = getMonthRangeFromUrl(url);
-	const monthProgress = getMonthProgress(month, year);
-	const isCurrentMonth = monthProgress.status === 'current';
+	const today = new Date();
+	const isCurrentMonth = getMonthProgress(month, year, today).status === 'current';
 	const selectedMonthKey = toMonthKey(month, year);
 	const chartStartDate = new Date(year, month - 6, 1);
 	const chartStartKey = toMonthKey(chartStartDate.getMonth() + 1, chartStartDate.getFullYear());
@@ -145,17 +149,19 @@ export async function loadMonthlyDashboard(url: URL) {
 		toSpendInputs(actualExpenses)
 	);
 
-	const forecast: MonthEndForecast | null = forecastHistory
-		? computeMonthEndForecast({
-				...forecastHistory,
-				monthStart: startDate,
-				daysInMonth: monthProgress.totalUnits,
-				currentDay: monthProgress.elapsedUnits,
-				discretionarySpent: actualExpensesTotal - recurringBillsMonthlyTotal,
-				recurringBillsMonthlyTotal,
-				incomeThisMonth: totalIncome
-			})
-		: null;
+	const cashFlow = monthProgress(
+		{
+			month,
+			year,
+			monthStart: startDate,
+			totalIncome,
+			actualSpent: actualExpensesTotal,
+			recurringBillsMonthlyTotal,
+			plannedExpensesTotal
+		},
+		today,
+		forecastHistory
+	);
 
 	const historicalMonths: Array<{
 		targetMonth: number;
@@ -167,7 +173,7 @@ export async function loadMonthlyDashboard(url: URL) {
 
 	for (let i = 5; i >= 0; i--) {
 		const targetDate = new Date(year, month - 1 - i, 1);
-		if (targetDate > new Date()) continue;
+		if (targetDate > today) continue;
 
 		const targetMonth = targetDate.getMonth() + 1;
 		const targetYear = targetDate.getFullYear();
@@ -218,7 +224,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		plannedExpenses,
 		categoryStatuses,
 		recurringBills,
-		upcomingBills: upcomingBills(recurringBills, selectedMonthKey, getPacificTodayDate()),
+		upcomingBills: upcomingBills(recurringBills, selectedMonthKey, getPacificTodayDate(today)),
 		recurringBillsMonthlyTotal,
 		actualExpensesTotal,
 		excludedExpensesTotal,
@@ -230,7 +236,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		netflowSparkline,
 		spendingSparkline,
 		spendingSpikes,
-		forecast,
+		cashFlow,
 		goalsWithProgress,
 		savingsAccountsTotal
 	};

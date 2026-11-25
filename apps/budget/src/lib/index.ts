@@ -11,7 +11,6 @@ export type {
 	ExcludedExpense,
 	ExcludedSpendCategory,
 	Income,
-	MonthEndForecast,
 	MonthlyNetflowData,
 	MonthlySpentChartData,
 	RecurringBill,

@@ -37,11 +37,9 @@
 	import { getCategoriesContext } from '#lib/contexts/index.js';
 	import { dashboardSectionsForMode } from '#lib/dashboardSections.js';
 	import { formatCurrency, monthNames, months } from '#lib/utils.js';
-	import { computeCashFlowProjection } from '#lib/utils/cashFlowProjection.js';
 	import { categoryColorMap } from '#lib/utils/categoryColors.js';
 	import {
 		getCurrentPacificMonthYear,
-		getMonthProgress,
 		getYearOptions,
 		getYearProgress,
 		padMonth,
@@ -251,22 +249,13 @@
 	// Recurring total for the selected month, from the prices in effect that month.
 	let recurringBillsMonthlyTotal = $derived(data.recurringBillsMonthlyTotal || 0);
 
-	// Shared cash-flow projection (monthly only) — feeds the header subtitle, hero band, and waterfall.
-	let projection = $derived(
-		computeCashFlowProjection({
-			totalIncome: data.totalIncome || 0,
-			actualSpent: data.actualExpensesTotal || 0,
-			recurringBillsMonthlyTotal,
-			plannedExpensesTotal: data.plannedExpensesTotal || 0,
-			month: Number(selectedMonth),
-			year: Number(selectedYear)
-		})
-	);
+	// Server cash flow (monthly only) — feeds the header subtitle, hero band, and monthly overview.
+	let cashFlow = $derived(data.cashFlow);
 
 	// Shared "is the selected month the real current month" status — gates widgets
 	// that only make sense for the month actually in progress (safe-to-spend,
 	// cash flow projection daily figures, upcoming bills, recurring paid status).
-	let monthStatus = $derived(getMonthProgress(Number(selectedMonth), Number(selectedYear)).status);
+	let monthStatus = $derived(cashFlow?.status);
 
 	// Personalized header greeting + relative-time subtitle
 	let firstName = $derived(data.user?.name?.split(' ')[0] || '');
@@ -276,7 +265,8 @@
 			const monthName = monthNames[Number(selectedMonth) - 1];
 			if (monthStatus === 'past') return `${monthName} is complete`;
 			if (monthStatus === 'future') return `${monthName} hasn't started yet`;
-			const days = projection.daysRemainingInclusive;
+			if (!cashFlow) return monthName;
+			const days = cashFlow.daysRemaining;
 			return `${days} day${days === 1 ? '' : 's'} left in ${monthName}`;
 		}
 		const yearProgress = getYearProgress(Number(selectedYear));
@@ -371,7 +361,8 @@
 				tone: budgetTone(nonRecurringBudgetPct),
 				meter: nonRecurringBudgetPct,
 				// A week in, month-over-month spend comparisons are mostly noise.
-				trend: monthStatus === 'current' && projection.daysElapsed < 7 ? undefined : spendTrend,
+				trend:
+					monthStatus === 'current' && (cashFlow?.daysElapsed ?? 0) < 7 ? undefined : spendTrend,
 				tooltip:
 					"Your discretionary spending vs. planned budget, excluding recurring bills. More sensitive than the all-in % because the recurring amount isn't cushioning either side."
 			},
@@ -591,19 +582,15 @@
 	{:else if data.loadError}
 		<LoadErrorBanner message={data.loadError} />
 	{:else if selectedMode === 'monthly'}
-		{#if isSectionVisible('safeToSpendHero')}
+		{#if isSectionVisible('safeToSpendHero') && cashFlow}
 			<div class="mb-4">
 				<SafeToSpendHeroBand
-					dailyDiscretionary={projection.dailyDiscretionary}
-					discretionaryRemaining={projection.discretionaryRemaining}
+					{cashFlow}
 					{netBalance}
-					daysRemainingInclusive={projection.daysRemainingInclusive}
-					daysInMonth={projection.daysInMonth}
 					{discretionaryExpenses}
 					discretionaryBudget={nonRecurringBudgetPlanned}
 					month={Number(selectedMonth)}
-					year={Number(selectedYear)}
-					forecast={data.forecast?.discretionaryEnd}
+					forecast={cashFlow.forecast?.discretionaryEnd}
 				/>
 			</div>
 		{/if}
@@ -641,7 +628,7 @@
 			</section>
 		{/if}
 
-		{#if isSectionVisible('monthlyOverview') || isSectionVisible('cashFlowProjection')}
+		{#if cashFlow && (isSectionVisible('monthlyOverview') || isSectionVisible('cashFlowProjection'))}
 			<div class="mb-8 grid items-start gap-4 lg:grid-cols-2">
 				<MonthDetailCard
 					actualSpent={data.actualExpensesTotal || 0}
@@ -652,9 +639,7 @@
 					excludedSpendBreakdown={data.excludedExpensesBreakdown || []}
 					netTrendLabel={netBalanceTrend?.label}
 					showProjection={isSectionVisible('cashFlowProjection')}
-					forecast={data.forecast}
-					month={Number(selectedMonth)}
-					year={Number(selectedYear)}
+					{cashFlow}
 				/>
 				{#if isSectionVisible('monthlyOverview')}
 					<SpendingBreakdownChart

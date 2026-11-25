@@ -1,10 +1,8 @@
 <script lang="ts">
 	import InfoTooltip from '#lib/components/InfoTooltip.svelte';
 	import * as Card from '#lib/components/ui/card/index.js';
-	import type { ExcludedSpendCategory, MonthEndForecast } from '#lib/types.js';
+	import type { CashFlow, ExcludedSpendCategory } from '#lib/types.js';
 	import { formatCurrency } from '#lib/utils.js';
-	import { computeCashFlowProjection } from '#lib/utils/cashFlowProjection.js';
-	import { getMonthProgress } from '#lib/utils/dates.js';
 
 	interface Props {
 		/** Total spent including recurring. */
@@ -16,11 +14,9 @@
 		excludedSpendBreakdown?: ExcludedSpendCategory[];
 		netTrendLabel?: string;
 		showProjection?: boolean;
-		/** Server forecast for the current month; replaces the simple pace projection when set. */
-		forecast?: MonthEndForecast | null;
+		/** Server cash flow for the month; the projection shows when it has a forecast. */
+		cashFlow: CashFlow;
 		loading?: boolean;
-		month: number;
-		year: number;
 	}
 
 	let {
@@ -32,13 +28,12 @@
 		excludedSpendBreakdown = [],
 		netTrendLabel,
 		showProjection = true,
-		forecast = null,
-		loading = false,
-		month,
-		year
+		cashFlow,
+		loading = false
 	}: Props = $props();
 
-	let monthStatus = $derived(getMonthProgress(month, year).status);
+	let monthStatus = $derived(cashFlow.status);
+	let forecast = $derived(cashFlow.forecast);
 	let discretionarySpent = $derived(Math.max(0, actualSpent - recurringBillsTotal));
 	let discretionaryBudget = $derived(Math.max(0, plannedBudget - recurringBillsTotal));
 	let budgetPct = $derived(
@@ -46,20 +41,6 @@
 	);
 	let netBalance = $derived(totalIncome - actualSpent);
 	let isOverspent = $derived(netBalance < 0);
-
-	let projection = $derived(
-		computeCashFlowProjection({
-			totalIncome,
-			actualSpent,
-			recurringBillsMonthlyTotal: recurringBillsTotal,
-			plannedExpensesTotal: plannedBudget,
-			month,
-			year
-		})
-	);
-
-	let monthEndSpend = $derived(forecast?.totalEnd ?? projection.projectedEnd);
-	let dailySpendRate = $derived(forecast?.dailyRate ?? projection.dailyBurnRate);
 
 	let statusLabel = $derived(
 		monthStatus === 'past'
@@ -179,7 +160,7 @@
 				{/if}
 			</div>
 
-			{#if showProjection && monthStatus === 'current'}
+			{#if showProjection && forecast}
 				<dl class="grid grid-cols-2 gap-4 border-t pt-4 text-xs sm:grid-cols-4">
 					<div>
 						<dt class="text-muted-foreground flex items-center gap-1">
@@ -192,41 +173,39 @@
 						<dd
 							class={[
 								'mt-1 text-sm font-semibold tabular-nums',
-								totalIncome > 0 && monthEndSpend > totalIncome && 'text-destructive'
+								totalIncome > 0 && forecast.totalEnd > totalIncome && 'text-destructive'
 							]}
 						>
-							{formatCurrency(monthEndSpend)}
+							{formatCurrency(forecast.totalEnd)}
 						</dd>
 					</div>
-					{#if forecast}
-						<div>
-							<dt class="text-muted-foreground flex items-center gap-1">
-								Month-end net
-								<InfoTooltip
-									size="sm"
-									text="Expected income minus projected month-end spend. Expected income is the larger of income recorded this month and your average over the last 3 months."
-								/>
-							</dt>
-							<dd
-								class={[
-									'mt-1 text-sm font-semibold tabular-nums',
-									forecast.net.mid < 0 ? 'text-destructive' : 'text-positive'
-								]}
-							>
-								{formatCurrency(forecast.net.mid)}
-							</dd>
-						</div>
-					{/if}
+					<div>
+						<dt class="text-muted-foreground flex items-center gap-1">
+							Month-end net
+							<InfoTooltip
+								size="sm"
+								text="Expected income minus projected month-end spend. Expected income is the larger of income recorded this month and your average over the last 3 months."
+							/>
+						</dt>
+						<dd
+							class={[
+								'mt-1 text-sm font-semibold tabular-nums',
+								forecast.net.mid < 0 ? 'text-destructive' : 'text-positive'
+							]}
+						>
+							{formatCurrency(forecast.net.mid)}
+						</dd>
+					</div>
 					<div>
 						<dt class="text-muted-foreground">Spending /day</dt>
 						<dd class="mt-1 text-sm font-semibold tabular-nums">
-							{formatCurrency(dailySpendRate)}
+							{formatCurrency(forecast.dailyRate)}
 						</dd>
 					</div>
 					<div>
 						<dt class="text-muted-foreground">Budget left /day</dt>
 						<dd class="mt-1 text-sm font-semibold tabular-nums">
-							{formatCurrency(projection.dailyBudgetRemaining)}
+							{formatCurrency(cashFlow.budgetLeftPerDay)}
 						</dd>
 					</div>
 				</dl>
