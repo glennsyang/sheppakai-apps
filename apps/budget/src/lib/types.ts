@@ -123,6 +123,26 @@ export type MonthEndForecast = {
 	baselineWeeks: number;
 };
 
+/** A month's cash flow on the Pacific `today`; see `monthProgress` in `server/dashboard/cash-flow.ts`. */
+export type CashFlow = {
+	status: 'past' | 'current' | 'future';
+	daysInMonth: number;
+	/** Days elapsed, today included; all days for a past month, 0 for a future one. */
+	daysElapsed: number;
+	/** Days left to spend in, today included; 0 for a past month, all days for a future one. */
+	daysRemaining: number;
+	safeToSpend: {
+		/** Income less discretionary spend and recurring bills; negative when past income. */
+		remaining: number;
+		/** `remaining` (floored at 0) spread over the days left. */
+		perDay: number;
+	};
+	/** Planned budget left (floored at 0) spread over the days left. */
+	budgetLeftPerDay: number;
+	/** Month-end forecast; current month only. */
+	forecast: MonthEndForecast | null;
+};
+
 export type Contribution = QueryRow<'contribution', { goal: true; user: true }>;
 
 export type ChartData = {

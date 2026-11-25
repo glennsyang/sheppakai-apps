@@ -143,7 +143,7 @@ describe('loadMonthlyDashboard', () => {
 		const result = await loadMonthlyDashboard(
 			new URL('https://example.com/dashboard?month=6&year=2020')
 		);
-		expect(result.forecast).toBeNull();
+		expect(result.cashFlow.forecast).toBeNull();
 	});
 
 	it('uses the bill prices in effect in each month', async () => {
@@ -207,11 +207,15 @@ describe('loadMonthlyDashboard', () => {
 				'2026-09-30'
 			);
 			expect(mockIncomeQueries.findByDateRange).toHaveBeenCalledWith('2026-07-01', '2026-09-30');
-			expect(result.forecast).not.toBeNull();
+			expect(result.cashFlow.forecast).not.toBeNull();
 			// No baseline history → this month's pace: $100/day over 31 days
-			expect(result.forecast?.dailyRate).toBe(100);
-			expect(result.forecast?.totalEnd).toBe(3100);
-			expect(result.forecast?.expectedIncome).toBe(3000);
+			expect(result.cashFlow.forecast?.dailyRate).toBe(100);
+			expect(result.cashFlow.forecast?.totalEnd).toBe(3100);
+			expect(result.cashFlow.forecast?.expectedIncome).toBe(3000);
+			// Oct 15 Pacific: no income this month, $1,500 spent, 17 days left
+			expect(result.cashFlow.status).toBe('current');
+			expect(result.cashFlow.daysRemaining).toBe(17);
+			expect(result.cashFlow.safeToSpend).toEqual({ remaining: -1500, perDay: 0 });
 		});
 	});
 });

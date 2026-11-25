@@ -2,45 +2,33 @@
 	import InfoTooltip from '#lib/components/InfoTooltip.svelte';
 	import SpendPaceChart from '#lib/components/SpendPaceChart.svelte';
 	import * as Card from '#lib/components/ui/card/index.js';
-	import type { ForecastRange } from '#lib/types.js';
+	import type { CashFlow, ForecastRange } from '#lib/types.js';
 	import { formatCurrency, monthNames } from '#lib/utils.js';
-	import { getMonthProgress } from '#lib/utils/dates.js';
 
 	interface Props {
-		dailyDiscretionary: number;
-		discretionaryRemaining: number;
+		cashFlow: CashFlow;
 		netBalance: number;
-		daysRemainingInclusive: number;
-		daysInMonth: number;
 		discretionaryExpenses: { date: string; amount: number }[];
 		discretionaryBudget: number;
 		month: number;
-		year: number;
 		/** Projected month-end discretionary spend (current month only). */
 		forecast?: ForecastRange | null;
 	}
 
 	let {
-		dailyDiscretionary,
-		discretionaryRemaining,
+		cashFlow,
 		netBalance,
-		daysRemainingInclusive,
-		daysInMonth,
 		discretionaryExpenses,
 		discretionaryBudget,
 		month,
-		year,
 		forecast = null
 	}: Props = $props();
 
-	let monthStatus = $derived(getMonthProgress(month, year).status);
-	let throughDay = $derived(
-		monthStatus === 'past'
-			? daysInMonth
-			: monthStatus === 'future'
-				? 0
-				: daysInMonth - daysRemainingInclusive + 1
-	);
+	let monthStatus = $derived(cashFlow.status);
+	let daysInMonth = $derived(cashFlow.daysInMonth);
+	let daysRemaining = $derived(cashFlow.daysRemaining);
+	let dailyDiscretionary = $derived(cashFlow.safeToSpend.perDay);
+	let discretionaryRemaining = $derived(cashFlow.safeToSpend.remaining);
 
 	let discretionarySpent = $derived(discretionaryExpenses.reduce((sum, e) => sum + e.amount, 0));
 	let budgetResult = $derived(discretionaryBudget - discretionarySpent);
@@ -69,13 +57,11 @@
 						<span class="text-destructive font-medium tabular-nums"
 							>{formatCurrency(-discretionaryRemaining)} past this month's income</span
 						>
-						<span class="text-muted-foreground">with {daysRemainingInclusive} days to go.</span>
+						<span class="text-muted-foreground">with {daysRemaining} days to go.</span>
 					{:else}
 						<span class="font-medium tabular-nums">{formatCurrency(discretionaryRemaining)}</span>
 						<span class="text-muted-foreground"
-							>left to spend over {daysRemainingInclusive} day{daysRemainingInclusive === 1
-								? ''
-								: 's'}.</span
+							>left to spend over {daysRemaining} day{daysRemaining === 1 ? '' : 's'}.</span
 						>
 					{/if}
 				</p>
@@ -127,7 +113,7 @@
 				budget={discretionaryBudget}
 				{month}
 				{daysInMonth}
-				{throughDay}
+				throughDay={cashFlow.daysElapsed}
 				complete={monthStatus === 'past'}
 				{forecast}
 			/>
