@@ -29,6 +29,11 @@ export type CustomerRates = {
 	hoursLogged: number;
 };
 
+/** Revenue: what one Job brought in, the amount charged plus any tip. The one definition. */
+export function revenue(job: { amountCharged: number; tip: number }): number {
+	return job.amountCharged + job.tip;
+}
+
 const DAY_MS = 86_400_000;
 
 function toDayNumber(date: string): number {
@@ -86,7 +91,7 @@ export function customerRates(jobs: StatsJob[]): CustomerRates {
 		tips += job.tip;
 		if (job.durationHours != null && job.durationHours > 0) {
 			hoursLogged += job.durationHours;
-			timedEarned += job.amountCharged + job.tip;
+			timedEarned += revenue(job);
 		}
 	}
 
@@ -122,7 +127,7 @@ export function revenueByMonth(
 	for (const job of jobs) {
 		if (!job.jobDate.startsWith(prefix)) continue;
 		const monthIndex = Number(job.jobDate.slice(5, 7)) - 1;
-		totals[monthIndex] += job.amountCharged + job.tip;
+		totals[monthIndex] += revenue(job);
 	}
 	return MONTHS.map((month, i) => ({ month, earned: totals[i] }));
 }

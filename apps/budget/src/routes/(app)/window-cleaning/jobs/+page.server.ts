@@ -6,6 +6,7 @@ import { deleteJob, sendInvoice, updateJob } from '#lib/server/actions/window-cl
 import { windowCleaningJobQueries } from '#lib/server/db/queries/index.js';
 import { logger } from '#lib/server/logger.js';
 import { getCurrentPacificMonthYear, parseYearParam } from '#lib/utils/dates.js';
+import { revenue } from '#lib/utils/windowCleaningStats.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -25,8 +26,8 @@ export const load: PageServerLoad = async ({ url }) => {
 
 		const totalCharged = jobs.reduce((sum, j) => sum + j.amountCharged, 0);
 		const totalTips = jobs.reduce((sum, j) => sum + j.tip, 0);
-		const totalEarned = totalCharged + totalTips;
-		const earnedLastYear = jobsLastYear.reduce((sum, j) => sum + j.amountCharged + j.tip, 0);
+		const totalEarned = jobs.reduce((sum, j) => sum + revenue(j), 0);
+		const earnedLastYear = jobsLastYear.reduce((sum, j) => sum + revenue(j), 0);
 
 		return {
 			jobs,

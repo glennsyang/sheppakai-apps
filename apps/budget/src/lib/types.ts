@@ -182,6 +182,8 @@ export type WindowCleaningCustomerWithStats = WindowCleaningCustomer & {
 	hourlyRate: number | null;
 	tipPct: number | null;
 	reclean: RecleanDue | null;
+	/** Overdue Customer: their Reclean Interval has passed since their last Job. */
+	overdue: boolean;
 };
 
 export type SidebarData = {

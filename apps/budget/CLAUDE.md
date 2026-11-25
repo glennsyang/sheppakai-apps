@@ -66,10 +66,15 @@ This repo already has a shared helper for the repeated "list page + form + serve
   (`withAuditFieldsForCreate/Update`), and consistent success/error messages (`CrudMessages`).
 - **`createWriteActions()`** (and `writeCreateAction`/`writeUpdateAction`/`writeDeleteAction`) in
   the same file — the form envelope only, for entities with a **write module** in
-  `src/lib/server/db/writes/` (Expense, Income, Contribution, Customer, Job). The write module owns
-  row mapping, `updatedAt` and side effects (e.g. the Budget alert on Expense writes), and `/api/v1`
+  `src/lib/server/db/writes/` (Expense, Income, Contribution, Job). The write module owns row
+  mapping, `updatedAt` and side effects (e.g. the Budget alert on Expense writes), and `/api/v1`
   calls the same functions — never map rows in the route. Use `createCrudActions()` only for
-  entities with no write module.
+  entities with no write module. A write refuses a business rule by throwing `ApiWriteError`: the
+  API answers with it and the form banner shows the same text and status.
+- **Customer** writes live in the Customer module, `src/lib/server/window-cleaning/customers.ts`,
+  which also owns the customer list with Overdue Customer status, Revenue totals and the Deleted
+  Customer guard (no update or new Job for a Deleted Customer). Revenue itself is `revenue(job)` in
+  `src/lib/utils/windowCleaningStats.ts` (client-safe) — never write `amountCharged + tip`.
 - **Query objects** per domain in `src/lib/server/db/queries` (e.g. `expenseQueries`,
   `budgetQueries`) — encapsulate the Drizzle queries for that entity (`findByDateRange`, `search`,
   etc.) rather than querying inline in `+page.server.ts`.

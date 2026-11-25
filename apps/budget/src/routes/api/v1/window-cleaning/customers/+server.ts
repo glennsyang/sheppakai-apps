@@ -4,9 +4,9 @@ import { handleApiWrite } from '#lib/server/api/handle-write.js';
 import { requireApiKey } from '#lib/server/api/require-api-key.js';
 import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiCreateWindowCleaningCustomerSchema } from '#lib/server/api/schemas/window-cleaning-customers.js';
-import { windowCleaningCustomerQueries } from '#lib/server/db/queries/index.js';
-import { createWindowCleaningCustomer } from '#lib/server/db/writes/window-cleaning-customers.js';
 import { logger } from '#lib/server/logger.js';
+import { create, listWithStatus } from '#lib/server/window-cleaning/customers.js';
+import { getPacificTodayDate } from '#lib/utils/dates.js';
 
 import type { RequestHandler } from './$types';
 
@@ -15,8 +15,9 @@ export const GET: RequestHandler = async ({ request }) => {
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
 	try {
-		const customers = await windowCleaningCustomerQueries.findAll();
-		return apiSuccess(customers);
+		const { customers } = await listWithStatus(getPacificTodayDate());
+		// Jobs are served by /api/v1/window-cleaning/jobs; the list carries their totals only
+		return apiSuccess(customers.map(({ jobs: _jobs, ...customer }) => customer));
 	} catch (error) {
 		logger.error('API: failed to list window cleaning customers', error);
 		return apiError('internal_error', 'Failed to load window cleaning customers.', 500);
@@ -38,7 +39,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 			path: url.pathname,
 			action: 'windowCleaningCustomers:write'
 		},
-		() => createWindowCleaningCustomer(parsed.data, auth.userId),
+		() => create(parsed.data, auth.userId),
 		{ successStatus: 201, failureMessage: 'Failed to create window cleaning customer' }
 	);
 };

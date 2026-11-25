@@ -5,8 +5,8 @@ import { restoreCustomerSchema } from '#lib/formSchemas/index.js';
 import { adminFormAction } from '#lib/server/actions/admin-guard.js';
 import { assertAdmin } from '#lib/server/actions/auth-guard.js';
 import { windowCleaningCustomerQueries } from '#lib/server/db/queries/index.js';
-import { restoreWindowCleaningCustomer } from '#lib/server/db/writes/window-cleaning-customers.js';
 import { logger } from '#lib/server/logger.js';
+import { restore } from '#lib/server/window-cleaning/customers.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -32,7 +32,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions = {
 	restore: adminFormAction(restoreCustomerSchema, async (_event, form) => {
 		try {
-			await restoreWindowCleaningCustomer(form.data.customerId);
+			await restore(form.data.customerId);
 
 			logger.info(`Customer restored: ${form.data.customerId}`);
 			return message(form, { type: 'success', text: 'Customer restored successfully' });

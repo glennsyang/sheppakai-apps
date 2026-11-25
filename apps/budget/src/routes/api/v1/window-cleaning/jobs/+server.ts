@@ -8,8 +8,8 @@ import {
 	apiWindowCleaningJobListQuerySchema
 } from '#lib/server/api/schemas/window-cleaning-jobs.js';
 import { windowCleaningJobQueries } from '#lib/server/db/queries/index.js';
-import { createWindowCleaningJob } from '#lib/server/db/writes/window-cleaning-jobs.js';
 import { logger } from '#lib/server/logger.js';
+import { addJob } from '#lib/server/window-cleaning/customers.js';
 
 import type { RequestHandler } from './$types';
 
@@ -53,7 +53,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 			path: url.pathname,
 			action: 'windowCleaningJobs:write'
 		},
-		() => createWindowCleaningJob(parsed.data, auth.userId),
+		() => addJob(parsed.data, auth.userId),
 		{ successStatus: 201, failureMessage: 'Failed to create window cleaning job' }
 	);
 };
