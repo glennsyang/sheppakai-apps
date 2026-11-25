@@ -9,3 +9,4 @@ export * from './meditation';
 export * from './visits';
 export * from './settings';
 export * from './api';
+export * from './family-worship';

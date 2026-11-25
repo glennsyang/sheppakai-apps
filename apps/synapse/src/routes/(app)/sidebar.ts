@@ -1,4 +1,13 @@
-import { Book, Dumbbell, Heart, House, Shield, SquareCheck, Users } from '@lucide/svelte/icons';
+import {
+	Book,
+	BookOpen,
+	Dumbbell,
+	Heart,
+	House,
+	Shield,
+	SquareCheck,
+	Users
+} from '@lucide/svelte/icons';
 
 import type { SidebarNav } from '#lib/types.js';
 
@@ -51,6 +60,14 @@ export const navItems: SidebarNav = {
 			icon: Users,
 			pen: 'pink',
 			short: 'Visits'
+		},
+		{
+			title: 'Family Worship',
+			description: 'Plan the topics you study at home each week',
+			url: '/family-worship',
+			icon: BookOpen,
+			pen: 'amber',
+			short: 'Worship'
 		},
 		{
 			title: 'Admin',

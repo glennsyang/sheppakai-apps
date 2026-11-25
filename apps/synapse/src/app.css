@@ -186,6 +186,7 @@
 	--color-pen-tasks: oklch(var(--color-orange));
 	--color-pen-mind: oklch(var(--color-purple));
 	--color-pen-people: oklch(var(--color-pink));
+	--color-pen-worship: oklch(var(--color-amber));
 	--color-pen-warn: oklch(var(--color-amber));
 
 	/* Legacy section colour names, now resolving to the pens */

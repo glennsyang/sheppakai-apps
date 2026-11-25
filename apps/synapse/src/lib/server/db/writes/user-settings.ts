@@ -4,6 +4,7 @@ import { getDb } from '#lib/server/db/index.js';
 import {
 	dailyCalorieTargets,
 	dashboardGoalSettings,
+	familyWorshipSettings,
 	goalWeights,
 	morningDigestSettings,
 	visitStatusSettings
@@ -18,6 +19,7 @@ import {
 export type UserSettingsTable =
 	| typeof dailyCalorieTargets
 	| typeof dashboardGoalSettings
+	| typeof familyWorshipSettings
 	| typeof goalWeights
 	| typeof morningDigestSettings
 	| typeof visitStatusSettings;
