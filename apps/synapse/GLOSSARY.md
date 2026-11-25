@@ -151,11 +151,61 @@ Content or Happy, or a custom mood you write in, with optional notes.
 
 _Avoid_: Mood log, check-in
 
+### Family Worship
+
+**Family Worship**: The weekly Bible study you hold at home, usually on the same weekday each week.
+
+_Avoid_: Bible study, devotional
+
+**Topic**: Something in the catalog to study, with a description and optional notes, scripture
+references and publication links. An **Archived Topic** is hidden from the catalog and the rotation
+but keeps its history and can be restored. A topic with sessions can only be archived, never
+deleted.
+
+_Avoid_: Subject, lesson, study
+
+**Family Worship Session**: One time you held family worship: the date, the one topic you covered
+and an optional note. It counts for the week it falls in, and a week has at most one. Logging it
+doesn't finish the topic. Inside Family Worship, "Session" alone is fine.
+
+_Avoid_: Study, meeting, entry
+
+**Usual Weekday**: The day of the week you normally hold family worship (Wednesday unless you change
+it). It sets the date each planned week shows and when the reminders go out.
+
+_Avoid_: Worship day, study night
+
+**Planned Week**: A week with the topic you've chosen to study in it. A week has at most one.
+
+_Avoid_: Slot, schedule, booking
+
+**Skipped Week**: A week you've marked as having no family worship, with an optional reason. A week
+is only skipped when you mark it; a past week with no session is just unlogged.
+
+_Avoid_: Missed week, gap
+
+**Topic Queue**: The order you study your active topics in. Every active topic is in it; planning a
+topic sends it to the back, a planned topic you don't study goes back to the front, and the top of
+the queue is next week's suggestion.
+
+_Avoid_: Rotation, backlog, list
+
+**Planning Reminder**: The Monday 5pm push and email sent when that week has no planned week and
+isn't skipped.
+
+_Avoid_: Topic alert
+
+**Logging Reminder**: The push and email sent at 9am the morning after your usual weekday when that
+week has no session and isn't skipped.
+
+_Avoid_: Missed-week alert
+
 ### Notifications
 
 **Morning Digest**: The daily morning push notification: today's agenda, tasks due today, tonight's
-planned dinner from Meal Planner, recurring bills due this week from Budget, and overdue visits. A
-section appears only when it has something in it.
+planned dinner from Meal Planner, recurring bills due this week from Budget, overdue visits, and on
+your usual weekday, tonight's family worship topic. A section appears only when it has something in
+it.
 
 _Avoid_: Summary, daily email
 

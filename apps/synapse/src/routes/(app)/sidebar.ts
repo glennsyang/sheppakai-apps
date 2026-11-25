@@ -1,4 +1,13 @@
-import { Book, Dumbbell, Heart, House, Shield, SquareCheck, Users } from '@lucide/svelte/icons';
+import {
+	Book,
+	BookOpen,
+	Dumbbell,
+	Heart,
+	House,
+	Shield,
+	SquareCheck,
+	Users
+} from '@lucide/svelte/icons';
 
 import type { SidebarNav } from '#lib/types.js';
 
@@ -11,14 +20,6 @@ export const navItems: SidebarNav = {
 			icon: House,
 			pen: 'teal',
 			short: 'Today'
-		},
-		{
-			title: 'Journal',
-			description: 'Capture your daily thoughts and experiences',
-			url: '/journal',
-			icon: Book,
-			pen: 'blue',
-			short: 'Journal'
 		},
 		{
 			title: 'Tasks',
@@ -37,12 +38,12 @@ export const navItems: SidebarNav = {
 			short: 'Fitness'
 		},
 		{
-			title: 'Meditation',
-			description: 'Build mindfulness habits with guided routines',
-			url: '/meditation',
-			icon: Heart,
-			pen: 'purple',
-			short: 'Meditation'
+			title: 'Family Worship',
+			description: 'Plan the topics you study at home each week',
+			url: '/family-worship',
+			icon: BookOpen,
+			pen: 'brown',
+			short: 'FW'
 		},
 		{
 			title: 'Visits',
@@ -51,6 +52,24 @@ export const navItems: SidebarNav = {
 			icon: Users,
 			pen: 'pink',
 			short: 'Visits'
+		},
+		{
+			title: 'Journal',
+			description: 'Capture your daily thoughts and experiences',
+			url: '/journal',
+			icon: Book,
+			pen: 'blue',
+			short: 'Journal',
+			mobileMore: true
+		},
+		{
+			title: 'Meditation',
+			description: 'Build mindfulness habits with guided routines',
+			url: '/meditation',
+			icon: Heart,
+			pen: 'purple',
+			short: 'Meditation',
+			mobileMore: true
 		},
 		{
 			title: 'Admin',
