@@ -190,8 +190,8 @@ the queue is next week's suggestion.
 
 _Avoid_: Rotation, backlog, list
 
-**Planning Reminder**: The Monday 5pm push and email sent when that week has no planned week and
-isn't skipped.
+**Planning Reminder**: The Monday 5pm push and email sent when that week has no planned week, no
+session and isn't skipped.
 
 _Avoid_: Topic alert
 

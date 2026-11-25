@@ -266,14 +266,28 @@ only while unlogged). One row per week:
 current or upcoming week; it is computed on read, not stored.
 
 `PUT /api/v1/family-worship/plan/{weekStart}` — requires `family-worship:write`. Body:
-`{ "topicId": "t1" }`. Plans an active topic for the week, replacing any planned topic.
-`DELETE /api/v1/family-worship/plan/{weekStart}` clears the week's plan; its topic goes back to the
-front of the queue.
+`{ "topicId": "t1" }`. Plans an active topic for the week, replacing any planned topic. Returns
+`{ "weekStart": "2026-11-30", "topicId": "t1" }`.
+
+`DELETE /api/v1/family-worship/plan/{weekStart}` — requires `family-worship:write`. Clears the
+week's plan; its topic goes back to the front of the queue. Returns
+`{ "weekStart": "2026-11-30", "topicId": null }` (also when the week had no plan).
 
 `GET /api/v1/family-worship/sessions` — requires `family-worship:read`. Sessions newest first. Query
-params (optional): `topicId`, `limit` (1-200, default 50).
+params (optional): `topicId`, `limit` (1-200, default 50). Each session:
 
-`POST /api/v1/family-worship/sessions` — requires `family-worship:write`. Returns the session (201).
+```json
+{
+	"id": "s1",
+	"date": "2026-11-25",
+	"topicId": "t1",
+	"topicTitle": "Psalm 23",
+	"note": null
+}
+```
+
+`POST /api/v1/family-worship/sessions` — requires `family-worship:write`. Returns the new session in
+the same shape (201).
 
 ```bash
 curl -X POST -H "Authorization: Bearer sk_live_xxx" -H "Content-Type: application/json" \
@@ -291,11 +305,13 @@ Optional flags: `confirmUnskip` (must be `true` to log into a Skipped Week; this
 `"shift"`, needed when next week already holds a different topic).
 
 `PATCH /api/v1/family-worship/sessions/{id}` — requires `family-worship:write`. Any of `date`,
-`topicId`, `note` (`null` clears it), plus `confirmUnskip` when moving into a Skipped Week.
+`topicId`, `note` (`null` clears it), plus `confirmUnskip` when moving into a Skipped Week. Fields
+left out keep their value. Returns the updated session in the same shape.
 
 `POST /api/v1/family-worship/skipped-weeks` — requires `family-worship:write`. Body:
 `{ "weekStart": "2026-11-30", "reason": "Convention" }` (`reason` optional). The week's planned
-topic goes back to the front of the queue.
+topic goes back to the front of the queue. Skipping an already Skipped Week updates its reason.
+Returns `{ "weekStart": "2026-11-30", "reason": "Convention" }` (201).
 
 Rule violations return an error with an `error.reason`, so a client can explain what went wrong and
 how to fix it:

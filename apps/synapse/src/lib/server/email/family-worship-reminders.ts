@@ -47,7 +47,7 @@ function familyWorshipUsers(db: Db): Owner[] {
 }
 
 /**
- * Planning Reminder: Monday at or after 5pm Pacific, when this week has no Planned Week, no session
+ * Planning Reminder: Monday at or after 5pm Pacific, when this week isn't planned, has no session
  * and isn't a Skipped Week. Names the top of the Topic Queue.
  */
 export const planningReminderJob: NotificationJob<WeekCandidate> = {
@@ -72,8 +72,8 @@ export const planningReminderJob: NotificationJob<WeekCandidate> = {
 		email: buildPlanningReminderEmail(owner.name, topicTitle, familyWorshipUrl()),
 		push: {
 			message: topicTitle
-				? `This week has no Planned Week. Next in your Topic Queue: ${topicTitle}.`
-				: 'This week has no Planned Week. Choose a topic for family worship.',
+				? `This week isn't planned yet. Next in your Topic Queue: ${topicTitle}.`
+				: "This week isn't planned yet. Choose a topic for family worship.",
 			title: 'Synapse - Plan Family Worship',
 			tags: FAMILY_WORSHIP_TAGS,
 			click: familyWorshipUrl()

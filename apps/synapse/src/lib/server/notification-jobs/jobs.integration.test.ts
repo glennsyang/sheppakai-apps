@@ -595,6 +595,20 @@ describe('planningReminderJob', () => {
 		expect(notifier.pushes).toHaveLength(0);
 	});
 
+	it('does not send when a session is already logged this week', async () => {
+		const topic = addTopic('Kindness');
+		// Monday 2026-01-12, 10:00 AM PST: logged earlier the same day.
+		logSession(
+			db,
+			TEST_USER.id,
+			{ date: FW_WEEK, topicId: topic.id, note: null },
+			{ now: new Date('2026-01-12T18:00:00Z') }
+		);
+
+		await runNotificationJob(planningReminderJob, contextAt(db, MONDAY_AFTER_FIVE), notifier);
+		expect(notifier.pushes).toHaveLength(0);
+	});
+
 	it('does not send for a Skipped Week', async () => {
 		skipWeek(db, TEST_USER.id, FW_WEEK, 'Convention', { now: new Date(MORNING) });
 

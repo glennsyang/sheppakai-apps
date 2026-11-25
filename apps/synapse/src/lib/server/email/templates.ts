@@ -229,7 +229,7 @@ function familyWorshipButton(url: string, label: string): string {
 		</div>`;
 }
 
-/** Monday evening, when this week has no Planned Week yet. */
+/** Monday evening, when this week isn't planned yet. */
 export function buildPlanningReminderEmail(
 	name: string,
 	suggestedTopic: string | null,
@@ -247,7 +247,7 @@ export function buildPlanningReminderEmail(
 			`
 		<p style="font-size: 16px; margin-bottom: 20px;">Hi ${escapeHtml(name)},</p>
 		<p style="font-size: 16px; margin-bottom: 20px;">
-			This week doesn't have a Planned Week yet. ${suggestion}
+			This week isn't planned yet. ${suggestion}
 		</p>
 		<p style="font-size: 16px; margin-bottom: 20px;">
 			Not studying this week? Mark it as a Skipped Week and this reminder won't come back.
@@ -264,8 +264,8 @@ export function buildLoggingReminderEmail(
 	familyWorshipUrl: string
 ): EmailContent {
 	const topic = plannedTopic
-		? `The Planned Week's topic was <strong>${escapeHtml(plannedTopic)}</strong>.`
-		: 'This week had no Planned Week.';
+		? `This week's planned topic was <strong>${escapeHtml(plannedTopic)}</strong>.`
+		: "This week wasn't planned.";
 	return {
 		subject: "[Synapse] 📖 Log this week's family worship",
 		label: 'family worship logging reminder email',
