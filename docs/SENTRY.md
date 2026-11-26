@@ -67,10 +67,12 @@ monitor and sends `in_progress` → `ok` / `error` check-ins (timezone `Etc/UTC`
   at the other.
 - `checkinMargin` is 30 min because GitHub Actions scheduled runs are often 10–30 min late.
 
-| App     | Route                            | Workflow                         | Slug                          |
-| ------- | -------------------------------- | -------------------------------- | ----------------------------- |
-| synapse | `/api/cron/email-notifications`  | `synapse-notifications-cron.yml` | `synapse-email-notifications` |
-| budget  | `/api/cron/email-weekly-summary` | `budget-weekly-cron.yml`         | `budget-weekly-summary`       |
+| App     | Route                           | Workflow                         | Slug                          |
+| ------- | ------------------------------- | -------------------------------- | ----------------------------- |
+| synapse | `/api/cron/email-notifications` | `synapse-notifications-cron.yml` | `synapse-email-notifications` |
+
+Budget's weekly summary has no monitor: the Sentry plan includes one cron monitor, and Synapse's
+high-frequency job uses it. GitHub's failed-workflow email covers Budget's failed runs.
 
 **Manual step:** in the Sentry UI (Crons → monitor → Alerts), make sure each monitor's alert notifies by
 email or push.
