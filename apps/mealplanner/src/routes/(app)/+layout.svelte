@@ -6,6 +6,7 @@
 
 	import { SIGN_OUT_ROUTE } from '#lib/auth-routes.js';
 	import Icon, { type IconName } from '#lib/components/Icon.svelte';
+	import { Toaster } from '#lib/components/ui/sonner/index.js';
 
 	import type { LayoutData } from './$types';
 
@@ -37,6 +38,8 @@
 
 	const userInitial = $derived(user?.name?.[0]?.toUpperCase() ?? '?');
 </script>
+
+<Toaster position="bottom-right" richColors />
 
 <form method="POST" action={SIGN_OUT_ROUTE} use:enhance bind:this={logoutForm} hidden></form>
 

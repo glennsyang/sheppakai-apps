@@ -22,6 +22,7 @@
 		"clsx",
 		"mode-watcher",
 		"svelte",
+		"svelte-sonner",
 		"sveltekit-superforms",
 		"tailwind-merge",
 		"tailwind-variants",
