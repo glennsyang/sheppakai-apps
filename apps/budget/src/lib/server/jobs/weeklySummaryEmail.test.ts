@@ -1,12 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
+	timeZone: 'America/Vancouver',
 	select: vi.fn<() => unknown>(),
 	getCategoryStatuses: vi.fn<() => Promise<unknown[]>>(),
 	sendWeeklySummaryEmail: vi.fn<(payload: { to: string }) => Promise<unknown>>(),
 	loggerInfo: vi.fn<() => void>(),
 	loggerWarn: vi.fn<() => void>(),
 	loggerError: vi.fn<() => void>()
+}));
+
+vi.mock('$app/env/public', () => ({
+	get APP_TIME_ZONE() {
+		return mockState.timeZone;
+	}
 }));
 
 vi.mock('#lib/server/db/index.js', () => ({
@@ -79,14 +86,15 @@ describe('runWeeklySummaryEmail', () => {
 	});
 
 	afterEach(() => {
+		mockState.timeZone = 'America/Vancouver';
 		vi.restoreAllMocks();
 	});
 
-	it('skips without touching the database when it is not Monday Pacific time', async () => {
+	it('skips without touching the database when it is not Monday in the app time zone', async () => {
 		const result = await runWeeklySummaryEmail(TUESDAY_PACIFIC);
 
 		expect(result.skipped).toBe(true);
-		expect(result.reason).toBe('Not Monday Pacific time');
+		expect(result.reason).toBe('Not Monday in app time zone');
 		expect(mockState.select).not.toHaveBeenCalled();
 	});
 
@@ -226,6 +234,49 @@ describe('runWeeklySummaryEmail', () => {
 			month: 9,
 			year: 2026,
 			through: '2026-09-14'
+		});
+	});
+
+	describe('in the configured APP_TIME_ZONE', () => {
+		// 00:30 Monday Dec 7 in BC (UTC-7); still 23:30 Sunday Dec 6 in Los Angeles.
+		const mondayInBc = new Date('2026-12-07T07:30:00Z');
+
+		it('uses America/Vancouver by default for the day and month-to-date range', async () => {
+			mockState.select.mockReturnValueOnce(queryResult([]));
+
+			const result = await runWeeklySummaryEmail(mondayInBc);
+
+			expect(result.reason).not.toBe('Not Monday in app time zone');
+			expect(result.monthLabel).toBe('December 2026');
+			expect(mockState.getCategoryStatuses).toHaveBeenCalledWith({
+				month: 12,
+				year: 2026,
+				through: '2026-12-07'
+			});
+		});
+
+		it('follows a configured zone', async () => {
+			mockState.timeZone = 'America/Los_Angeles';
+
+			const result = await runWeeklySummaryEmail(mondayInBc);
+
+			expect(result.skipped).toBe(true);
+			expect(result.reason).toBe('Not Monday in app time zone');
+			expect(mockState.select).not.toHaveBeenCalled();
+		});
+
+		it("ends the range on the configured zone's date", async () => {
+			mockState.timeZone = 'America/Los_Angeles';
+			mockState.select.mockReturnValueOnce(queryResult([]));
+
+			// 23:30 Monday Nov 30 in Los Angeles; already Tuesday Dec 1 in BC.
+			await runWeeklySummaryEmail(new Date('2026-12-01T07:30:00Z'));
+
+			expect(mockState.getCategoryStatuses).toHaveBeenCalledWith({
+				month: 11,
+				year: 2026,
+				through: '2026-11-30'
+			});
 		});
 	});
 });

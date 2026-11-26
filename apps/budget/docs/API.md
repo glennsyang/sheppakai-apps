@@ -107,11 +107,11 @@ progress, spending trends, savings goals). Query parameters:
 
 Monthly-only fields include:
 
-- `cashFlow` — the month's cash flow on today's Pacific date, the same numbers the page shows:
-  `status` (`past`, `current` or `future`), `daysInMonth`, `daysElapsed`, `daysRemaining` (today
-  included), `safeToSpend: { remaining, perDay }`, `budgetLeftPerDay`, and `forecast` (month-end
-  projection: `dailyRate`, `discretionaryEnd`, `totalEnd`, `expectedIncome`, `net`, `baselineWeeks`;
-  `null` outside the current month).
+- `cashFlow` — the month's cash flow on today's date (app time zone), the same numbers the page
+  shows: `status` (`past`, `current` or `future`), `daysInMonth`, `daysElapsed`, `daysRemaining`
+  (today included), `safeToSpend: { remaining, perDay }`, `budgetLeftPerDay`, and `forecast`
+  (month-end projection: `dailyRate`, `discretionaryEnd`, `totalEnd`, `expectedIncome`, `net`,
+  `baselineWeeks`; `null` outside the current month).
 
 Yearly-only fields include:
 
@@ -178,7 +178,7 @@ Returns `404` (`not_found`) if the id doesn't exist.
 ### `GET /api/v1/window-cleaning/customers`
 
 Requires `windowCleaningCustomers:read`. No parameters — returns every active (non-deleted)
-customer, each with its status as of today (Pacific time):
+customer, each with its status as of today (app time zone):
 
 - `totalEarned` — Revenue (amount charged + tip) across all their jobs
 - `lastJobDate` — date of their latest job, or `null`
