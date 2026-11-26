@@ -65,6 +65,25 @@ describe('recurring bills setPastAmount action', () => {
 		});
 	});
 
+	it('rejects a missing bill id with 400 and a field error on id', async () => {
+		const result = await setPastAmount({ id: '', month: '2026-09', amount: '10' });
+
+		expect(result.status).toBe(400);
+		expect(result.data?.form.errors.id?.[0]).toBe('Recurring bill ID is required');
+		expect(setAmountMock).not.toHaveBeenCalled();
+	});
+
+	it('answers 500 and logs when the write throws', async () => {
+		setAmountMock.mockImplementation(() => {
+			throw new Error('database is locked');
+		});
+		const result = await setPastAmount({ id: 'bill-1', month: '2026-09', amount: '10' });
+
+		expect(result.status).toBe(500);
+		expect(result.data?.form.message?.type).toBe('error');
+		expect(loggerMock.error).toHaveBeenCalled();
+	});
+
 	it('refuses a month that is not in the past with 400', async () => {
 		setAmountMock.mockReturnValue('not-past');
 		const result = await setPastAmount({ id: 'bill-1', month: '2099-01', amount: '10' });
