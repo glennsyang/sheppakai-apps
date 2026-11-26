@@ -22,6 +22,8 @@ vi.mock('#lib/server/api/api-key-store.js', () => ({
 
 vi.mock('#lib/server/logger.js', () => ({ logger: loggerMock }));
 
+import { actionEvent, runAction } from '#lib/test-utils/action-event.js';
+
 import { actions, load } from './+page.server';
 
 const adminLocals = { user: { id: 'admin-1', role: 'admin' } } as App.Locals;
@@ -36,12 +38,11 @@ function loadEvent(locals: App.Locals) {
 	} as never;
 }
 
-function revokeRequest(id: string) {
-	return new Request('https://budget.example.com/admin/api-keys?/revokeApiKey', {
-		method: 'POST',
-		body: new URLSearchParams({ id })
-	});
-}
+const revoke = (id: string, locals: App.Locals = adminLocals) =>
+	runAction(
+		actions.revokeApiKey,
+		actionEvent('/admin/api-keys', 'revokeApiKey', { id }, { locals })
+	);
 
 describe('admin api-keys page', () => {
 	beforeEach(() => {
@@ -73,10 +74,7 @@ describe('admin api-keys page', () => {
 
 	describe('revokeApiKey', () => {
 		it('deletes a key by id regardless of who owns it', async () => {
-			const result = await actions.revokeApiKey({
-				request: revokeRequest('other-admins-key'),
-				locals: adminLocals
-			} as never);
+			const result = await revoke('other-admins-key');
 
 			expect(deleteByIdMock).toHaveBeenCalledWith('other-admins-key');
 			expect(result).toMatchObject({ form: { message: { type: 'success' } } });
@@ -85,10 +83,7 @@ describe('admin api-keys page', () => {
 		it('returns 404 when the key does not exist', async () => {
 			deleteByIdMock.mockResolvedValue(false);
 
-			const result = await actions.revokeApiKey({
-				request: revokeRequest('missing'),
-				locals: adminLocals
-			} as never);
+			const result = await revoke('missing');
 
 			expect(result).toMatchObject({
 				status: 404,
@@ -97,10 +92,7 @@ describe('admin api-keys page', () => {
 		});
 
 		it('rejects a non-admin caller without deleting anything', async () => {
-			const result = await actions.revokeApiKey({
-				request: revokeRequest('k1'),
-				locals: { user: { id: 'u-1', role: 'user' } } as App.Locals
-			} as never);
+			const result = await revoke('k1', { user: { id: 'u-1', role: 'user' } } as App.Locals);
 
 			expect(deleteByIdMock).not.toHaveBeenCalled();
 			expect(result).toMatchObject({ status: 403 });

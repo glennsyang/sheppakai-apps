@@ -26,16 +26,11 @@ vi.mock('#lib/server/logger.js', () => ({
 vi.mock('#lib/server/db/index.js', () => ({ getDb: vi.fn<() => void>() }));
 vi.mock('#lib/server/db/queries/index.js', () => ({ userQueries, accountQueries }));
 
+import { actionEvent, runAction } from '#lib/test-utils/action-event.js';
+
 import { actions, load } from './+page.server';
 
 const USER = { id: 'user-1', name: 'Alice', email: 'alice@example.com', role: 'user' };
-
-function post(fields: Record<string, string>) {
-	return new Request('https://budget.example.com/profile', {
-		method: 'POST',
-		body: new URLSearchParams(fields)
-	});
-}
 
 // The action behaviour itself is tested in @sheppakai/shared/profile-actions; these check
 // this app's wiring (its auth instance and password-changed email).
@@ -48,10 +43,10 @@ describe('profile actions — wiring', () => {
 	});
 
 	it("updateName goes through this app's better-auth instance", async () => {
-		const result = await actions.updateName({
-			request: post({ name: 'New Name' }),
-			locals: { user: USER }
-		} as never);
+		const result = await runAction(
+			actions.updateName,
+			actionEvent('/profile', 'updateName', { name: 'New Name' }, { user: USER })
+		);
 
 		expect(api.updateUser).toHaveBeenCalledWith(
 			expect.objectContaining({ body: { name: 'New Name' } })
@@ -60,15 +55,19 @@ describe('profile actions — wiring', () => {
 	});
 
 	it("changePassword sends this app's password-changed email", async () => {
-		await actions.changePassword({
-			request: post({
-				currentPassword: 'old-password-123',
-				newPassword: 'new-password-1234',
-				confirmPassword: 'new-password-1234'
-			}),
-			getClientAddress: () => '203.0.113.7',
-			locals: { user: USER }
-		} as never);
+		await runAction(
+			actions.changePassword,
+			actionEvent(
+				'/profile',
+				'changePassword',
+				{
+					currentPassword: 'old-password-123',
+					newPassword: 'new-password-1234',
+					confirmPassword: 'new-password-1234'
+				},
+				{ user: USER, getClientAddress: () => '203.0.113.7' }
+			)
+		);
 
 		expect(api.changePassword).toHaveBeenCalledOnce();
 		expect(sendPasswordChangedEmail).toHaveBeenCalledWith(
@@ -138,11 +137,16 @@ describe('passkey actions', () => {
 		api.deletePasskey.mockResolvedValue({ status: true });
 	});
 
-	const event = (fields: Record<string, string>, user: typeof USER | null = USER) =>
-		({ request: post(fields), locals: { user } }) as never;
+	const rename = (fields: Record<string, string>) =>
+		runAction(
+			actions.renamePasskey,
+			actionEvent('/profile', 'renamePasskey', fields, { user: USER })
+		);
+	const remove = (fields: Record<string, string>, user: typeof USER | null = USER) =>
+		runAction(actions.removePasskey, actionEvent('/profile', 'removePasskey', fields, { user }));
 
 	it('renames a passkey with a trimmed name', async () => {
-		const result = await actions.renamePasskey(event({ id: 'pk-1', name: '  Work laptop ' }));
+		const result = await rename({ id: 'pk-1', name: '  Work laptop ' });
 
 		expect(api.updatePasskey).toHaveBeenCalledWith(
 			expect.objectContaining({ body: { id: 'pk-1', name: 'Work laptop' } })
@@ -151,8 +155,8 @@ describe('passkey actions', () => {
 	});
 
 	it('rejects an empty or too-long name without calling Better Auth', async () => {
-		const empty = await actions.renamePasskey(event({ id: 'pk-1', name: '   ' }));
-		const long = await actions.renamePasskey(event({ id: 'pk-1', name: 'x'.repeat(51) }));
+		const empty = await rename({ id: 'pk-1', name: '   ' });
+		const long = await rename({ id: 'pk-1', name: 'x'.repeat(51) });
 
 		expect(api.updatePasskey).not.toHaveBeenCalled();
 		expect(empty).toMatchObject({ status: 400 });
@@ -162,7 +166,7 @@ describe('passkey actions', () => {
 	it('shows an error when the rename fails', async () => {
 		api.updatePasskey.mockRejectedValue(new Error('not yours'));
 
-		const result = await actions.renamePasskey(event({ id: 'pk-1', name: 'Phone' }));
+		const result = await rename({ id: 'pk-1', name: 'Phone' });
 
 		expect(result).toMatchObject({
 			status: 500,
@@ -171,7 +175,7 @@ describe('passkey actions', () => {
 	});
 
 	it('removes a passkey', async () => {
-		const result = await actions.removePasskey(event({ id: 'pk-1' }));
+		const result = await remove({ id: 'pk-1' });
 
 		expect(api.deletePasskey).toHaveBeenCalledWith(
 			expect.objectContaining({ body: { id: 'pk-1' } })
@@ -182,7 +186,7 @@ describe('passkey actions', () => {
 	it('shows an error when the removal fails', async () => {
 		api.deletePasskey.mockRejectedValue(new Error('not found'));
 
-		const result = await actions.removePasskey(event({ id: 'pk-1' }));
+		const result = await remove({ id: 'pk-1' });
 
 		expect(result).toMatchObject({
 			status: 500,
@@ -191,7 +195,7 @@ describe('passkey actions', () => {
 	});
 
 	it('requires a signed-in user', async () => {
-		const result = await actions.removePasskey(event({ id: 'pk-1' }, null));
+		const result = await remove({ id: 'pk-1' }, null);
 
 		expect(api.deletePasskey).not.toHaveBeenCalled();
 		expect(result).toMatchObject({ status: 401 });

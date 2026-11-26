@@ -22,31 +22,15 @@ vi.mock('#lib/server/db/writes/recurring-bills.js', () => ({
 	setRecurringBillAmountForMonth: setAmountMock
 }));
 
+import { actionEvent, runAction } from '#lib/test-utils/action-event.js';
+
 import { actions } from './+page.server';
 
-type FormShape = {
-	valid: boolean;
-	errors: Record<string, string[] | undefined>;
-	message?: App.Superforms.Message;
-};
-type ActionOutcome = { status?: number; data?: { form: FormShape }; form?: FormShape };
-
-function pastAmountEvent(fields: Record<string, string>) {
-	const body = new FormData();
-	for (const [key, value] of Object.entries(fields)) body.set(key, value);
-	return {
-		request: new Request('https://budget.example.com/recurring-bills?/setPastAmount', {
-			method: 'POST',
-			body
-		}),
-		locals: { user: { id: 'user-1' } },
-		url: new URL('https://budget.example.com/recurring-bills?/setPastAmount')
-	} as never;
-}
-
-async function setPastAmount(fields: Record<string, string>): Promise<ActionOutcome> {
-	return (await actions.setPastAmount(pastAmountEvent(fields))) as ActionOutcome;
-}
+const setPastAmount = (fields: Record<string, string>) =>
+	runAction(
+		actions.setPastAmount,
+		actionEvent('/recurring-bills', 'setPastAmount', fields, { user: { id: 'user-1' } })
+	);
 
 describe('recurring bills setPastAmount action', () => {
 	beforeEach(() => {
