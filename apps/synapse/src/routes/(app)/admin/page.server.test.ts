@@ -175,6 +175,15 @@ describe('admin user-management actions — wiring', () => {
 		expect(mockDisableApiKeysForUser).toHaveBeenCalledWith(TARGET.id);
 	});
 
+	it('banUser rejects a ban reason over 500 characters without banning', async () => {
+		const result = await runAction('banUser', { userId: TARGET.id, banReason: 'x'.repeat(501) });
+
+		expect(result.status).toBe(400);
+		const form = result.data?.form as { errors: Record<string, string[]> };
+		expect(form.errors.banReason).toEqual(['Reason must be at most 500 characters']);
+		expect(mockAdminApi.banUser).not.toHaveBeenCalled();
+	});
+
 	it('sendWelcomeEmail sends the welcome email to the target user', async () => {
 		await runAction('sendWelcomeEmail', { userId: TARGET.id });
 
