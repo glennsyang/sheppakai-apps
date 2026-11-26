@@ -2,7 +2,7 @@ import { logger } from '#lib/server/logger.js';
 import { getCurrentTimeString, getISODayOfWeek, getTodayString } from '#lib/utils/date.js';
 
 /**
- * One reading of the clock, in Pacific time, shared by every job in a run. Jobs read the time
+ * One reading of the clock, in the app time zone (`APP_TIME_ZONE`), shared by every job in a run. Jobs read the time
  * from here and never call `new Date()` themselves.
  */
 export type JobClock = {

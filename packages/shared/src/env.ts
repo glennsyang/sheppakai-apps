@@ -44,6 +44,15 @@ export function applyTestEnv(extra: Record<string, string> = {}) {
 	}
 }
 
+/** True when `timeZone` is an IANA zone this runtime's tzdata knows (e.g. `America/Vancouver`). */
+export function isValidTimeZone(timeZone: string): boolean {
+	try {
+		return new Intl.DateTimeFormat('en-US', { timeZone }).resolvedOptions().timeZone !== '';
+	} catch {
+		return false;
+	}
+}
+
 /**
  * `building ? placeholder : runtime schema that rejects the placeholder`. The refine runs
  * whenever the app is not building: in dev, in tests and in production. Exported for
@@ -123,6 +132,18 @@ export function sharedEnvVars(building: boolean) {
 			description:
 				'Minimum log level to emit (debug, info, warn, error); defaults to debug in dev, info in prod',
 			schema: z.enum(['debug', 'info', 'warn', 'error']).optional()
+		},
+		APP_TIME_ZONE: {
+			description:
+				'IANA time zone for app dates, "today" and reminder times, on the server and in the ' +
+				'browser. Defaults to America/Vancouver.',
+			// Public because date utilities run in the browser too. Dynamic, not static: static
+			// public values are inlined at `vite build`, which never sees fly.toml [env].
+			public: true,
+			schema: z
+				.string()
+				.refine(isValidTimeZone, { message: 'APP_TIME_ZONE must be a valid IANA time zone' })
+				.default('America/Vancouver')
 		}
 	};
 }

@@ -73,9 +73,9 @@ describe('fitnessInsights — workouts', () => {
 		expect(result.workouts.dayStreak).toBe(3);
 	});
 
-	it('anchors today to Pacific time for a late-evening Workout', () => {
-		// 11:30pm Pacific on Nov 24 is already Nov 25 in UTC.
-		const today = getTodayString(new Date('2026-11-25T07:30:00Z'));
+	it('anchors today to app time for a late-evening Workout', () => {
+		// 11:30pm Vancouver (UTC-7) on Nov 24 is already Nov 25 in UTC.
+		const today = getTodayString(new Date('2026-11-25T06:30:00Z'));
 		expect(today).toBe('2026-11-24');
 
 		const result = run({

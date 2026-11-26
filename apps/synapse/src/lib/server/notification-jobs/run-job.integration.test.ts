@@ -32,6 +32,22 @@ describe('createJobClock', () => {
 	});
 });
 
+describe('createJobClock in winter (#416)', () => {
+	it('reads America/Vancouver time, UTC-7 year-round', () => {
+		expect(createJobClock(new Date('2026-11-26T15:00:00Z'))).toMatchObject({
+			today: '2026-11-26',
+			hour: '08',
+			minute: '00',
+			weekday: 4
+		});
+	});
+
+	it('fires a 07:00 reminder on the first cron run after 14:00 UTC', () => {
+		expect(hasTimePassed(createJobClock(new Date('2026-11-26T13:37:00Z')), '07:00')).toBe(false);
+		expect(hasTimePassed(createJobClock(new Date('2026-11-26T14:07:00Z')), '07:00')).toBe(true);
+	});
+});
+
 describe('hasTimePassed / firesToday', () => {
 	const clock = createJobClock(new Date('2026-01-14T15:00:00Z')); // Wed 7:00 AM PST
 
