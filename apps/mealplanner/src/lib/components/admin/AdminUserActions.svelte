@@ -2,9 +2,8 @@
 	import { enhance } from '$app/forms';
 
 	import { Button } from '#lib/components/ui/button/index.js';
-	import { NativeSelect } from '#lib/components/ui/native-select/index.js';
-	import { USER_ROLES } from '#lib/schemas/admin.js';
 
+	import RoleSelectForm from './RoleSelectForm.svelte';
 	import type { AdminUser } from './types';
 
 	let {
@@ -33,22 +32,9 @@
 	<span class="ink-faint marker text-sm">you</span>
 {:else}
 	<div class="flex flex-wrap items-center gap-2">
-		<form method="POST" action="?/setRole" use:enhance={submit}>
-			<input type="hidden" name="userId" value={user.id} />
-			<NativeSelect
-				name="role"
-				class="w-24"
-				size="sm"
-				value={user.role ?? 'user'}
-				disabled={busy}
-				onchange={(e) => e.currentTarget.form?.requestSubmit()}
-				aria-label="Change role for {user.email}"
-			>
-				{#each USER_ROLES as role (role)}
-					<option value={role}>{role}</option>
-				{/each}
-			</NativeSelect>
-		</form>
+		{#key user.id}
+			<RoleSelectForm {user} disabled={busy} />
+		{/key}
 
 		{#if allowlisted && !user.emailVerified}
 			<form method="POST" action="?/sendWelcomeEmail" use:enhance={submit}>
