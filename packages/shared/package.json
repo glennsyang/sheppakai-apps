@@ -39,6 +39,7 @@
 		"./name-guard": "./src/name-guard.ts",
 		"./passkey-client": "./src/passkey-client.ts",
 		"./ntfy": "./src/ntfy.ts",
+		"./post-action": "./src/post-action.ts",
 		"./profile-actions": "./src/profile-actions.ts",
 		"./rate-limiter": "./src/rate-limiter.ts",
 		"./sentry-client": "./src/sentry-client.ts",

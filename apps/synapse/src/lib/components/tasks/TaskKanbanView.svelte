@@ -1,7 +1,12 @@
 <script lang="ts">
-	import { deserialize, type ActionResult } from '$app/forms';
+	import type { ActionResult } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import { ChevronLeft, ChevronRight, Plus } from '@lucide/svelte/icons';
+	import {
+		isSessionExpired,
+		postAction,
+		SESSION_EXPIRED_MESSAGE
+	} from '@sheppakai/shared/post-action';
 	import type { DndEvent } from 'svelte-dnd-action';
 	import { dndzone } from 'svelte-dnd-action';
 	import { toast } from 'svelte-sonner';
@@ -154,16 +159,10 @@
 		};
 	}
 
-	// With the `x-sveltekit-action` header SvelteKit answers with a serialized ActionResult
-	// instead of re-rendering the page, so a redirect (e.g. expired session) is not mistaken
-	// for a successful save.
-	async function postAction(action: string, formData: FormData): Promise<ActionResult> {
-		const response = await fetch(`?/${action}`, {
-			method: 'POST',
-			headers: { 'x-sveltekit-action': 'true' },
-			body: formData
-		});
-		return deserialize(await response.text());
+	function failureReason(error: unknown, fallback: string): string {
+		return error instanceof Error && error.message === SESSION_EXPIRED_MESSAGE
+			? SESSION_EXPIRED_MESSAGE
+			: fallback;
 	}
 
 	async function submitBoardMove(payload: MoveBoardTaskPayload): Promise<ActionResult> {
@@ -181,18 +180,17 @@
 
 		try {
 			const result = await submitBoardMove(payload);
-			if (result.type !== 'success') {
-				throw new Error('move-failed');
-			}
+			if (isSessionExpired(result)) throw new Error(SESSION_EXPIRED_MESSAGE);
+			if (result.type !== 'success') throw new Error('Could not save task move.');
 
 			if (payload.fromState !== 'done' && payload.toState === 'done') {
 				makeConfettiBurst();
 			}
 
 			await refreshAll();
-		} catch {
+		} catch (error) {
 			boardTasks = cloneBoardTasksByState(snapshot);
-			toast.error('Could not save task move. The board was restored.');
+			toast.error(`${failureReason(error, 'Could not save task move.')} The board was restored.`);
 		} finally {
 			isSavingMove = false;
 		}
@@ -269,17 +267,16 @@
 
 		try {
 			const result = await submitStateChange(taskId, newState);
-			if (result.type !== 'success') {
-				throw new Error('update-failed');
-			}
+			if (isSessionExpired(result)) throw new Error(SESSION_EXPIRED_MESSAGE);
+			if (result.type !== 'success') throw new Error('Could not update the task state.');
 
 			if (previousState !== 'done' && newState === 'done') {
 				makeConfettiBurst();
 			}
 
 			await refreshAll();
-		} catch {
-			toast.error('Could not update the task state. Please try again.');
+		} catch (error) {
+			toast.error(`${failureReason(error, 'Could not update the task state.')} Please try again.`);
 		} finally {
 			isSavingMove = false;
 		}

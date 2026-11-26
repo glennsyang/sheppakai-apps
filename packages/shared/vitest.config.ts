@@ -8,7 +8,8 @@ export default defineConfig({
 	ssr: { resolve: { conditions: ['svelte'] } },
 	resolve: {
 		alias: {
-			'$app/server': fileURLToPath(new URL('./test/app-server-stub.ts', import.meta.url))
+			'$app/server': fileURLToPath(new URL('./test/app-server-stub.ts', import.meta.url)),
+			'$app/forms': fileURLToPath(new URL('./test/app-forms-stub.ts', import.meta.url))
 		}
 	},
 	test: {
