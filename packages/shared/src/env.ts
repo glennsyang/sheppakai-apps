@@ -47,8 +47,7 @@ export function applyTestEnv(extra: Record<string, string> = {}) {
 /** True when `timeZone` is an IANA zone this runtime's tzdata knows (e.g. `America/Vancouver`). */
 export function isValidTimeZone(timeZone: string): boolean {
 	try {
-		new Intl.DateTimeFormat('en-US', { timeZone });
-		return true;
+		return new Intl.DateTimeFormat('en-US', { timeZone }).resolvedOptions().timeZone !== '';
 	} catch {
 		return false;
 	}
