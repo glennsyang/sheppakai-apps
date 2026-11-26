@@ -74,7 +74,8 @@ export const recurringBillSchema = z
 export const pastAmountSchema = z.object({
 	id: z.string().min(1, 'Recurring bill ID is required'),
 	month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM'),
-	amount: z.number().positive('Amount must be positive')
+	// An emptied number input binds to null; name the problem instead of Zod's type message.
+	amount: z.number({ error: 'Amount is required' }).positive('Amount must be positive')
 });
 
 export const togglePaidSchema = z.object({

@@ -8,7 +8,8 @@ import {
 	toRecurringBillFormData,
 	toDuplicateExpenseFormData,
 	toExpenseFormData,
-	expenseSchema
+	expenseSchema,
+	pastAmountSchema
 } from './finances';
 
 const user: Expense['user'] = {
@@ -96,5 +97,18 @@ describe('toRecurringBillFormData', () => {
 		expect(data.dueDay).toBe(15);
 		expect(data.dueMonth).toBe(3);
 		expect(recurringBillSchema.safeParse(data).success).toBe(true);
+	});
+});
+
+describe('pastAmountSchema', () => {
+	const valid = { id: 'bill-1', month: '2026-09', amount: 42.5 };
+
+	it('accepts a positive amount', () => {
+		expect(pastAmountSchema.safeParse(valid).success).toBe(true);
+	});
+
+	it('asks for an amount when it is empty', () => {
+		const result = pastAmountSchema.safeParse({ ...valid, amount: null });
+		expect(result.error?.issues[0]?.message).toBe('Amount is required');
 	});
 });
