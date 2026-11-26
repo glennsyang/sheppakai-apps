@@ -2,6 +2,8 @@ name: Budget Weekly Summary Email
 
 on:
   schedule:
+    # Keep in sync with the Sentry monitor schedule in
+    # apps/budget/src/routes/api/cron/email-weekly-summary/+server.ts.
     - cron: '10 16 * * 1' # Monday 8:10am PST / 9:10am PDT
   workflow_dispatch: # Allow manual trigger
 
