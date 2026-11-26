@@ -31,6 +31,7 @@ vi.mock('#lib/server/receipt-scan/index.js', async (importOriginal) => {
 });
 
 import { UnreadableReceiptError } from '#lib/server/receipt-scan/index.js';
+import { type ActionEvent, actionEvent, runAction } from '#lib/test-utils/action-event.js';
 
 import { actions } from './+page.server';
 
@@ -45,32 +46,12 @@ const scan = {
 
 let userCounter = 0;
 
-function scanEvent(receipt: File | null, userId = `user-${++userCounter}`) {
-	const body = new FormData();
-	if (receipt) body.set('receipt', receipt);
-	return {
-		request: new Request('https://budget.example.com/expenses?/scanReceipt', {
-			method: 'POST',
-			body
-		}),
-		locals: { user: { id: userId } },
-		getClientAddress: () => '127.0.0.1',
-		url: new URL('https://budget.example.com/expenses?/scanReceipt'),
-		cookies: { get: () => undefined, set: () => undefined }
-	} as never;
-}
+const scanEvent = (receipt: File | null, userId = `user-${++userCounter}`) =>
+	actionEvent('/expenses', 'scanReceipt', { receipt }, { user: { id: userId } });
 
 const jpeg = () => new File(['image'], 'receipt.jpg', { type: 'image/jpeg' });
 
-type ActionOutcome = {
-	status?: number;
-	data?: { form: { data: unknown; message: App.Superforms.Message } };
-	form?: { data: unknown; message: App.Superforms.Message };
-};
-
-async function runScan(event: never): Promise<ActionOutcome> {
-	return (await actions.scanReceipt(event)) as ActionOutcome;
-}
+const runScan = (event: ActionEvent) => runAction(actions.scanReceipt, event);
 
 describe('expenses scanReceipt action', () => {
 	beforeEach(() => {
@@ -84,7 +65,7 @@ describe('expenses scanReceipt action', () => {
 		const result = await runScan(scanEvent(jpeg()));
 
 		expect(result.form?.data).toEqual(scan);
-		expect(result.form?.message.type).toBe('success');
+		expect(result.form?.message?.type).toBe('success');
 		expect(scanReceiptMock).toHaveBeenCalledWith({ mimeType: 'image/jpeg', base64: 'aW1hZ2U=' }, [
 			{ id: 'cat-gas', name: 'Gas' }
 		]);
@@ -108,7 +89,7 @@ describe('expenses scanReceipt action', () => {
 		scanReceiptMock.mockRejectedValue(new UnreadableReceiptError('bad'));
 		const result = await runScan(scanEvent(jpeg()));
 		expect(result.status).toBe(422);
-		expect(result.data?.form.message.text).toMatch(/clearer/);
+		expect(result.data?.form.message?.text).toMatch(/clearer/);
 	});
 
 	it('answers 502 and logs when the provider fails', async () => {
@@ -126,18 +107,18 @@ describe('expenses scanReceipt action', () => {
 	});
 
 	it('answers 413 when the upload body cannot be read (over BODY_SIZE_LIMIT)', async () => {
-		const event = scanEvent(jpeg()) as { request: Request };
+		const event = scanEvent(jpeg());
 		event.request = {
 			formData: () => Promise.reject(new Error('Content-length of 7000000 exceeds limit'))
 		} as unknown as Request;
-		const result = await runScan(event as never);
+		const result = await runScan(event);
 		expect(result.status).toBe(413);
 		expect(scanReceiptMock).not.toHaveBeenCalled();
 	});
 
 	it('returns 401 without a signed-in user', async () => {
 		const event = scanEvent(jpeg());
-		(event as { locals: App.Locals }).locals = { user: null, session: null };
+		event.locals = { user: null, session: null };
 		expect((await runScan(event)).status).toBe(401);
 	});
 });

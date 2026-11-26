@@ -54,6 +54,7 @@ vi.mock('#lib/server/auth/welcome.js', () => ({ sendWelcome: sendWelcomeMock }))
 
 vi.mock('#lib/server/notifications/index.js', () => ({ sendAuthAlerts: sendAuthAlertsMock }));
 
+import { actionEvent, runAction } from '#lib/test-utils/action-event.js';
 import type { UserWithSessions } from '#lib/types.js';
 
 import { actions, load } from './+page.server';
@@ -61,12 +62,8 @@ import { actions, load } from './+page.server';
 const adminLocals = { user: { id: 'admin-1', role: 'admin' } } as App.Locals;
 const LISTED = { id: 'u-2', name: 'Listed', email: 'listed@example.com' };
 
-function post(fields: Record<string, string>) {
-	return new Request('https://budget.example.com/admin/users', {
-		method: 'POST',
-		body: new URLSearchParams(fields)
-	});
-}
+const run = (name: keyof typeof actions, fields: Record<string, string>, locals = adminLocals) =>
+	runAction(actions[name], actionEvent('/admin/users', name, fields, { locals }));
 
 // The user-management behaviour itself is tested in @sheppakai/shared/admin-user-actions;
 // these check this app's wiring (guard, API-key hook, welcome email, Fly app name).
@@ -91,44 +88,34 @@ describe('admin users actions — wiring', () => {
 		'setPassword',
 		'revokeSession'
 	] as const)('%s is admin-only', async (name) => {
-		const result = await actions[name]({
-			request: post({ userId: LISTED.id }),
-			locals: { user: { id: 'u-3', role: 'user' } } as App.Locals
-		} as never);
+		const result = await run(name, { userId: LISTED.id }, {
+			user: { id: 'u-3', role: 'user' }
+		} as App.Locals);
 
 		expect(result).toMatchObject({ status: 403 });
 	});
 
 	it("banUser disables the banned user's API keys", async () => {
-		await actions.banUser({ request: post({ userId: LISTED.id }), locals: adminLocals } as never);
+		await run('banUser', { userId: LISTED.id });
 
 		expect(disableApiKeysForUserMock).toHaveBeenCalledWith(LISTED.id);
 	});
 
 	it('sendWelcomeEmail sends the set-password welcome email', async () => {
-		await actions.sendWelcomeEmail({
-			request: post({ userId: LISTED.id }),
-			locals: adminLocals
-		} as never);
+		await run('sendWelcomeEmail', { userId: LISTED.id });
 
 		expect(sendWelcomeMock).toHaveBeenCalledWith(LISTED);
 	});
 
 	it('createUser points the allowlist hint at this Fly app', async () => {
-		const result = await actions.createUser({
-			request: post({ name: 'New', email: 'new@example.com', role: 'user' }),
-			locals: adminLocals
-		} as never);
+		const result = await run('createUser', { name: 'New', email: 'new@example.com', role: 'user' });
 
 		expect(result).toMatchObject({ allowlistCommand: expect.stringMatching(/-a budget-test$/) });
 		expect(sendWelcomeMock).not.toHaveBeenCalled();
 	});
 
 	it('revokeSession revokes every session of the posted userId', async () => {
-		const result = await actions.revokeSession({
-			request: post({ userId: LISTED.id }),
-			locals: adminLocals
-		} as never);
+		const result = await run('revokeSession', { userId: LISTED.id });
 
 		expect(api.revokeUserSessions).toHaveBeenCalledWith(
 			expect.objectContaining({ body: { userId: LISTED.id } })
