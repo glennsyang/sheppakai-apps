@@ -4,19 +4,13 @@
 	import type { AdminUser } from '#lib/components/admin/types.js';
 	import { Alert } from '#lib/components/ui/alert/index.js';
 
-	import type { ActionData, PageData } from './$types';
+	import type { PageData } from './$types';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	// Row actions (role, ban, remove, welcome email) answer with a toast; the create-user form
+	// renders its own message.
+	let { data }: { data: PageData } = $props();
 
 	const users = $derived(data.users as AdminUser[]);
-
-	// Row actions (role, ban, remove, welcome email) answer with `message(form, …)` on a form of
-	// their own; the create-user form renders its own message, so skip it here.
-	const rowMessage = $derived.by(() => {
-		const actionForm = (form as { form?: { id: string; message?: App.Superforms.Message } } | null)
-			?.form;
-		return actionForm && actionForm.id !== data.createForm.id ? actionForm.message : undefined;
-	});
 </script>
 
 <svelte:head>
@@ -27,16 +21,6 @@
 	{#if data.loadError}
 		<Alert variant="destructive" role="alert">
 			{data.loadError}
-		</Alert>
-	{/if}
-
-	{#if rowMessage?.type === 'error'}
-		<Alert variant="destructive" role="alert">
-			{rowMessage.text}
-		</Alert>
-	{:else if rowMessage}
-		<Alert variant="success" role="status">
-			{rowMessage.text}
 		</Alert>
 	{/if}
 

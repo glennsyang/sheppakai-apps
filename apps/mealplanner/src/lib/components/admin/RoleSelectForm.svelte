@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { toast } from 'svelte-sonner';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 
@@ -24,11 +25,16 @@
 			validators: zod4Client(setRoleSchema),
 			// Keep the picked role after a save; a reset would flash back to the initial one.
 			resetForm: false,
-			// The page's banner shows the action's message (`form` is applied to the page).
+			onUpdate({ form: result }) {
+				// Read result.message, not $message: the store is only repopulated after onUpdate.
+				if (result.message) toast[result.message.type](result.message.text);
+				else if (!result.valid) toast.error('Failed to change role');
+			},
 			onUpdated({ form: result }) {
 				if (!result.valid || result.message?.type === 'error') revert();
 			},
-			onError() {
+			onError({ result }) {
+				toast.error(`Failed to change role: ${result.error.message}`);
 				revert();
 			}
 		}
