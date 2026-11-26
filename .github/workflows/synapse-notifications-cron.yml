@@ -8,6 +8,8 @@ on:
     # Off-the-hour minutes (:07/:37) dodge GitHub's top-of-hour scheduling delays.
     # Reminders fire on the first run at or after their time, so they arrive up to ~30 min late,
     # and anything scheduled during the overnight gap won't fire.
+    # Keep in sync with the Sentry monitor schedule in
+    # apps/synapse/src/routes/api/cron/email-notifications/+server.ts.
     - cron: "7,37 0-5,12-23 * * *"
   workflow_dispatch: # Allow manual trigger
 

@@ -10,5 +10,13 @@ export const POST: RequestHandler = createCronHandler({
 	secret: CRON_SECRET,
 	name: 'weekly summary email',
 	run: runWeeklySummaryEmail,
+	monitor: {
+		slug: 'budget-weekly-summary',
+		// Must match the cron line in .github/workflows/budget-weekly-cron.yml.
+		schedule: '10 16 * * 1',
+		// GitHub Actions scheduled runs are often 10–30 min late.
+		checkinMargin: 30,
+		maxRuntime: 10
+	},
 	logger
 });

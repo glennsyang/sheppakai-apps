@@ -14,5 +14,13 @@ export const POST: RequestHandler = createCronHandler({
 		const outcome = await runEmailNotifications();
 		if (!outcome.ok) throw outcome.error;
 	},
+	monitor: {
+		slug: 'synapse-email-notifications',
+		// Must match the cron line in .github/workflows/synapse-notifications-cron.yml.
+		schedule: '7,37 0-5,12-23 * * *',
+		// GitHub Actions scheduled runs are often 10–30 min late.
+		checkinMargin: 30,
+		maxRuntime: 10
+	},
 	logger
 });

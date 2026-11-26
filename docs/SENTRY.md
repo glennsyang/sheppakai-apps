@@ -11,7 +11,7 @@ Single source of truth for how Sentry is wired into `hooks.server.ts` /
 ```ts
 export const handle = sequence(
   Sentry.sentryHandle(),
-  createServerHandle({ auth, logger, allowedEmails, dev, building })
+  createServerHandle({ auth, logger, allowedEmails, dev, building }),
 );
 ```
 
@@ -52,6 +52,28 @@ All three apps are on SDK v11 (one version, pinned in the `pnpm-workspace.yaml` 
 
 `enableLogs` is not set: nothing uses `Sentry.logger`. Each `Sentry.init({...})` call documents the
 `dataCollection` choice inline, so nobody drops it when copy-pasting config between hooks.
+
+## Cron monitors
+
+`createCronHandler` (`packages/shared/src/cron.ts`) takes an optional `monitor` (`slug`, `schedule`,
+`checkinMargin`, `maxRuntime`). When set, the job runs inside `Sentry.withMonitor`, which upserts the
+monitor and sends `in_progress` → `ok` / `error` check-ins (timezone `Etc/UTC`). Sentry then alerts on
+**missed** and **failed** runs.
+
+- Check-ins are only sent for **authorized** runs. A 401 (e.g. `CRON_SECRET` drift) sends nothing, so it
+  shows up as a missed run.
+- No check-ins when `NODE_ENV !== 'production'` (same rule as the logger's `IS_DEV`).
+- `schedule` must match the `cron:` line in the app's workflow exactly; both sides carry a comment pointing
+  at the other.
+- `checkinMargin` is 30 min because GitHub Actions scheduled runs are often 10–30 min late.
+
+| App     | Route                            | Workflow                         | Slug                          |
+| ------- | -------------------------------- | -------------------------------- | ----------------------------- |
+| synapse | `/api/cron/email-notifications`  | `synapse-notifications-cron.yml` | `synapse-email-notifications` |
+| budget  | `/api/cron/email-weekly-summary` | `budget-weekly-cron.yml`         | `budget-weekly-summary`       |
+
+**Manual step:** in the Sentry UI (Crons → monitor → Alerts), make sure each monitor's alert notifies by
+email or push.
 
 ## Changing this strategy
 

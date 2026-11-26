@@ -1,5 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 
+import * as Sentry from '@sentry/sveltekit';
+
 import { parseBearerToken, type BearerTokenFailureReason } from './bearer-token';
 import { MIN_CRON_SECRET_LENGTH } from './env';
 
@@ -57,9 +59,23 @@ export function verifyCronAuthorization(
 	return { authorized: true };
 }
 
+/** Sentry Cron Monitoring config; see `docs/SENTRY.md` ("Cron monitors"). */
+export type CronMonitor = {
+	/** Sentry monitor slug, e.g. `synapse-email-notifications`. */
+	slug: string;
+	/** Crontab in UTC. Must match the `cron:` line in the app's `.github/workflows/*-cron.yml`. */
+	schedule: string;
+	/** Minutes a check-in may be late before Sentry reports a miss. */
+	checkinMargin?: number;
+	/** Minutes a run may stay in progress before Sentry marks it failed. */
+	maxRuntime?: number;
+};
+
 /**
  * Builds a cron `POST` handler: rejects anything not carrying `Bearer <secret>`, then runs
  * the job and answers `{ success, timestamp, result? }`, or a logged 500 if it throws.
+ * With `monitor` set, authorized production runs report check-ins to Sentry Cron Monitoring;
+ * a 401 sends none, so an unauthorized call surfaces as a missed run.
  */
 export function createCronHandler(options: {
 	/** The app's `CRON_SECRET`; a missing, blank or short secret fails closed. */
@@ -67,13 +83,25 @@ export function createCronHandler(options: {
 	/** Human-readable job name for the start/finish/failure log lines. */
 	name: string;
 	run: () => Promise<unknown>;
+	monitor?: CronMonitor;
 	logger: {
 		info(message: string, meta?: unknown): void;
 		warn(message: string, meta?: unknown): void;
 		error(message: string, meta?: unknown): void;
 	};
 }): (event: { request: Request }) => Promise<Response> {
-	const { secret, name, run, logger } = options;
+	const { secret, name, run, monitor, logger } = options;
+
+	const runJob = (): Promise<unknown> => {
+		// Same dev rule as @sheppakai/logger's IS_DEV: local runs must not pollute the monitors.
+		if (!monitor || process.env.NODE_ENV !== 'production') return run();
+		return Sentry.withMonitor(monitor.slug, run, {
+			schedule: { type: 'crontab', value: monitor.schedule },
+			checkinMargin: monitor.checkinMargin,
+			maxRuntime: monitor.maxRuntime,
+			timezone: 'Etc/UTC'
+		});
+	};
 
 	return async ({ request }) => {
 		const authResult = verifyCronAuthorization(request.headers.get('authorization'), secret);
@@ -85,7 +113,7 @@ export function createCronHandler(options: {
 
 		try {
 			logger.info(`⏰ Starting cron job: ${name}`);
-			const result = await run();
+			const result = await runJob();
 			logger.info(`✅ Cron job completed: ${name}`);
 			return Response.json({
 				success: true,
