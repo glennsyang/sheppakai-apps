@@ -164,24 +164,35 @@ If exploitability depends on live state you can't see from static files ("is thi
 ## Review workflow (mandatory)
 
 1. **Scope and context**: choose scope (see **Scope selection**), read the repo context docs and the baseline report.
-2. **Inventory**: map entry points and dangerous sinks before reading file-by-file. Start with these greps across the scope:
-   - `rg -n '\{@html' apps packages`
-   - `rg -n 'sql\.raw|sql\x60' apps packages`
-   - `rg -n 'redirect\(' apps packages --glob '*.server.ts' --glob '+server.ts'`
-   - `rg -n '\$env/(static|dynamic)/public|PUBLIC_' apps packages`
-   - `rg -n 'console\.(log|error|warn)' apps packages`
-   - `rg -n 'fetch\(' apps packages --glob '*.server.ts' --glob '+server.ts' --glob 'src/lib/server/**'`
-   - `rg -n 'csrf|checkOrigin|trustedOrigins' apps packages`
-   - `rg -n 'formData\(\)|request\.json\(\)' apps packages`
+2. **Inventory**: map entry points and dangerous sinks before reading file-by-file. Set `TARGETS` by scope:
+   - **Full audit**: `TARGETS="apps packages"`.
+   - **Diff or named scope**: `TARGETS` is the changed or named files (`git diff --name-only origin/main...HEAD`) plus the `packages/shared` modules they import. Don't search the whole repo.
+
+   Then run these searches over `$TARGETS`:
+   - `rg -n '\{@html' $TARGETS`
+   - `rg -n 'sql\.raw|sql\x60' $TARGETS`
+   - `rg -n 'redirect\(' $TARGETS --glob '*.server.ts' --glob '+server.ts'`
+   - `rg -n '\$env/(static|dynamic)/public|PUBLIC_' $TARGETS`
+   - `rg -n 'console\.(log|error|warn)' $TARGETS`
+   - `rg -n 'fetch\(' $TARGETS --glob '*.server.ts' --glob '+server.ts' --glob 'src/lib/server/**'`
+   - `rg -n 'csrf|checkOrigin|trustedOrigins' $TARGETS`
+   - `rg -n 'formData\(\)|request\.json\(\)' $TARGETS`
 3. **Threat-oriented review**: work through focus areas A–F for everything in scope. Skip areas the scope doesn't touch, and list them as skipped in the report.
-4. **Automated checks**: run these and include relevant output:
-   - `pnpm audit --prod`
-   - `pnpm --filter <app> check:redirect-throws` for each app in scope
-   - `pnpm check` (svelte-check type errors on server/client boundaries)
-   - the inventory greps above, with counts and notable hits
-5. **Prove the serious findings**: for every P0/P1 finding, give a concrete repro (a `curl` command, a request sequence, or a failing test sketch in Vitest that would pass once fixed). If you can't build a repro, explain why and downgrade your confidence in the finding.
-6. **Baseline comparison**: compare against the most recent `docs/security-review/*-review.md`. Mark each finding **New**, **Still open** (was in the baseline, not fixed), or **Regressed** (was fixed, back again). List baseline findings now **Fixed** separately.
-7. **Write the report** (see **Report**).
+4. **Automated checks**: match each check to the scope, and include the relevant output:
+
+   | Check                                     | Full audit    | Diff or named scope                                     |
+   | ----------------------------------------- | ------------- | ------------------------------------------------------- |
+   | `pnpm audit --prod`                       | Run           | Only if `pnpm-lock.yaml` or a `package.json` changed    |
+   | `pnpm --filter <app> check:redirect-throws` | Every app   | Only apps with changed server files                     |
+   | `pnpm --filter <app> check` (svelte-check) | Every app (or root `pnpm check`) | Only apps the diff touches; any app importing a changed `packages/shared` module |
+   | Inventory searches (step 2)               | `apps packages` | `$TARGETS` only                                      |
+
+   List skipped checks and the reason in `## Validation & Compliance`.
+
+5. **Stay in scope**: in a diff or named-scope review, a problem you notice in code outside the scope is not a finding. Put it under `## Residual Risks / Follow-ups` as "Out of scope, noticed in passing", and leave it out of the findings list and any machine-readable findings output. The exception is a problem the change makes reachable or worse: that is in scope, so report it as a finding against the changed file.
+6. **Prove the serious findings**: for every P0/P1 finding, give a concrete repro (a `curl` command, a request sequence, or a failing test sketch in Vitest that would pass once fixed). If you can't build a repro, explain why and downgrade your confidence in the finding.
+7. **Baseline comparison**: compare against the most recent `docs/security-review/*-review.md`. Mark each finding **New**, **Still open** (was in the baseline, not fixed), or **Regressed** (was fixed, back again). List baseline findings now **Fixed** separately.
+8. **Write the report** (see **Report**).
 
 ## Severity model
 
@@ -211,8 +222,8 @@ Structure:
 4. `## Findings`: one subsection per finding, highest priority first, with priority and status tags
 5. `## Fixed Since Last Review`: baseline findings now resolved (or "No baseline")
 6. `## Recommended Fixes`: ordered remediation checklist for handoff
-7. `## Validation & Compliance`: output summary of `pnpm audit --prod`, `check:redirect-throws`, `pnpm check`, and the inventory greps
-8. `## Residual Risks / Follow-ups`: live-state checks needed, assumptions, areas not reviewed
+7. `## Validation & Compliance`: output summary of each check that ran, and each check skipped with the reason
+8. `## Residual Risks / Follow-ups`: live-state checks needed, assumptions, areas not reviewed, and out-of-scope issues noticed in passing
 
 Show both the vulnerable and the fixed code wherever possible.
 
