@@ -45,10 +45,10 @@ Read these first. They define intended behaviour; review the code against them a
 
 Repo facts that change how you review:
 
-- Security headers come from `packages/shared/src/server-handle.ts`, not hand-written in each app's `hooks.server.ts`. Review the shared handle and then confirm each app's `hooks.server.ts` actually uses it, in the right `sequence()` order.
+- Security headers come from `packages/shared/src/server-handle.ts`, not each app's `hooks.server.ts` (see area 19).
 - Auth is better-auth, built through `createAppAuth` in `packages/shared/src/auth-config.ts`, which also enforces `ALLOWED_EMAILS` (`auth-allowlist.ts`). Route protection goes through `auth-guard.ts` / `guards.ts`.
 - DB column naming differs per app: synapse uses camelCase, budget and mealplanner use snake_case. When you see raw SQL fragments (`` sql`...` ``, `sql.raw`), check them against that app's convention. A wrong column name can silently turn a `WHERE userId = ?` ownership filter into an error path or a no-op.
-- All three apps deploy to Fly (`apps/*/fly.toml`) from the root `Dockerfile` and `scripts/start.sh`. Fly terminates TLS and sits in front of the app as a proxy, which matters for client-IP handling and HTTPS enforcement.
+- All three apps deploy to Fly (`apps/*/fly.toml`) from the root `Dockerfile` and `scripts/start.sh`. Fly terminates TLS and proxies every request (see areas 15 and 20).
 
 ## Available tools & skills
 
@@ -125,7 +125,7 @@ Repo facts that change how you review:
 
 ### E. Headers, platform and resource limits
 
-19. **CSP and security headers** (`server-handle.ts`, `docs/CSP.md`, SvelteKit `kit.csp` config): CSP without `unsafe-inline`/`unsafe-eval` or broad wildcards unless justified and compensated; `Strict-Transport-Security` (with `includeSubDomains`, and `preload` only if intended); `X-Content-Type-Options: nosniff`; `X-Frame-Options` or `frame-ancestors`; `Referrer-Policy`; `Permissions-Policy`; `Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy` where they don't break the apps. Confirm the headers also apply to `+server.ts` responses and error pages, not only to HTML pages.
+19. **CSP and security headers** (`server-handle.ts`, `docs/CSP.md`, SvelteKit `kit.csp` config): CSP without `unsafe-inline`/`unsafe-eval` or broad wildcards unless justified and compensated; `Strict-Transport-Security` (with `includeSubDomains`, and `preload` only if intended); `X-Content-Type-Options: nosniff`; `X-Frame-Options` or `frame-ancestors`; `Referrer-Policy`; `Permissions-Policy`; `Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy` where they don't break the apps. Confirm each app's `hooks.server.ts` actually uses the shared handle, in the right `sequence()` order, and that the headers also apply to `+server.ts` responses and error pages, not only to HTML pages.
 
 20. **Fly platform config** (`apps/*/fly.toml`): `force_https = true`; only the intended port is exposed publicly; no secrets in `[env]` (they belong in `fly secrets`); health checks hit `healthz.ts`, which returns nothing beyond up/down (no versions, env, DB paths or errors).
 
@@ -234,9 +234,8 @@ Show both the vulnerable and the fixed code wherever possible.
 - Redact secret values in the report. Quote the variable name, never the value.
 - Fixes must fit the existing architecture: extend the `packages/shared` module rather than proposing an app-local copy, and follow the repo's Svelte 5, superforms and error-handling conventions.
 - If you're unsure, state the assumption and what would confirm it rather than guessing.
+- File paths in this prompt are pointers, not guarantees. If a named file is missing, search for its replacement (`rg -l` on its main export or purpose), review that instead, and list the stale path under `## Residual Risks / Follow-ups` so this prompt gets updated. Never skip a check because its file moved.
 
-## Output expectations
+## Final chat message
 
-1. Findings summarized in chat in priority order, with `path:line` references, so the user doesn't need to open the file to learn the results.
-2. The saved report path.
-3. A remediation checklist suitable for engineering handoff.
+Summarize the findings in priority order with `path:line` references, so the user doesn't need to open the report, and end with the saved report path.
