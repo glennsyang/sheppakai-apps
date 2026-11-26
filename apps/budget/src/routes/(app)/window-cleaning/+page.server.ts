@@ -18,7 +18,7 @@ import {
 	softDelete,
 	update
 } from '#lib/server/window-cleaning/customers.js';
-import { getCurrentPacificMonthYear, getPacificTodayDate } from '#lib/utils/dates.js';
+import { getCurrentAppMonthYear, getAppTodayDate } from '#lib/utils/dates.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -27,7 +27,7 @@ export const load: PageServerLoad = async () => {
 	const jobForm = await superValidate(zod4(windowCleaningJobSchema));
 
 	try {
-		const today = getPacificTodayDate();
+		const today = getAppTodayDate();
 		const { customers, jobs } = await listWithStatus(today);
 
 		return {
@@ -46,7 +46,7 @@ export const load: PageServerLoad = async () => {
 			hourlyRateThisYear: null,
 			tipPctThisYear: null,
 			revenueByMonth: [],
-			currentYear: getCurrentPacificMonthYear().year,
+			currentYear: getCurrentAppMonthYear().year,
 			totalCustomers: 0,
 			jobsThisMonthCount: 0,
 			earnedThisMonth: 0,

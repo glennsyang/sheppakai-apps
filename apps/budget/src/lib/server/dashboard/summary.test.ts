@@ -212,7 +212,7 @@ describe('loadMonthlyDashboard', () => {
 			expect(result.cashFlow.forecast?.dailyRate).toBe(100);
 			expect(result.cashFlow.forecast?.totalEnd).toBe(3100);
 			expect(result.cashFlow.forecast?.expectedIncome).toBe(3000);
-			// Oct 15 Pacific: no income this month, $1,500 spent, 17 days left
+			// Oct 15 (app time zone): no income this month, $1,500 spent, 17 days left
 			expect(result.cashFlow.status).toBe('current');
 			expect(result.cashFlow.daysRemaining).toBe(17);
 			expect(result.cashFlow.safeToSpend).toEqual({ remaining: -1500, perDay: 0 });

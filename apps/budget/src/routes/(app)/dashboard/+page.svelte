@@ -39,7 +39,7 @@
 	import { formatCurrency, monthNames, months } from '#lib/utils.js';
 	import { categoryColorMap } from '#lib/utils/categoryColors.js';
 	import {
-		getCurrentPacificMonthYear,
+		getCurrentAppMonthYear,
 		getYearOptions,
 		getYearProgress,
 		padMonth,
@@ -56,7 +56,7 @@
 		| { mode: 'monthly'; month: string; year: string }
 		| { mode: 'yearly'; view: YearlyView; year: string };
 
-	const { month: currentMonth, year: currentYear } = getCurrentPacificMonthYear();
+	const { month: currentMonth, year: currentYear } = getCurrentAppMonthYear();
 
 	let selectedMode = $derived(page.url.searchParams.get('mode') ?? data.mode ?? 'monthly');
 	let selectedMonth: string = $derived(

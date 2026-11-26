@@ -28,7 +28,7 @@ const keyOf = ({ month, year }: MonthKey) => `${year}-${month}`;
 
 /**
  * `count` months ending at (and including) `month`/`year`, oldest first. Dates sit at noon
- * UTC so they stay on the right calendar day once serialized to a Pacific browser.
+ * UTC so they stay on the right calendar day once serialized to a browser in the app time zone.
  */
 export function monthWindow(month: number, year: number, count: number): MonthEntry[] {
 	const months: MonthEntry[] = [];

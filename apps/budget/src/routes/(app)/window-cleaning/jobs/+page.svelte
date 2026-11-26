@@ -10,11 +10,7 @@
 	import TableSkeleton from '#lib/components/TableSkeleton.svelte';
 	import DataTable from '#lib/components/ui/data-table/data-table.svelte';
 	import { jobFormContext } from '#lib/contexts/index.js';
-	import {
-		formatDayHeading,
-		getCurrentPacificMonthYear,
-		parseYearParam
-	} from '#lib/utils/dates.js';
+	import { formatDayHeading, getCurrentAppMonthYear, parseYearParam } from '#lib/utils/dates.js';
 	import { usePendingReload } from '#lib/utils/pendingNavigation.svelte.js';
 
 	import type { PageProps } from './$types';
@@ -25,7 +21,7 @@
 	// svelte-ignore state_referenced_locally
 	jobFormContext.set(data.jobForm);
 
-	const { year: defaultYear } = getCurrentPacificMonthYear();
+	const { year: defaultYear } = getCurrentAppMonthYear();
 
 	let selectedYear = $derived(parseYearParam(page.url.searchParams.get('year'), defaultYear));
 

@@ -23,8 +23,8 @@ describe('month keys', () => {
 		expect(nextMonthKey('2026-09')).toBe('2026-10');
 	});
 
-	it('uses Pacific time for the current month', () => {
-		// 2026-12-01 03:00 UTC is still November 30 in Pacific time
+	it('uses the app time zone for the current month', () => {
+		// 2026-12-01 03:00 UTC is still November 30 in the app time zone
 		expect(currentMonthKey(new Date('2026-12-01T03:00:00Z'))).toBe('2026-11');
 	});
 

@@ -219,7 +219,7 @@ function getAppDateParts(date: Date = new Date()): {
  * month rolls over at local midnight rather than midnight UTC or the
  * server/browser's own local timezone.
  */
-export function getCurrentPacificMonthYear(date: Date = new Date()): {
+export function getCurrentAppMonthYear(date: Date = new Date()): {
 	month: number;
 	year: number;
 } {
@@ -228,7 +228,7 @@ export function getCurrentPacificMonthYear(date: Date = new Date()): {
 }
 
 /** Today's date (YYYY-MM-DD) as observed in the app time zone. */
-export function getPacificTodayDate(date: Date = new Date()): string {
+export function getAppTodayDate(date: Date = new Date()): string {
 	const { year, month, day } = getAppDateParts(date);
 	return `${year}-${padMonth(month)}-${padMonth(day)}`;
 }
@@ -274,7 +274,7 @@ export function getYearOptions(
 	firstYear: number = FIRST_DATA_YEAR,
 	referenceDate: Date = new Date()
 ): number[] {
-	const { year: currentYear } = getCurrentPacificMonthYear(referenceDate);
+	const { year: currentYear } = getCurrentAppMonthYear(referenceDate);
 	const years = new Set<number>();
 	for (let year = currentYear; year >= firstYear; year--) years.add(year);
 	if (selectedYear !== undefined) years.add(selectedYear);
@@ -291,7 +291,7 @@ export function getYearOptions(
  * Example: URL with no params → { month: 1, year: 2026 } (current date, app time zone)
  */
 export function getMonthYearFromUrl(url: URL): { month: number; year: number } {
-	const current = getCurrentPacificMonthYear();
+	const current = getCurrentAppMonthYear();
 
 	return {
 		month: parseMonthParam(url.searchParams.get('month'), current.month),
@@ -431,7 +431,7 @@ export function calculateMonthsSinceJanuary(
 	year: number,
 	referenceDate: Date = new Date()
 ): number {
-	const current = getCurrentPacificMonthYear(referenceDate);
+	const current = getCurrentAppMonthYear(referenceDate);
 
 	if (year < current.year) {
 		return 12;
