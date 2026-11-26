@@ -61,6 +61,13 @@ describe('sharedEnvVars at runtime', () => {
 		expect(runtime.LOG_LEVEL.schema.parse(undefined)).toBeUndefined();
 		expect(runtime.LOG_LEVEL.schema.safeParse('verbose').success).toBe(false);
 	});
+
+	it('defaults APP_TIME_ZONE to America/Vancouver and rejects unknown zones', () => {
+		expect(runtime.APP_TIME_ZONE.schema.parse(undefined)).toBe('America/Vancouver');
+		expect(runtime.APP_TIME_ZONE.schema.parse('America/Los_Angeles')).toBe('America/Los_Angeles');
+		expect(runtime.APP_TIME_ZONE.schema.safeParse('Mars/Olympus').success).toBe(false);
+		expect(runtime.APP_TIME_ZONE.schema.safeParse('').success).toBe(false);
+	});
 });
 
 describe('cronSecretEnvVar', () => {

@@ -2,19 +2,23 @@
  * Email Notifications Cron Job
  *
  * Runs every 30 minutes (skipping overnight; see synapse-notifications-cron.yml) to send scheduled reminders:
- * - Morning digest push at each user's send time (default 6:00 AM PT): agenda, tasks due,
+ * - Morning digest push at each user's send time (default 6:00 AM app time): agenda, tasks due,
  *   tonight's dinner (mealplanner API), bills due this week (budget API) and overdue visits
- * - Tasks due-today digest emails at 6:00 AM PT (based on tasks.due_date)
+ * - Tasks due-today digest emails at 6:00 AM app time (based on tasks.due_date)
  * - Workout reminders (based on workout_reminders table)
  * - Meditation reminders (based on meditation_schedules table)
  * - Visit warnings (for people in yellow/red visit status)
  * - Visit-today and one-week-ahead Next Visit reminders
- * - Family Worship Planning Reminder (Monday 5:00 PM PT, week not planned) and Logging Reminder
- *   (9:00 AM PT the morning after the Usual Weekday, no session logged); neither for a Skipped Week
+ * - Family Worship Planning Reminder (Monday 5:00 PM app time, week not planned) and Logging Reminder
+ *   (9:00 AM app time the morning after the Usual Weekday, no session logged); neither for a Skipped Week
+ *
+ * All times are in the app time zone (`APP_TIME_ZONE`, default America/Vancouver).
  *
  * Every job runs through `runNotificationJob`, which logs each send in the email_notifications
  * table to prevent duplicates.
  */
+
+import { APP_TIME_ZONE } from '$app/env/public';
 
 import { logger } from '#lib/server/logger.js';
 
@@ -46,7 +50,8 @@ export async function runEmailNotifications({
 
 	logger.debug('🚀 Starting email notifications job run...', {
 		utc: now.toISOString(),
-		pacific: `${clock.today} ${clock.hour}:${clock.minute}`,
+		timeZone: APP_TIME_ZONE,
+		appTime: `${clock.today} ${clock.hour}:${clock.minute}`,
 		weekday: clock.weekday
 	});
 

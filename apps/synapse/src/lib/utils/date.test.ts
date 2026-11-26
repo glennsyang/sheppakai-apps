@@ -263,6 +263,14 @@ describe('app-timezone datetime-local helpers', () => {
 		expect(getCurrentTimeString(new Date('2026-01-16T07:30:00.000Z'))).toBe('23:30');
 	});
 
+	it('stays on UTC-7 in winter (America/Vancouver, not Los Angeles)', () => {
+		const winter = new Date('2026-11-26T15:00:00.000Z');
+		expect(getCurrentTimeString(winter)).toBe('08:00');
+		expect(getTodayString(winter)).toBe('2026-11-26');
+		expect(toAppDatetimeLocal(winter)).toBe('2026-11-26T08:00');
+		expect(parseAppDateTime('2026-11-26T08:00').toISOString()).toBe('2026-11-26T15:00:00.000Z');
+	});
+
 	it('round-trips through parse and format', () => {
 		for (const value of ['2026-10-10T08:00', '2026-01-15T00:05', '2026-07-04T23:59']) {
 			expect(toAppDatetimeLocal(parseAppDateTime(value))).toBe(value);

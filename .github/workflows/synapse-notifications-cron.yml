@@ -4,7 +4,8 @@ on:
   schedule:
     # Every 30 minutes, skipping overnight so the Fly machine can stay stopped.
     # Each call wakes the machine for ~6 minutes; every 10 minutes kept it up ~60% of the time.
-    # GitHub cron is UTC: hours 12-23 and 0-5 UTC = 04:00-21:59 PST / 05:00-22:59 PDT.
+    # GitHub cron is UTC: hours 12-23 and 0-5 UTC = 05:00-22:59 in America/Vancouver
+    # (UTC-7 year-round since Nov 2026; the app zone is APP_TIME_ZONE).
     # Off-the-hour minutes (:07/:37) dodge GitHub's top-of-hour scheduling delays.
     # Reminders fire on the first run at or after their time, so they arrive up to ~30 min late,
     # and anything scheduled during the overnight gap won't fire.

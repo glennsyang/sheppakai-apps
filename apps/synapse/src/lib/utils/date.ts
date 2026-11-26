@@ -8,9 +8,8 @@
  * These utilities ensure dates are parsed and displayed in the local timezone.
  */
 
+import { APP_TIME_ZONE } from '$app/env/public';
 import { parseDateTime } from '@internationalized/date';
-
-const APP_TIME_ZONE = 'America/Los_Angeles';
 
 const appDateFormatter = new Intl.DateTimeFormat('en-US', {
 	timeZone: APP_TIME_ZONE,
@@ -393,7 +392,7 @@ const EXPLICIT_OFFSET_PATTERN = /(Z|[+-]\d{2}:?\d{2})$/i;
  * @throws If the value is not a valid datetime
  *
  * @example
- * parseAppDateTime('2026-10-10T08:00') // 2026-10-10T15:00:00.000Z (8:00 AM PDT)
+ * parseAppDateTime('2026-10-10T08:00') // 2026-10-10T15:00:00.000Z (8:00 AM in America/Vancouver)
  */
 export function parseAppDateTime(value: string): Date {
 	const date = EXPLICIT_OFFSET_PATTERN.test(value)

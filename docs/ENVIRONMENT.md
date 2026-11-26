@@ -41,6 +41,7 @@ differences.
 | `ADDRESS_HEADER`       | `Fly-Client-IP`, set in each `fly.toml`. Makes `getClientAddress()` return the real client IP so the auth rate limiters key per client. Not in `env.ts`; read by `adapter-node`.                                           |
 | `SENTRY_DSN`           | Public (sent to the browser). Defaults to the app's Sentry project DSN in `env.ts`, so no config is needed.                                                                                                                |
 | `LOG_LEVEL`            | `debug` \| `info` \| `warn` \| `error`. Defaults to `debug` in dev, `info` in prod. Declared in the shared env entries; read straight from `process.env` by `packages/logger`, so tests can override it with `vi.stubEnv`. |
+| `APP_TIME_ZONE` | IANA time zone for dates, "today" and reminder times, on the server and in the browser. Defaults to `America/Vancouver`; an unknown zone fails env validation. Public and dynamic (not inlined at build), so override it with `[env] APP_TIME_ZONE = "..."` in `apps/<app>/fly.toml`. |
 
 ### Adding a user
 

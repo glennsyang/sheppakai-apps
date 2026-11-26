@@ -29,7 +29,7 @@ import {
 } from './family-worship';
 
 const OTHER_USER = { id: 'user-2', name: 'Other', email: 'other@example.com' };
-// Tuesday 24 Nov 2026, noon Pacific. This week starts Monday 23 Nov.
+// Tuesday 24 Nov 2026, 1:00 PM Vancouver (UTC-7). This week starts Monday 23 Nov.
 const NOW = new Date('2026-11-24T20:00:00Z');
 const TODAY = '2026-11-24';
 const W0 = '2026-11-23';
@@ -91,11 +91,11 @@ describe('weeks', () => {
 		);
 	});
 
-	it('counts a session for the week of its Pacific date, across the Sunday-Monday midnight', () => {
+	it('counts a session for the week of its app-time date, across the Sunday-Monday midnight', () => {
 		const a = topic('Prayer');
-		// 07:30 UTC Monday is still 23:30 Sunday in Pacific time.
-		const lateSunday = new Date('2026-11-30T07:30:00Z');
-		const earlyMonday = new Date('2026-11-30T08:30:00Z');
+		// 06:30 UTC Monday is still 23:30 Sunday in Vancouver (UTC-7).
+		const lateSunday = new Date('2026-11-30T06:30:00Z');
+		const earlyMonday = new Date('2026-11-30T07:30:00Z');
 
 		const first = logSession(
 			db,
@@ -104,7 +104,7 @@ describe('weeks', () => {
 			{ now: lateSunday }
 		);
 		expect(first.ok).toBe(true);
-		// On Sunday night Pacific, Monday is still in the future.
+		// On Sunday night app time, Monday is still in the future.
 		expect(
 			logSession(db, me, { date: '2026-11-30', topicId: a.id, note: null }, { now: lateSunday })
 		).toEqual({ ok: false, reason: 'future_date' });
