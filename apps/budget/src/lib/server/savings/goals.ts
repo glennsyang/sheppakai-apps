@@ -14,7 +14,7 @@ import {
 	type ContributionInput
 } from '#lib/server/db/writes/contributions.js';
 import type { Contribution, SavingsGoalStatus } from '#lib/types.js';
-import { formatDateForStorage, getPacificTodayDate } from '#lib/utils/dates.js';
+import { formatDateForStorage, getAppTodayDate } from '#lib/utils/dates.js';
 
 /**
  * The Savings Goal module: the one place for Savings Goal progress and the Goal Status rules.
@@ -56,7 +56,7 @@ export async function goalsWithProgress(): Promise<SavingsGoalWithEta[]> {
 	if (includedGoals.length === 0) return [];
 
 	const includedGoalIds = includedGoals.map((g) => g.id);
-	const today = getPacificTodayDate();
+	const today = getAppTodayDate();
 	const rateWindowStart = getGoalRateWindowStart(today);
 
 	const totalsRows = await getDb()

@@ -6,7 +6,7 @@ import { apiError, apiSuccess } from '#lib/server/api/response.js';
 import { apiCreateWindowCleaningCustomerSchema } from '#lib/server/api/schemas/window-cleaning-customers.js';
 import { logger } from '#lib/server/logger.js';
 import { create, listWithStatus } from '#lib/server/window-cleaning/customers.js';
-import { getPacificTodayDate } from '#lib/utils/dates.js';
+import { getAppTodayDate } from '#lib/utils/dates.js';
 
 import type { RequestHandler } from './$types';
 
@@ -15,7 +15,7 @@ export const GET: RequestHandler = async ({ request }) => {
 	if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
 	try {
-		const { customers } = await listWithStatus(getPacificTodayDate());
+		const { customers } = await listWithStatus(getAppTodayDate());
 		// Jobs are served by /api/v1/window-cleaning/jobs; the list carries their totals only
 		return apiSuccess(customers.map(({ jobs: _jobs, ...customer }) => customer));
 	} catch (error) {

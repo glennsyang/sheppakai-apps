@@ -37,7 +37,7 @@ import {
 	getMonthDateRange,
 	getMonthProgress,
 	getMonthRangeFromUrl,
-	getPacificTodayDate,
+	getAppTodayDate,
 	getPreviousMonthsRange,
 	getYearDateRange,
 	parseYearParam
@@ -224,7 +224,7 @@ export async function loadMonthlyDashboard(url: URL) {
 		plannedExpenses,
 		categoryStatuses,
 		recurringBills,
-		upcomingBills: upcomingBills(recurringBills, selectedMonthKey, getPacificTodayDate(today)),
+		upcomingBills: upcomingBills(recurringBills, selectedMonthKey, getAppTodayDate(today)),
 		recurringBillsMonthlyTotal,
 		actualExpensesTotal,
 		excludedExpensesTotal,

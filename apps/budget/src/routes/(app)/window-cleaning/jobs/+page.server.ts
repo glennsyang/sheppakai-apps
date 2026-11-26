@@ -5,16 +5,13 @@ import { windowCleaningJobSchema } from '#lib/formSchemas/index.js';
 import { deleteJob, sendInvoice, updateJob } from '#lib/server/actions/window-cleaning-jobs.js';
 import { windowCleaningJobQueries } from '#lib/server/db/queries/index.js';
 import { logger } from '#lib/server/logger.js';
-import { getCurrentPacificMonthYear, parseYearParam } from '#lib/utils/dates.js';
+import { getCurrentAppMonthYear, parseYearParam } from '#lib/utils/dates.js';
 import { revenue } from '#lib/utils/windowCleaningStats.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
-	const selectedYear = parseYearParam(
-		url.searchParams.get('year'),
-		getCurrentPacificMonthYear().year
-	);
+	const selectedYear = parseYearParam(url.searchParams.get('year'), getCurrentAppMonthYear().year);
 
 	const jobForm = await superValidate(zod4(windowCleaningJobSchema));
 

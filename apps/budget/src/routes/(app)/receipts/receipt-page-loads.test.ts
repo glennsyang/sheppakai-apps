@@ -103,7 +103,7 @@ describe('receipts/fuel monthly average', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.useFakeTimers();
-		// Mid-March 2026 Pacific: January and February are the completed months.
+		// Mid-March 2026 (app time zone): January and February are the completed months.
 		vi.setSystemTime(new Date('2026-03-15T20:00:00Z'));
 	});
 

@@ -10,8 +10,8 @@ vi.mock('$app/env/public', () => ({
 
 import {
 	formatDayHeading,
-	getCurrentPacificMonthYear,
-	getPacificTodayDate,
+	getCurrentAppMonthYear,
+	getAppTodayDate,
 	calculateMonthsSinceJanuary,
 	extractDateFromTimestamp,
 	filterByDateRange,
@@ -247,7 +247,7 @@ describe('Date Utilities - Local Timezone Storage', () => {
 			expect(result).toEqual({ month: 7, year: 2025 });
 		});
 
-		it('should stay in the previous month across the UTC day boundary (Pacific 9pm July 31 = UTC Aug 1)', () => {
+		it('should stay in the previous month across the UTC day boundary (Vancouver 9pm July 31 = UTC Aug 1)', () => {
 			vi.setSystemTime(new Date('2026-08-01T04:00:00Z')); // 9:00pm PDT on July 31
 			const url = new URL('http://localhost/');
 			const result = getMonthYearFromUrl(url);
@@ -420,7 +420,7 @@ describe('Date Utilities - Local Timezone Storage', () => {
 			]);
 		});
 
-		it('does not include the next month across the UTC day boundary (Pacific 9pm July 31 = UTC Aug 1)', () => {
+		it('does not include the next month across the UTC day boundary (Vancouver 9pm July 31 = UTC Aug 1)', () => {
 			vi.setSystemTime(new Date('2026-08-01T04:00:00Z')); // 9:00pm PDT on July 31
 			const result = getPreviousMonthsRange(2);
 			expect(result).toEqual([
@@ -466,7 +466,7 @@ describe('Date Utilities - Local Timezone Storage', () => {
 			});
 		});
 
-		it('excludes August across the UTC day boundary (Pacific 9pm July 31 = UTC Aug 1)', () => {
+		it('excludes August across the UTC day boundary (Vancouver 9pm July 31 = UTC Aug 1)', () => {
 			vi.setSystemTime(new Date('2026-08-01T04:00:00Z')); // 9:00pm PDT on July 31
 			const result = getCalendarYearMonthsRange(2026);
 			expect(result).toHaveLength(7);
@@ -545,8 +545,8 @@ describe('Date Utilities - Local Timezone Storage', () => {
 			expect(progress.percentage).toBe(50);
 		});
 
-		it('uses the Pacific date when UTC has already rolled into the next month', () => {
-			// 2026-03-01T03:00:00Z is still Feb 28 in Pacific time
+		it('uses the app-time-zone date when UTC has already rolled into the next month', () => {
+			// 2026-03-01T03:00:00Z is still Feb 28 in the app time zone
 			const reference = new Date('2026-03-01T03:00:00Z');
 
 			expect(getMonthProgress(2, 2026, reference)).toMatchObject({
@@ -655,13 +655,13 @@ describe('Date Utilities - Local Timezone Storage', () => {
 			expect(calculateMonthsSinceJanuary(2026, new Date('2026-01-20T19:00:00Z'))).toBe(0);
 		});
 
-		it('uses the Pacific month when UTC has already rolled over', () => {
-			// 2026-03-01 03:00 UTC is still Feb 28 in Pacific time
+		it('uses the app-time-zone month when UTC has already rolled over', () => {
+			// 2026-03-01 03:00 UTC is still Feb 28 in the app time zone
 			expect(calculateMonthsSinceJanuary(2026, new Date('2026-03-01T03:00:00Z'))).toBe(1);
 		});
 
-		it('uses the Pacific year when UTC has already reached New Year', () => {
-			// 2027-01-01 03:00 UTC is still Dec 31, 2026 in Pacific time
+		it('uses the app-time-zone year when UTC has already reached New Year', () => {
+			// 2027-01-01 03:00 UTC is still Dec 31, 2026 in the app time zone
 			expect(calculateMonthsSinceJanuary(2026, new Date('2027-01-01T03:00:00Z'))).toBe(11);
 		});
 	});
@@ -719,8 +719,8 @@ describe('Date Utilities - Local Timezone Storage', () => {
 			expect(progress.percentage).toBeCloseTo((2 / 12) * 100, 6);
 		});
 
-		it("uses the Pacific date on New Year's Eve when UTC has already rolled over", () => {
-			// 2027-01-01T03:00:00Z is still Dec 31, 2026 in Pacific time
+		it("uses the app-time-zone date on New Year's Eve when UTC has already rolled over", () => {
+			// 2027-01-01T03:00:00Z is still Dec 31, 2026 in the app time zone
 			const reference = new Date('2027-01-01T03:00:00Z');
 
 			expect(getYearProgress(2026, reference)).toMatchObject({
@@ -755,8 +755,8 @@ describe('getYearOptions', () => {
 		]);
 	});
 
-	it('uses the Pacific year, not UTC, on New Year’s Eve', () => {
-		// 2027-01-01 03:00 UTC is still Dec 31, 2026 in Pacific time.
+	it('uses the app-time-zone year, not UTC, on New Year’s Eve', () => {
+		// 2027-01-01 03:00 UTC is still Dec 31, 2026 in the app time zone.
 		expect(getYearOptions(undefined, 2025, new Date('2027-01-01T03:00:00Z'))).toEqual([2026, 2025]);
 	});
 
@@ -777,13 +777,13 @@ describe('APP_TIME_ZONE', () => {
 	});
 
 	it('defaults to America/Vancouver', () => {
-		expect(getPacificTodayDate(instant)).toBe('2026-12-01');
-		expect(getCurrentPacificMonthYear(instant)).toEqual({ month: 12, year: 2026 });
+		expect(getAppTodayDate(instant)).toBe('2026-12-01');
+		expect(getCurrentAppMonthYear(instant)).toEqual({ month: 12, year: 2026 });
 	});
 
 	it('follows a configured zone (America/Los_Angeles restores the old behaviour)', () => {
 		zone.value = 'America/Los_Angeles';
-		expect(getPacificTodayDate(instant)).toBe('2026-11-30');
-		expect(getCurrentPacificMonthYear(instant)).toEqual({ month: 11, year: 2026 });
+		expect(getAppTodayDate(instant)).toBe('2026-11-30');
+		expect(getCurrentAppMonthYear(instant)).toEqual({ month: 11, year: 2026 });
 	});
 });

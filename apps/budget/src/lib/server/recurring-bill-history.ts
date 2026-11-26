@@ -1,5 +1,5 @@
 import type { UpcomingBill } from '#lib/types.js';
-import { getPacificTodayDate, padMonth } from '#lib/utils/dates.js';
+import { getAppTodayDate, padMonth } from '#lib/utils/dates.js';
 
 /**
  * Pure helpers for recurring bill history (#240). Months are `YYYY-MM` keys, which sort and
@@ -16,9 +16,9 @@ export function toMonthKey(month: number, year: number): string {
 	return `${year}-${padMonth(month)}`;
 }
 
-/** The current month in Pacific time, as a `YYYY-MM` key. */
+/** The current month in the app time zone, as a `YYYY-MM` key. */
 export function currentMonthKey(now: Date = new Date()): string {
-	return getPacificTodayDate(now).slice(0, 7);
+	return getAppTodayDate(now).slice(0, 7);
 }
 
 export function previousMonthKey(monthKey: string): string {
@@ -116,7 +116,7 @@ function dueDateIn(dueDay: number, dueMonth: number | null, cadence: Cadence, mo
 }
 
 /**
- * Unpaid Recurring Bills due within {@link UPCOMING_WINDOW_DAYS} of `today` (a Pacific
+ * Unpaid Recurring Bills due within {@link UPCOMING_WINDOW_DAYS} of `today` (an app-time-zone
  * `YYYY-MM-DD`), including Overdue Bills, soonest first. `bills` carry `monthKey`'s paid state
  * (see `recurringBillsForMonth`).
  */

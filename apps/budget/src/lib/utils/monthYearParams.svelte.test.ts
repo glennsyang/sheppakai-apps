@@ -9,7 +9,7 @@ vi.mock('$app/navigation', () => ({ goto: mocks.goto }));
 vi.mock('$app/state', () => ({ page: mocks.page }));
 vi.mock('./dates', async (importOriginal) => ({
 	...(await importOriginal<typeof import('./dates')>()),
-	getCurrentPacificMonthYear: () => ({ month: 9, year: 2026 })
+	getCurrentAppMonthYear: () => ({ month: 9, year: 2026 })
 }));
 
 import { useMonthYearParams } from './monthYearParams.svelte';
@@ -22,7 +22,7 @@ describe('useMonthYearParams', () => {
 		mocks.page.url = new URL('http://localhost/income');
 	});
 
-	it('falls back to the current Pacific month/year when params are missing', () => {
+	it('falls back to the current app-time-zone month/year when params are missing', () => {
 		const params = useMonthYearParams('/income');
 
 		expect(params.month).toBe(9);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { monthProgress, type MonthTotals } from './cash-flow';
 
-// Aug 5, 2026, midday Pacific: 5 days elapsed, 27 days left including today, 31 days in month.
+// Aug 5, 2026, midday in the app time zone: 5 days elapsed, 27 days left including today, 31 days in month.
 const AUG_5 = new Date('2026-08-05T19:00:00Z');
 
 const august: MonthTotals = {
@@ -64,8 +64,8 @@ describe('monthProgress', () => {
 		expect(result.forecast?.totalEnd).toBeCloseTo(1950);
 	});
 
-	it('uses the Pacific day, not UTC', () => {
-		// 03:00 UTC on Aug 6 is still Aug 5 in Pacific time.
+	it('uses the app-time-zone day, not UTC', () => {
+		// 03:00 UTC on Aug 6 is still Aug 5 in the app time zone.
 		const result = monthProgress(august, new Date('2026-08-06T03:00:00Z'), null);
 
 		expect(result.daysElapsed).toBe(5);
