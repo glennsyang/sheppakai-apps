@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { deserialize, enhance, type ActionResult } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
-	import { superForm } from 'sveltekit-superforms';
+	import { tick } from 'svelte';
+	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 
 	import { actionFailureText } from '#lib/action-result.js';
@@ -20,6 +20,7 @@
 	import { recipeAsSuggestion } from '#lib/recipes.js';
 	import {
 		addCustomMealSchema,
+		saveAndAddSchema,
 		suggestionListSchema,
 		suggestionSchema
 	} from '#lib/schemas/mealPlan.js';
@@ -35,9 +36,7 @@
 	// drop a row until the next load replaces it.
 	let entries = $derived<MealPlanEntryWithRecipe[]>(data.entries);
 	let pendingSuggestion = $state<Suggestion | null>(null);
-	let selectedDay = $state<number>(0);
 	let showDayPicker = $state(false);
-	let isSubmitting = $state(false);
 
 	// Custom meal modal state
 	let showCustomModal = $state(false);
@@ -78,6 +77,70 @@
 			sessionStorage.removeItem('pendingSuggestion');
 		}
 	});
+
+	const PLAN_FAILED = 'Could not add that dinner to the week plan. Please try again.';
+
+	// The client adapter can't derive defaults from the schema, so start from an empty plan.
+	const EMPTY_PLAN = {
+		weekStartDate: '',
+		dayOfWeek: 0,
+		name: '',
+		description: '',
+		ingredientsJson: '',
+		instructionsJson: '',
+		prepTimeMinutes: 1,
+		servings: 1
+	};
+
+	// One "Plan Dinner" form for both a Suggestion (via "Which night?") and a Variation.
+	// Created once at init; its <form> is always rendered so submit() has a real form.
+	const {
+		form: planForm,
+		enhance: planEnhance,
+		submitting: planSubmitting,
+		submit: submitPlanForm
+	} = superForm(defaults(EMPTY_PLAN, zod4Client(saveAndAddSchema)), {
+		id: 'plan-dinner',
+		validators: zod4Client(saveAndAddSchema),
+		resetForm: false,
+		onResult({ result, cancel }) {
+			// A redirect (expired session) is applied by superforms: it goes to sign-in.
+			if (result.type === 'redirect') return;
+			if (result.type !== 'success') {
+				actionError = actionFailureText(result, PLAN_FAILED);
+				// The banner is the whole failure UI; skip superforms' own failure handling.
+				cancel();
+				return;
+			}
+			actionError = null;
+			stuckDay = $planForm.dayOfWeek;
+			showDayPicker = false;
+			pendingSuggestion = null;
+			variationsList = null;
+			variationsDay = null;
+			drawerSuggestion = null;
+		},
+		onError() {
+			actionError = PLAN_FAILED;
+		}
+	});
+
+	/** Put a Suggestion or Variation on `day` of the week being viewed. */
+	async function planDinner(suggestion: Suggestion, day: number): Promise<void> {
+		$planForm = {
+			weekStartDate: data.weekStartDate,
+			dayOfWeek: day,
+			name: suggestion.name,
+			description: suggestion.description,
+			ingredientsJson: JSON.stringify(suggestion.ingredients),
+			instructionsJson: JSON.stringify(suggestion.steps),
+			prepTimeMinutes: suggestion.prepTimeMinutes,
+			servings: suggestion.servings
+		};
+		// Let the hidden inputs pick up the store before the form posts.
+		await tick();
+		submitPlanForm();
+	}
 
 	// svelte-ignore state_referenced_locally
 	const {
@@ -144,48 +207,12 @@
 		}
 	}
 
-	async function handleVariationAddToPlanner(suggestion: Suggestion): Promise<void> {
+	function handleVariationAddToPlanner(suggestion: Suggestion): void {
 		if (variationsDay === null) {
 			actionError = 'Pick a day first: open variations from a planned dinner.';
 			return;
 		}
-		const fd = new FormData();
-		fd.set('weekStartDate', data.weekStartDate);
-		fd.set('dayOfWeek', String(variationsDay));
-		fd.set('name', suggestion.name);
-		fd.set('description', suggestion.description);
-		fd.set('ingredientsJson', JSON.stringify(suggestion.ingredients));
-		fd.set('instructionsJson', JSON.stringify(suggestion.steps));
-		fd.set('prepTimeMinutes', String(suggestion.prepTimeMinutes));
-		fd.set('servings', String(suggestion.servings));
-
-		// Triggered from the variations panel / recipe drawer rather than a form, so call
-		// the action programmatically — with the `x-sveltekit-action` header SvelteKit
-		// answers with a serialized ActionResult instead of re-rendering the page.
-		let result: ActionResult;
-		try {
-			const res = await fetch('?/saveAndAdd', {
-				method: 'POST',
-				headers: { 'x-sveltekit-action': 'true' },
-				body: fd
-			});
-			result = deserialize(await res.text());
-		} catch {
-			result = { type: 'error', error: { status: 500, message: 'Network error' } };
-		}
-		if (result.type !== 'success') {
-			actionError = actionFailureText(
-				result,
-				'Could not add that dinner to the week plan. Please try again.'
-			);
-			return;
-		}
-		actionError = null;
-		stuckDay = variationsDay;
-		variationsList = null;
-		variationsDay = null;
-		drawerSuggestion = null;
-		await refreshAll();
+		void planDinner(suggestion, variationsDay);
 	}
 
 	function getWeekLabel(weekStartDate: string): string {
@@ -219,57 +246,16 @@
 			</p>
 		</div>
 
-		<form
-			method="POST"
-			action="?/saveAndAdd"
-			use:enhance={() => {
-				isSubmitting = true;
-				return async ({ result, update }) => {
-					isSubmitting = false;
-					if (result.type === 'success') {
-						actionError = null;
-						stuckDay = selectedDay;
-						showDayPicker = false;
-						pendingSuggestion = null;
-						await update();
-					} else {
-						actionError = actionFailureText(
-							result,
-							'Could not add that dinner to the week plan. Please try again.'
-						);
-					}
-				};
-			}}
-			class="space-y-5"
-		>
-			<input type="hidden" name="weekStartDate" value={data.weekStartDate} />
-
-			<input type="hidden" name="name" value={pendingSuggestion.name} />
-
-			<input type="hidden" name="description" value={pendingSuggestion.description} />
-
-			<input
-				type="hidden"
-				name="ingredientsJson"
-				value={JSON.stringify(pendingSuggestion.ingredients)}
-			/>
-			<input
-				type="hidden"
-				name="instructionsJson"
-				value={JSON.stringify(pendingSuggestion.steps)}
-			/>
-			<input type="hidden" name="prepTimeMinutes" value={pendingSuggestion.prepTimeMinutes} />
-			<input type="hidden" name="servings" value={pendingSuggestion.servings} />
-
+		<div class="space-y-5">
 			<fieldset class="ruled">
 				<legend class="sr-only">Night of the week ({getWeekLabel(data.weekStartDate)})</legend>
 				{#each DAY_LABELS as day, i (day)}
 					<label class="night">
 						<input
 							type="radio"
-							name="dayOfWeek"
+							name="planDay"
 							value={i}
-							bind:group={selectedDay}
+							bind:group={$planForm.dayOfWeek}
 							class="sr-only"
 						/>
 						<span class="marker w-24 shrink-0">{day}</span>
@@ -281,17 +267,34 @@
 			</fieldset>
 
 			<div class="flex gap-2">
-				<Button type="submit" disabled={isSubmitting} class="flex-1 py-2.5">
-					{isSubmitting ? 'Sticking it on…' : `Put on ${DAY_LABELS[selectedDay]}`}
+				<Button
+					type="button"
+					disabled={$planSubmitting}
+					onclick={() => pendingSuggestion && planDinner(pendingSuggestion, $planForm.dayOfWeek)}
+					class="flex-1 py-2.5"
+				>
+					{$planSubmitting ? 'Sticking it on…' : `Put on ${DAY_LABELS[$planForm.dayOfWeek]}`}
 				</Button>
 
 				<Button type="button" onclick={closeDayPicker} variant="outline" class="py-2.5"
 					>Cancel</Button
 				>
 			</div>
-		</form>
+		</div>
 	{/if}
 </Modal>
+
+<!-- The one Plan Dinner form: the day picker and the variations panel / drawer submit it. -->
+<form method="POST" action="?/saveAndAdd" use:planEnhance hidden>
+	<input type="hidden" name="weekStartDate" value={$planForm.weekStartDate} />
+	<input type="hidden" name="dayOfWeek" value={$planForm.dayOfWeek} />
+	<input type="hidden" name="name" value={$planForm.name} />
+	<input type="hidden" name="description" value={$planForm.description} />
+	<input type="hidden" name="ingredientsJson" value={$planForm.ingredientsJson} />
+	<input type="hidden" name="instructionsJson" value={$planForm.instructionsJson} />
+	<input type="hidden" name="prepTimeMinutes" value={$planForm.prepTimeMinutes} />
+	<input type="hidden" name="servings" value={$planForm.servings} />
+</form>
 
 <!-- Write in a dinner by hand -->
 
