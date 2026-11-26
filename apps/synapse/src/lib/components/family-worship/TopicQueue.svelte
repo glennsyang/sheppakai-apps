@@ -1,8 +1,12 @@
 <script lang="ts">
-	import { deserialize, type ActionResult } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import { GripVertical } from '@lucide/svelte/icons';
 	import { actionMessage } from '@sheppakai/shared/action-message';
+	import {
+		isSessionExpired,
+		postAction,
+		SESSION_EXPIRED_MESSAGE
+	} from '@sheppakai/shared/post-action';
 	import type { DndEvent } from 'svelte-dnd-action';
 	import { dndzone } from 'svelte-dnd-action';
 	import { toast } from 'svelte-sonner';
@@ -29,17 +33,6 @@
 	let isSaving = $state(false);
 	let dragSnapshot: TopicEntry[] | null = null;
 
-	// With the `x-sveltekit-action` header SvelteKit answers with a serialized ActionResult, so a
-	// redirect (e.g. expired session) is not mistaken for a successful save.
-	async function postAction(action: string, formData: FormData): Promise<ActionResult> {
-		const response = await fetch(`?/${action}`, {
-			method: 'POST',
-			headers: { 'x-sveltekit-action': 'true' },
-			body: formData
-		});
-		return deserialize(await response.text());
-	}
-
 	function handleConsider(event: CustomEvent<DndEvent<TopicEntry>>) {
 		dragSnapshot ??= [...items];
 		items = event.detail.items;
@@ -59,8 +52,7 @@
 
 		try {
 			const result = await postAction('reorderTopicQueue', formData);
-			// A redirect here is the auth wall (expired session), not a save.
-			if (result.type === 'redirect') throw new Error('Your session expired. Sign in again.');
+			if (isSessionExpired(result)) throw new Error(SESSION_EXPIRED_MESSAGE);
 			const resultMessage = actionMessage(result, {
 				success: 'Topic Queue saved.',
 				error: 'Could not save the Topic Queue.'
