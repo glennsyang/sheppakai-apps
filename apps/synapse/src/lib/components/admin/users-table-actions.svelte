@@ -7,7 +7,10 @@
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import UserCheckIcon from '@lucide/svelte/icons/user-check';
 	import { actionMessage } from '@sheppakai/shared/action-message';
+	import { banUserSchema } from '@sheppakai/shared/admin-user-schemas';
 	import { toast } from 'svelte-sonner';
+	import { defaults, superForm } from 'sveltekit-superforms';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Dialog from '#lib/components/ui/dialog/index.js';
@@ -78,11 +81,49 @@
 	const dialog = $derived(activeAction ? dialogs[activeAction] : null);
 	const isDestructive = $derived(activeAction === 'banUser' || activeAction === 'removeUser');
 
+	// The ban form has a typed field, so it runs through superForm; the rest are button-only forms.
+	const banValidators = zod4Client(banUserSchema);
+	const banInitialData = () => ({ userId: user.id, banReason: '' });
+
+	// svelte-ignore state_referenced_locally — superForm is intentionally initialized once from props
+	const {
+		form: banForm,
+		errors: banErrors,
+		enhance: banEnhance,
+		submitting: banSubmitting,
+		reset: resetBanForm
+	} = superForm(defaults(banInitialData(), banValidators), {
+		id: `banUser-${user.id}`,
+		validators: banValidators,
+		onUpdate: ({ form }) => {
+			// Read form.message, not $message: the store is only repopulated after onUpdate.
+			if (form.message) toast[form.message.type](form.message.text);
+			// Like the other row actions, close once the server has answered a valid form, success
+			// or not; stay open only to show field errors (e.g. a reason over 500 characters).
+			if (form.valid) openDialog = false;
+		},
+		onError: ({ result }) => {
+			toast.error(`${dialogs.banUser.error}: ${result.error.message}`);
+			openDialog = false;
+		}
+	});
+
 	function open(action: RowAction) {
+		// Each opening starts empty, dropping a cancelled reason and its error.
+		if (action === 'banUser') resetBanForm({ data: banInitialData(), newState: banInitialData() });
 		activeAction = action;
 		openDialog = true;
 	}
 </script>
+
+{#snippet dialogButtons(confirm: string, submitting: boolean)}
+	<div class="flex justify-end gap-2 pt-4">
+		<Button type="button" variant="outline" onclick={() => (openDialog = false)}>Cancel</Button>
+		<Button type="submit" variant={isDestructive ? 'destructive' : 'default'} disabled={submitting}>
+			{submitting ? 'Working...' : confirm}
+		</Button>
+	</div>
+{/snippet}
 
 {#if isSelf}
 	<span class="text-muted-foreground px-3 text-sm">you</span>
@@ -137,51 +178,55 @@
 					<Dialog.Title>{dialog.title}</Dialog.Title>
 					<Dialog.Description>{dialog.description}</Dialog.Description>
 				</Dialog.Header>
-				<form
-					method="POST"
-					action="?/{activeAction}"
-					use:enhance={() => {
-						isSubmitting = true;
-						const { success, error } = dialog;
-
-						return async ({ result, update }) => {
-							const resultMessage = actionMessage(result, { success, error });
-							if (resultMessage.type === 'success') {
-								toast.success(resultMessage.text);
-							} else {
-								toast.error(resultMessage.text);
-							}
-							await update();
-							isSubmitting = false;
-							openDialog = false;
-						};
-					}}
-				>
-					<input type="hidden" name="userId" value={user.id} />
-					{#if activeAction === 'setRole'}
-						<input type="hidden" name="role" value={nextRole} />
-					{/if}
-
-					{#if activeAction === 'banUser'}
+				{#if activeAction === 'banUser'}
+					<form method="POST" action="?/banUser" use:banEnhance>
+						<input type="hidden" name="userId" value={$banForm.userId} />
 						<div class="space-y-2">
 							<Label for="ban-reason-{user.id}">Reason (optional)</Label>
-							<Textarea id="ban-reason-{user.id}" name="banReason" maxlength={500} rows={3} />
+							<Textarea
+								id="ban-reason-{user.id}"
+								name="banReason"
+								rows={3}
+								bind:value={$banForm.banReason}
+								aria-invalid={$banErrors.banReason ? 'true' : undefined}
+								aria-describedby={$banErrors.banReason ? `ban-reason-error-${user.id}` : undefined}
+							/>
+							{#if $banErrors.banReason}
+								<p id="ban-reason-error-{user.id}" class="text-destructive text-sm">
+									{$banErrors.banReason[0]}
+								</p>
+							{/if}
 						</div>
-					{/if}
+						{@render dialogButtons(dialog.confirm, $banSubmitting)}
+					</form>
+				{:else}
+					<form
+						method="POST"
+						action="?/{activeAction}"
+						use:enhance={() => {
+							isSubmitting = true;
+							const { success, error } = dialog;
 
-					<div class="flex justify-end gap-2 pt-4">
-						<Button type="button" variant="outline" onclick={() => (openDialog = false)}>
-							Cancel
-						</Button>
-						<Button
-							type="submit"
-							variant={isDestructive ? 'destructive' : 'default'}
-							disabled={isSubmitting}
-						>
-							{isSubmitting ? 'Working...' : dialog.confirm}
-						</Button>
-					</div>
-				</form>
+							return async ({ result, update }) => {
+								const resultMessage = actionMessage(result, { success, error });
+								if (resultMessage.type === 'success') {
+									toast.success(resultMessage.text);
+								} else {
+									toast.error(resultMessage.text);
+								}
+								await update();
+								isSubmitting = false;
+								openDialog = false;
+							};
+						}}
+					>
+						<input type="hidden" name="userId" value={user.id} />
+						{#if activeAction === 'setRole'}
+							<input type="hidden" name="role" value={nextRole} />
+						{/if}
+						{@render dialogButtons(dialog.confirm, isSubmitting)}
+					</form>
+				{/if}
 			{/if}
 		</Dialog.Content>
 	</Dialog.Root>
