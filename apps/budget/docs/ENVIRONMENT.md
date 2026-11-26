@@ -30,6 +30,7 @@ Fly app: `sheppakai-budget`. Validated in [`src/env.ts`](../src/env.ts) unless n
 | `ADDRESS_HEADER`        | No       | `fly.toml` `[env]`               | `Fly-Client-IP`. Not in `env.ts`.                                                                                                                                                                                               |
 | `SENTRY_DSN`            | No       | Default in `env.ts`              | Public.                                                                                                                                                                                                                         |
 | `LOG_LEVEL`             | No       | Not set                          | Declared in the shared env entries; read by `packages/logger` from `process.env`.                                                                                                                                               |
+| `APP_TIME_ZONE`         | No       | Default in shared env            | `America/Vancouver`. Drives "today", the current month/year and the weekly summary's date range (public, so the browser uses it too). To change it, set `[env] APP_TIME_ZONE = "..."` in `apps/budget/fly.toml`.                |
 
 ## GitHub Actions secrets
 

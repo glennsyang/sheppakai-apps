@@ -1,7 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const zone = vi.hoisted(() => ({ value: 'America/Vancouver' }));
+
+vi.mock('$app/env/public', () => ({
+	get APP_TIME_ZONE() {
+		return zone.value;
+	}
+}));
+
 import {
 	formatDayHeading,
+	getCurrentPacificMonthYear,
+	getPacificTodayDate,
 	calculateMonthsSinceJanuary,
 	extractDateFromTimestamp,
 	filterByDateRange,
@@ -755,5 +765,25 @@ describe('getYearOptions', () => {
 		expect(getYearOptions(2024, 2025, ref)).toEqual([2026, 2025, 2024]);
 		expect(getYearOptions(2030, 2025, ref)).toEqual([2030, 2026, 2025]);
 		expect(getYearOptions(2025, 2025, ref)).toEqual([2026, 2025]);
+	});
+});
+
+describe('APP_TIME_ZONE', () => {
+	// 00:30 on Dec 1 in BC (UTC-7 year-round from Nov 2026); still 23:30 Nov 30 in Los Angeles.
+	const instant = new Date('2026-12-01T07:30:00Z');
+
+	afterEach(() => {
+		zone.value = 'America/Vancouver';
+	});
+
+	it('defaults to America/Vancouver', () => {
+		expect(getPacificTodayDate(instant)).toBe('2026-12-01');
+		expect(getCurrentPacificMonthYear(instant)).toEqual({ month: 12, year: 2026 });
+	});
+
+	it('follows a configured zone (America/Los_Angeles restores the old behaviour)', () => {
+		zone.value = 'America/Los_Angeles';
+		expect(getPacificTodayDate(instant)).toBe('2026-11-30');
+		expect(getCurrentPacificMonthYear(instant)).toEqual({ month: 11, year: 2026 });
 	});
 });

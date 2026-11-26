@@ -8,11 +8,11 @@
  * Audit: created_at/updated_at still use SQLite's current_timestamp (UTC)
  */
 
+import { APP_TIME_ZONE } from '$app/env/public';
+
 type PeriodProgressKind = 'month' | 'year';
 type PeriodProgressStatus = 'past' | 'current' | 'future';
 type PeriodProgressUnit = 'day' | 'month';
-
-const PACIFIC_TIMEZONE = 'America/Los_Angeles';
 
 export interface PeriodProgress {
 	kind: PeriodProgressKind;
@@ -189,17 +189,17 @@ export function padMonth(month: number | string): string {
 }
 
 /**
- * Get year/month/day parts of a date as observed in the Pacific timezone
- * (America/Los_Angeles, which auto-adjusts for PST/PDT), regardless of the
- * server or browser's own local timezone.
+ * Get year/month/day parts of a date as observed in the app time zone
+ * (`APP_TIME_ZONE`, default America/Vancouver), regardless of the server or
+ * browser's own local timezone.
  */
-function getPacificDateParts(date: Date = new Date()): {
+function getAppDateParts(date: Date = new Date()): {
 	year: number;
 	month: number;
 	day: number;
 } {
 	const formatter = new Intl.DateTimeFormat('en-US', {
-		timeZone: PACIFIC_TIMEZONE,
+		timeZone: APP_TIME_ZONE,
 		year: 'numeric',
 		month: '2-digit',
 		day: '2-digit'
@@ -215,21 +215,21 @@ function getPacificDateParts(date: Date = new Date()): {
 }
 
 /**
- * Get the current month/year as observed in the Pacific timezone, so the
- * month rolls over at midnight Pacific rather than midnight UTC or the
+ * Get the current month/year as observed in the app time zone, so the
+ * month rolls over at local midnight rather than midnight UTC or the
  * server/browser's own local timezone.
  */
 export function getCurrentPacificMonthYear(date: Date = new Date()): {
 	month: number;
 	year: number;
 } {
-	const { month, year } = getPacificDateParts(date);
+	const { month, year } = getAppDateParts(date);
 	return { month, year };
 }
 
-/** Today's date (YYYY-MM-DD) as observed in the Pacific timezone. */
+/** Today's date (YYYY-MM-DD) as observed in the app time zone. */
 export function getPacificTodayDate(date: Date = new Date()): string {
-	const { year, month, day } = getPacificDateParts(date);
+	const { year, month, day } = getAppDateParts(date);
 	return `${year}-${padMonth(month)}-${padMonth(day)}`;
 }
 
@@ -263,7 +263,7 @@ export function parseYearParam(value: string | null, fallback: number): number {
 const FIRST_DATA_YEAR = 2025;
 
 /**
- * Years for a year picker, newest first: `firstYear` through the current Pacific year, plus
+ * Years for a year picker, newest first: `firstYear` through the current year (app time zone), plus
  * `selectedYear` when it falls outside that range (e.g. a hand-typed `?year=`), so the picker
  * always contains the year it is showing. Grows on its own each January.
  *
@@ -283,12 +283,12 @@ export function getYearOptions(
 
 /**
  * Extract month and year from URL search params with fallback to current date
- * Invalid or out-of-range values fall back to the current Pacific month/year.
+ * Invalid or out-of-range values fall back to the current month/year (app time zone).
  * @param url - URL object containing searchParams
  * @returns Object with month (1-12) and year
  *
  * Example: URL with ?month=3&year=2025 → { month: 3, year: 2025 }
- * Example: URL with no params → { month: 1, year: 2026 } (current date, Pacific time)
+ * Example: URL with no params → { month: 1, year: 2026 } (current date, app time zone)
  */
 export function getMonthYearFromUrl(url: URL): { month: number; year: number } {
 	const current = getCurrentPacificMonthYear();
@@ -324,7 +324,7 @@ export function getMonthRangeFromUrl(url: URL) {
  *   → Returns data for Aug 2025, Sep 2025, Oct 2025, Nov 2025, Dec 2025, Jan 2026
  */
 export function getPreviousMonthsRange(count: number) {
-	const { year: currentYear, month: currentMonth, day: currentDay } = getPacificDateParts();
+	const { year: currentYear, month: currentMonth, day: currentDay } = getAppDateParts();
 	const currentDate = new Date(currentYear, currentMonth - 1, currentDay);
 	const ranges = [];
 
@@ -355,7 +355,7 @@ export function getPreviousMonthsRange(count: number) {
  *   → Returns all 12 months of 2025
  */
 export function getCalendarYearMonthsRange(year: number) {
-	const { year: currentYear, month: currentMonth, day: currentDay } = getPacificDateParts();
+	const { year: currentYear, month: currentMonth, day: currentDay } = getAppDateParts();
 	const currentDate = new Date(currentYear, currentMonth - 1, currentDay);
 	const ranges = [];
 
@@ -394,7 +394,7 @@ function buildPeriodProgress(
 
 /**
  * Get completion progress for a selected month relative to the reference date,
- * as observed in the Pacific timezone so it agrees with the month/year resolved
+ * as observed in the app time zone so it agrees with the month/year resolved
  * by getMonthYearFromUrl. Past months are complete, future months have not started, and the current month
  * uses the current day of month as the elapsed amount.
  */
@@ -408,7 +408,7 @@ export function getMonthProgress(
 		year: referenceYear,
 		month: referenceMonth,
 		day: referenceDay
-	} = getPacificDateParts(referenceDate);
+	} = getAppDateParts(referenceDate);
 
 	if (year < referenceYear || (year === referenceYear && month < referenceMonth)) {
 		return buildPeriodProgress('month', totalUnits, totalUnits, 'past', 'day');
@@ -422,8 +422,8 @@ export function getMonthProgress(
 }
 
 /**
- * Count the months of `year` that have fully elapsed, as observed in the Pacific
- * timezone so it agrees with the month/year resolved by getMonthYearFromUrl.
+ * Count the months of `year` that have fully elapsed, as observed in the app
+ * time zone so it agrees with the month/year resolved by getMonthYearFromUrl.
  * Past years count 12, future years 0, and the current year counts the months
  * before the current one (January → 0).
  */
@@ -446,13 +446,13 @@ export function calculateMonthsSinceJanuary(
 
 /**
  * Get completion progress for a selected year relative to the reference date,
- * as observed in the Pacific timezone so it agrees with the month/year resolved
+ * as observed in the app time zone so it agrees with the month/year resolved
  * by getMonthYearFromUrl. Past years are complete, future years have not started,
  * and the current year counts the months before the current one as elapsed.
  */
 export function getYearProgress(year: number, referenceDate: Date = new Date()): PeriodProgress {
 	const totalUnits = 12;
-	const { year: referenceYear, month: referenceMonth } = getPacificDateParts(referenceDate);
+	const { year: referenceYear, month: referenceMonth } = getAppDateParts(referenceDate);
 
 	if (year < referenceYear) {
 		return buildPeriodProgress('year', totalUnits, totalUnits, 'past', 'month');

@@ -1,3 +1,4 @@
+import { APP_TIME_ZONE } from '$app/env/public';
 import { and, eq, ne } from 'drizzle-orm';
 
 import { getCategoryStatuses } from '#lib/server/budgets/category-status.js';
@@ -25,7 +26,7 @@ type WeeklySummaryRunResult = {
 	excludedCount: number;
 };
 
-type PacificDateParts = {
+type AppDateParts = {
 	year: number;
 	month: number;
 	day: number;
@@ -33,11 +34,9 @@ type PacificDateParts = {
 	weekday: number;
 };
 
-const PACIFIC_TIMEZONE = 'America/Los_Angeles';
-
-function getPacificDateParts(date: Date): PacificDateParts {
+function getAppDateParts(date: Date): AppDateParts {
 	const formatter = new Intl.DateTimeFormat('en-US', {
-		timeZone: PACIFIC_TIMEZONE,
+		timeZone: APP_TIME_ZONE,
 		year: 'numeric',
 		month: '2-digit',
 		day: '2-digit',
@@ -79,22 +78,22 @@ function formatMonthLabel(month: number, year: number): string {
 }
 
 function buildMonthRange(date: Date) {
-	const pacificParts = getPacificDateParts(date);
-	const month = String(pacificParts.month).padStart(2, '0');
-	const day = String(pacificParts.day).padStart(2, '0');
+	const parts = getAppDateParts(date);
+	const month = String(parts.month).padStart(2, '0');
+	const day = String(parts.day).padStart(2, '0');
 
 	return {
-		year: String(pacificParts.year),
+		year: String(parts.year),
 		month,
-		startDate: `${pacificParts.year}-${month}-01`,
-		endDate: `${pacificParts.year}-${month}-${day}`,
-		monthLabel: formatMonthLabel(pacificParts.month, pacificParts.year)
+		startDate: `${parts.year}-${month}-01`,
+		endDate: `${parts.year}-${month}-${day}`,
+		monthLabel: formatMonthLabel(parts.month, parts.year)
 	};
 }
 
-function shouldRunAtScheduledPacificTime(date: Date): boolean {
-	const pacificParts = getPacificDateParts(date);
-	return pacificParts.weekday === 1;
+function isMondayInAppTimeZone(date: Date): boolean {
+	const parts = getAppDateParts(date);
+	return parts.weekday === 1;
 }
 
 /** Over and near rows come straight from the Category Status states. */
@@ -126,12 +125,12 @@ function toSummaryRows(statuses: CategoryStatus[]): {
 }
 
 export async function runWeeklySummaryEmail(date = new Date()): Promise<WeeklySummaryRunResult> {
-	if (!shouldRunAtScheduledPacificTime(date)) {
+	if (!isMondayInAppTimeZone(date)) {
 		const monthRange = buildMonthRange(date);
 		return {
 			success: true,
 			skipped: true,
-			reason: 'Not Monday Pacific time',
+			reason: 'Not Monday in app time zone',
 			monthLabel: monthRange.monthLabel,
 			recipientsScanned: 0,
 			emailsSent: 0,

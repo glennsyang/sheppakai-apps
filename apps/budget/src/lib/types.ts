@@ -123,7 +123,7 @@ export type MonthEndForecast = {
 	baselineWeeks: number;
 };
 
-/** A month's cash flow on the Pacific `today`; see `monthProgress` in `server/dashboard/cash-flow.ts`. */
+/** A month's cash flow on the app-time-zone `today`; see `monthProgress` in `server/dashboard/cash-flow.ts`. */
 export type CashFlow = {
 	status: 'past' | 'current' | 'future';
 	daysInMonth: number;
