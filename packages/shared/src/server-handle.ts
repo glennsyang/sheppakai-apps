@@ -1,7 +1,9 @@
+import { redirect } from '@sveltejs/kit';
 import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 
 import { isUserAccessAllowed } from './auth-allowlist';
+import { SIGN_IN_ROUTE } from './auth-routes';
 import { redactSensitivePath } from './sensitive-path';
 
 /** The slice of `@sheppakai/logger` the request pipeline uses. */
@@ -38,6 +40,17 @@ interface ServerHandleOptions {
 	dev: boolean;
 	/** `building` from `$app/env`. */
 	building: boolean;
+	/**
+	 * Route-id prefixes (e.g. `'/(app)'`) that require a signed-in user. Anonymous requests
+	 * to a matching route are redirected to sign-in here, before any load or action runs.
+	 */
+	protectedRoutes?: readonly string[];
+}
+
+/** True when `routeId` is `prefix` itself or a route nested under it. */
+function isProtectedRoute(routeId: string | null, prefixes: readonly string[]): boolean {
+	if (!routeId) return false;
+	return prefixes.some((prefix) => routeId === prefix || routeId.startsWith(`${prefix}/`));
 }
 
 /**
@@ -46,7 +59,7 @@ interface ServerHandleOptions {
  * security headers.
  */
 export function createServerHandle(options: ServerHandleOptions): Handle {
-	const { auth, logger, allowedEmails, dev, building } = options;
+	const { auth, logger, allowedEmails, dev, building, protectedRoutes = [] } = options;
 
 	return async ({ event, resolve }) => {
 		if (dev && event.url.pathname === '/.well-known/appspecific/com.chrome.devtools.json') {
@@ -103,6 +116,19 @@ export function createServerHandle(options: ServerHandleOptions): Handle {
 			event.locals.user = session.user as NonNullable<typeof event.locals.user>;
 
 			requestLogger = requestLogger.child({ userId: session.user.id });
+		}
+
+		// Fail-closed auth gate. A layout load is not a reliable guard on its own: a
+		// `__data.json?x-sveltekit-invalidated=…` request can mark the layout as "skip", so
+		// only the page load runs. Checking here covers page, data and form-action requests
+		// alike. SvelteKit turns the thrown redirect into the right response for each (a 303,
+		// or a `{ type: 'redirect' }` JSON body for data and enhanced-form requests).
+		if (!event.locals.user && isProtectedRoute(event.route.id, protectedRoutes)) {
+			requestLogger.info('Unauthenticated request to protected route', {
+				routeId: event.route.id,
+				isDataRequest: event.isDataRequest
+			});
+			throw redirect(303, SIGN_IN_ROUTE);
 		}
 
 		const response = await svelteKitHandler({ event, resolve, auth, building });

@@ -1,4 +1,4 @@
-import type { RequestEvent } from '@sveltejs/kit';
+import { isRedirect, type RequestEvent } from '@sveltejs/kit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
@@ -27,14 +27,33 @@ function fakeLogger() {
 	return logger satisfies RequestLogger;
 }
 
-function fakeEvent(pathname = '/dashboard') {
+function fakeEvent(
+	pathname = '/dashboard',
+	{
+		routeId = null,
+		isDataRequest = false
+	}: { routeId?: string | null; isDataRequest?: boolean } = {}
+) {
 	return {
 		url: new URL(`http://localhost${pathname}`),
 		request: new Request(`http://localhost${pathname}`, {
 			headers: { 'user-agent': 'vitest' }
 		}),
+		route: { id: routeId },
+		isDataRequest,
 		locals: {} as App.Locals
 	} as unknown as RequestEvent;
+}
+
+/** Runs the handle and returns the redirect it threw, or `undefined` if it resolved. */
+async function thrownRedirect(promise: Response | Promise<Response>) {
+	try {
+		await promise;
+		return undefined;
+	} catch (err) {
+		if (isRedirect(err)) return err;
+		throw err;
+	}
 }
 
 const session = {
@@ -177,6 +196,93 @@ describe('createServerHandle', () => {
 			resolve,
 			auth,
 			building: true
+		});
+	});
+
+	describe('protectedRoutes gate', () => {
+		const protectedHandle = (lookup: typeof session | null) =>
+			createServerHandle({
+				auth: fakeAuth(lookup),
+				logger: fakeLogger(),
+				allowedEmails,
+				dev: false,
+				building: false,
+				protectedRoutes: ['/(app)']
+			});
+
+		// The leak this gate closes: `/savings/__data.json?x-sveltekit-invalidated=001` makes
+		// SvelteKit skip the `(app)` layout load (the old only guard) and run the page load.
+		it('redirects an anonymous __data.json request before any load runs', async () => {
+			const event = fakeEvent('/savings/__data.json', {
+				routeId: '/(app)/savings',
+				isDataRequest: true
+			});
+
+			const redirect = await thrownRedirect(protectedHandle(null)({ event, resolve }));
+
+			expect(redirect).toMatchObject({ status: 303, location: '/sign-in' });
+			expect(mockState.svelteKitHandler).not.toHaveBeenCalled();
+			expect(resolve).not.toHaveBeenCalled();
+		});
+
+		it.each(['/(app)', '/(app)/window-cleaning/jobs', '/(app)/recipes/[id]'])(
+			'redirects anonymous page requests to %s',
+			async (routeId) => {
+				const redirect = await thrownRedirect(
+					protectedHandle(null)({ event: fakeEvent('/', { routeId }), resolve })
+				);
+
+				expect(redirect).toMatchObject({ status: 303, location: '/sign-in' });
+			}
+		);
+
+		it('redirects a session the allowlist just rejected', async () => {
+			const rejected = { ...session, user: { ...session.user, email: 'removed@example.com' } };
+			const event = fakeEvent('/savings', { routeId: '/(app)/savings' });
+
+			const redirect = await thrownRedirect(protectedHandle(rejected)({ event, resolve }));
+
+			expect(redirect).toMatchObject({ status: 303, location: '/sign-in' });
+		});
+
+		it('lets a signed-in user through', async () => {
+			const event = fakeEvent('/savings/__data.json', {
+				routeId: '/(app)/savings',
+				isDataRequest: true
+			});
+
+			const response = await protectedHandle(session)({ event, resolve });
+
+			expect(response.status).toBe(200);
+			expect(mockState.svelteKitHandler).toHaveBeenCalledOnce();
+		});
+
+		it.each([
+			['the sign-in page', '/(auth)/sign-in'],
+			['a look-alike group', '/(application)/savings'],
+			['the API', '/api/v1/expenses'],
+			['an unmatched route (404)', null]
+		])('leaves %s open to anonymous requests', async (_label, routeId) => {
+			const response = await protectedHandle(null)({ event: fakeEvent('/', { routeId }), resolve });
+
+			expect(response.status).toBe(200);
+		});
+
+		it('gates nothing when protectedRoutes is not passed', async () => {
+			const handle = createServerHandle({
+				auth: fakeAuth(null),
+				logger: fakeLogger(),
+				allowedEmails,
+				dev: false,
+				building: false
+			});
+
+			const response = await handle({
+				event: fakeEvent('/savings', { routeId: '/(app)/savings' }),
+				resolve
+			});
+
+			expect(response.status).toBe(200);
 		});
 	});
 
