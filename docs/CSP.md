@@ -24,8 +24,21 @@ itself. Sentry's `sentryHandle()` (where used) reads the same nonce.
 The server handle (`createServerHandle` in `packages/shared/src/server-handle.ts`, wired
 into each app's `hooks.server.ts`) **must never set `Content-Security-Policy`** — doing so
 overrides the nonce-bearing header SvelteKit emits. The other security headers
-(`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS,
-`X-Request-ID`) are set there.
+(`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`,
+`Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, HSTS, `X-Request-ID`) are set
+there.
+
+### Cross-origin isolation headers
+
+| Header                         | Value         | Why                                                                                                                                               |
+| ------------------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Cross-Origin-Opener-Policy`   | `same-origin` | A window opened from another origin gets no `window.opener` handle on our pages, which blocks reverse tabnabbing and cross-window leaks.          |
+| `Cross-Origin-Resource-Policy` | `same-origin` | Other origins can't load our responses (pages, `__data.json`, images) as no-cors subresources, so signed-in content can't be embedded elsewhere. |
+
+Neither breaks anything the apps do today: there are no OAuth popups (sign-in is email,
+password and passkeys, none of which use a cross-origin window), the apps never embed each
+other's resources, and emails don't load images from the apps. Revisit both headers before
+adding a social-login popup or serving assets to another origin.
 
 > Historical note: `synapse` previously hand-built CSP in `hooks.server.ts` — a
 > per-request nonce plus a `transformPageChunk` pass that rewrote every `<script>` tag,
