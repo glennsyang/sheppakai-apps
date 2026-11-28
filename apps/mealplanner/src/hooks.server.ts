@@ -33,10 +33,18 @@ Sentry.init({
 });
 
 // Request ID, request logging, session + allowlist re-check and security headers live in
-// @sheppakai/shared/server-handle so the three apps can't drift apart.
+// @sheppakai/shared/server-handle so the three apps can't drift apart. `protectedRoutes`
+// makes the hook, not the `(app)` layout load, the auth gate for the whole route group.
 export const handle = sequence(
 	Sentry.sentryHandle(),
-	createServerHandle({ auth, logger, allowedEmails, dev, building })
+	createServerHandle({
+		auth,
+		logger,
+		allowedEmails,
+		dev,
+		building,
+		protectedRoutes: ['/(app)']
+	})
 );
 
 export const handleError = createHandleError({ logger, dev });
