@@ -142,6 +142,10 @@ export function createServerHandle(options: ServerHandleOptions): Handle {
 		response.headers.set('X-Content-Type-Options', 'nosniff');
 		response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 		response.headers.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+		// Cut the `window.opener` link to cross-origin windows (reverse tabnabbing, cross-window
+		// leaks), and stop other origins from loading our responses as no-cors subresources.
+		response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+		response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
 		response.headers.set('X-Request-ID', requestId);
 
 		if (!dev) {
